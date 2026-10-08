@@ -1,7 +1,7 @@
 /**
- * Commander (PLAN-E, E4) : l'IA lance son commandant depuis la zone de commandement, le remet dans la zone de
- * commandement (903.9a), compte les blessures de commandant dans ses PV effectifs et achève un joueur par elles ; la
- * déterminisation laisse les commandants intacts (ils sont publics) ; parties de Commander complètes et invariantes.
+ * Commander (PLAN-E, E4): the AI casts its commander from the command zone, puts it back in the command zone
+ * (903.9a), counts commander damage in its effective life and finishes a player with it; determinization
+ * leaves commanders intact (they are public); full Commander games stay invariant-clean.
  */
 import { card } from "@mtgx/cards";
 import { cloneState, type GameState } from "@mtgx/engine";
@@ -25,13 +25,13 @@ const makeCommander = (s: GameState, id: string) => {
 };
 
 describe("IA et Commander", () => {
-  it("lance son commandant depuis la zone de commandement", () => {
+  it("casts its commander from the command zone", () => {
     const s = scenario({ p1: { command: [ARAHBO], battlefield: ["Plains", "Plains", "Plains"], hand: [] } });
     const d = heuristicAgent()(s, "p1");
     expect(d).toMatchObject({ type: "cast", card: commanderId(s, "p1") });
   });
 
-  it("903.9a : remet son commandant dans la zone de commandement plutôt que de le laisser au cimetière", () => {
+  it("903.9a: puts its commander back in the command zone rather than leaving it in the graveyard", () => {
     let s = scenario({ p1: { battlefield: [ARAHBO] } });
     makeCommander(s, idOf(s, "p1", "battlefield", ARAHBO));
     moveObject(s, idOf(s, "p1", "battlefield", ARAHBO), "graveyard");
@@ -40,16 +40,16 @@ describe("IA et Commander", () => {
     expect(heuristicAgent()(s, "p1")).toEqual({ type: "choose", values: [1] });
   });
 
-  it("PV effectifs : la distance aux 21 blessures d'un même commandant compte", () => {
+  it("effective life: the distance to 21 damage from a single commander counts", () => {
     const s = scenario({ p1: { battlefield: [ARAHBO] }, p2: { life: 30 } });
     makeCommander(s, idOf(s, "p1", "battlefield", ARAHBO));
     expect(effectiveLife(s, "p2")).toBe(30);
     s.commander!.cards[Object.keys(s.commander!.cards)[0]!]!.damage.p2 = 15;
-    // 30 PV et 15 blessures d'un commandant : 30 × 6 / 21.
+    // 30 life and 15 damage from a commander: 30 × 6 / 21.
     expect(effectiveLife(s, "p2")).toBeCloseTo(30 * (6 / 21));
   });
 
-  it("à plusieurs, attaque le joueur que son commandant peut achever par ses blessures de commandant", () => {
+  it("in multiplayer, attacks the player its commander can finish with commander damage", () => {
     let s = scenario({ players: 3, p1: { battlefield: [ARAHBO] }, p2: { life: 40 }, p3: { life: 10 } });
     const arahbo = idOf(s, "p1", "battlefield", ARAHBO);
     makeCommander(s, arahbo);
@@ -60,7 +60,7 @@ describe("IA et Commander", () => {
     if (d.type === "declareAttackers") expect(d.attackers.find((a) => a.id === arahbo)?.defender).toBe("p2");
   });
 
-  it("déterminisation : un commandant dans la main d'un adversaire reste ce qu'il est", () => {
+  it("determinization: a commander in an opponent's hand stays what it is", () => {
     const s = scenario({ p2: { hand: [ARAHBO, "Forest"] } });
     makeCommander(s, idOf(s, "p2", "hand", ARAHBO));
     const d = determinize(cloneState(s), "p1", mulberry32(5));
@@ -68,7 +68,7 @@ describe("IA et Commander", () => {
     expect(commander?.defId).toBe(card(ARAHBO).id);
   });
 
-  it("parties de Commander à 2 et 4 joueurs (IA moyenne et aléatoire) : invariants respectés, parties finies", () => {
+  it("Commander games with 2 and 4 players (medium and random AI): invariants hold, games finish", () => {
     for (const players of [2, 4]) {
       const decks = Array.from({ length: players }, (_, i) => randomCommanderDeck(900 + players * 10 + i));
       const r = playGame({
@@ -80,7 +80,7 @@ describe("IA et Commander", () => {
         maxDecisions: 15000 * players,
         check: true,
       });
-      expect(r.state.over, `${players} joueurs`).toBe(true);
+      expect(r.state.over, `${players} players`).toBe(true);
       expect(r.state.players.p1?.startingLife).toBe(40);
     }
   }, 120_000);

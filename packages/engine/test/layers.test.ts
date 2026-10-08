@@ -6,23 +6,23 @@ import { chars, obj, tapObject, untapObject } from "../src/state";
 import type { LayerMods } from "../src/types";
 import { act, customCard, idOf, idsOf, passBoth, passUntil, scenario } from "./helpers";
 
-/** « La créature ciblée devient 0/1 et perd toutes ses capacités jusqu'à la fin du tour. » */
+/** "Target creature becomes 0/1 and loses all abilities until end of turn." */
 const HEX = customCard({
-  name: "Maléfice",
+  name: "Hex",
   typeLine: "Instant",
   types: ["Instant"],
   spell: spell([target.creature()], [fx.modify(ref.target(), { setPower: 0, setToughness: 1, loseAllAbilities: true })]),
 });
 
 describe("couches (613)", () => {
-  it("seigneur : les autres Elfes gagnent +1/+1, pas le seigneur lui-même", () => {
+  it("lord: the other Elves get +1/+1, not the lord itself", () => {
     const s = scenario({ p1: { battlefield: ["Imperious Perfect", "Llanowar Elves", "Bear Cub"] } });
     expect(chars(s, idOf(s, "p1", "battlefield", "Llanowar Elves")).power).toBe(2);
     expect(chars(s, idOf(s, "p1", "battlefield", "Imperious Perfect")).power).toBe(2);
     expect(chars(s, idOf(s, "p1", "battlefield", "Bear Cub")).power).toBe(2);
   });
 
-  it("les effets suivent le seigneur : il quitte le jeu, le bonus disparaît", () => {
+  it("effects follow the lord: it leaves the battlefield, the bonus goes away", () => {
     let s = scenario({
       p1: { battlefield: ["Imperious Perfect", "Llanowar Elves"] },
       p2: { battlefield: ["Mountain"], hand: ["Burst Lightning"] },
@@ -38,7 +38,7 @@ describe("couches (613)", () => {
     expect(chars(s, elves).power).toBe(1);
   });
 
-  it("7b puis 7c : « devient 0/1 » s'applique avant les marqueurs et le seigneur", () => {
+  it("7b then 7c: 'becomes 0/1' applies before the counters and the lord", () => {
     let s = scenario({
       p1: { battlefield: ["Island", "Imperious Perfect", "Llanowar Elves"], hand: [HEX] },
     });
@@ -48,24 +48,24 @@ describe("couches (613)", () => {
       objects: { ...s.objects, [elves]: { ...s.objects[elves]!, counters: { "+1/+1": 1 } } },
       version: s.version + 1,
     };
-    expect(chars(s, elves).power).toBe(3); // 1 + 1 marqueur + 1 seigneur
-    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Maléfice"), targets: { t: [elves] } });
+    expect(chars(s, elves).power).toBe(3); // 1 + 1 counter + 1 lord
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Hex"), targets: { t: [elves] } });
     s = passBoth(s);
-    // 0/1 (7b) + marqueur (7c) + seigneur (7c) = 2/3 ; la capacité de mana est perdue (couche 6).
+    // 0/1 (7b) + counter (7c) + lord (7c) = 2/3; the mana ability is lost (layer 6).
     expect(chars(s, elves)).toMatchObject({ power: 2, toughness: 3, abilities: [] });
   });
 
-  it("capacité conditionnelle : Kargan a le vol seulement avec un Dragon", () => {
+  it("conditional ability: Kargan has flying only with a Dragon", () => {
     let s = scenario({ p1: { battlefield: Array(5).fill("Mountain").concat("Kargan Dragonrider"), hand: ["Dragon Trainer"] } });
     const kargan = idOf(s, "p1", "battlefield", "Kargan Dragonrider");
     expect(chars(s, kargan).keywords).not.toContain("flying");
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Dragon Trainer") });
-    s = passBoth(s); // le Dresseur arrive
-    s = passBoth(s); // son déclenchement crée le Dragon
+    s = passBoth(s); // the Trainer enters
+    s = passBoth(s); // its trigger creates the Dragon
     expect(chars(s, kargan).keywords).toContain("flying");
   });
 
-  it("« créatures attaquantes » : Goblin Oriflamme ne compte qu'en attaque", () => {
+  it("'attacking creatures': Goblin Oriflamme only counts while attacking", () => {
     let s = scenario({ p1: { battlefield: ["Goblin Oriflamme", "Swab Goblin"] } });
     const g = idOf(s, "p1", "battlefield", "Swab Goblin");
     expect(chars(s, g).power).toBe(2);
@@ -77,32 +77,32 @@ describe("couches (613)", () => {
     expect(chars(s, g).power).toBe(2);
   });
 
-  it("donner une capacité aux autres : Aggressive Mammoth donne le piétinement", () => {
+  it("granting an ability to others: Aggressive Mammoth grants trample", () => {
     const s = scenario({ p1: { battlefield: ["Aggressive Mammoth", "Bear Cub"] } });
     expect(chars(s, idOf(s, "p1", "battlefield", "Bear Cub")).keywords).toContain("trample");
   });
 });
 
-describe("remplacements et prévention (614–615)", () => {
-  it("« exilez-la à la place » : Obliterating Bolt exile la créature qui meurt", () => {
+describe("replacements and prevention (614–615)", () => {
+  it("'exile it instead': Obliterating Bolt exiles the creature that dies", () => {
     let s = scenario({
       p1: { battlefield: ["Mountain", "Mountain"], hand: ["Obliterating Bolt"] },
       p2: { battlefield: ["Pelakka Wurm"] },
     });
     const wurm = idOf(s, "p2", "battlefield", "Pelakka Wurm");
-    // Pelakka Wurm fait 7/7 : on le blesse d'abord pour que 4 blessures suffisent.
+    // Pelakka Wurm is 7/7: damage it first so that 4 damage is enough.
     s = { ...s, objects: { ...s.objects, [wurm]: { ...s.objects[wurm]!, damage: 3 } } };
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Obliterating Bolt"), targets: { t: [wurm] } });
     s = passBoth(s);
     expect(s.exile).toHaveLength(1);
     expect(s.players.p2?.graveyard).toHaveLength(0);
-    // Exilée, elle n'est pas « morte » : pas de pioche de Pelakka Wurm.
+    // Exiled, it has not "died": no Pelakka Wurm draw.
     expect(s.stack).toHaveLength(0);
   });
 
-  it("arrive avec des marqueurs (raid) et « double ses marqueurs » (landfall)", () => {
+  it("enters with counters (raid) and 'doubles its counters' (landfall)", () => {
     let s = scenario({ step: "main2", p1: { battlefield: Array(3).fill("Mountain"), hand: ["Goblin Boarders"] } });
-    // Raid : une attaque ce tour-ci (journal du tour).
+    // Raid: an attack this turn (turn log).
     s = {
       ...s,
       turnLog: [...s.turnLog, { e: "attack", player: "p1", defender: "p2", types: ["Creature"], subtypes: [] }],
@@ -122,14 +122,14 @@ describe("remplacements et prévention (614–615)", () => {
     expect(chars(t, hydra).power).toBe(2);
   });
 
-  it("arrive engagé : Diregraf Ghoul", () => {
+  it("enters tapped: Diregraf Ghoul", () => {
     let s = scenario({ p1: { battlefield: ["Swamp"], hand: ["Diregraf Ghoul"] } });
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Diregraf Ghoul") });
     s = passBoth(s);
     expect(s.objects[idOf(s, "p1", "battlefield", "Diregraf Ghoul")]?.tapped).toBe(true);
   });
 
-  it("prévention : Fleeting Flight empêche les blessures de combat infligées à la créature", () => {
+  it("prevention: Fleeting Flight prevents the combat damage dealt to the creature", () => {
     let s = scenario({
       active: "p2",
       p1: { battlefield: ["Plains", "Bear Cub"], hand: ["Fleeting Flight"] },
@@ -151,12 +151,12 @@ describe("remplacements et prévention (614–615)", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Interactions synthétiques : cartes fabriquées, effets continus posés directement, horodatages maîtrisés.
+// Synthetic interactions: made-up cards, continuous effects set directly, controlled timestamps.
 // ---------------------------------------------------------------------------
 
 type State = ReturnType<typeof scenario>;
 
-/** Effet continu issu d'une résolution (ensemble verrouillé, 611.2c), avec l'horodatage voulu. */
+/** Continuous effect from a resolution (locked-in set, 611.2c), with the chosen timestamp. */
 function withEffect(s: State, affected: string[], mods: LayerMods, timestamp = s.timestamp + 1): State {
   return {
     ...s,
@@ -166,36 +166,36 @@ function withEffect(s: State, affected: string[], mods: LayerMods, timestamp = s
   };
 }
 
-const ARTIFACT = customCard({ name: "Rouage", typeLine: "Artifact", types: ["Artifact"] });
-/** « Les artefacts que vous contrôlez sont des créatures-artefacts 2/2. » (couches 4 et 7b) */
+const ARTIFACT = customCard({ name: "Gear", typeLine: "Artifact", types: ["Artifact"] });
+/** "Artifacts you control are 2/2 artifact creatures." (layers 4 and 7b) */
 const ANIMATOR = customCard({
-  name: "Animateur",
+  name: "Animator",
   typeLine: "Enchantment",
   types: ["Enchantment"],
   abilities: [
     staticAbility({ types: ["Artifact"], controller: "you" }, { addTypes: ["Creature"], setPower: 2, setToughness: 2 }),
   ],
 });
-/** « Les créatures que vous contrôlez gagnent +1/+1 et ont le vol. » (couches 6 et 7c) */
+/** "Creatures you control get +1/+1 and have flying." (layers 6 and 7c) */
 const ANTHEM = customCard({
-  name: "Hymne",
+  name: "Anthem",
   typeLine: "Enchantment",
   types: ["Enchantment"],
   abilities: [staticAbility({ types: ["Creature"], controller: "you" }, { power: 1, toughness: 1, addKeywords: ["flying"] })],
 });
-/** « Les créatures rouges ont la célérité. » (couche 6, filtre de couleur) */
+/** "Red creatures have haste." (layer 6, color filter) */
 const RED_HASTE = customCard({
-  name: "Fanion rouge",
+  name: "Red Banner",
   typeLine: "Enchantment",
   types: ["Enchantment"],
   abilities: [staticAbility({ types: ["Creature"], colors: ["R"] }, { addKeywords: ["haste"] })],
 });
 
-describe("couches : interactions synthétiques", () => {
-  it("un type ajouté en couche 4 rend l'objet concerné par les couches suivantes (6, 7b, 7c)", () => {
+describe("layers: synthetic interactions", () => {
+  it("a type added in layer 4 makes the object subject to the later layers (6, 7b, 7c)", () => {
     const s = scenario({ p1: { battlefield: [ARTIFACT, ANIMATOR, ANTHEM] } });
-    // Artefact → créature 2/2 (4, 7b), puis +1/+1 et vol de l'Hymne, dont l'ensemble est fixé à ses couches (613.6).
-    expect(chars(s, idOf(s, "p1", "battlefield", "Rouage"))).toMatchObject({
+    // Artifact → 2/2 creature (4, 7b), then +1/+1 and flying from the Anthem, whose set is fixed at its layers (613.6).
+    expect(chars(s, idOf(s, "p1", "battlefield", "Gear"))).toMatchObject({
       types: ["Artifact", "Creature"],
       power: 3,
       toughness: 3,
@@ -203,7 +203,7 @@ describe("couches : interactions synthétiques", () => {
     });
   });
 
-  it("une couleur changée en couche 5 compte pour un filtre de couleur en couche 6", () => {
+  it("a color changed in layer 5 counts for a color filter in layer 6", () => {
     let s = scenario({ p1: { battlefield: ["Bear Cub", RED_HASTE] } });
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     expect(chars(s, bear).keywords).not.toContain("haste");
@@ -211,8 +211,8 @@ describe("couches : interactions synthétiques", () => {
     expect(chars(s, bear).keywords).toContain("haste");
   });
 
-  it("611.2c : l'ensemble d'un effet de résolution est verrouillé, un nouveau venu n'en profite pas", () => {
-    // « Les créatures que vous contrôlez gagnent +2/+0 » résolu quand seul l'Ours était là ; les Elfes arrivent après.
+  it("611.2c: the set of a resolution effect is locked in, a newcomer does not benefit", () => {
+    // "Creatures you control get +2/+0" resolved when only the Bear was there; the Elves arrive afterwards.
     let s = scenario({ p1: { battlefield: ["Bear Cub", "Llanowar Elves"] } });
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     s = withEffect(s, [bear], { power: 2 });
@@ -220,11 +220,11 @@ describe("couches : interactions synthétiques", () => {
     expect(chars(s, bear).power).toBe(4);
   });
 
-  it("perte de toutes les capacités : l'ordre des horodatages décide (613.7)", () => {
+  it("loss of all abilities: timestamp order decides (613.7)", () => {
     const base = scenario({ p1: { battlefield: ["Bear Cub"] } });
     const bear = idOf(base, "p1", "battlefield", "Bear Cub");
     const t = base.timestamp;
-    // Vol puis perte : plus de vol.
+    // Flying then loss: no more flying.
     const lostLast = withEffect(
       withEffect(base, [bear], { addKeywords: ["flying"] }, t + 1),
       [bear],
@@ -232,7 +232,7 @@ describe("couches : interactions synthétiques", () => {
       t + 2,
     );
     expect(chars(lostLast, bear).keywords).not.toContain("flying");
-    // Perte puis vol : le vol reste.
+    // Loss then flying: flying stays.
     const gainedLast = withEffect(
       withEffect(base, [bear], { loseAllAbilities: true }, t + 1),
       [bear],
@@ -242,45 +242,45 @@ describe("couches : interactions synthétiques", () => {
     expect(chars(gainedLast, bear).keywords).toContain("flying");
   });
 
-  it("une source qui perd ses capacités n'applique plus ses statiques", () => {
+  it("a source that loses its abilities no longer applies its static abilities", () => {
     let s = scenario({ p1: { battlefield: ["Bear Cub", ANTHEM] } });
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     expect(chars(s, bear).power).toBe(3);
-    s = withEffect(s, [idOf(s, "p1", "battlefield", "Hymne")], { loseAllAbilities: true });
+    s = withEffect(s, [idOf(s, "p1", "battlefield", "Anthem")], { loseAllAbilities: true });
     expect(chars(s, bear)).toMatchObject({ power: 2, keywords: [] });
   });
 
-  it("7b, 7c puis 7d : F/E fixées, modification, marqueur, puis échange", () => {
+  it("7b, 7c then 7d: fixed P/T, modification, counter, then switch", () => {
     let s = scenario({ p1: { battlefield: ["Bear Cub"] } });
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-    s = withEffect(s, [bear], { switchPT: true }); // le plus ancien, mais la couche 7d vient en dernier
+    s = withEffect(s, [bear], { switchPT: true }); // the oldest, but layer 7d comes last
     s = withEffect(s, [bear], { setPower: 1, setToughness: 4 });
     s = withEffect(s, [bear], { power: 2 });
     s = { ...s, objects: { ...s.objects, [bear]: { ...s.objects[bear]!, counters: { "+1/+1": 1 } } }, version: s.version + 1 };
-    // 1/4 → +2/+0 → +1/+1 = 4/5 → échange = 5/4.
+    // 1/4 → +2/+0 → +1/+1 = 4/5 → switch = 5/4.
     expect(chars(s, bear)).toMatchObject({ power: 5, toughness: 4, basePower: 1 });
   });
 
-  it("copie (couche 1) puis modification : les valeurs copiables, puis le bonus", () => {
+  it("copy (layer 1) then modification: the copiable values, then the bonus", () => {
     let s = scenario({ p1: { battlefield: ["Llanowar Elves", "Bear Cub"] } });
     const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
     const bearDef = s.objects[idOf(s, "p1", "battlefield", "Bear Cub")]!.defId;
     s = withEffect(s, [elves], { power: 1 });
     s = withEffect(s, [elves], { copyOf: bearDef });
-    // La copie (plus récente) ne balaie pas le bonus : les couches s'appliquent dans l'ordre, pas par horodatage.
+    // The copy (newer) does not sweep away the bonus: layers apply in order, not by timestamp.
     expect(chars(s, elves)).toMatchObject({ name: "Bear Cub", power: 3, toughness: 2 });
   });
 
-  it("une statique accordée par un effet s'applique (Roar of the Fifth People, chapitre II)", () => {
+  it("a static ability granted by an effect applies (Roar of the Fifth People, chapter II)", () => {
     let s = scenario({ p1: { battlefield: ["Bear Cub", ARTIFACT] } });
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     const grant = staticAbility({ types: ["Creature"], controller: "you" }, { addKeywords: ["vigilance"] });
     expect(chars(s, bear).keywords).not.toContain("vigilance");
-    s = withEffect(s, [idOf(s, "p1", "battlefield", "Rouage")], { addAbilities: [grant] });
+    s = withEffect(s, [idOf(s, "p1", "battlefield", "Gear")], { addAbilities: [grant] });
     expect(chars(s, bear).keywords).toContain("vigilance");
   });
 
-  it("603.4 : une capacité déclenchée accordée « si… » revérifie sa condition à la résolution", () => {
+  it("603.4: a granted triggered ability with 'if…' rechecks its condition on resolution", () => {
     const run = (removeInResponse: boolean) => {
       let s = scenario({ p1: { battlefield: ["Bear Cub", ARTIFACT, "Island"], hand: ["Opt"] } });
       const grant = triggered(when.castSpell("you"), [fx.gainLife(3)], { condition: cond.controls({ types: ["Artifact"] }) });
@@ -288,7 +288,7 @@ describe("couches : interactions synthétiques", () => {
       s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Opt") });
       s = passUntil(s, (x) => x.stack.length === 2);
       expect(s.stack.length).toBe(2);
-      if (removeInResponse) destroy(s, idOf(s, "p1", "battlefield", "Rouage"));
+      if (removeInResponse) destroy(s, idOf(s, "p1", "battlefield", "Gear"));
       s = passUntil(s, (x) => x.stack.length === 1);
       return s.players.p1?.life;
     };
@@ -296,8 +296,8 @@ describe("couches : interactions synthétiques", () => {
     expect(run(true)).toBe(20);
   });
 
-  it("613.8 : la condition d'une statique voit les types ajoutés par un effet", () => {
-    // Kargan a le vol « tant que vous contrôlez un Dragon » : un Ours devenu Dragon par un effet suffit.
+  it("613.8: a static ability's condition sees the types added by an effect", () => {
+    // Kargan has flying "as long as you control a Dragon": a Bear turned into a Dragon by an effect is enough.
     let s = scenario({ p1: { battlefield: ["Kargan Dragonrider", "Bear Cub"] } });
     const kargan = idOf(s, "p1", "battlefield", "Kargan Dragonrider");
     expect(chars(s, kargan).keywords).not.toContain("flying");
@@ -305,7 +305,7 @@ describe("couches : interactions synthétiques", () => {
     expect(chars(s, kargan).keywords).toContain("flying");
   });
 
-  it("dernières informations connues : une créature renforcée qui meurt garde sa force modifiée", () => {
+  it("last known information: a pumped creature that dies keeps its modified power", () => {
     let s = scenario({
       p1: { battlefield: ["Bear Cub"] },
       p2: { battlefield: ["Mountain"], hand: ["Burst Lightning"] },
@@ -320,8 +320,8 @@ describe("couches : interactions synthétiques", () => {
   });
 });
 
-describe("limites connues du moteur, gardées par un test", () => {
-  it("aucune statique n'accorde de capacité statique (dépendance non gérée par les couches)", () => {
+describe("known engine limits, kept by a test", () => {
+  it("no static ability grants a static ability (dependency not handled by the layers)", () => {
     const offenders: string[] = [];
     const walk = (v: unknown, name: string): void => {
       if (Array.isArray(v)) for (const x of v) walk(x, name);
@@ -336,21 +336,21 @@ describe("limites connues du moteur, gardées par un test", () => {
   });
 });
 
-describe("cache des couches : invalidation ciblée (PLAN-C, lot C15)", () => {
+describe("layer cache: targeted invalidation (PLAN-C, lot C15)", () => {
   const tappedAnthem = customCard({
-    name: "Hymne des engagés",
+    name: "Tapped Anthem",
     typeLine: "Enchantment",
     types: ["Enchantment"],
     abilities: [staticAbility({ types: ["Creature"], controller: "you", tapped: true }, { power: 1, toughness: 1 })],
   });
   const poolLord = customCard({
-    name: "Seigneur de la réserve",
+    name: "Pool Lord",
     power: 1,
     toughness: 1,
     abilities: [staticAbility("self", { power: 5, toughness: 0 }, { condition: cond.manaPoolAtLeast(2) })],
   });
 
-  it("engager ou dégager une créature met à jour une statique qui lit l'état engagé", () => {
+  it("tapping or untapping a creature updates a static ability that reads the tapped state", () => {
     const s = scenario({ p1: { battlefield: [tappedAnthem, "Bear Cub"] } });
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     expect(chars(s, bear).power).toBe(2);
@@ -360,7 +360,7 @@ describe("cache des couches : invalidation ciblée (PLAN-C, lot C15)", () => {
     expect(chars(s, bear).power).toBe(2);
   });
 
-  it("sans statique qui le lit, engager ne recalcule pas les caractéristiques", () => {
+  it("without a static ability reading it, tapping does not recompute the characteristics", () => {
     const s = scenario({ p1: { battlefield: ["Bear Cub", "Forest"] } });
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     chars(s, bear);
@@ -369,9 +369,9 @@ describe("cache des couches : invalidation ciblée (PLAN-C, lot C15)", () => {
     expect(s.version).toBe(v);
   });
 
-  it("produire du mana met à jour une statique qui lit la réserve", () => {
+  it("producing mana updates a static ability that reads the mana pool", () => {
     let s = scenario({ p1: { battlefield: [poolLord, "Forest", "Forest"] } });
-    const lord = idOf(s, "p1", "battlefield", "Seigneur de la réserve");
+    const lord = idOf(s, "p1", "battlefield", "Pool Lord");
     expect(chars(s, lord).power).toBe(1);
     for (const land of idsOf(s, "p1", "battlefield", "Forest"))
       s = act(s, "p1", { type: "tapForMana", source: land, ability: 0 });

@@ -1,7 +1,7 @@
 /**
- * Salons de 3 et 4 joueurs et Commander en ligne (PLAN-E, E13) : la partie commence quand le salon est plein, chacun
- * voit ses adversaires ; un joueur qui part abandonne et la partie continue sans lui ; un salon Commander valide le
- * commandant et donne 40 points de vie ; pas de BO3 à plusieurs.
+ * 3- and 4-player rooms and online Commander (PLAN-E, E13): the game starts when the room is full, everyone
+ * sees their opponents; a player who leaves concedes and the game goes on without them; a Commander room validates the
+ * commander and gives 40 life; no BO3 with several players.
  */
 
 import { mkdtempSync, rmSync } from "node:fs";
@@ -29,41 +29,41 @@ async function connect(port: number, n: number): Promise<Client[]> {
   return out;
 }
 
-/** Deck Commander minimal et légal : Arahbo et 99 Plaines (terrains de base : plusieurs exemplaires permis). */
+/** Minimal legal Commander deck: Arahbo and 99 Plains (basic lands: several copies allowed). */
 const ARAHBO: DeckEntries = [[1, "Arahbo, the First Fang"]];
 const PLAINS_99: DeckEntries = [[99, "Plains"]];
 
-describe("salons à plusieurs", () => {
-  it("à trois : la partie commence quand le troisième arrive ; sièges p1 à p3, deux adversaires chacun", async () => {
+describe("multiplayer rooms", () => {
+  it("with three: the game starts when the third arrives; seats p1 to p3, two opponents each", async () => {
     const port = await start();
     const [a, b, c] = (await connect(port, 3)) as [Client, Client, Client];
     a.send({ type: "create", name: "Alice", deck: GREEN, players: 3, bestOf: 3 });
     const created = await a.next("room");
     expect(created.room.match.seats).toBe(3);
-    // Pas de BO3 à plusieurs.
+    // No BO3 with several players.
     expect(created.room.match.bestOf).toBe(1);
     b.send({ type: "join", code: created.room.code, name: "Bob", deck: RED });
     const waiting = await b.next("room");
     expect(waiting.room.status).toBe("waiting");
-    c.send({ type: "join", code: created.room.code, name: "Chloé", deck: GREEN });
+    c.send({ type: "join", code: created.room.code, name: "Chloe", deck: GREEN });
     const seen = await Promise.all([a, b, c].map((x) => x.next("update")));
     expect(seen.map((u) => u.view.viewer).sort()).toEqual(["p1", "p2", "p3"]);
     for (const u of seen) expect(u.view.opponents).toHaveLength(2);
-    // Un quatrième est refusé.
+    // A fourth is refused.
     const [d] = (await connect(port, 1)) as [Client];
     d.send({ type: "join", code: created.room.code, name: "David", deck: RED });
     expect((await d.next("error")).code).toBe("full");
   });
 
-  it("un joueur qui ne revient pas abandonne ; à trois, la partie continue entre les deux autres", async () => {
+  it("a player who does not come back concedes; with three, the game goes on between the other two", async () => {
     const port = await start({ graceMs: 150 });
     const [a, b, c] = (await connect(port, 3)) as [Client, Client, Client];
     a.send({ type: "create", name: "Alice", deck: GREEN, players: 3 });
     const created = await a.next("room");
     b.send({ type: "join", code: created.room.code, name: "Bob", deck: RED });
-    c.send({ type: "join", code: created.room.code, name: "Chloé", deck: GREEN });
+    c.send({ type: "join", code: created.room.code, name: "Chloe", deck: GREEN });
     const [, , up] = await Promise.all([a, b, c].map((x) => x.next("update")));
-    // Bob et Chloé arrivent en même temps : le siège de Chloé est celui que lui donne le serveur.
+    // Bob and Chloe arrive at the same time: Chloe's seat is the one the server gives her.
     const seat = up?.view.viewer ?? "p3";
     await c.close();
     const after = await a.next("update", (m) => !!m.view.players[seat]?.lost, 10_000);
@@ -73,21 +73,21 @@ describe("salons à plusieurs", () => {
 });
 
 describe("Commander en ligne", () => {
-  it("commandant validé, 40 points de vie, commandant dans la zone de commandement de chacun", async () => {
+  it("commander validated, 40 life, commander in everyone's command zone", async () => {
     const port = await start();
     const [a, b, c] = (await connect(port, 3)) as [Client, Client, Client];
     a.send({ type: "create", name: "Alice", deck: PLAINS_99, commander: ARAHBO, format: "commander", players: 3 });
     const created = await a.next("room");
     expect(created.room.match.format).toBe("commander");
     expect(created.room.deck.commander).toEqual(ARAHBO);
-    // Sans commandant : refusé.
+    // Without a commander: refused.
     b.send({ type: "join", code: created.room.code, name: "Bob", deck: PLAINS_99 });
     expect((await b.next("error")).code).toBe("deck");
-    // Deck Standard dans un salon Commander : refusé (100 cartes, identité…).
+    // Standard deck in a Commander room: refused (100 cards, identity...).
     b.send({ type: "join", code: created.room.code, name: "Bob", deck: GREEN, commander: ARAHBO });
     expect((await b.next("error")).code).toBe("deck");
     b.send({ type: "join", code: created.room.code, name: "Bob", deck: PLAINS_99, commander: ARAHBO });
-    c.send({ type: "join", code: created.room.code, name: "Chloé", deck: PLAINS_99, commander: ARAHBO });
+    c.send({ type: "join", code: created.room.code, name: "Chloe", deck: PLAINS_99, commander: ARAHBO });
     const u = await a.next("update");
     for (const p of ["p1", "p2", "p3"]) {
       expect(u.view.players[p]?.life).toBe(40);
@@ -96,8 +96,8 @@ describe("Commander en ligne", () => {
   });
 });
 
-describe("reprise d'un salon Commander à trois", () => {
-  it("après un redémarrage du serveur, chacun reprend avec son jeton : commandants et 40 PV conservés", async () => {
+describe("resuming a three-player Commander room", () => {
+  it("after a server restart, everyone resumes with their token: commanders and 40 life kept", async () => {
     const dataDir = mkdtempSync(join(tmpdir(), "mtgx-rooms-"));
     try {
       const first = await server({ dataDir, graceMs: 10_000 });
@@ -106,7 +106,7 @@ describe("reprise d'un salon Commander à trois", () => {
       a.send({ type: "create", name: "Alice", deck: PLAINS_99, commander: ARAHBO, format: "commander", players: 3 });
       const created = await a.next("room");
       b.send({ type: "join", code: created.room.code, name: "Bob", deck: PLAINS_99, commander: ARAHBO });
-      c.send({ type: "join", code: created.room.code, name: "Chloé", deck: PLAINS_99, commander: ARAHBO });
+      c.send({ type: "join", code: created.room.code, name: "Chloe", deck: PLAINS_99, commander: ARAHBO });
       await Promise.all(cs.map((x) => x.next("update")));
       const tokens = cs.map((x) => {
         const r = [...x.received].reverse().find((m) => m.type === "room");

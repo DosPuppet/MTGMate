@@ -1,6 +1,6 @@
 /**
- * Bloomburrow : Progéniture, Cadeau (cibles propres au cadeau, cadeau d'un permanent), Fourrager (effet, coût d'activation,
- * coût alternatif), Dépense, Vaillance, modes « patte », prouesse accordée, Mockingbird, Vren, Sunspine Lynx.
+ * Bloomburrow: Offspring, Gift (gift-specific targets, gift of a permanent), Forage (effect, activation cost,
+ * alternative cost), Expend, Valiant, paw modes, granted prowess, Mockingbird, Vren, Sunspine Lynx.
  */
 
 import { TOKEN_SPECS } from "@mtgx/cards";
@@ -48,7 +48,7 @@ const castOption = (s: S, name: string) => {
 };
 
 describe("Bloomburrow", () => {
-  it("Progéniture : payée, la créature crée un jeton 1/1 copie d'elle-même", () => {
+  it("Offspring: when paid, the creature creates a 1/1 token copy of itself", () => {
     let s = scenario({ p1: { battlefield: lands("Plains", 4), hand: ["Intrepid Rabbit"] } });
     const { card, opt } = castOption(s, "Intrepid Rabbit");
     expect(plainText(opt?.kickerPrompt?.with ?? "")).toBe("Offspring {1}");
@@ -58,18 +58,18 @@ describe("Bloomburrow", () => {
     expect(rabbits).toHaveLength(2);
     const token = rabbits.find((id) => s.objects[id]?.isToken) as string;
     expect(s.defs[s.objects[token]?.defId ?? ""]?.name).toBe("Intrepid Rabbit");
-    // Le jeton est 1/1 (plus l'éventuel +1/+1 de son propre déclencheur d'arrivée jusqu'à la fin du tour).
+    // The token is 1/1 (plus the +1/+1 from its own enter trigger, if any, until end of turn).
     expect(s.effects.some((e) => e.affected.includes(token) && e.setPower === 1 && e.setToughness === 1)).toBe(true);
   });
 
-  it("Progéniture non payée : pas de jeton", () => {
+  it("Offspring unpaid: no token", () => {
     let s = scenario({ p1: { battlefield: lands("Plains", 4), hand: ["Intrepid Rabbit"] } });
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Intrepid Rabbit") });
     s = settle(s);
     expect(idsOf(s, "p1", "battlefield", "Intrepid Rabbit")).toHaveLength(1);
   });
 
-  it("Cadeau d'une Nourriture : l'adversaire la reçoit, et « si le cadeau n'a pas été promis » s'inverse", () => {
+  it('Gift of a Food: the opponent gets it, and "if the gift wasn\'t promised" is inverted', () => {
     const setup = () =>
       scenario({
         p1: { battlefield: [...lands("Swamp", 3), "Jolly Gerbils"], hand: ["Nocturnal Hunger"] },
@@ -83,7 +83,7 @@ describe("Bloomburrow", () => {
     s = settle(act(s, "p1", { type: "cast", card, kicked: true, targets: { t: [dragon] } }));
     expect(idsOf(s, "p2", "battlefield", "Food")).toHaveLength(1);
     expect(s.players.p1?.life).toBe(20);
-    // Jolly Gerbils : « chaque fois que vous offrez un cadeau, piochez une carte ».
+    // Jolly Gerbils: "whenever you give a gift, draw a card".
     expect(s.players.p1?.hand.length).toBe(hand);
     let t = setup();
     t = settle(act(t, "p1", { type: "cast", card: idOf(t, "p1", "hand", "Nocturnal Hunger"), targets: { t: [dragon] } }));
@@ -91,7 +91,7 @@ describe("Bloomburrow", () => {
     expect(t.players.p1?.life).toBe(18);
   });
 
-  it("Cadeau : une autre cible si le cadeau est promis (Into the Flood Maw)", () => {
+  it("Gift: a different target if the gift is promised (Into the Flood Maw)", () => {
     const s = scenario({
       p1: { battlefield: ["Island"], hand: ["Into the Flood Maw"] },
       p2: { battlefield: ["Anthem of Champions"] },
@@ -102,12 +102,12 @@ describe("Bloomburrow", () => {
     expect(() => act(s, "p1", { type: "cast", card, targets: { t: [anthem] } })).toThrow(RulesError);
     const t = settle(act(s, "p1", { type: "cast", card, kicked: true, targets: { t: [anthem] } }));
     expect(t.players.p2?.hand.map((id) => t.defs[t.objects[id]?.defId ?? ""]?.name)).toContain("Anthem of Champions");
-    // Le Poisson du cadeau arrive engagé chez l'adversaire.
+    // The gift Fish enters tapped under the opponent's control.
     const fish = idOf(t, "p2", "battlefield", "Fish");
     expect(t.objects[fish]?.tapped).toBe(true);
   });
 
-  it("Cadeau d'un permanent : l'adversaire pioche quand il arrive (Scrapshooter)", () => {
+  it("Gift of a permanent: the opponent draws when it enters (Scrapshooter)", () => {
     let s = scenario({
       p1: { battlefield: lands("Forest", 3), hand: ["Scrapshooter"] },
       p2: { battlefield: ["Anthem of Champions"], library: ["Forest", "Island"] },
@@ -118,7 +118,7 @@ describe("Bloomburrow", () => {
     expect(idsOf(s, "p2", "battlefield", "Anthem of Champions")).toHaveLength(0);
   });
 
-  it("Cadeau à plusieurs adversaires : l'adversaire est choisi en lançant le sort, avant la priorité (702.174a)", () => {
+  it("Gift with several opponents: the opponent is chosen on casting the spell, before priority (702.174a)", () => {
     let s = scenario({
       players: 3,
       p1: { battlefield: lands("Swamp", 3), hand: ["Nocturnal Hunger"] },
@@ -126,7 +126,7 @@ describe("Bloomburrow", () => {
     });
     const dragon = idOf(s, "p2", "battlefield", "Shivan Dragon");
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Nocturnal Hunger"), kicked: true, targets: { t: [dragon] } });
-    // Le sort est sur la pile ; personne n'a encore la priorité : son contrôleur choisit l'adversaire.
+    // The spell is on the stack; nobody has priority yet: its controller chooses the opponent.
     expect(s.pending?.kind).toBe("choice");
     expect(s.pending?.player).toBe("p1");
     const req = s.pending?.kind === "choice" ? s.pending.request : null;
@@ -139,7 +139,7 @@ describe("Bloomburrow", () => {
     expect(idsOf(s, "p2", "graveyard", "Shivan Dragon")).toHaveLength(1);
   });
 
-  it("Cadeau d'un permanent à plusieurs adversaires : l'adversaire choisi en le lançant pioche à l'arrivée (Scrapshooter)", () => {
+  it("Gift of a permanent with several opponents: the opponent chosen on casting it draws on entering (Scrapshooter)", () => {
     let s = scenario({
       players: 3,
       p1: { battlefield: lands("Forest", 3), hand: ["Scrapshooter"] },
@@ -154,7 +154,7 @@ describe("Bloomburrow", () => {
     expect(s.players.p2?.hand.length).toBe(hand2);
   });
 
-  it("Cadeau en duel, ou à plusieurs sans cadeau promis : aucune question", () => {
+  it("Gift in a duel, or with several players and no gift promised: no question", () => {
     let s = scenario({ p1: { battlefield: lands("Forest", 3), hand: ["Scrapshooter"] } });
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Scrapshooter"), kicked: true });
     expect(s.pending?.kind).toBe("priority");
@@ -163,7 +163,7 @@ describe("Bloomburrow", () => {
     expect(t.pending?.kind).toBe("priority");
   });
 
-  it("Cadeau copié pendant le lancement (Teach by Example) : la copie garde l'adversaire choisi pour l'original (707.10)", () => {
+  it("Gift copied during casting (Teach by Example): the copy keeps the opponent chosen for the original (707.10)", () => {
     let s = scenario({
       players: 3,
       p1: { battlefield: [...lands("Island", 2), ...lands("Swamp", 3)], hand: ["Teach by Example", "Nocturnal Hunger"] },
@@ -173,7 +173,7 @@ describe("Bloomburrow", () => {
     const [a, b] = idsOf(s, "p2", "battlefield", "Shivan Dragon") as [string, string];
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Nocturnal Hunger"), kicked: true, targets: { t: [a] } });
     expect(s.stack).toHaveLength(2);
-    // D'abord l'adversaire du cadeau de l'original (plus bas sur la pile), puis les nouvelles cibles de la copie.
+    // First the original's gift opponent (lower on the stack), then the copy's new targets.
     const req = s.pending?.kind === "choice" ? s.pending.request : null;
     expect(req?.type === "pick" ? req.options : []).toEqual(["p2", "p3"]);
     s = act(s, "p1", { type: "choose", values: ["p3"] });
@@ -187,7 +187,7 @@ describe("Bloomburrow", () => {
     expect(s.players.p1?.life).toBe(20);
   });
 
-  it("Cadeau copié par l'adversaire en duel (Return the Favor) : le cadeau va toujours à l'adversaire promis (707.10)", () => {
+  it("Gift copied by the opponent in a duel (Return the Favor): the gift still goes to the promised opponent (707.10)", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Swamp", 3), "Llanowar Elves"], hand: ["Nocturnal Hunger"] },
       p2: { battlefield: [...lands("Mountain", 3), "Shivan Dragon"], hand: ["Return the Favor"] },
@@ -199,10 +199,10 @@ describe("Bloomburrow", () => {
     s = act(s, "p1", { type: "pass" });
     const favor = idOf(s, "p2", "hand", "Return the Favor");
     const opt = legalActions(s, "p2").find((x) => x.type === "cast" && x.card === favor);
-    const mode = opt?.type === "cast" ? opt.modes.find((m) => m.label === "Copiez un sort ou une capacité")?.index : undefined;
+    const mode = opt?.type === "cast" ? opt.modes.find((m) => m.label === "Copy a spell or ability")?.index : undefined;
     s = act(s, "p2", { type: "cast", card: favor, mode, targets: { c: [hunger] } });
     s = passAccepting(s, (x) => x.stack.length === 2 && x.pending?.kind === "choice" && x.pending.player === "p2");
-    // La copie, contrôlée par p2, vise les Llanowar Elves de p1.
+    // The copy, controlled by p2, targets p1's Llanowar Elves.
     s = settle(act(s, "p2", { type: "choose", values: [elves] }));
     expect(idsOf(s, "p1", "graveyard", "Llanowar Elves")).toHaveLength(1);
     expect(idsOf(s, "p2", "graveyard", "Shivan Dragon")).toHaveLength(1);
@@ -210,23 +210,23 @@ describe("Bloomburrow", () => {
     expect(idsOf(s, "p1", "battlefield", "Food")).toHaveLength(0);
   });
 
-  it("Fourrager : trois cartes du cimetière exilées, sinon une Nourriture sacrifiée", () => {
+  it("Forage: three cards exiled from the graveyard, otherwise a sacrificed Food", () => {
     let s = scenario({
       p1: { battlefield: lands("Forest", 4), hand: ["Treetop Sentries"], graveyard: ["Opt", "Forest", "Stab"] },
     });
     const hand = s.players.p1?.hand.length ?? 0;
     s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Treetop Sentries") }));
     expect(s.players.p1?.graveyard).toHaveLength(0);
-    expect(s.players.p1?.hand.length).toBe(hand); // la créature est partie, une carte piochée
+    expect(s.players.p1?.hand.length).toBe(hand); // the creature is gone, one card drawn
     let t = scenario({
       p1: { battlefield: [...lands("Forest", 4), "Bakersbane Duo"], hand: ["Treetop Sentries"] },
     });
-    // Bakersbane Duo n'est pas une Nourriture : sans cimetière ni Nourriture, on ne peut pas fourrager.
+    // Bakersbane Duo is not a Food: with no graveyard and no Food, you can't forage.
     t = settle(act(t, "p1", { type: "cast", card: idOf(t, "p1", "hand", "Treetop Sentries") }));
     expect(t.players.p1?.hand).toHaveLength(0);
   });
 
-  it("Feed the Cycle : fourrager plutôt que payer {B} (coût alternatif)", () => {
+  it("Feed the Cycle: forage rather than pay {B} (alternative cost)", () => {
     const s = scenario({
       p1: { battlefield: lands("Swamp", 2), hand: ["Feed the Cycle"], graveyard: ["Opt", "Forest", "Stab"] },
       p2: { battlefield: ["Shivan Dragon"] },
@@ -241,7 +241,7 @@ describe("Bloomburrow", () => {
     expect(t.players.p1?.graveyard.map((id) => t.defs[t.objects[id]?.defId ?? ""]?.name)).toEqual(["Feed the Cycle"]);
   });
 
-  it("Dépense 4 : une seule fois, quand le quatrième mana est dépensé pour des sorts", () => {
+  it("Expend 4: only once, when the fourth mana is spent on spells", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Mountain", 6), "Teapot Slinger"], hand: ["Playful Shove", "Playful Shove", "Playful Shove"] },
     });
@@ -250,13 +250,13 @@ describe("Bloomburrow", () => {
     s = settle(act(s, "p1", { type: "cast", card: shove(), targets: { t: ["p2"] } }));
     expect(p2()).toBe(19);
     s = settle(act(s, "p1", { type: "cast", card: shove(), targets: { t: ["p2"] } }));
-    // Quatrième mana : 1 blessure du sort, 2 de Teapot Slinger.
+    // Fourth mana: 1 damage from the spell, 2 from Teapot Slinger.
     expect(p2()).toBe(16);
     s = settle(act(s, "p1", { type: "cast", card: shove(), targets: { t: ["p2"] } }));
     expect(p2()).toBe(15);
   });
 
-  it("Vaillance : la première fois de chaque tour, par un sort ou une capacité que vous contrôlez", () => {
+  it("Valiant: the first time each turn, by a spell or ability you control", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Forest", 3), "Heartfire Hero"], hand: ["Giant Growth", "Giant Growth"] },
     });
@@ -267,7 +267,7 @@ describe("Bloomburrow", () => {
     expect(s.objects[hero]?.counters["+1/+1"]).toBe(1);
   });
 
-  it("Vaillance : un sort adverse ne la déclenche pas", () => {
+  it("Valiant: an opposing spell doesn't trigger it", () => {
     let s = scenario({
       p1: { battlefield: ["Heartfire Hero"] },
       p2: { battlefield: ["Forest"], hand: ["Giant Growth"] },
@@ -278,28 +278,28 @@ describe("Bloomburrow", () => {
     expect(s.objects[hero]?.counters["+1/+1"] ?? 0).toBe(0);
   });
 
-  it("Heartfire Hero : en mourant, des blessures égales à sa force", () => {
+  it("Heartfire Hero: when it dies, damage equal to its power", () => {
     let s = scenario({
       p1: { battlefield: [{ name: "Heartfire Hero", damage: 0 }, "Swamp", "Swamp"], hand: ["Fell"] },
     });
     const hero = idOf(s, "p1", "battlefield", "Heartfire Hero");
     s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Fell"), targets: { t: [hero] } }));
-    // Fell la cible : la Vaillance lui donne d'abord un marqueur +1/+1 (force 2 en mourant).
+    // Fell targets it: Valiant first gives it a +1/+1 counter (power 2 on dying).
     expect(s.players.p2?.life).toBe(18);
   });
 
-  it("Saisons : quinze combinaisons de modes, le même mode plusieurs fois", () => {
+  it("Seasons: fifteen mode combinations, the same mode several times", () => {
     let s = scenario({ p1: { battlefield: lands("Plains", 5), hand: ["Season of the Burrow"] } });
     const { card, opt } = castOption(s, "Season of the Burrow");
     expect(s.defs[s.objects[card]?.defId ?? ""]?.spell?.modes).toHaveLength(15);
-    // Sans cible possible, seules les combinaisons du mode {P} sont proposées.
+    // With no possible target, only the {P} mode combinations are offered.
     expect(opt?.modes).toHaveLength(5);
     const five = opt?.modes.find((m) => m.label?.split(" + ").length === 5);
     s = settle(act(s, "p1", { type: "cast", card, mode: five?.index }));
     expect(idsOf(s, "p1", "battlefield", "Rabbit")).toHaveLength(5);
   });
 
-  it("Saisons : deux exemplaires d'un mode ciblé ont chacun leur cible", () => {
+  it("Seasons: two copies of a targeted mode each have their own target", () => {
     let s = scenario({
       p1: { battlefield: lands("Plains", 5), hand: ["Season of the Burrow"] },
       p2: { battlefield: ["Shivan Dragon", "Anthem of Champions"], library: ["Forest", "Island", "Swamp"] },
@@ -323,7 +323,7 @@ describe("Bloomburrow", () => {
     expect(s.players.p2?.hand).toHaveLength(2);
   });
 
-  it("Prouesse d'un jeton Loutre et prouesse accordée (Bria)", () => {
+  it("Prowess of an Otter token and granted prowess (Bria)", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Island", 4), "Bria, Riptide Rogue", "Llanowar Elves"], hand: ["Otterball Antics", "Opt"] },
     });
@@ -332,11 +332,11 @@ describe("Bloomburrow", () => {
     const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
     s = passAccepting(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Opt") }), (x) => x.stack.length === 0);
     expect(chars(s, otter).power).toBeGreaterThanOrEqual(2);
-    // Llanowar Elves a la prouesse grâce à Bria (deux sorts non-créature lancés).
+    // Llanowar Elves has prowess thanks to Bria (two noncreature spells cast).
     expect(chars(s, elves).power).toBe(3);
   });
 
-  it("Mockingbird : copie d'une créature adverse de VM ≤ mana dépensé, Oiseau volant en plus", () => {
+  it("Mockingbird: copies an opposing creature of MV <= mana spent, plus a flying Bird", () => {
     let s = scenario({ p1: { battlefield: lands("Island", 2), hand: ["Mockingbird"] }, p2: { battlefield: ["Llanowar Elves"] } });
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Mockingbird"), x: 1 });
     s = settle(s);
@@ -349,7 +349,7 @@ describe("Bloomburrow", () => {
     expect(c.keywords).toContain("flying");
   });
 
-  it("Vren : les créatures adverses sont exilées ; un Rat par créature exilée à l'étape de fin", () => {
+  it("Vren: opposing creatures are exiled; a Rat per exiled creature at the end step", () => {
     let s = scenario({
       p1: { battlefield: ["Vren, the Relentless", "Swamp", "Swamp"], hand: ["Fell"] },
       p2: { battlefield: ["Shivan Dragon"] },
@@ -366,7 +366,7 @@ describe("Bloomburrow", () => {
     expect(idsOf(s, "p1", "battlefield", "Rat")).toHaveLength(1);
   });
 
-  it("Sunspine Lynx : blessures selon les terrains non de base de chaque joueur", () => {
+  it("Sunspine Lynx: damage according to each player's nonbasic lands", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Mountain", 4), "Hidden Grotto"], hand: ["Sunspine Lynx"] },
       p2: { battlefield: ["Fabled Passage", "Three Tree City"] },
@@ -376,7 +376,7 @@ describe("Bloomburrow", () => {
     expect(s.players.p2?.life).toBe(18);
   });
 
-  it("Sunspine Lynx à trois : chaque joueur, autant de blessures que ses propres terrains non de base", () => {
+  it("Sunspine Lynx with three players: each player, as much damage as their own nonbasic lands", () => {
     let s = scenario({
       players: 3,
       p1: { battlefield: lands("Mountain", 4), hand: ["Sunspine Lynx"] },
@@ -387,7 +387,7 @@ describe("Bloomburrow", () => {
     expect([s.players.p1?.life, s.players.p2?.life, s.players.p3?.life]).toEqual([20, 19, 17]);
   });
 
-  it("Agate-Blade Assassin : le joueur défenseur perd 1 PV", () => {
+  it("Agate-Blade Assassin: the defending player loses 1 life", () => {
     let s = scenario({ p1: { battlefield: ["Agate-Blade Assassin"] } });
     s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
     s = act(s, "p1", {
@@ -399,7 +399,7 @@ describe("Bloomburrow", () => {
     expect(s.players.p1?.life).toBe(21);
   });
 
-  it("Carrot Cake : un Lapin en arrivant et un autre quand on la sacrifie", () => {
+  it("Carrot Cake: a Rabbit on entering and another when it's sacrificed", () => {
     let s = scenario({ p1: { battlefield: lands("Plains", 4), hand: ["Carrot Cake"] } });
     s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Carrot Cake") }));
     expect(idsOf(s, "p1", "battlefield", "Rabbit")).toHaveLength(1);
@@ -410,7 +410,7 @@ describe("Bloomburrow", () => {
     expect(s.players.p1?.life).toBe(23);
   });
 
-  it("Starfall Invocation : avec le cadeau, une créature détruite ainsi revient", () => {
+  it("Starfall Invocation: with the gift, a creature destroyed this way comes back", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Plains", 5), "Shivan Dragon"], hand: ["Starfall Invocation"] },
       p2: { battlefield: ["Llanowar Elves"], library: ["Forest"] },
@@ -421,7 +421,7 @@ describe("Bloomburrow", () => {
     expect(s.players.p2?.hand).toHaveLength(1);
   });
 
-  it("Cache Grab : une carte de permanent meulée en main, et une Nourriture pour un Écureuil", () => {
+  it("Cache Grab: a permanent card milled into hand, and a Food for a Squirrel", () => {
     let s = scenario({
       p1: {
         battlefield: lands("Forest", 2),
@@ -433,12 +433,12 @@ describe("Bloomburrow", () => {
     const names = (zone: "hand" | "graveyard") => s.players.p1?.[zone].map((id) => s.defs[s.objects[id]?.defId ?? ""]?.name);
     expect(names("hand")).toHaveLength(1);
     expect(names("graveyard")).toContain("Cache Grab");
-    // La carte suggérée est la première carte de permanent : Bushy Bodyguard (un Écureuil), d'où la Nourriture.
+    // The suggested card is the first permanent card: Bushy Bodyguard (a Squirrel), hence the Food.
     expect(names("hand")).toEqual(["Bushy Bodyguard"]);
     expect(idsOf(s, "p1", "battlefield", "Food")).toHaveLength(1);
   });
 
-  it("Cruelclaw's Heist : la carte exilée reste jouable avec le cadeau", () => {
+  it("Cruelclaw's Heist: the exiled card stays playable with the gift", () => {
     let s = scenario({
       p1: { battlefield: lands("Swamp", 2), hand: ["Cruelclaw's Heist"] },
       p2: { hand: ["Shivan Dragon", "Forest"], library: ["Island"] },
@@ -451,7 +451,7 @@ describe("Bloomburrow", () => {
     expect(s.playPermissions?.some((p) => p.card === dragon && p.player === "p1")).toBe(true);
   });
 
-  it("Osteomancer Adept : une créature lancée depuis le cimetière en fourrageant, avec un marqueur de finalité", () => {
+  it("Osteomancer Adept: a creature cast from the graveyard by foraging, with a finality counter", () => {
     let s = scenario({
       p1: {
         battlefield: [...lands("Forest", 2), "Osteomancer Adept"],
@@ -469,7 +469,7 @@ describe("Bloomburrow", () => {
     expect(s.players.p1?.graveyard).toHaveLength(0);
   });
 
-  it("Festival of Embers : un éphémère lancé depuis le cimetière pour 1 PV, puis exilé", () => {
+  it("Festival of Embers: an instant cast from the graveyard for 1 life, then exiled", () => {
     let s = scenario({
       p1: { battlefield: ["Festival of Embers", "Island"], graveyard: ["Opt"], library: ["Forest", "Forest"] },
     });
@@ -479,7 +479,7 @@ describe("Bloomburrow", () => {
     expect(s.players.p1?.graveyard).toHaveLength(0);
   });
 
-  it("Stormchaser's Talent : Loutre en arrivant, puis niveau 2 (récupère un éphémère)", () => {
+  it("Stormchaser's Talent: Otter on entering, then level 2 (returns an instant)", () => {
     let s = scenario({ p1: { battlefield: lands("Island", 5), hand: ["Stormchaser's Talent"], graveyard: ["Opt"] } });
     s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Stormchaser's Talent") }));
     expect(idsOf(s, "p1", "battlefield", "Otter")).toHaveLength(1);
@@ -490,7 +490,7 @@ describe("Bloomburrow", () => {
     expect(idsOf(s, "p1", "hand", "Opt")).toHaveLength(1);
   });
 
-  it("Dour Port-Mage : une créature renvoyée (sans mourir) fait piocher", () => {
+  it("Dour Port-Mage: a creature returned (without dying) makes you draw", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Island", 2), "Dour Port-Mage", "Llanowar Elves"], library: ["Forest", "Forest"] },
     });
@@ -508,11 +508,11 @@ describe("Bloomburrow", () => {
     expect(s.players.p1?.hand.length).toBe(hand + 2);
   });
 
-  it("Valley Flamecaller : +1 blessure pour une Souris que vous contrôlez", () => {
+  it("Valley Flamecaller: +1 damage for a Mouse you control", () => {
     let s = scenario({ p1: { battlefield: ["Valley Flamecaller", "Kindlespark Duo"] } });
     const duo = idOf(s, "p1", "battlefield", "Kindlespark Duo");
     const ping = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === duo);
-    // Kindlespark Duo est un Lézard Loutre : 1 + 1 blessures.
+    // Kindlespark Duo is a Lizard Otter: 1 + 1 damage.
     s = settle(
       act(s, "p1", {
         type: "activate",
@@ -524,36 +524,36 @@ describe("Bloomburrow", () => {
     expect(s.players.p2?.life).toBe(18);
   });
 
-  it("Wishing Well : lance gratuitement, pendant la résolution, un sort de VM égale aux marqueurs de pièce", () => {
+  it("Wishing Well: casts for free, during resolution, a spell with MV equal to the coin counters", () => {
     let s = scenario({ p1: { battlefield: ["Wishing Well"], graveyard: ["Opt", "Stab"], library: ["Forest", "Forest"] } });
     const well = idOf(s, "p1", "battlefield", "Wishing Well");
     const act0 = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === well);
     s = untilCastNow(act(s, "p1", { type: "activate", source: well, ability: act0?.type === "activate" ? act0.ability : -1 }));
     expect(s.objects[well]?.counters.coin).toBe(1);
     const opt = idOf(s, "p1", "graveyard", "Opt");
-    // Opt (VM 1), ciblée par la capacité réflexive, est la seule carte proposée.
+    // Opt (MV 1), targeted by the reflexive ability, is the only card offered.
     expect(castNowOf(s)?.cards).toEqual([opt]);
     s = settle(act(s, "p1", { type: "cast", card: opt }));
-    // Opt s'est résolue (pioche) puis a été exilée au lieu d'aller au cimetière.
+    // Opt resolved (draw) then was exiled instead of going to the graveyard.
     expect(s.players.p1?.hand).toHaveLength(1);
     expect(s.exile.some((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === "Opt")).toBe(true);
   });
 
-  it("Alania : copie le premier éphémère du tour (un adversaire pioche)", () => {
+  it("Alania: copies the first instant of the turn (an opponent draws)", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Mountain", 4), "Alania, Divergent Storm"], hand: ["Playful Shove", "Playful Shove"] },
       p2: { library: ["Forest", "Island"] },
     });
     const shove = () => idsOf(s, "p1", "hand", "Playful Shove")[0] as string;
     s = settle(act(s, "p1", { type: "cast", card: shove(), targets: { t: ["p2"] } }));
-    // Le sort et sa copie : 2 blessures ; l'adversaire a pioché une carte.
+    // The spell and its copy: 2 damage; the opponent drew a card.
     expect(s.players.p2?.life).toBe(18);
     expect(s.players.p2?.hand).toHaveLength(1);
     s = settle(act(s, "p1", { type: "cast", card: shove(), targets: { t: ["p2"] } }));
     expect(s.players.p2?.life).toBe(17);
   });
 
-  it("Alania : copie aussi le premier sort de Loutre du tour, la copie devient un jeton ; pas le deuxième", () => {
+  it("Alania: also copies the first Otter spell of the turn, the copy becomes a token; not the second", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Island", 6), "Alania, Divergent Storm"], hand: ["Thieving Otter", "Thieving Otter"] },
       p2: { library: ["Forest", "Island"] },
@@ -570,8 +570,8 @@ describe("Bloomburrow", () => {
   });
 });
 
-describe("Bloomburrow : cartes des decks du méta (PLAN-C, lot C13)", () => {
-  /** Répond « oui » aux questions et choisit les objets voulus. */
+describe("Bloomburrow: cards from the meta decks (PLAN-C, lot C13)", () => {
+  /** Answers "yes" to questions and picks the wanted objects. */
   const choosing =
     (want: string[] = []): Answer =>
     (req) => {
@@ -580,19 +580,19 @@ describe("Bloomburrow : cartes des decks du méta (PLAN-C, lot C13)", () => {
       const picked = want.filter((w) => req.options.includes(w));
       return picked.length > 0 ? picked : undefined;
     };
-  /** Active la capacité de `source` dont le libellé contient `label`. */
+  /** Activates the ability of `source` whose label contains `label`. */
   const activate = (s: S, player: string, source: string, label: string, extra: object = {}) => {
     const a = legalActions(s, player).find(
       (x) => x.type === "activate" && x.source === source && plainText(x.label ?? "").includes(label),
     );
-    if (a?.type !== "activate") throw new Error(`capacité introuvable : ${label}`);
+    if (a?.type !== "activate") throw new Error(`ability not found: ${label}`);
     return act(s, player, { type: "activate", source, ability: a.ability, ...extra });
   };
   const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
-  /** Joue jusqu'au tour suivant (étape de fin comprise). */
+  /** Plays until the next turn (end step included). */
   const toNextTurn = (s: S) => advanceUntil(s, (x) => x.turn.number > s.turn.number);
 
-  it("Fountainport : un Poisson 1/1 bleu pour {3} et 1 PV", () => {
+  it("Fountainport: a 1/1 blue Fish for {3} and 1 life", () => {
     let s = scenario({ p1: { battlefield: ["Fountainport", ...lands("Island", 3)] } });
     s = resolve(activate(s, "p1", idOf(s, "p1", "battlefield", "Fountainport"), "Fish"));
     const fish = idOf(s, "p1", "battlefield", "Fish");
@@ -601,7 +601,7 @@ describe("Bloomburrow : cartes des decks du méta (PLAN-C, lot C13)", () => {
     expect(s.players.p1?.life).toBe(19);
   });
 
-  it("Fountainport : {2}, {T}, sacrifiez un jeton : piochez une carte", () => {
+  it("Fountainport: {2}, {T}, sacrifice a token: draw a card", () => {
     let s = scenario({ p1: { battlefield: ["Fountainport", ...lands("Island", 2)], library: lands("Plains", 5) } });
     createTokens(s, "p1", TOKEN_SPECS.Treasure as TokenSpec, 1);
     s.version += 1;
@@ -610,7 +610,7 @@ describe("Bloomburrow : cartes des decks du méta (PLAN-C, lot C13)", () => {
     expect(namesIn(s, s.players.p1?.hand)).toEqual(["Plains"]);
   });
 
-  it("Fountainport : {4}, {T} : un Trésor", () => {
+  it("Fountainport: {4}, {T}: a Treasure", () => {
     let s = scenario({ p1: { battlefield: ["Fountainport", ...lands("Island", 4)] } });
     s = resolve(activate(s, "p1", idOf(s, "p1", "battlefield", "Fountainport"), "Treasure"));
     expect(idsOf(s, "p1", "battlefield", "Treasure")).toHaveLength(1);
@@ -629,7 +629,7 @@ describe("Bloomburrow : cartes des decks du méta (PLAN-C, lot C13)", () => {
       return opt?.type === "cast" ? (opt.modes[0]?.targets[0]?.legal ?? []) : [];
     };
 
-    it("vous et vos permanents avez la défense talismanique jusqu'à la fin du tour", () => {
+    it("you and your permanents have hexproof until end of turn", () => {
       let s = setup(false);
       const cub = idOf(s, "p1", "battlefield", "Bear Cub");
       expect(chars(s, cub).keywords).toContain("hexproof");
@@ -642,7 +642,7 @@ describe("Bloomburrow : cartes des decks du méta (PLAN-C, lot C13)", () => {
       expect(legal).not.toContain(cub);
     });
 
-    it("cadeau promis : l'adversaire pioche, vos permanents sont aussi indestructibles", () => {
+    it("gift promised: the opponent draws, your permanents are also indestructible", () => {
       const s = setup(true);
       expect(s.players.p2?.hand).toHaveLength(2);
       expect(chars(s, idOf(s, "p1", "battlefield", "Bear Cub")).keywords).toEqual(
@@ -651,7 +651,7 @@ describe("Bloomburrow : cartes des decks du méta (PLAN-C, lot C13)", () => {
     });
   });
 
-  it("Hired Claw : 1 blessure quand vous attaquez avec un Lézard ; {1}{R} une fois, si un adversaire a perdu des PV", () => {
+  it("Hired Claw: 1 damage when you attack with a Lizard; {1}{R} once, if an opponent lost life", () => {
     let s = scenario({ p1: { battlefield: ["Hired Claw", ...lands("Mountain", 4)] } });
     const claw = idOf(s, "p1", "battlefield", "Hired Claw");
     expect(canActivate(s, "p1", claw)).toBe(false);
@@ -662,7 +662,7 @@ describe("Bloomburrow : cartes des decks du méta (PLAN-C, lot C13)", () => {
     expect(canActivate(s, "p1", claw)).toBe(false);
   });
 
-  it("Emberheart Challenger : vaillance — la carte du dessus est exilée et jouable ce tour-ci ; prouesse", () => {
+  it("Emberheart Challenger: valiant — the top card is exiled and playable this turn; prowess", () => {
     let s = scenario({
       p1: { battlefield: ["Emberheart Challenger", "Forest"], hand: ["Giant Growth"], library: lands("Mountain", 5) },
     });
@@ -676,7 +676,7 @@ describe("Bloomburrow : cartes des decks du méta (PLAN-C, lot C13)", () => {
   });
 
   describe("Eddymurk Crab", () => {
-    it("coûte {1} de moins par carte d'éphémère ou de rituel au cimetière ; engage jusqu'à deux créatures", () => {
+    it("costs {1} less per instant or sorcery card in the graveyard; taps up to two creatures", () => {
       let s = scenario({
         p1: { battlefield: lands("Island", 2), hand: ["Eddymurk Crab"], graveyard: ["Opt", "Opt", "Opt", "Hop to It", "Opt"] },
         p2: { battlefield: ["Bear Cub", "Serra Angel"] },
@@ -687,7 +687,7 @@ describe("Bloomburrow : cartes des decks du méta (PLAN-C, lot C13)", () => {
       expect(s.objects[idOf(s, "p1", "battlefield", "Eddymurk Crab")]?.tapped).toBe(false);
     });
 
-    it("arrive engagé si ce n'est pas votre tour", () => {
+    it("enters tapped if it isn't your turn", () => {
       let s = scenario({
         p1: { battlefield: lands("Island", 7), hand: ["Eddymurk Crab"] },
         active: "p2",
@@ -699,7 +699,7 @@ describe("Bloomburrow : cartes des decks du méta (PLAN-C, lot C13)", () => {
   });
 
   describe("Lunar Convocation", () => {
-    it("vous avez gagné des PV : chaque adversaire perd 1 PV à votre étape de fin, sans Chauve-souris", () => {
+    it("you gained life: each opponent loses 1 life at your end step, without a Bat", () => {
       let s = scenario({ p1: { battlefield: ["Lunar Convocation", "Vampire Neonate", ...lands("Swamp", 2)] } });
       s = resolve(activate(s, "p1", idOf(s, "p1", "battlefield", "Vampire Neonate"), ""));
       expect(s.players.p2?.life).toBe(19);
@@ -708,7 +708,7 @@ describe("Bloomburrow : cartes des decks du méta (PLAN-C, lot C13)", () => {
       expect(idsOf(s, "p1", "battlefield", "Bat")).toHaveLength(0);
     });
 
-    it("gagné et perdu des PV : une Chauve-souris volante ; {1}{B}, 2 PV : piochez", () => {
+    it("gained and lost life: a flying Bat; {1}{B}, 2 life: draw", () => {
       let s = scenario({
         p1: { battlefield: ["Lunar Convocation", "Vampire Neonate", ...lands("Swamp", 4)], library: lands("Plains", 5) },
       });
@@ -724,7 +724,7 @@ describe("Bloomburrow : cartes des decks du méta (PLAN-C, lot C13)", () => {
   });
 
   describe("Essence Channeler", () => {
-    it("vol et vigilance si vous avez perdu des PV ce tour-ci ; un marqueur +1/+1 quand vous gagnez des PV", () => {
+    it("flying and vigilance if you lost life this turn; a +1/+1 counter when you gain life", () => {
       let s = scenario({
         p1: { battlefield: ["Essence Channeler", "Vampire Neonate", ...lands("Swamp", 2)] },
         p2: { battlefield: ["Vampire Neonate", ...lands("Swamp", 2)] },
@@ -740,7 +740,7 @@ describe("Bloomburrow : cartes des decks du méta (PLAN-C, lot C13)", () => {
       expect(chars(s, channeler).keywords).toEqual(expect.arrayContaining(["flying", "vigilance"]));
     });
 
-    it("en mourant, met ses marqueurs sur une créature que vous contrôlez", () => {
+    it("when it dies, puts its counters on a creature you control", () => {
       let s = scenario({
         p1: {
           battlefield: [{ name: "Essence Channeler", counters: { "+1/+1": 2 } }, "Bear Cub", ...lands("Swamp", 2)],
@@ -757,13 +757,13 @@ describe("Bloomburrow : cartes des decks du méta (PLAN-C, lot C13)", () => {
   });
 
   describe("Iridescent Vinelasher", () => {
-    it("atterrissage : 1 blessure à un adversaire", () => {
+    it("landfall: 1 damage to an opponent", () => {
       let s = scenario({ p1: { battlefield: ["Iridescent Vinelasher"], hand: ["Swamp"] } });
       s = resolve(act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Swamp") }));
       expect(s.players.p2?.life).toBe(19);
     });
 
-    it("progéniture : un jeton 1/1 copie, et deux déclenchements d'atterrissage", () => {
+    it("offspring: a 1/1 token copy, and two landfall triggers", () => {
       let s = scenario({ p1: { battlefield: lands("Swamp", 3), hand: ["Iridescent Vinelasher", "Swamp"] } });
       s = resolve(cast(s, "p1", "Iridescent Vinelasher", { kicked: true }));
       const all = idsOf(s, "p1", "battlefield", "Iridescent Vinelasher");
@@ -776,7 +776,7 @@ describe("Bloomburrow : cartes des decks du méta (PLAN-C, lot C13)", () => {
   });
 
   describe("Beza, the Bounding Spring", () => {
-    it("rattrapage : Trésor, 4 PV, deux Poissons et une carte quand l'adversaire a plus de chaque", () => {
+    it("catch-up: Treasure, 4 life, two Fish and a card when the opponent has more of each", () => {
       let s = scenario({
         p1: { battlefield: lands("Plains", 4), hand: ["Beza, the Bounding Spring"], life: 10, library: lands("Plains", 5) },
         p2: { battlefield: [...lands("Forest", 5), "Bear Cub", "Bear Cub"], hand: ["Opt", "Opt"] },
@@ -788,7 +788,7 @@ describe("Bloomburrow : cartes des decks du méta (PLAN-C, lot C13)", () => {
       expect(namesIn(s, s.players.p1?.hand)).toEqual(["Plains"]);
     });
 
-    it("rien quand l'adversaire n'a pas plus (égalité comprise)", () => {
+    it("nothing when the opponent doesn't have more (ties included)", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Plains", 4), "Bear Cub"], hand: ["Beza, the Bounding Spring"] },
         p2: { battlefield: [...lands("Forest", 4), "Bear Cub", "Bear Cub"] },
@@ -812,32 +812,32 @@ describe("Bloomburrow : cartes des decks du méta (PLAN-C, lot C13)", () => {
     }
   });
 
-  it("Caretaker's Talent : une pioche par tour pour des jetons ; niveau 2 copie un jeton ; niveau 3 +2/+2", () => {
+  it("Caretaker's Talent: one draw per turn for tokens; level 2 copies a token; level 3 +2/+2", () => {
     let s = scenario({
       p1: { battlefield: ["Caretaker's Talent", ...lands("Plains", 8)], hand: ["Hop to It"], library: lands("Island", 5) },
     });
     const talent = idOf(s, "p1", "battlefield", "Caretaker's Talent");
     s = resolve(cast(s, "p1", "Hop to It"));
-    expect(s.players.p1?.hand).toHaveLength(1); // un seul déclenchement pour trois jetons
+    expect(s.players.p1?.hand).toHaveLength(1); // a single trigger for three tokens
     const rabbit = idOf(s, "p1", "battlefield", "Rabbit");
     s = resolve(activate(s, "p1", talent, "Level 2"), choosing([rabbit]));
     expect(idsOf(s, "p1", "battlefield", "Rabbit")).toHaveLength(4);
-    expect(s.players.p1?.hand).toHaveLength(1); // une seule fois par tour
+    expect(s.players.p1?.hand).toHaveLength(1); // only once per turn
     expect(pt(s, rabbit)).toEqual([1, 1]);
     s = resolve(activate(s, "p1", talent, "Level 3"));
     for (const r of idsOf(s, "p1", "battlefield", "Rabbit")) expect(pt(s, r)).toEqual([3, 3]);
   });
 
   describe("Rottenmouth Viper", () => {
-    it("en arrivant : un marqueur de fléau ; l'adversaire sans permanent ni carte perd 4 PV", () => {
+    it("on entering: a blight counter; the opponent with no permanent or card loses 4 life", () => {
       let s = scenario({ p1: { battlefield: lands("Swamp", 6), hand: ["Rottenmouth Viper"] }, p2: { hand: [] } });
       s = resolve(cast(s, "p1", "Rottenmouth Viper"));
       expect(s.objects[idOf(s, "p1", "battlefield", "Rottenmouth Viper")]?.counters.blight).toBe(1);
       expect(s.players.p2?.life).toBe(16);
     });
 
-    it("coût additionnel : sacrifier des permanents non-terrain le réduit de {1} chacun, au choix du joueur", () => {
-      // Deux Marais seulement : quatre sacrifices sont nécessaires ({5}{B} - 4 = {1}{B}).
+    it("additional cost: sacrificing nonland permanents reduces it by {1} each, player's choice", () => {
+      // Only two Swamps: four sacrifices are needed ({5}{B} - 4 = {1}{B}).
       let s = scenario({
         p1: {
           battlefield: [...lands("Swamp", 2), "Bear Cub", "Llanowar Elves", "Fountainport", "Vampire Neonate", "Savannah Lions"],
@@ -860,7 +860,7 @@ describe("Bloomburrow : cartes des decks du méta (PLAN-C, lot C13)", () => {
       expect(idsOf(s, "p1", "battlefield", "Rottenmouth Viper")).toHaveLength(1);
     });
 
-    it("sans choix, le paiement automatique ne sacrifie rien si le mana suffit, et le moins possible sinon", () => {
+    it("with no choice, automatic payment sacrifices nothing if the mana suffices, and as little as possible otherwise", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Swamp", 6), "Bear Cub"], hand: ["Rottenmouth Viper"] },
         p2: { hand: [] },
@@ -876,7 +876,7 @@ describe("Bloomburrow : cartes des decks du méta (PLAN-C, lot C13)", () => {
       expect(idsOf(t, "p1", "battlefield", "Rottenmouth Viper")).toHaveLength(1);
     });
 
-    it("en attaquant : un marqueur de plus, puis 4 PV par marqueur (ou une défausse à la place)", () => {
+    it("on attacking: one more counter, then 4 life per counter (or a discard instead)", () => {
       let s = scenario({
         p1: { battlefield: [{ name: "Rottenmouth Viper", counters: { blight: 1 } }] },
         p2: { hand: ["Opt"] },
@@ -884,13 +884,13 @@ describe("Bloomburrow : cartes des decks du méta (PLAN-C, lot C13)", () => {
       const viper = idOf(s, "p1", "battlefield", "Rottenmouth Viper");
       s = resolve(attack(s, [viper]));
       expect(s.objects[viper]?.counters.blight).toBe(2);
-      // L'adversaire défausse sa seule carte une fois, puis perd 4 PV la seconde.
+      // The opponent discards their only card once, then loses 4 life the second time.
       expect(idsOf(s, "p2", "graveyard", "Opt")).toHaveLength(1);
       expect(s.players.p2?.life).toBe(16);
     });
   });
 
-  it("Starscape Cleric : vol, ne bloque pas ; chaque fois que vous gagnez des PV, chaque adversaire perd 1 PV", () => {
+  it("Starscape Cleric: flying, can't block; whenever you gain life, each opponent loses 1 life", () => {
     let s = scenario({ p1: { battlefield: ["Starscape Cleric", "Vampire Neonate", ...lands("Swamp", 2)] } });
     const cleric = idOf(s, "p1", "battlefield", "Starscape Cleric");
     expect(chars(s, cleric).keywords).toEqual(expect.arrayContaining(["flying", "cantBlock"]));
@@ -898,7 +898,7 @@ describe("Bloomburrow : cartes des decks du méta (PLAN-C, lot C13)", () => {
     expect(s.players.p2?.life).toBe(18);
   });
 
-  it("Keen-Eyed Curator : {1} exile une carte d'un cimetière ; +4/+4 et piétinement avec quatre types parmi les cartes exilées", () => {
+  it("Keen-Eyed Curator: {1} exiles a card from a graveyard; +4/+4 and trample with four types among the exiled cards", () => {
     let s = scenario({
       p1: { battlefield: ["Keen-Eyed Curator", ...lands("Forest", 4)] },
       p2: { graveyard: ["Forest", "Opt", "Bear Cub", "Hop to It"] },
@@ -915,8 +915,8 @@ describe("Bloomburrow : cartes des decks du méta (PLAN-C, lot C13)", () => {
   });
 });
 
-describe("« Vous mettez des marqueurs » (lot K2)", () => {
-  it("Stocking the Pantry : seuls les marqueurs +1/+1 que vous mettez sur vos créatures la déclenchent", () => {
+describe('"You put counters" (lot K2)', () => {
+  it("Stocking the Pantry: only the +1/+1 counters you put on your creatures trigger it", () => {
     const setup = (active: PlayerId) =>
       scenario({
         active,
@@ -931,8 +931,8 @@ describe("« Vous mettez des marqueurs » (lot K2)", () => {
   });
 });
 
-describe("Mana en n'importe quelle combinaison (lot K2)", () => {
-  it("Muerra, Trash Tactician : {R} ou {G} pour chaque Raton laveur, répartis par le joueur", () => {
+describe("Mana in any combination (lot K2)", () => {
+  it("Muerra, Trash Tactician: {R} or {G} for each Raccoon, split by the player", () => {
     let s = scenario({ step: "draw", p1: { battlefield: ["Muerra, Trash Tactician", "Teapot Slinger"] } });
     s = passAccepting(s, (x) => x.pending?.kind === "choice");
     const p = s.pending;
@@ -943,18 +943,18 @@ describe("Mana en n'importe quelle combinaison (lot K2)", () => {
   });
 });
 
-describe("Choix non ciblés rendus au joueur (lot K6)", () => {
-  /** Une créature que les sorts de la couleur `c` ne peuvent pas cibler : seul un choix non ciblé la désigne. */
+describe("Untargeted choices handed back to the player (lot K6)", () => {
+  /** A creature that spells of color `c` can't target: only an untargeted choice designates it. */
   const shielded = (name: string, c: "G" | "U") =>
     customCard({
       name,
       power: 2,
       toughness: 2,
-      abilities: [protectionAbility(protection.from({ colors: [c] }, "Protection contre une couleur"))],
+      abilities: [protectionAbility(protection.from({ colors: [c] }, "Protection from a color"))],
     });
   const counters = (s: S, id: string) => s.objects[id]?.counters["+1/+1"] ?? 0;
 
-  it("Season of Gathering : la créature qui reçoit le marqueur est choisie à la résolution, sans la cibler", () => {
+  it("Season of Gathering: the creature that gets the counter is chosen on resolution, without targeting it", () => {
     const ward = shielded("Test Green Ward", "G");
     let s = scenario({ p1: { battlefield: [...lands("Forest", 6), ward, "Bear Cub"], hand: ["Season of Gathering"] } });
     const { card, opt } = castOption(s, "Season of Gathering");
@@ -968,13 +968,13 @@ describe("Choix non ciblés rendus au joueur (lot K6)", () => {
       return [wardId];
     });
     expect(namesIn(s, options).sort()).toEqual(["Bear Cub", "Test Green Ward"]);
-    // Protection contre le vert : la créature n'est pas ciblée, elle reçoit le marqueur, la vigilance et le piétinement.
+    // Protection from green: the creature isn't targeted, it gets the counter, vigilance and trample.
     expect(counters(s, wardId)).toBe(1);
     expect(chars(s, wardId).keywords).toEqual(expect.arrayContaining(["vigilance", "trample"]));
     expect(counters(s, idOf(s, "p1", "battlefield", "Bear Cub"))).toBe(0);
   });
 
-  it("Season of Weaving : l'artefact ou la créature copié est choisi à la résolution, sans le cibler", () => {
+  it("Season of Weaving: the artifact or creature copied is chosen on resolution, without targeting it", () => {
     const ward = shielded("Test Blue Ward", "U");
     let s = scenario({ p1: { battlefield: [...lands("Island", 6), ward, "Bear Cub"], hand: ["Season of Weaving"] } });
     const { card, opt } = castOption(s, "Season of Weaving");
@@ -986,7 +986,7 @@ describe("Choix non ciblés rendus au joueur (lot K6)", () => {
     expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
   });
 
-  it("Wick, the Whorled Mind : le marqueur va sur un Escargot choisi à la résolution ; sans Escargot, un jeton", () => {
+  it("Wick, the Whorled Mind: the counter goes on a Snail chosen on resolution; with no Snail, a token", () => {
     const snail = customCard({ name: "Test Snail", subtypes: ["Snail"], power: 1, toughness: 1 });
     let s = scenario({ p1: { battlefield: [...lands("Swamp", 4), snail, snail], hand: ["Wick, the Whorled Mind"] } });
     const [a, b] = idsOf(s, "p1", "battlefield", "Test Snail") as [string, string];
@@ -1012,7 +1012,7 @@ describe("Choix non ciblés rendus au joueur (lot K6)", () => {
       return passAccepting(s, (x) => x.pending?.kind === "choice" || (x.turn.active === "p1" && x.turn.step === "main1"));
     };
 
-    it("l'autre créature renvoyée est choisie à la résolution (renvoi obligatoire) ; l'Aînée reçoit un marqueur", () => {
+    it("the other creature returned is chosen on resolution (mandatory return); the Elder gets a counter", () => {
       let s = upkeep(["Bear Cub", "Llanowar Elves"]);
       const p = s.pending;
       expect(p?.kind === "choice" && p.request.type === "pick" && p.request.min).toBe(1);
@@ -1026,7 +1026,7 @@ describe("Choix non ciblés rendus au joueur (lot K6)", () => {
       expect(counters(s, idOf(s, "p1", "battlefield", "Mistbreath Elder"))).toBe(1);
     });
 
-    it("sans autre créature, vous pouvez la renvoyer elle-même (refus : elle reste, sans marqueur)", () => {
+    it("with no other creature, you may return it itself (declined: it stays, with no counter)", () => {
       const ask = upkeep([]);
       expect(ask.pending?.kind === "choice" && ask.pending.request.type).toBe("yesNo");
       const no = resolve(act(ask, "p1", { type: "choose", values: [0] }));
@@ -1039,7 +1039,7 @@ describe("Choix non ciblés rendus au joueur (lot K6)", () => {
 });
 
 describe("Pawpatch Recruit (lot K6)", () => {
-  it("le marqueur va sur une créature autre que celle ciblée par l'adversaire", () => {
+  it("the counter goes on a creature other than the one targeted by the opponent", () => {
     let s = scenario({
       active: "p2",
       p1: { battlefield: ["Pawpatch Recruit", "Bear Cub", "Llanowar Elves"] },
@@ -1065,7 +1065,7 @@ describe("Pawpatch Recruit (lot K6)", () => {
 });
 
 describe("Season of the Bold (lot K7)", () => {
-  it("{P}{P}{P} : l'emblème dure jusqu'à la fin de votre prochain tour (et non jusqu'à son début)", () => {
+  it("{P}{P}{P}: the emblem lasts until the end of your next turn (not until its start)", () => {
     let s = scenario({ p1: { battlefield: lands("Mountain", 5), hand: ["Season of the Bold"] } });
     const card = idOf(s, "p1", "hand", "Season of the Bold");
     const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === card);
@@ -1082,16 +1082,16 @@ describe("Season of the Bold (lot K7)", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Lot K8 : cartes mythiques, rares et peu communes qu'aucun test ne nommait.
+// Lot K8: mythic, rare and uncommon cards that no test named.
 // ---------------------------------------------------------------------------
 
-/** Réponses aux choix : mode d'une capacité déclenchée (par libellé), oui ou non, objets voulus. */
+/** Answers to choices: mode of a triggered ability (by label), yes or no, wanted objects. */
 const answer =
   (o: { mode?: string; yes?: boolean; pick?: string[] } = {}): Answer =>
   (req) => {
     if (req.type === "yesNo") return o.yes === undefined ? undefined : [o.yes ? 1 : 0];
     if (req.type !== "pick") return undefined;
-    // Mode d'une capacité, ou option « au choix » (608.2d) : par libellé.
+    // Mode of an ability, or "as you choose" option (608.2d): by label.
     if (req.intent === "triggerMode" || (o.mode && req.labels)) {
       const mode = o.mode?.toLowerCase();
       const hit = Object.entries(req.labels ?? {}).find(([, l]) => !!mode && l.toLowerCase().includes(mode));
@@ -1100,12 +1100,12 @@ const answer =
     const picked = (o.pick ?? []).filter((w) => req.options.includes(w));
     return picked.length > 0 ? picked : undefined;
   };
-/** Active la capacité de `source` dont le libellé contient `label`. */
+/** Activates the ability of `source` whose label contains `label`. */
 const activateK8 = (s: S, player: PlayerId, source: string, label: string, extra: object = {}): S => {
   const a = legalActions(s, player).find(
     (x) => x.type === "activate" && x.source === source && plainText(x.label ?? "").includes(label),
   );
-  if (a?.type !== "activate") throw new Error(`capacité « ${label} » introuvable`);
+  if (a?.type !== "activate") throw new Error(`ability "${label}" not found`);
   return act(s, player, { type: "activate", source, ability: a.ability, ...extra });
 };
 const canActivateK8 = (s: S, player: PlayerId, source: string, label: string) =>
@@ -1114,7 +1114,7 @@ const ptOf = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
 const plusOne = (s: S, id: string) => s.objects[id]?.counters["+1/+1"] ?? 0;
 const handOf = (s: S, p: PlayerId = "p1") => namesIn(s, s.players[p]?.hand);
 const graveOf = (s: S, p: PlayerId = "p1") => namesIn(s, s.players[p]?.graveyard);
-/** Passe et répond aux choix jusqu'à une priorité « lancer maintenant » (608.2g). */
+/** Passes and answers choices until a "cast now" priority (608.2g). */
 const toCastNow = (s: S, ans: Answer = () => undefined): S => {
   let cur = s;
   for (let i = 0; i < 300 && !castNowOf(cur); i++) {
@@ -1127,18 +1127,18 @@ const toCastNow = (s: S, ans: Answer = () => undefined): S => {
   }
   return cur;
 };
-/** Une permission de jouer encore valable pour cette carte. */
+/** A still valid permission to play this card. */
 const playable = (s: S, card: string) => (s.playPermissions ?? []).some((p) => p.card === card && permissionActive(s, p));
-/** La combinaison de modes d'un sort à modes « patte » dont les libellés sont exactement `labels`. */
+/** The combination of modes of a paw-mode spell whose labels are exactly `labels`. */
 const pawMode = (s: S, name: string, labels: string[]) => {
   const { opt } = castOption(s, name);
   const m = opt?.modes.find((x) => plainText(x.label ?? "") === labels.join(" + "));
-  if (!m) throw new Error(`combinaison introuvable : ${labels.join(" + ")}`);
+  if (!m) throw new Error(`combination not found: ${labels.join(" + ")}`);
   return m.index;
 };
 
 describe("Bloomburrow, lot K8 : mythiques", () => {
-  it("Byrke : vigilance ; en arrivant, un marqueur +1/+1 sur chacune de jusqu'à deux créatures ciblées", () => {
+  it("Byrke: vigilance; on entering, a +1/+1 counter on each of up to two targeted creatures", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Forest", 3), ...lands("Plains", 3), "Bear Cub"], hand: ["Byrke, Long Ear of the Law"] },
       p2: { battlefield: ["Serra Angel", "Llanowar Elves"] },
@@ -1152,7 +1152,7 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
     expect([plusOne(s, cub), plusOne(s, angel), plusOne(s, elves), plusOne(s, byrke)]).toEqual([1, 1, 0, 0]);
   });
 
-  it("Byrke : une créature que vous contrôlez avec un marqueur +1/+1 qui attaque double ses marqueurs ; sans marqueur, rien", () => {
+  it("Byrke: an attacking creature you control with a +1/+1 counter doubles its counters; with no counter, nothing", () => {
     let s = scenario({
       p1: { battlefield: ["Byrke, Long Ear of the Law", { name: "Bear Cub", counters: { "+1/+1": 2 } }, "Savannah Lions"] },
     });
@@ -1163,7 +1163,7 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
     expect(plusOne(s, lions)).toBe(0);
   });
 
-  it("Dragonhawk : exile X cartes (X = vos créatures de force 4 ou plus), jouables jusqu'à votre prochaine étape de fin ; 2 blessures par carte restée en exil", () => {
+  it("Dragonhawk: exiles X cards (X = your creatures with power 4 or greater), playable until your next end step; 2 damage per card left in exile", () => {
     let s = scenario({
       p1: {
         battlefield: [...lands("Mountain", 5), "Shivan Dragon", "Bear Cub"],
@@ -1173,20 +1173,20 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
     });
     s = resolve(cast(s, "p1", "Dragonhawk, Fate's Tempest"));
     expect(chars(s, idOf(s, "p1", "battlefield", "Dragonhawk, Fate's Tempest")).keywords).toContain("flying");
-    // Shivan Dragon et Dragonhawk : deux cartes (Bear Cub n'a pas 4 de force).
+    // Shivan Dragon and Dragonhawk: two cards (Bear Cub doesn't have power 4).
     expect(namesIn(s, s.exile).sort()).toEqual(["Mountain", "Opt"]);
     const mountain = exiled(s, "Mountain")[0] as string;
     const opt = exiled(s, "Opt")[0] as string;
     expect(playable(s, opt)).toBe(true);
     s = act(s, "p1", { type: "playLand", card: mountain });
     s = advanceUntil(s, (x) => x.turn.active === "p2");
-    // Opt est restée en exil : 2 blessures ; elle n'est plus jouable après votre étape de fin.
+    // Opt stayed in exile: 2 damage; it is no longer playable after your end step.
     expect(s.players.p2?.life).toBe(18);
     expect(s.exile).toContain(opt);
     expect(playable(s, opt)).toBe(false);
   });
 
-  it("Eluge : F/E égales à vos Îles ; en arrivant, un marqueur d'inondation fait d'un terrain ciblé une Île tant qu'il a ce marqueur", () => {
+  it("Eluge: P/T equal to your Islands; on entering, a flood counter makes a targeted land an Island as long as it has that counter", () => {
     let s = scenario({ p1: { battlefield: [...lands("Island", 4), "Forest"], hand: ["Eluge, the Shoreless Sea"] } });
     const forest = idOf(s, "p1", "battlefield", "Forest");
     s = resolve(cast(s, "p1", "Eluge, the Shoreless Sea"), answer({ pick: [forest] }));
@@ -1194,14 +1194,14 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
     expect(s.objects[forest]?.counters.flood).toBe(1);
     expect(chars(s, forest).subtypes).toEqual(expect.arrayContaining(["Forest", "Island"]));
     expect(ptOf(s, eluge)).toEqual([5, 5]);
-    // L'effet survit à Eluge, mais pas au marqueur d'inondation.
+    // The effect survives Eluge, but not the flood counter.
     moveObject(s, eluge, "graveyard");
     expect(chars(s, forest).subtypes).toContain("Island");
     changeCounters(s, s.objects[forest] as GameObject, "flood", -1);
     expect(chars(s, forest).subtypes).not.toContain("Island");
   });
 
-  it("Eluge : le premier éphémère ou rituel de chaque tour coûte {1} de moins par terrain inondé, pas le deuxième", () => {
+  it("Eluge: the first instant or sorcery each turn costs {1} less per flooded land, not the second", () => {
     let s = scenario({
       p1: {
         battlefield: ["Eluge, the Shoreless Sea", "Island", { name: "Forest", counters: { flood: 1 } }, ...lands("Mountain", 3)],
@@ -1216,7 +1216,7 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
     expect(s.players.p2?.life).toBe(14);
   });
 
-  it("Glarb : contact mortel ; terrains et sorts de VM 4 ou plus jouables depuis le dessus de la bibliothèque, pas les autres", () => {
+  it("Glarb: deathtouch; lands and spells with MV 4 or greater playable from the top of the library, not the others", () => {
     const setup = (top: string) =>
       scenario({ p1: { battlefield: ["Glarb, Calamity's Augur", ...lands("Mountain", 6)], library: [top, "Forest"] } });
     let s = setup("Forest");
@@ -1242,7 +1242,7 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
     expect(namesIn(s, s.players.p1?.library)).toEqual(["Forest"]);
   });
 
-  it("Helga : un sort de créature de VM 4 ou plus fait piocher, gagner 1 PV et met un marqueur sur elle ; pas un sort de VM 3", () => {
+  it("Helga: a creature spell with MV 4 or greater makes you draw, gain 1 life and put a counter on her; not an MV 3 spell", () => {
     let s = scenario({
       p1: { battlefield: ["Helga, Skittish Seer", ...lands("Mountain", 8)], hand: ["Shivan Dragon", "Goblin Smuggler"] },
     });
@@ -1253,14 +1253,14 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
     expect([s.players.p1?.life, plusOne(s, helga), s.players.p1?.hand.length]).toEqual([21, 1, 1]);
   });
 
-  it("Helga : {T} : X mana d'une couleur (X = sa force), seulement pour les sorts de créature de VM 4 ou plus", () => {
+  it("Helga: {T}: X mana of one color (X = her power), only for creature spells with MV 4 or greater", () => {
     const s = scenario({
       p1: {
         battlefield: [{ name: "Helga, Skittish Seer", counters: { "+1/+1": 3 } }, ...lands("Mountain", 2)],
         hand: ["Shivan Dragon", "Lightning Strike", "Goblin Smuggler"],
       },
     });
-    // Force 4 : {R}{R}{R}{R} de Helga et deux Montagnes paient Shivan Dragon.
+    // Power 4: Helga's {R}{R}{R}{R} and two Mountains pay for Shivan Dragon.
     expect(castable(s, "p1", idOf(s, "p1", "hand", "Shivan Dragon"))).toBe(true);
     const t = scenario({
       p1: {
@@ -1272,20 +1272,20 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
     expect(castable(t, "p1", idOf(t, "p1", "hand", "Goblin Smuggler"))).toBe(false);
   });
 
-  it("Helga : son mana paie aussi un sort de créature avec {X} dans son coût, quelle que soit sa valeur de mana", () => {
+  it("Helga: her mana also pays a creature spell with {X} in its cost, whatever its mana value", () => {
     let s = scenario({
       p1: {
         battlefield: [{ name: "Helga, Skittish Seer", counters: { "+1/+1": 3 } }],
         hand: ["Wildwood Scourge", "Goblin Smuggler"],
       },
     });
-    // Wildwood Scourge ({X}{G}) avec X = 1 : valeur de mana 2, payée par le seul mana de Helga.
+    // Wildwood Scourge ({X}{G}) with X = 1: mana value 2, paid by Helga's mana alone.
     s = resolve(cast(s, "p1", "Wildwood Scourge", { x: 1 }));
     expect(idsOf(s, "p1", "battlefield", "Wildwood Scourge")).toHaveLength(1);
     expect(castable(s, "p1", idOf(s, "p1", "hand", "Goblin Smuggler"))).toBe(false);
   });
 
-  it("Hugs : exile X cartes, jouables jusqu'à la fin de votre prochain tour ; un terrain supplémentaire à chacun de vos tours", () => {
+  it("Hugs: exiles X cards, playable until the end of your next turn; an additional land on each of your turns", () => {
     let s = scenario({
       p1: {
         battlefield: [...lands("Mountain", 3), ...lands("Forest", 3)],
@@ -1300,12 +1300,12 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
     const swamp = exiled(s, "Swamp")[0] as string;
     s = act(s, "p1", { type: "playLand", card: island });
     s = act(s, "p1", { type: "playLand", card: swamp });
-    // Deux terrains ce tour-ci, pas un troisième.
+    // Two lands this turn, not a third.
     const plains = idOf(s, "p1", "hand", "Plains");
     expect(legalActions(s, "p1").some((a) => a.type === "playLand" && a.card === plains)).toBe(false);
   });
 
-  it("Hugs : les cartes exilées restent jouables pendant votre prochain tour, plus après", () => {
+  it("Hugs: the exiled cards stay playable during your next turn, not after", () => {
     let s = scenario({
       p1: {
         battlefield: [...lands("Mountain", 3), ...lands("Forest", 3)],
@@ -1321,7 +1321,7 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
     expect(playable(s, island)).toBe(false);
   });
 
-  it("Kitsa : vigilance et prouesse ; {T} : piochez puis défaussez", () => {
+  it("Kitsa: vigilance and prowess; {T}: draw then discard", () => {
     let s = scenario({ p1: { battlefield: ["Kitsa, Otterball Elite"], hand: ["Stab"], library: ["Opt", "Forest"] } });
     const kitsa = idOf(s, "p1", "battlefield", "Kitsa, Otterball Elite");
     expect(chars(s, kitsa).keywords).toEqual(expect.arrayContaining(["vigilance", "prowess"]));
@@ -1330,7 +1330,7 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
     expect(graveOf(s)).toEqual(["Stab"]);
   });
 
-  it("Kitsa : {2}, {T} : copie un éphémère ou un rituel que vous contrôlez, seulement si sa force est de 3 ou plus", () => {
+  it("Kitsa: {2}, {T}: copies an instant or sorcery you control, only if its power is 3 or greater", () => {
     let s = scenario({
       p1: {
         battlefield: [{ name: "Kitsa, Otterball Elite", counters: { "+1/+1": 1 } }, ...lands("Mountain", 3)],
@@ -1340,7 +1340,7 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
     const kitsa = idOf(s, "p1", "battlefield", "Kitsa, Otterball Elite");
     s = cast(s, "p1", "Shock", { targets: { t: ["p2"] } });
     const shock = s.stack[0]?.id as string;
-    // Force 2 tant que la prouesse ne s'est pas résolue.
+    // Power 2 until prowess has resolved.
     expect(canActivateK8(s, "p1", kitsa, "Copies")).toBe(false);
     s = passBoth(s);
     expect(chars(s, kitsa).power).toBe(3);
@@ -1348,7 +1348,7 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
     expect(s.players.p2?.life).toBe(16);
   });
 
-  it("Lumra : portée et vigilance ; meule quatre cartes puis renvoie engagées toutes les cartes de terrain du cimetière ; F/E = vos terrains", () => {
+  it("Lumra: reach and vigilance; mills four cards then returns all land cards from the graveyard tapped; P/T = your lands", () => {
     let s = scenario({
       p1: {
         battlefield: lands("Forest", 6),
@@ -1366,7 +1366,7 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
     expect(ptOf(s, lumra)).toEqual([9, 9]);
   });
 
-  it("Maha : vol, piétinement et garde ; les créatures adverses ont une endurance de base de 1, pas les vôtres", () => {
+  it("Maha: flying, trample and ward; opposing creatures have base toughness 1, yours don't", () => {
     const s = scenario({
       p1: { battlefield: ["Maha, Its Feathers Night", "Bear Cub"] },
       p2: { battlefield: ["Serra Angel", { name: "Bear Cub", counters: { "+1/+1": 1 } }] },
@@ -1379,7 +1379,7 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
     expect(ptOf(s, idOf(s, "p1", "battlefield", "Bear Cub"))).toEqual([2, 2]);
   });
 
-  it("Ral : un sort non-créature lui donne un marqueur de loyauté ; +1 : une Loutre 1/1 bleu et rouge avec la prouesse", () => {
+  it("Ral: a noncreature spell gives him a loyalty counter; +1: a 1/1 blue and red Otter with prowess", () => {
     let s = scenario({
       p1: {
         battlefield: ["Ral, Crackling Wit", "Island", "Forest"],
@@ -1400,7 +1400,7 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
     expect(chars(s, otter).keywords).toContain("prowess");
   });
 
-  it("Ral : −3 : piochez trois cartes, puis défaussez-en deux", () => {
+  it("Ral: −3: draw three cards, then discard two", () => {
     let s = scenario({ p1: { battlefield: ["Ral, Crackling Wit"], hand: ["Opt"], library: ["Plains", "Island", "Swamp"] } });
     const ral = idOf(s, "p1", "battlefield", "Ral, Crackling Wit");
     s = resolve(activateK8(s, "p1", ral, "discard two"));
@@ -1409,7 +1409,7 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
     expect(s.players.p1?.graveyard).toHaveLength(2);
   });
 
-  it("Ral : −10 : piochez trois cartes ; emblème — vos éphémères et rituels ont la réplique", () => {
+  it("Ral: −10: draw three cards; emblem — your instants and sorceries have storm", () => {
     let s = scenario({
       p1: {
         battlefield: [{ name: "Ral, Crackling Wit", counters: { loyalty: 10 } }, ...lands("Mountain", 2)],
@@ -1421,14 +1421,14 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
     s = resolve(activateK8(s, "p1", ral, "emblem"));
     expect(s.players.p1?.hand).toHaveLength(5);
     expect(s.players.p1?.command ?? []).toHaveLength(1);
-    // Premier sort du tour : pas de copie ; deuxième : une copie.
+    // First spell of the turn: no copy; second: one copy.
     s = resolve(cast(s, "p1", "Shock", { targets: { t: ["p2"] } }));
     expect(s.players.p2?.life).toBe(18);
     s = resolve(cast(s, "p1", "Shock", { targets: { t: ["p2"] } }));
     expect(s.players.p2?.life).toBe(14);
   });
 
-  it("Ral : l'emblème compte aussi les sorts lancés par les adversaires avant le vôtre ce tour-ci", () => {
+  it("Ral: the emblem also counts spells cast by opponents before yours this turn", () => {
     let s = scenario({
       p1: {
         battlefield: [{ name: "Ral, Crackling Wit", counters: { loyalty: 10 } }, "Mountain"],
@@ -1442,12 +1442,12 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
     s = resolve(cast(s, "p2", "Shock", { targets: { t: ["p1"] } }));
     expect(s.players.p1?.life).toBe(18);
     expect(s.turn.active).toBe("p1");
-    // Un sort (de l'adversaire) lancé avant : une copie.
+    // A spell (the opponent's) cast before: one copy.
     s = resolve(cast(s, "p1", "Shock", { targets: { t: ["p2"] } }));
     expect(s.players.p2?.life).toBe(16);
   });
 
-  it("Season of Loss : {P} chaque joueur sacrifie une créature, puis {P}{P} piochez par créature morte sous votre contrôle ce tour-ci", () => {
+  it("Season of Loss: {P} each player sacrifices a creature, then {P}{P} draw for each creature that died under your control this turn", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Swamp", 5), "Bear Cub"], hand: ["Season of Loss"], library: lands("Plains", 3) },
       p2: { battlefield: ["Serra Angel"] },
@@ -1462,7 +1462,7 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
     expect(handOf(s)).toEqual(["Plains"]);
   });
 
-  it("Season of Loss : {P}{P}{P} chaque adversaire perd X PV (X = cartes de créature de votre cimetière)", () => {
+  it("Season of Loss: {P}{P}{P} each opponent loses X life (X = creature cards in your graveyard)", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Swamp", 5), "Bear Cub"], hand: ["Season of Loss"], graveyard: ["Llanowar Elves", "Opt"] },
       p2: { battlefield: ["Serra Angel"] },
@@ -1472,12 +1472,12 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
       "Each opponent loses X life (creatures in the graveyard)",
     ]);
     s = resolve(cast(s, "p1", "Season of Loss", { mode }));
-    // Llanowar Elves et Bear Cub, sacrifié par le premier mode.
+    // Llanowar Elves and Bear Cub, sacrificed by the first mode.
     expect(s.players.p2?.life).toBe(18);
     expect(s.players.p1?.life).toBe(20);
   });
 
-  it("Stormsplitter : célérité ; un éphémère ou un rituel crée une copie-jeton, exilée à la prochaine étape de fin ; pas un sort de créature", () => {
+  it("Stormsplitter: haste; an instant or sorcery creates a token copy, exiled at the next end step; not a creature spell", () => {
     let s = scenario({
       p1: { battlefield: ["Stormsplitter", ...lands("Mountain", 2)], hand: ["Shock", "Fanatical Firebrand"] },
     });
@@ -1492,7 +1492,7 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
     expect(s.objects[left[0] as string]?.isToken).toBeFalsy();
   });
 
-  it("The Infamous Cruelclaw : menace ; blessures de combat à un joueur — exile jusqu'à une carte non-terrain, lancée en défaussant une carte", () => {
+  it("The Infamous Cruelclaw: menace; combat damage to a player — exiles up to one nonland card, cast by discarding a card", () => {
     let s = scenario({
       p1: { battlefield: ["The Infamous Cruelclaw"], hand: ["Opt"], library: ["Forest", "Serra Angel", "Island"] },
     });
@@ -1507,7 +1507,7 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
     expect(namesIn(s, s.players.p1?.library)).toEqual(["Island"]);
   });
 
-  it("Warren Warleader : chaque fois que vous attaquez, un Lapin 1/1 engagé et attaquant, ou vos attaquants +1/+1", () => {
+  it("Warren Warleader: whenever you attack, a tapped and attacking 1/1 Rabbit, or your attackers +1/+1", () => {
     const setup = () => scenario({ p1: { battlefield: ["Warren Warleader", "Bear Cub", "Savannah Lions"] } });
     let s = setup();
     const ids = ["Warren Warleader", "Bear Cub"].map((n) => idOf(s, "p1", "battlefield", n));
@@ -1524,7 +1524,7 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
     expect(idsOf(t, "p1", "battlefield", "Rabbit")).toHaveLength(0);
   });
 
-  it("Warren Warleader : progéniture {2}", () => {
+  it("Warren Warleader: offspring {2}", () => {
     let s = scenario({ p1: { battlefield: lands("Plains", 6), hand: ["Warren Warleader"] } });
     s = resolve(cast(s, "p1", "Warren Warleader", { kicked: true }));
     const all = idsOf(s, "p1", "battlefield", "Warren Warleader");
@@ -1532,7 +1532,7 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
     expect(ptOf(s, all.find((id) => s.objects[id]?.isToken) as string)).toEqual([1, 1]);
   });
 
-  it("Ygra : garde ; les autres créatures sont des Nourritures ; chaque Nourriture mise au cimetière depuis le champ de bataille lui donne deux marqueurs", () => {
+  it("Ygra: ward; other creatures are Foods; each Food put into the graveyard from the battlefield gives it two counters", () => {
     let s = scenario({
       p1: { battlefield: ["Ygra, Eater of All", "Bear Cub", ...lands("Forest", 2)] },
       p2: { battlefield: ["Serra Angel"] },
@@ -1546,7 +1546,7 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
       expect(chars(s, id).types).toEqual(expect.arrayContaining(["Artifact", "Creature"]));
       expect(chars(s, id).subtypes).toContain("Food");
     }
-    // La créature-Nourriture a « {2}, {T}, sacrifiez ce permanent : vous gagnez 3 PV ».
+    // The Food creature has "{2}, {T}, sacrifice this permanent: you gain 3 life".
     s = resolve(activateK8(s, "p1", cub, "+3 life"));
     expect(s.players.p1?.life).toBe(23);
     expect(plusOne(s, ygra)).toBe(2);
@@ -1563,7 +1563,7 @@ describe("Bloomburrow, lot K8 : rares (1)", () => {
     return s;
   };
 
-  it("Azure Beastbinder : vigilance ; imblocable par les créatures de force 2 ou plus ; en attaquant, une créature adverse perd ses capacités et devient 2/2 jusqu'à votre prochain tour", () => {
+  it("Azure Beastbinder: vigilance; can't be blocked by creatures with power 2 or greater; on attacking, an opposing creature loses its abilities and becomes 2/2 until your next turn", () => {
     let s = scenario({
       p1: { battlefield: ["Azure Beastbinder"] },
       p2: { battlefield: ["Serra Angel", "Llanowar Elves"] },
@@ -1585,7 +1585,7 @@ describe("Bloomburrow, lot K8 : rares (1)", () => {
     expect(chars(s, angel).keywords).toContain("flying");
   });
 
-  it("Baylen : engagez quatre jetons — trois marqueurs +1/+1 et le piétinement ; engagez trois jetons — piochez ; deux — un mana", () => {
+  it("Baylen: tap four tokens — three +1/+1 counters and trample; tap three tokens — draw; two — a mana", () => {
     let s = tokens(scenario({ p1: { battlefield: ["Baylen, the Haymaker"], library: lands("Plains", 3) } }), "Treasure", 4);
     const baylen = idOf(s, "p1", "battlefield", "Baylen, the Haymaker");
     expect(canActivateK8(s, "p1", baylen, "three tokens")).toBe(true);
@@ -1600,7 +1600,7 @@ describe("Bloomburrow, lot K8 : rares (1)", () => {
     expect(handOf(t)).toEqual(["Plains"]);
   });
 
-  it("Byway Barterer : menace ; dépense 4 — vous pouvez défausser votre main pour piocher deux cartes", () => {
+  it("Byway Barterer: menace; expend 4 — you may discard your hand to draw two cards", () => {
     const setup = () =>
       scenario({
         p1: {
@@ -1621,7 +1621,7 @@ describe("Bloomburrow, lot K8 : rares (1)", () => {
     expect(handOf(run(false))).toEqual(["Opt"]);
   });
 
-  it("Camellia : menace pour elle et vos autres Écureuils ; sacrifier une Nourriture crée un Écureuil ; {2}, fourrager : un marqueur sur chaque autre Écureuil", () => {
+  it("Camellia: menace for her and your other Squirrels; sacrificing a Food creates a Squirrel; {2}, forage: a counter on each other Squirrel", () => {
     let s = scenario({
       p1: {
         battlefield: ["Camellia, the Seedmiser", "Bushy Bodyguard", "Bear Cub", ...lands("Forest", 4)],
@@ -1645,14 +1645,14 @@ describe("Bloomburrow, lot K8 : rares (1)", () => {
     expect(plusOne(s, idOf(s, "p1", "battlefield", "Bear Cub"))).toBe(0);
   });
 
-  it("Clement : vigilance ; vos Grenouilles ont « {T} : {G} ou {U}, seulement pour un sort de créature »", () => {
+  it('Clement: vigilance; your Frogs have "{T}: {G} or {U}, only for a creature spell"', () => {
     const s = scenario({ p1: { battlefield: ["Clement, the Worrywort"], hand: ["Llanowar Elves", "Giant Growth"] } });
     expect(chars(s, idOf(s, "p1", "battlefield", "Clement, the Worrywort")).keywords).toContain("vigilance");
     expect(castable(s, "p1", idOf(s, "p1", "hand", "Llanowar Elves"))).toBe(true);
     expect(castable(s, "p1", idOf(s, "p1", "hand", "Giant Growth"))).toBe(false);
   });
 
-  it("Clement : une créature qui arrive sous votre contrôle renvoie une de vos créatures de valeur de mana inférieure", () => {
+  it("Clement: a creature that enters under your control returns one of your creatures of lesser mana value", () => {
     let s = scenario({
       p1: { battlefield: ["Clement, the Worrywort", "Bear Cub", ...lands("Plains", 5)], hand: ["Serra Angel"] },
     });
@@ -1662,12 +1662,12 @@ describe("Bloomburrow, lot K8 : rares (1)", () => {
     expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
   });
 
-  it("Clement : seules vos créatures de valeur de mana inférieure peuvent être ciblées, et la cible est choisie au déclenchement", () => {
+  it("Clement: only your creatures of lesser mana value can be targeted, and the target is chosen on trigger", () => {
     let s = scenario({
       p1: { battlefield: ["Clement, the Worrywort", "Bear Cub", "Serra Angel", ...lands("Plains", 5)], hand: ["Llanowar Elves"] },
     });
     s = passUntil(cast(s, "p1", "Llanowar Elves"), (x) => x.pending?.kind === "choice");
-    // Llanowar Elves (VM 1) : aucune créature de valeur de mana inférieure, rien n'est proposé.
+    // Llanowar Elves (MV 1): no creature of lesser mana value, nothing is offered.
     expect(s.pending?.kind === "choice" && s.pending.request.intent === "triggerTarget").toBe(false);
     s = resolve(s);
     expect(handOf(s)).toEqual([]);
@@ -1677,11 +1677,11 @@ describe("Bloomburrow, lot K8 : rares (1)", () => {
     t = passUntil(cast(t, "p1", "Serra Angel"), (x) => x.pending?.kind === "choice");
     const req = t.pending?.kind === "choice" ? t.pending.request : undefined;
     expect(req?.intent).toBe("triggerTarget");
-    // Clement (VM 3) et Bear Cub (VM 2), pas l'autre Serra Angel (VM 5, pas inférieure).
+    // Clement (MV 3) and Bear Cub (MV 2), not the other Serra Angel (MV 5, not lesser).
     expect(namesIn(t, req?.type === "pick" ? req.options : []).sort()).toEqual(["Bear Cub", "Clement, the Worrywort"]);
   });
 
-  it("Coiling Rebirth : une carte de créature revient du cimetière ; avec le cadeau, un jeton 1/1 copie en plus, sauf légendaire", () => {
+  it("Coiling Rebirth: a creature card returns from the graveyard; with the gift, a 1/1 token copy as well, unless legendary", () => {
     const setup = (creature: string) =>
       scenario({
         p1: { battlefield: lands("Swamp", 5), hand: ["Coiling Rebirth"], graveyard: [creature] },
@@ -1705,7 +1705,7 @@ describe("Bloomburrow, lot K8 : rares (1)", () => {
     expect(idsOf(legend, "p1", "battlefield", "Byrke, Long Ear of the Law")).toHaveLength(1);
   });
 
-  it("Colossification : en arrivant, engage la créature enchantée ; +20/+20", () => {
+  it("Colossification: on entering, taps the enchanted creature; +20/+20", () => {
     let s = scenario({ p1: { battlefield: [...lands("Forest", 7), "Bear Cub"], hand: ["Colossification"] } });
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
     s = resolve(cast(s, "p1", "Colossification", { targets: { enchant: [cub] } }));
@@ -1713,7 +1713,7 @@ describe("Bloomburrow, lot K8 : rares (1)", () => {
     expect(ptOf(s, cub)).toEqual([22, 22]);
   });
 
-  it("Darkstar Augur : vol ; à votre entretien, la carte du dessus en main, et vous perdez sa valeur de mana", () => {
+  it("Darkstar Augur: flying; at your upkeep, the top card into hand, and you lose life equal to its mana value", () => {
     let s = scenario({
       active: "p2",
       step: "end",
@@ -1721,18 +1721,18 @@ describe("Bloomburrow, lot K8 : rares (1)", () => {
     });
     expect(chars(s, idOf(s, "p1", "battlefield", "Darkstar Augur")).keywords).toContain("flying");
     s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1");
-    // Serra Angel à l'entretien (5 PV), puis la Forêt piochée.
+    // Serra Angel at upkeep (5 life), then the drawn Forest.
     expect(handOf(s).sort()).toEqual(["Forest", "Serra Angel"]);
     expect(s.players.p1?.life).toBe(15);
   });
 
-  it("Darkstar Augur : progéniture {B}", () => {
+  it("Darkstar Augur: offspring {B}", () => {
     let s = scenario({ p1: { battlefield: lands("Swamp", 4), hand: ["Darkstar Augur"] } });
     s = resolve(cast(s, "p1", "Darkstar Augur", { kicked: true }));
     expect(idsOf(s, "p1", "battlefield", "Darkstar Augur")).toHaveLength(2);
   });
 
-  it("Dreamdew Entrancer : portée ; engage jusqu'à une créature avec trois marqueurs d'étourdissement ; piochez deux cartes si vous la contrôlez", () => {
+  it("Dreamdew Entrancer: reach; taps up to one creature with three stun counters; draw two cards if you control it", () => {
     const setup = () =>
       scenario({
         p1: {
@@ -1756,7 +1756,7 @@ describe("Bloomburrow, lot K8 : rares (1)", () => {
     expect(handOf(t)).toEqual(["Plains", "Plains"]);
   });
 
-  it("Fecund Greenshell : portée ; avec dix terrains ou plus, vos créatures ont +2/+2", () => {
+  it("Fecund Greenshell: reach; with ten or more lands, your creatures have +2/+2", () => {
     const run = (n: number) => {
       const s = scenario({
         p1: { battlefield: ["Fecund Greenshell", "Bear Cub", ...lands("Forest", n)] },
@@ -1774,7 +1774,7 @@ describe("Bloomburrow, lot K8 : rares (1)", () => {
     ]);
   });
 
-  it("Fecund Greenshell : elle ou une créature d'endurance supérieure à sa force arrive — la carte du dessus : un terrain sur le champ de bataille engagé, sinon en main", () => {
+  it("Fecund Greenshell: it or a creature with toughness greater than its power enters — the top card: a land onto the battlefield tapped, otherwise into hand", () => {
     let s = scenario({ p1: { battlefield: lands("Forest", 5), hand: ["Fecund Greenshell"], library: ["Island", "Opt"] } });
     s = resolve(cast(s, "p1", "Fecund Greenshell"), answer({ yes: true }));
     expect(chars(s, idOf(s, "p1", "battlefield", "Fecund Greenshell")).keywords).toContain("reach");
@@ -1786,20 +1786,20 @@ describe("Bloomburrow, lot K8 : rares (1)", () => {
         library: ["Opt", "Island"],
       },
     });
-    // Vampire Neonate (0/3) : Opt n'est pas un terrain, elle va en main ; Bear Cub (2/2) ne déclenche rien.
+    // Vampire Neonate (0/3): Opt isn't a land, it goes to hand; Bear Cub (2/2) doesn't trigger anything.
     t = resolve(cast(t, "p1", "Vampire Neonate"));
     expect(handOf(t).sort()).toEqual(["Bear Cub", "Opt"]);
     t = resolve(cast(t, "p1", "Bear Cub"));
     expect(handOf(t)).toEqual(["Opt"]);
     expect(namesIn(t, t.players.p1?.library)).toEqual(["Island"]);
-    // Un terrain refusé reste sur la bibliothèque (pas en main), et la carte suivante n'est pas regardée.
+    // A land that is declined stays on the library (not in hand), and the next card isn't looked at.
     let u = scenario({ p1: { battlefield: lands("Forest", 5), hand: ["Fecund Greenshell"], library: ["Island", "Opt"] } });
     u = resolve(cast(u, "p1", "Fecund Greenshell"), (req) => (req.intent === "lookAtTop" ? [] : undefined));
     expect(handOf(u)).toEqual([]);
     expect(namesIn(u, u.players.p1?.library)).toEqual(["Island", "Opt"]);
   });
 
-  it("Finneas : portée et vigilance ; en attaquant, un marqueur sur chaque autre créature jeton ou Lapin ; piochez si la force totale atteint 10", () => {
+  it("Finneas: reach and vigilance; on attacking, a counter on each other token creature or Rabbit; draw if total power reaches 10", () => {
     let s = scenario({
       p1: { battlefield: ["Finneas, Ace Archer", "Intrepid Rabbit", "Bear Cub"], library: lands("Plains", 3) },
     });
@@ -1811,14 +1811,14 @@ describe("Bloomburrow, lot K8 : rares (1)", () => {
     expect(chars(s, finneas).keywords).toEqual(expect.arrayContaining(["reach", "vigilance"]));
     s = resolve(attack(s, [finneas]));
     expect([plusOne(s, rabbit), plusOne(s, cat), plusOne(s, cub), plusOne(s, finneas)]).toEqual([1, 1, 0, 0]);
-    // 2 + 4 + 2 + 3 = 11 : une carte.
+    // 2 + 4 + 2 + 3 = 11: one card.
     expect(handOf(s)).toEqual(["Plains"]);
     let t = scenario({ p1: { battlefield: ["Finneas, Ace Archer", "Intrepid Rabbit"], library: lands("Plains", 3) } });
     t = resolve(attack(t, [idOf(t, "p1", "battlefield", "Finneas, Ace Archer")]));
     expect(t.players.p1?.hand).toHaveLength(0);
   });
 
-  it("For the Common Good : X copies d'un de vos jetons ; vos jetons indestructibles jusqu'à votre prochain tour ; 1 PV par jeton", () => {
+  it("For the Common Good: X copies of one of your tokens; your tokens indestructible until your next turn; 1 life per token", () => {
     let s = tokens(scenario({ p1: { battlefield: lands("Forest", 5), hand: ["For the Common Good"] } }), "Food", 1);
     const food = idOf(s, "p1", "battlefield", "Food");
     s = resolve(cast(s, "p1", "For the Common Good", { x: 2, targets: { t: [food] } }));
@@ -1832,24 +1832,24 @@ describe("Bloomburrow, lot K8 : rares (1)", () => {
     expect(chars(s, food).keywords).not.toContain("indestructible");
   });
 
-  it("Gev : garde ; sans adversaire ayant perdu des PV, pas de marqueur ; un sort de Lézard inflige 1 blessure à un adversaire ciblé", () => {
+  it("Gev: ward; with no opponent who lost life, no counter; a Lizard spell deals 1 damage to a targeted opponent", () => {
     let s = scenario({
       p1: { battlefield: ["Gev, Scaled Scorch", ...lands("Forest", 2)], hand: ["Bear Cub", "Hired Claw", "Mountain"] },
     });
     const gev = idOf(s, "p1", "battlefield", "Gev, Scaled Scorch");
     expect(chars(s, gev).keywords).toContain("ward");
-    // Personne n'a perdu de PV : pas de marqueur ; Bear Cub n'est pas un Lézard.
+    // Nobody lost life: no counter; Bear Cub isn't a Lizard.
     s = resolve(cast(s, "p1", "Bear Cub"));
     expect(plusOne(s, idOf(s, "p1", "battlefield", "Bear Cub"))).toBe(0);
     expect(s.players.p2?.life).toBe(20);
     s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Mountain") });
     s = resolve(cast(s, "p1", "Hired Claw"), answer({ pick: ["p2"] }));
     expect(s.players.p2?.life).toBe(19);
-    // L'adversaire a perdu des PV avant la résolution : Hired Claw arrive avec un marqueur +1/+1.
+    // The opponent lost life before resolution: Hired Claw enters with a +1/+1 counter.
     expect(plusOne(s, idOf(s, "p1", "battlefield", "Hired Claw"))).toBe(1);
   });
 
-  it("Gev : les créatures adverses n'arrivent pas avec des marqueurs", () => {
+  it("Gev: opposing creatures don't enter with counters", () => {
     let s = scenario({
       active: "p2",
       p1: { battlefield: ["Gev, Scaled Scorch"] },
@@ -1861,7 +1861,7 @@ describe("Bloomburrow, lot K8 : rares (1)", () => {
     expect(plusOne(s, idOf(s, "p2", "battlefield", "Bear Cub"))).toBe(0);
   });
 
-  it("Hearthborn Battler : célérité ; le deuxième sort d'un joueur dans un tour inflige 2 blessures à un adversaire ciblé ; pas le premier ni le troisième", () => {
+  it("Hearthborn Battler: haste; a player's second spell in a turn deals 2 damage to a targeted opponent; not the first or the third", () => {
     let s = scenario({
       p1: { battlefield: ["Hearthborn Battler", ...lands("Mountain", 3)], hand: ["Shock", "Shock", "Shock"] },
     });
@@ -1875,7 +1875,7 @@ describe("Bloomburrow, lot K8 : rares (1)", () => {
     expect(s.players.p2?.life).toBe(12);
   });
 
-  it("Innkeeper's Talent : au début du combat de votre tour, un marqueur +1/+1 sur une créature ciblée que vous contrôlez", () => {
+  it("Innkeeper's Talent: at the beginning of combat on your turn, a +1/+1 counter on a targeted creature you control", () => {
     let s = scenario({ p1: { battlefield: ["Innkeeper's Talent", "Bear Cub"] }, p2: { battlefield: ["Serra Angel"] } });
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
     s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
@@ -1883,7 +1883,7 @@ describe("Bloomburrow, lot K8 : rares (1)", () => {
     expect(plusOne(s, idOf(s, "p2", "battlefield", "Serra Angel"))).toBe(0);
   });
 
-  it("Innkeeper's Talent : niveau 2 — vos permanents avec des marqueurs ont la garde {1} ; niveau 3 — vos marqueurs sont doublés", () => {
+  it("Innkeeper's Talent: level 2 — your permanents with counters have ward {1}; level 3 — your counters are doubled", () => {
     let s = scenario({
       p1: {
         battlefield: [
@@ -1909,7 +1909,7 @@ describe("Bloomburrow, lot K8 : rares (1)", () => {
     expect(chars(s, elves).keywords).toContain("ward");
   });
 
-  it("Innkeeper's Talent : niveau 3 — seuls les marqueurs que vous mettez sont doublés, même sur une créature adverse", () => {
+  it("Innkeeper's Talent: level 3 — only counters you put are doubled, even on an opposing creature", () => {
     let s = scenario({
       p1: { battlefield: ["Innkeeper's Talent", "Bear Cub", ...lands("Forest", 5), "Plains"], hand: ["Fleeting Flight"] },
       p2: { battlefield: ["Serra Angel", "Plains"], hand: ["Fleeting Flight"] },
@@ -1918,10 +1918,10 @@ describe("Bloomburrow, lot K8 : rares (1)", () => {
     s = resolve(activateK8(s, "p1", talent, "Level 2"));
     s = resolve(activateK8(s, "p1", talent, "Level 3"));
     const angel = idOf(s, "p2", "battlefield", "Serra Angel");
-    // Vous mettez un marqueur sur l'Ange adverse : deux.
+    // You put a counter on the opposing Angel: two.
     s = resolve(cast(s, "p1", "Fleeting Flight", { targets: { t: [angel] } }));
     expect(plusOne(s, angel)).toBe(2);
-    // Un adversaire met un marqueur sur votre Ourson : un seul.
+    // An opponent puts a counter on your Bear Cub: just one.
     let t = scenario({
       active: "p2",
       p1: { battlefield: [{ name: "Innkeeper's Talent" }, "Bear Cub"] },
@@ -1935,7 +1935,7 @@ describe("Bloomburrow, lot K8 : rares (1)", () => {
     expect(plusOne(t, cub2)).toBe(1);
   });
 
-  it("Jackdaw Savior : vol ; elle ou une autre de vos créatures volantes meurt — une autre carte de créature de valeur de mana inférieure revient du cimetière", () => {
+  it("Jackdaw Savior: flying; it or another of your flying creatures dies — another creature card of lesser mana value returns from the graveyard", () => {
     let s = scenario({
       p1: { battlefield: ["Jackdaw Savior", "Bear Cub"], graveyard: ["Llanowar Elves", "Serra Angel"] },
     });
@@ -1946,20 +1946,20 @@ describe("Bloomburrow, lot K8 : rares (1)", () => {
     expect(idsOf(s, "p1", "battlefield", "Llanowar Elves")).toHaveLength(1);
     expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(0);
     expect(idsOf(s, "p1", "battlefield", "Jackdaw Savior")).toHaveLength(0);
-    // Une créature sans le vol qui meurt ne déclenche rien.
+    // A creature without flying that dies triggers nothing.
     let t = scenario({ p1: { battlefield: ["Jackdaw Savior", "Bear Cub"], graveyard: ["Llanowar Elves"] } });
     destroy(t, idOf(t, "p1", "battlefield", "Bear Cub"));
     t = resolve(t);
     expect(idsOf(t, "p1", "battlefield", "Llanowar Elves")).toHaveLength(0);
   });
 
-  it("Jackdaw Savior : la carte de valeur de mana inférieure est ciblée au déclenchement ; partie du cimetière, rien ne revient", () => {
+  it("Jackdaw Savior: the card of lesser mana value is targeted on trigger; having left the graveyard, nothing returns", () => {
     let s = scenario({ p1: { battlefield: ["Jackdaw Savior"], graveyard: ["Llanowar Elves", "Bear Cub", "Serra Angel"] } });
     destroy(s, idOf(s, "p1", "battlefield", "Jackdaw Savior"));
     s = passUntil(s, (x) => x.pending?.kind === "choice");
     const req = s.pending?.kind === "choice" ? s.pending.request : undefined;
     expect(req?.intent).toBe("triggerTarget");
-    // Ni Serra Angel (VM 5), ni Jackdaw Savior elle-même (VM 3, pas inférieure).
+    // Neither Serra Angel (MV 5), nor Jackdaw Savior herself (MV 3, not lesser).
     expect(namesIn(s, req?.type === "pick" ? req.options : []).sort()).toEqual(["Bear Cub", "Llanowar Elves"]);
     const cub = idOf(s, "p1", "graveyard", "Bear Cub");
     s = act(s, "p1", { type: "choose", values: [cub] });
@@ -1970,7 +1970,7 @@ describe("Bloomburrow, lot K8 : rares (1)", () => {
     expect(graveOf(s)).toContain("Llanowar Elves");
   });
 
-  it("Kastral : des Oiseaux infligent des blessures de combat — un marqueur sur chaque Oiseau, ou piochez une carte", () => {
+  it("Kastral: Birds deal combat damage — a counter on each Bird, or draw a card", () => {
     const setup = () =>
       scenario({ p1: { battlefield: ["Kastral, the Windcrested", "Healer's Hawk", "Bear Cub"], library: lands("Plains", 3) } });
     const go = (mode: string) => {
@@ -1987,14 +1987,14 @@ describe("Bloomburrow, lot K8 : rares (1)", () => {
     const a = go("counter");
     expect(a.ids.map((id) => plusOne(a.s, id))).toEqual([1, 1]);
     expect(plusOne(a.s, idOf(a.s, "p1", "battlefield", "Bear Cub"))).toBe(0);
-    // Un seul déclenchement pour deux Oiseaux.
+    // A single trigger for two Birds.
     expect(a.s.players.p1?.hand).toHaveLength(0);
     const b = go("Draw");
     expect(handOf(b.s)).toEqual(["Plains"]);
     expect(b.ids.map((id) => plusOne(b.s, id))).toEqual([0, 0]);
   });
 
-  it("Kastral : ou un Oiseau de votre main mis sur le champ de bataille avec un marqueur de finalité", () => {
+  it("Kastral: or a Bird from your hand put onto the battlefield with a finality counter", () => {
     let s = scenario({ p1: { battlefield: ["Kastral, the Windcrested"], hand: ["Healer's Hawk"] } });
     s = resolve(
       passAccepting(attack(s, [idOf(s, "p1", "battlefield", "Kastral, the Windcrested")]), (x) => x.turn.step === "combatDamage"),
@@ -2004,7 +2004,7 @@ describe("Bloomburrow, lot K8 : rares (1)", () => {
     expect(s.objects[hawk]?.counters.finality).toBe(1);
   });
 
-  it("Kitnap : vous contrôlez la créature enchantée, engagée ; sans cadeau, trois marqueurs d'étourdissement ; avec, l'adversaire pioche", () => {
+  it("Kitnap: you control the enchanted creature, tapped; with no gift, three stun counters; with it, the opponent draws", () => {
     const run = (kicked: boolean) => {
       const s = scenario({
         p1: { battlefield: lands("Island", 4), hand: ["Kitnap"] },
@@ -2026,7 +2026,7 @@ describe("Bloomburrow, lot K8 : rares (1)", () => {
   });
 });
 
-/** Passe et répond aux choix jusqu'à la condition (les défenseurs ne bloquent pas). */
+/** Passes and answers choices until the condition (the defenders don't block). */
 const driveUntil = (s: S, until: (x: S) => boolean, ans: Answer = () => undefined): S => {
   let cur = s;
   for (let i = 0; i < 400 && !until(cur); i++) {
@@ -2042,7 +2042,7 @@ const driveUntil = (s: S, until: (x: S) => boolean, ans: Answer = () => undefine
 };
 
 describe("Bloomburrow, lot K8 : rares (2)", () => {
-  it("Mabel : vos autres Souris +1/+1 ; en arrivant, Cragflame, Équipement légendaire incolore (+1/+1, vigilance, piétinement, célérité ; équiper {2})", () => {
+  it("Mabel: your other Mice +1/+1; on entering, Cragflame, a legendary colorless Equipment (+1/+1, vigilance, trample, haste; equip {2})", () => {
     let s = scenario({
       p1: {
         battlefield: [...lands("Mountain", 3), ...lands("Plains", 2), "Flowerfoot Swordmaster", "Bear Cub"],
@@ -2066,7 +2066,7 @@ describe("Bloomburrow, lot K8 : rares (2)", () => {
     expect(chars(s, cub).keywords).toEqual(expect.arrayContaining(["vigilance", "trample", "haste"]));
   });
 
-  it("Manifold Mouse : au début du combat de votre tour, une Souris ciblée gagne la double initiative ou le piétinement, au choix", () => {
+  it("Manifold Mouse: at the beginning of combat on your turn, a targeted Mouse gains double strike or trample, your choice", () => {
     const run = (mode: string) => {
       const s = scenario({ p1: { battlefield: ["Manifold Mouse", "Flowerfoot Swordmaster", "Bear Cub"] } });
       const sword = idOf(s, "p1", "battlefield", "Flowerfoot Swordmaster");
@@ -2077,26 +2077,26 @@ describe("Bloomburrow, lot K8 : rares (2)", () => {
     expect(chars(a.s, a.sword).keywords).not.toContain("trample");
     const b = run("Trample");
     expect(chars(b.s, b.sword).keywords).toContain("trample");
-    // Seules vos Souris sont des cibles légales : Bear Cub ne gagne rien.
+    // Only your Mice are legal targets: Bear Cub gains nothing.
     let s = scenario({ p1: { battlefield: ["Manifold Mouse", "Bear Cub"] } });
     s = driveUntil(s, (x) => x.pending?.kind === "declareAttackers", answer({ mode: "Trample" }));
     expect(chars(s, idOf(s, "p1", "battlefield", "Bear Cub")).keywords).not.toContain("trample");
     expect(chars(s, idOf(s, "p1", "battlefield", "Manifold Mouse")).keywords).toContain("trample");
   });
 
-  it("Manifold Mouse : progéniture {2}", () => {
+  it("Manifold Mouse: offspring {2}", () => {
     let s = scenario({ p1: { battlefield: lands("Mountain", 4), hand: ["Manifold Mouse"] } });
     s = resolve(cast(s, "p1", "Manifold Mouse", { kicked: true }));
     expect(idsOf(s, "p1", "battlefield", "Manifold Mouse")).toHaveLength(2);
   });
 
-  it("Mind Spring : piochez X cartes", () => {
+  it("Mind Spring: draw X cards", () => {
     let s = scenario({ p1: { battlefield: lands("Island", 5), hand: ["Mind Spring"], library: lands("Plains", 5) } });
     s = resolve(cast(s, "p1", "Mind Spring", { x: 3 }));
     expect(handOf(s)).toEqual(["Plains", "Plains", "Plains"]);
   });
 
-  it("Portent of Calamity : quatre types exilés — un sort lancé gratuitement, le reste en main ; les cartes non exilées au cimetière", () => {
+  it("Portent of Calamity: four types exiled — a spell cast for free, the rest into hand; the unexiled cards into the graveyard", () => {
     let s = scenario({
       p1: {
         battlefield: lands("Island", 6),
@@ -2114,7 +2114,7 @@ describe("Bloomburrow, lot K8 : rares (2)", () => {
     expect(namesIn(s, s.players.p1?.library)).toEqual(["Plains"]);
   });
 
-  it("Portent of Calamity : moins de quatre cartes exilées — pas de sort gratuit, elles vont en main", () => {
+  it("Portent of Calamity: fewer than four cards exiled — no free spell, they go to hand", () => {
     let s = scenario({
       p1: { battlefield: lands("Island", 3), hand: ["Portent of Calamity"], library: ["Forest", "Serra Angel", "Plains"] },
     });
@@ -2123,7 +2123,7 @@ describe("Bloomburrow, lot K8 : rares (2)", () => {
     expect(handOf(s).sort()).toEqual(["Forest", "Serra Angel"]);
   });
 
-  it("Salvation Swan : flash et vol ; elle ou un autre Oiseau arrive — une de vos créatures sans le vol est exilée et revient à l'étape de fin avec un marqueur de vol", () => {
+  it("Salvation Swan: flash and flying; it or another Bird enters — one of your creatures without flying is exiled and returns at the end step with a flying counter", () => {
     let s = scenario({ p1: { battlefield: [...lands("Plains", 4), "Bear Cub"], hand: ["Salvation Swan"] } });
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
     s = resolve(cast(s, "p1", "Salvation Swan"), answer({ pick: [cub] }));
@@ -2137,7 +2137,7 @@ describe("Bloomburrow, lot K8 : rares (2)", () => {
     expect(chars(s, back).keywords).toContain("flying");
   });
 
-  it("Scavenger's Talent : une Nourriture quand une ou plusieurs de vos créatures meurent, une fois par tour", () => {
+  it("Scavenger's Talent: a Food when one or more of your creatures die, once per turn", () => {
     let s = scenario({
       p1: { battlefield: ["Scavenger's Talent", "Bear Cub", "Llanowar Elves"] },
       p2: { battlefield: ["Serra Angel"] },
@@ -2153,7 +2153,7 @@ describe("Bloomburrow, lot K8 : rares (2)", () => {
     expect(idsOf(s, "p1", "battlefield", "Food")).toHaveLength(1);
   });
 
-  it("Scavenger's Talent : niveau 2 — sacrifier un permanent fait meuler deux cartes à un joueur ciblé ; niveau 3 — à votre étape de fin, sacrifier trois permanents réanime une créature avec un marqueur de finalité", () => {
+  it("Scavenger's Talent: level 2 — sacrificing a permanent mills two cards for a targeted player; level 3 — at your end step, sacrificing three permanents reanimates a creature with a finality counter", () => {
     let s = scenario({
       p1: { battlefield: ["Scavenger's Talent", ...lands("Swamp", 7)], graveyard: ["Serra Angel"] },
       p2: { library: lands("Island", 5) },
@@ -2180,11 +2180,11 @@ describe("Bloomburrow, lot K8 : rares (2)", () => {
     expect(idsOf(s, "p1", "battlefield", "Food")).toHaveLength(0);
     const angel = idOf(s, "p1", "battlefield", "Serra Angel");
     expect(s.objects[angel]?.counters.finality).toBe(1);
-    // Trois sacrifices au niveau 2 : six cartes meulées de plus (la bibliothèque n'en avait que trois).
+    // Three sacrifices at level 2: six more cards milled (the library had only three).
     expect(s.players.p2?.library).toHaveLength(0);
   });
 
-  it("Serra Redeemer : vol ; une autre créature de force 2 ou moins arrive sous votre contrôle — deux marqueurs +1/+1 ; pas une créature plus forte ni adverse", () => {
+  it("Serra Redeemer: flying; another creature with power 2 or less enters under your control — two +1/+1 counters; not a stronger or opposing creature", () => {
     let s = scenario({
       p1: { battlefield: ["Serra Redeemer", ...lands("Plains", 7)], hand: ["Savannah Lions", "Serra Angel"] },
       p2: { battlefield: ["Plains"], hand: ["Savannah Lions"] },
@@ -2199,7 +2199,7 @@ describe("Bloomburrow, lot K8 : rares (2)", () => {
     expect(plusOne(s, idOf(s, "p2", "battlefield", "Savannah Lions"))).toBe(0);
   });
 
-  it("Tender Wildguide : {T} : un mana de n'importe quelle couleur ; {T} : un marqueur +1/+1 sur elle ; progéniture {2}", () => {
+  it("Tender Wildguide: {T}: one mana of any color; {T}: a +1/+1 counter on it; offspring {2}", () => {
     let s = scenario({ p1: { battlefield: ["Tender Wildguide"] } });
     const guide = idOf(s, "p1", "battlefield", "Tender Wildguide");
     const colors = legalActions(s, "p1").flatMap((a) => (a.type === "tapForMana" && a.source === guide ? a.colors : []));
@@ -2212,7 +2212,7 @@ describe("Bloomburrow, lot K8 : rares (2)", () => {
     expect(idsOf(t, "p1", "battlefield", "Tender Wildguide")).toHaveLength(2);
   });
 
-  it("Thornvault Forager : {T}, fourrager : deux mana ; {3}{G}, {T} : cherche une carte d'Écureuil", () => {
+  it("Thornvault Forager: {T}, forage: two mana; {3}{G}, {T}: searches for a Squirrel card", () => {
     let s = scenario({ p1: { battlefield: ["Thornvault Forager"], graveyard: ["Opt", "Stab", "Island"] } });
     const forager = idOf(s, "p1", "battlefield", "Thornvault Forager");
     expect(legalActions(s, "p1").some((a) => a.type === "tapForMana" && a.source === forager && a.colors.includes("G"))).toBe(
@@ -2229,7 +2229,7 @@ describe("Bloomburrow, lot K8 : rares (2)", () => {
     expect(handOf(t)).toEqual(["Bushy Bodyguard"]);
   });
 
-  it("Thundertrap Trainer : regarde quatre cartes, une carte non-créature non-terrain en main, le reste dessous ; progéniture {4}", () => {
+  it("Thundertrap Trainer: looks at four cards, a noncreature nonland card into hand, the rest on the bottom; offspring {4}", () => {
     let s = scenario({
       p1: {
         battlefield: lands("Island", 6),
@@ -2250,7 +2250,7 @@ describe("Bloomburrow, lot K8 : rares (2)", () => {
     expect(idsOf(t, "p1", "battlefield", "Thundertrap Trainer")).toHaveLength(2);
   });
 
-  it("Valley Floodcaller : flash ; vos sorts non-créature ont le flash ; chacun donne +1/+1 à vos Oiseaux, Grenouilles, Loutres et Rats et les dégage", () => {
+  it("Valley Floodcaller: flash; your noncreature spells have flash; each gives +1/+1 to your Birds, Frogs, Otters and Rats and untaps them", () => {
     let s = scenario({
       p1: {
         battlefield: [
@@ -2269,7 +2269,7 @@ describe("Bloomburrow, lot K8 : rares (2)", () => {
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
     expect(chars(s, caller).keywords).toContain("flash");
     s = cast(s, "p1", "Opt");
-    // Un rituel alors que la pile n'est pas vide.
+    // A sorcery while the stack isn't empty.
     expect(castable(s, "p1", idOf(s, "p1", "hand", "Duress"))).toBe(true);
     s = resolve(s);
     expect([s.objects[caller]?.tapped, s.objects[hawk]?.tapped, s.objects[cub]?.tapped]).toEqual([false, false, true]);
@@ -2278,7 +2278,7 @@ describe("Bloomburrow, lot K8 : rares (2)", () => {
     expect(ptOf(s, cub)).toEqual([2, 2]);
   });
 
-  it("Valley Mightcaller : piétinement ; une autre Grenouille, Lapin, Raton laveur ou Écureuil arrive sous votre contrôle — un marqueur +1/+1", () => {
+  it("Valley Mightcaller: trample; another Frog, Rabbit, Raccoon or Squirrel enters under your control — a +1/+1 counter", () => {
     let s = scenario({
       p1: { battlefield: ["Valley Mightcaller", ...lands("Forest", 4)], hand: ["Bushy Bodyguard", "Bear Cub"] },
       p2: { battlefield: lands("Forest", 2), hand: ["Bushy Bodyguard"] },
@@ -2294,7 +2294,7 @@ describe("Bloomburrow, lot K8 : rares (2)", () => {
     expect(plusOne(s, caller)).toBe(1);
   });
 
-  it("Valley Questcaller : vos autres Lapins, Chauves-souris, Oiseaux et Souris +1/+1 ; leur arrivée (une ou plusieurs) fait regarder une carte", () => {
+  it("Valley Questcaller: your other Rabbits, Bats, Birds and Mice +1/+1; their entering (one or several) makes you look at a card", () => {
     let s = scenario({
       p1: { battlefield: ["Valley Questcaller", "Healer's Hawk", "Bear Cub", ...lands("Plains", 3)], hand: ["Hop to It"] },
       p2: { battlefield: ["Healer's Hawk"] },
@@ -2312,7 +2312,7 @@ describe("Bloomburrow, lot K8 : rares (2)", () => {
     for (const id of idsOf(s, "p1", "battlefield", "Rabbit")) expect(ptOf(s, id)).toEqual([2, 2]);
   });
 
-  it("Valley Rotcaller : menace ; en attaquant, chaque adversaire perd X PV et vous en gagnez X (vos autres Écureuils, Chauves-souris, Lézards et Rats)", () => {
+  it("Valley Rotcaller: menace; on attacking, each opponent loses X life and you gain X (your other Squirrels, Bats, Lizards and Rats)", () => {
     let s = scenario({ p1: { battlefield: ["Valley Rotcaller", "Bushy Bodyguard", "Hired Claw", "Bear Cub"] } });
     const rot = idOf(s, "p1", "battlefield", "Valley Rotcaller");
     expect(chars(s, rot).keywords).toContain("menace");
@@ -2321,7 +2321,7 @@ describe("Bloomburrow, lot K8 : rares (2)", () => {
     expect(s.players.p1?.life).toBe(22);
   });
 
-  it("Whiskervale Forerunner : vaillance — regarde cinq cartes ; hors de votre tour, une créature de VM 3 ou moins va en main", () => {
+  it("Whiskervale Forerunner: valiant — looks at five cards; outside your turn, a creature with MV 3 or less goes into hand", () => {
     let s = scenario({
       active: "p2",
       p1: {
@@ -2343,7 +2343,7 @@ describe("Bloomburrow, lot K8 : rares (2)", () => {
     expect(namesIn(s, s.players.p1?.library)[0]).toBe("Plains");
   });
 
-  it("Whiskervale Forerunner : pendant votre tour, la créature peut aller sur le champ de bataille", () => {
+  it("Whiskervale Forerunner: during your turn, the creature can go onto the battlefield", () => {
     let s = scenario({
       p1: { battlefield: ["Whiskervale Forerunner", "Forest"], hand: ["Giant Growth"], library: ["Bear Cub", "Forest"] },
     });
@@ -2351,7 +2351,7 @@ describe("Bloomburrow, lot K8 : rares (2)", () => {
     expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
   });
 
-  it("Whiskervale Forerunner : pendant votre tour, vous pouvez aussi la garder en main (« si vous ne la mettez pas sur le champ de bataille »)", () => {
+  it('Whiskervale Forerunner: during your turn, you can also keep it in hand ("if you don\'t put it onto the battlefield")', () => {
     let s = scenario({
       p1: {
         battlefield: ["Whiskervale Forerunner", "Forest"],
@@ -2374,7 +2374,7 @@ describe("Bloomburrow, lot K8 : rares (2)", () => {
     expect(namesIn(s, s.players.p1?.library)[0]).toBe("Swamp");
   });
 
-  it("Zoraline : vol et vigilance ; en arrivant, payez {W}{B} et 2 PV pour réanimer un permanent non-terrain de VM 3 ou moins avec un marqueur de finalité", () => {
+  it("Zoraline: flying and vigilance; on entering, pay {W}{B} and 2 life to reanimate a nonland permanent with MV 3 or less with a finality counter", () => {
     const setup = () =>
       scenario({
         p1: {
@@ -2404,16 +2404,16 @@ describe("Bloomburrow, lot K8 : rares (2)", () => {
     expect(idsOf(no, "p1", "battlefield", "Bear Cub")).toHaveLength(0);
   });
 
-  it("Zoraline : chaque Chauve-souris que vous contrôlez qui attaque fait gagner 1 PV", () => {
+  it("Zoraline: each Bat you control that attacks gains you 1 life", () => {
     let s = scenario({ p1: { battlefield: ["Zoraline, Cosmos Caller", "Starscape Cleric", "Bear Cub"] } });
     const ids = ["Zoraline, Cosmos Caller", "Starscape Cleric", "Bear Cub"].map((n) => idOf(s, "p1", "battlefield", n));
     s = resolve(attack(s, ids), answer({ yes: false }));
-    // Deux Chauves-souris (Starscape Cleric fait aussi perdre 1 PV par gain de PV).
+    // Two Bats (Starscape Cleric also makes each opponent lose 1 life per life gained).
     expect(s.players.p1?.life).toBe(22);
   });
 });
 
-/** Crée `n` jetons `name` (TOKEN_SPECS) pour `player`. */
+/** Creates `n` `name` tokens (TOKEN_SPECS) for `player`. */
 const addTokens = (s: S, name: string, n: number, player: PlayerId = "p1"): S => {
   createTokens(s, player, TOKEN_SPECS[name] as TokenSpec, n);
   s.version += 1;
@@ -2421,7 +2421,7 @@ const addTokens = (s: S, name: string, n: number, player: PlayerId = "p1"): S =>
 };
 
 describe("Bloomburrow, lot K8 : peu communes (1)", () => {
-  it("Bandit's Talent : chaque adversaire défausse deux cartes, sauf s'il défausse une carte non-terrain", () => {
+  it("Bandit's Talent: each opponent discards two cards, unless they discard a nonland card", () => {
     const run = (hand: string[], pick?: string) => {
       const s = scenario({ p1: { battlefield: lands("Swamp", 2), hand: ["Bandit's Talent"] }, p2: { hand } });
       return resolve(cast(s, "p1", "Bandit's Talent"), (req, _p, cur) => (pick ? pickNamed(cur, req, pick) : undefined));
@@ -2432,7 +2432,7 @@ describe("Bloomburrow, lot K8 : peu communes (1)", () => {
     expect(b.players.p2?.hand).toHaveLength(1);
   });
 
-  it("Bandit's Talent : niveau 2 — à l'entretien d'un adversaire qui a une carte en main ou moins, il perd 2 PV ; niveau 3 — une pioche de plus par tel adversaire", () => {
+  it("Bandit's Talent: level 2 — at the upkeep of an opponent with one card in hand or fewer, they lose 2 life; level 3 — one more draw per such opponent", () => {
     let s = scenario({
       p1: { battlefield: ["Bandit's Talent", ...lands("Swamp", 5)], library: lands("Plains", 5) },
       p2: { hand: ["Opt", "Opt"], library: lands("Island", 5) },
@@ -2440,10 +2440,10 @@ describe("Bloomburrow, lot K8 : peu communes (1)", () => {
     const talent = idOf(s, "p1", "battlefield", "Bandit's Talent");
     s = resolve(activateK8(s, "p1", talent, "Level 2"));
     s = resolve(activateK8(s, "p1", talent, "Level 3"));
-    // Deux cartes à son entretien : rien.
+    // Two cards at their upkeep: nothing.
     s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
     expect(s.players.p2?.life).toBe(20);
-    // p1 pioche deux cartes à son étape de pioche (p2 en a trois).
+    // p1 draws two cards at their draw step (p2 has three).
     s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1");
     expect(s.players.p1?.hand).toHaveLength(1);
     let t = scenario({
@@ -2457,7 +2457,7 @@ describe("Bloomburrow, lot K8 : peu communes (1)", () => {
     t = advanceUntil(t, (x) => x.turn.active === "p2" && x.turn.step === "draw");
     expect(t.players.p2?.life).toBe(18);
     t = advanceUntil(t, (x) => x.turn.active === "p1" && x.turn.step === "main1");
-    // Deux cartes en main pour p2 après sa pioche : pas de pioche supplémentaire.
+    // Two cards in hand for p2 after their draw: no extra draw.
     expect(t.players.p1?.hand).toHaveLength(1);
     let u = scenario({
       active: "p2",
@@ -2471,7 +2471,7 @@ describe("Bloomburrow, lot K8 : peu communes (1)", () => {
     expect(u.players.p1?.hand).toHaveLength(2);
   });
 
-  it("Blacksmith's Talent : une Épée (+1/+1, équiper {2}) ; niveau 2 — au début du combat, attache un Équipement ; niveau 3 — double initiative et célérité pendant votre tour", () => {
+  it("Blacksmith's Talent: a Sword (+1/+1, equip {2}); level 2 — at the beginning of combat, attaches an Equipment; level 3 — double strike and haste during your turn", () => {
     let s = scenario({ p1: { battlefield: [...lands("Mountain", 8), "Bear Cub"], hand: ["Blacksmith's Talent"] } });
     s = resolve(cast(s, "p1", "Blacksmith's Talent"));
     const sword = idOf(s, "p1", "battlefield", "Sword");
@@ -2489,7 +2489,7 @@ describe("Bloomburrow, lot K8 : peu communes (1)", () => {
     expect(chars(s, cub).keywords).not.toContain("doubleStrike");
   });
 
-  it("Blooming Blast : 2 blessures à une créature ; avec le cadeau (un Trésor), 3 blessures de plus à son contrôleur", () => {
+  it("Blooming Blast: 2 damage to a creature; with the gift (a Treasure), 3 more damage to its controller", () => {
     const run = (kicked: boolean) => {
       const s = scenario({
         p1: { battlefield: lands("Mountain", 2), hand: ["Blooming Blast"] },
@@ -2506,7 +2506,7 @@ describe("Bloomburrow, lot K8 : peu communes (1)", () => {
     expect(idsOf(b, "p2", "battlefield", "Treasure")).toHaveLength(1);
   });
 
-  it("Builder's Talent : un Mur 0/4 blanc avec le défenseur ; niveau 2 — un permanent non-créature non-terrain qui arrive met un marqueur ; niveau 3 — renvoie une telle carte du cimetière", () => {
+  it("Builder's Talent: a 0/4 white Wall with defender; level 2 — a noncreature nonland permanent that enters puts a counter; level 3 — returns such a card from the graveyard", () => {
     let s = scenario({
       p1: {
         battlefield: [...lands("Plains", 11)],
@@ -2531,11 +2531,11 @@ describe("Bloomburrow, lot K8 : peu communes (1)", () => {
     });
     expect(idsOf(s, "p1", "battlefield", "Short Bow")).toHaveLength(1);
     expect(options.every((n) => n !== "Bear Cub")).toBe(true);
-    // Short Bow est arrivé : un autre marqueur (niveau 2).
+    // Short Bow entered: another counter (level 2).
     expect(plusOne(s, wall)).toBe(2);
   });
 
-  it("Consumed by Greed : l'adversaire ciblé sacrifie sa créature de plus grande force ; avec le cadeau, une carte de créature revient en main", () => {
+  it("Consumed by Greed: the targeted opponent sacrifices their creature with the greatest power; with the gift, a creature card returns to hand", () => {
     const run = (kicked: boolean) => {
       const s = scenario({
         p1: { battlefield: lands("Swamp", 3), hand: ["Consumed by Greed"], graveyard: ["Llanowar Elves"] },
@@ -2557,7 +2557,7 @@ describe("Bloomburrow, lot K8 : peu communes (1)", () => {
     expect(b.players.p2?.hand).toHaveLength(1);
   });
 
-  it("Coruscation Mage : chaque sort non-créature que vous lancez inflige 1 blessure à chaque adversaire ; progéniture {2}", () => {
+  it("Coruscation Mage: each noncreature spell you cast deals 1 damage to each opponent; offspring {2}", () => {
     let s = scenario({
       p1: { battlefield: ["Coruscation Mage", "Island", "Forest"], hand: ["Opt", "Llanowar Elves"], library: lands("Plains", 2) },
     });
@@ -2570,7 +2570,7 @@ describe("Bloomburrow, lot K8 : peu communes (1)", () => {
     expect(idsOf(t, "p1", "battlefield", "Coruscation Mage")).toHaveLength(2);
   });
 
-  it("Dewdrop Cure : jusqu'à deux cartes de créature de VM 2 ou moins reviennent du cimetière ; trois avec le cadeau", () => {
+  it("Dewdrop Cure: up to two creature cards with MV 2 or less return from the graveyard; three with the gift", () => {
     const setup = () =>
       scenario({
         p1: {
@@ -2594,7 +2594,7 @@ describe("Bloomburrow, lot K8 : peu communes (1)", () => {
     expect(t.players.p2?.hand).toHaveLength(1);
   });
 
-  it("Downwind Ambusher : flash ; -1/-1 à une créature adverse, ou détruit une créature adverse blessée ce tour-ci", () => {
+  it("Downwind Ambusher: flash; -1/-1 to an opposing creature, or destroys an opposing creature damaged this turn", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Swamp", 4), "Mountain"], hand: ["Downwind Ambusher", "Shock"] },
       p2: { battlefield: ["Serra Angel", "Llanowar Elves"] },
@@ -2613,7 +2613,7 @@ describe("Bloomburrow, lot K8 : peu communes (1)", () => {
     expect(chars(t, idOf(t, "p1", "battlefield", "Downwind Ambusher")).keywords).toContain("flash");
   });
 
-  it("Feather of Flight : flash ; en arrivant, piochez une carte ; +1/+0 et le vol", () => {
+  it("Feather of Flight: flash; on entering, draw a card; +1/+0 and flying", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Plains", 2), "Bear Cub"], hand: ["Feather of Flight"], library: lands("Island", 2) },
     });
@@ -2625,7 +2625,7 @@ describe("Bloomburrow, lot K8 : peu communes (1)", () => {
     expect(chars(s, idOf(s, "p1", "battlefield", "Feather of Flight")).keywords).toContain("flash");
   });
 
-  it("Flamecache Gecko : en arrivant, {B}{R} si un adversaire a perdu des PV ce tour-ci ; {1}{R}, défaussez une carte : piochez", () => {
+  it("Flamecache Gecko: on entering, {B}{R} if an opponent lost life this turn; {1}{R}, discard a card: draw", () => {
     let s = scenario({ p1: { battlefield: lands("Mountain", 3), hand: ["Shock", "Flamecache Gecko"] } });
     s = resolve(cast(s, "p1", "Shock", { targets: { t: ["p2"] } }));
     s = resolve(cast(s, "p1", "Flamecache Gecko"));
@@ -2640,7 +2640,7 @@ describe("Bloomburrow, lot K8 : peu communes (1)", () => {
     expect(handOf(t)).toEqual(["Plains"]);
   });
 
-  it("Flowerfoot Swordmaster : vaillance — vos Souris +1/+0 jusqu'à la fin du tour", () => {
+  it("Flowerfoot Swordmaster: valiant — your Mice +1/+0 until end of turn", () => {
     let s = scenario({
       p1: { battlefield: ["Flowerfoot Swordmaster", "Seedglaive Mentor", "Bear Cub", "Forest"], hand: ["Giant Growth"] },
       p2: { battlefield: ["Flowerfoot Swordmaster"] },
@@ -2653,7 +2653,7 @@ describe("Bloomburrow, lot K8 : peu communes (1)", () => {
     expect(ptOf(s, idOf(s, "p2", "battlefield", "Flowerfoot Swordmaster"))).toEqual([1, 2]);
   });
 
-  it("Gossip's Talent : une créature arrive sous votre contrôle — surveillance 1", () => {
+  it("Gossip's Talent: a creature enters under your control — surveil 1", () => {
     let s = scenario({
       p1: { battlefield: ["Gossip's Talent", ...lands("Forest", 2)], hand: ["Bear Cub"], library: ["Opt", "Plains"] },
     });
@@ -2663,7 +2663,7 @@ describe("Bloomburrow, lot K8 : peu communes (1)", () => {
     expect(graveOf(s)).toEqual(["Opt"]);
   });
 
-  it("Gossip's Talent : niveau 2 — en attaquant, une attaquante de force 3 ou moins ne peut pas être bloquée ; niveau 3 — après des blessures de combat, exilée puis renvoyée", () => {
+  it("Gossip's Talent: level 2 — on attacking, an attacker with power 3 or less can't be blocked; level 3 — after combat damage, exiled then returned", () => {
     let s = scenario({
       p1: { battlefield: ["Gossip's Talent", "Bear Cub", ...lands("Island", 6)] },
       p2: { battlefield: ["Serra Angel"] },
@@ -2684,7 +2684,7 @@ describe("Bloomburrow, lot K8 : peu communes (1)", () => {
     expect(s.objects[back]?.tapped).toBe(false);
   });
 
-  it("Hazel's Nocturne : jusqu'à deux cartes de créature du cimetière en main ; chaque adversaire perd 2 PV, vous en gagnez 2", () => {
+  it("Hazel's Nocturne: up to two creature cards from the graveyard into hand; each opponent loses 2 life, you gain 2", () => {
     let s = scenario({
       p1: { battlefield: lands("Swamp", 4), hand: ["Hazel's Nocturne"], graveyard: ["Bear Cub", "Serra Angel", "Opt"] },
     });
@@ -2694,7 +2694,7 @@ describe("Bloomburrow, lot K8 : peu communes (1)", () => {
     expect([s.players.p1?.life, s.players.p2?.life]).toEqual([22, 18]);
   });
 
-  it("Hivespine Wolverine : un marqueur +1/+1 sur une de vos créatures, ou se bat contre un jeton de créature, ou détruit un artefact ou un enchantement", () => {
+  it("Hivespine Wolverine: a +1/+1 counter on one of your creatures, or fights a creature token, or destroys an artifact or an enchantment", () => {
     const setup = () =>
       addTokens(
         scenario({
@@ -2722,7 +2722,7 @@ describe("Bloomburrow, lot K8 : peu communes (1)", () => {
     expect(plusOne(u, cub)).toBe(1);
   });
 
-  it("Hivespine Wolverine : le combat ne vise qu'un jeton de créature", () => {
+  it("Hivespine Wolverine: the fight only targets a creature token", () => {
     const s = scenario({
       p1: { battlefield: lands("Forest", 5), hand: ["Hivespine Wolverine"] },
       p2: { battlefield: ["Serra Angel"] },
@@ -2731,7 +2731,7 @@ describe("Bloomburrow, lot K8 : peu communes (1)", () => {
     expect(t.objects[idOf(t, "p2", "battlefield", "Serra Angel")]?.damage).toBe(0);
   });
 
-  it("Hoarder's Overflow : un marqueur de réserve en arrivant et à chaque dépense 4 ; {1}{R}, sacrifiez-le : défaussez votre main, piochez une carte par marqueur", () => {
+  it("Hoarder's Overflow: a stash counter on entering and on each expend 4; {1}{R}, sacrifice it: discard your hand, draw a card per counter", () => {
     let s = scenario({
       p1: {
         battlefield: lands("Mountain", 6),
@@ -2749,7 +2749,7 @@ describe("Bloomburrow, lot K8 : peu communes (1)", () => {
     expect(handOf(s)).toEqual(["Plains", "Plains"]);
   });
 
-  it("Honored Dreyleader : piétinement ; arrive avec un marqueur par autre Écureuil et Nourriture ; un autre Écureuil ou Nourriture qui arrive en ajoute un", () => {
+  it("Honored Dreyleader: trample; enters with a counter per other Squirrel and Food; another Squirrel or Food that enters adds one", () => {
     let s = addTokens(
       scenario({
         p1: {
@@ -2770,7 +2770,7 @@ describe("Bloomburrow, lot K8 : peu communes (1)", () => {
     expect(plusOne(s, drey)).toBe(3);
   });
 
-  it("Hunter's Talent : en arrivant, une de vos créatures inflige des blessures égales à sa force à une créature que vous ne contrôlez pas", () => {
+  it("Hunter's Talent: on entering, one of your creatures deals damage equal to its power to a creature you don't control", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Forest", 2), "Serra Angel"], hand: ["Hunter's Talent"] },
       p2: { battlefield: ["Bear Cub"] },
@@ -2783,7 +2783,7 @@ describe("Bloomburrow, lot K8 : peu communes (1)", () => {
     expect(s.objects[idOf(s, "p1", "battlefield", "Serra Angel")]?.damage).toBe(0);
   });
 
-  it("Hunter's Talent : niveau 2 — en attaquant, une attaquante +1/+0 et piétinement ; niveau 3 — piochez à votre étape de fin si vous contrôlez une créature de force 4 ou plus", () => {
+  it("Hunter's Talent: level 2 — on attacking, an attacker +1/+0 and trample; level 3 — draw at your end step if you control a creature with power 4 or greater", () => {
     let s = scenario({
       p1: { battlefield: ["Hunter's Talent", "Bear Cub", ...lands("Forest", 6)], library: lands("Plains", 3) },
     });
@@ -2794,7 +2794,7 @@ describe("Bloomburrow, lot K8 : peu communes (1)", () => {
     s = resolve(attack(s, [cub]));
     expect(ptOf(s, cub)).toEqual([3, 2]);
     expect(chars(s, cub).keywords).toContain("trample");
-    // Force 3 seulement : pas de pioche à l'étape de fin.
+    // Power 3 only: no draw at the end step.
     s = advanceUntil(s, (x) => x.turn.active === "p2");
     expect(s.players.p1?.hand).toHaveLength(0);
     let t = scenario({
@@ -2810,7 +2810,7 @@ describe("Bloomburrow, lot K8 : peu communes (1)", () => {
 });
 
 describe("Bloomburrow, lot K8 : peu communes (2)", () => {
-  it("Huskburster Swarm : coûte {1} de moins par carte de créature que vous possédez en exil et dans votre cimetière ; menace et contact mortel", () => {
+  it("Huskburster Swarm: costs {1} less per creature card you own in exile and in your graveyard; menace and deathtouch", () => {
     const setup = (n: number, exiledOne: boolean) => {
       const s = scenario({ p1: { battlefield: ["Swamp"], hand: ["Huskburster Swarm"], graveyard: Array(n).fill("Bear Cub") } });
       if (exiledOne) moveObject(s, s.players.p1?.graveyard[0] as string, "exile");
@@ -2819,7 +2819,7 @@ describe("Bloomburrow, lot K8 : peu communes (2)", () => {
     const castableSwarm = (s: S) => castable(s, "p1", idOf(s, "p1", "hand", "Huskburster Swarm"));
     expect(castableSwarm(setup(6, false))).toBe(false);
     expect(castableSwarm(setup(7, false))).toBe(true);
-    // Une des sept cartes de créature exilée : elle compte toujours.
+    // One of the seven exiled creature cards: it still counts.
     expect(castableSwarm(setup(7, true))).toBe(true);
     let s = setup(7, false);
     s = resolve(cast(s, "p1", "Huskburster Swarm"));
@@ -2828,7 +2828,7 @@ describe("Bloomburrow, lot K8 : peu communes (2)", () => {
     );
   });
 
-  it("Knightfisher : vol ; un autre Oiseau non-jeton arrive sous votre contrôle — un Poisson 1/1 bleu ; pas une autre créature", () => {
+  it("Knightfisher: flying; another nontoken Bird enters under your control — a 1/1 blue Fish; not another creature", () => {
     let s = scenario({ p1: { battlefield: ["Knightfisher", ...lands("Plains", 3)], hand: ["Healer's Hawk", "Savannah Lions"] } });
     expect(chars(s, idOf(s, "p1", "battlefield", "Knightfisher")).keywords).toContain("flying");
     s = resolve(cast(s, "p1", "Savannah Lions"));
@@ -2839,7 +2839,7 @@ describe("Bloomburrow, lot K8 : peu communes (2)", () => {
     expect(chars(s, fish).colors).toEqual(["U"]);
   });
 
-  it("Lilypad Village : {T} : {U} seulement pour un sort de créature ; {U}, {T} : surveillance 2 si un Oiseau, une Grenouille, une Loutre ou un Rat est arrivé ce tour-ci", () => {
+  it("Lilypad Village: {T}: {U} only for a creature spell; {U}, {T}: surveil 2 if a Bird, Frog, Otter or Rat entered this turn", () => {
     const a = scenario({ p1: { battlefield: ["Lilypad Village", "Mountain"], hand: ["Opt", "Plumecreed Escort"] } });
     expect(castable(a, "p1", idOf(a, "p1", "hand", "Plumecreed Escort"))).toBe(true);
     expect(castable(a, "p1", idOf(a, "p1", "hand", "Opt"))).toBe(false);
@@ -2855,7 +2855,7 @@ describe("Bloomburrow, lot K8 : peu communes (2)", () => {
     expect(graveOf(s).sort()).toEqual(["Opt", "Stab"]);
   });
 
-  it("Lilysplash Mentor : portée ; {1}{G}{U} : exile une autre de vos créatures, qui revient avec un marqueur +1/+1 (rituel)", () => {
+  it("Lilysplash Mentor: reach; {1}{G}{U}: exiles another of your creatures, which returns with a +1/+1 counter (sorcery)", () => {
     let s = scenario({ p1: { battlefield: ["Lilysplash Mentor", "Bear Cub", ...lands("Forest", 2), "Island"] } });
     const mentor = idOf(s, "p1", "battlefield", "Lilysplash Mentor");
     expect(chars(s, mentor).keywords).toContain("reach");
@@ -2870,7 +2870,7 @@ describe("Bloomburrow, lot K8 : peu communes (2)", () => {
     );
   });
 
-  it("Long River Lurker : garde {1}, et vos autres Grenouilles aussi ; en arrivant, une de vos créatures est imblocable, et peut être exilée puis renvoyée après ses blessures de combat", () => {
+  it("Long River Lurker: ward {1}, and your other Frogs too; on entering, one of your creatures is unblockable, and may be exiled then returned after its combat damage", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Island", 3), "Bear Cub", "Lilysplash Mentor"], hand: ["Long River Lurker"] },
       p2: { battlefield: ["Serra Angel", "Clement, the Worrywort"] },
@@ -2888,7 +2888,7 @@ describe("Bloomburrow, lot K8 : peu communes (2)", () => {
     expect(idOf(s, "p1", "battlefield", "Bear Cub")).not.toBe(cub);
   });
 
-  it("Long River's Pull : contrecarre un sort de créature ; avec le cadeau, n'importe quel sort", () => {
+  it("Long River's Pull: counters a creature spell; with the gift, any spell", () => {
     const setup = (spell: string) => {
       let s = scenario({
         active: "p2",
@@ -2914,7 +2914,7 @@ describe("Bloomburrow, lot K8 : peu communes (2)", () => {
     expect(graveOf(t, "p2")).toEqual(["Bear Cub"]);
   });
 
-  it("Lupinflower Village : {T} : {W} seulement pour un sort de créature ; {1}{W}, {T}, sacrifiez-le : une Chauve-souris, un Oiseau, une Souris ou un Lapin parmi six cartes", () => {
+  it("Lupinflower Village: {T}: {W} only for a creature spell; {1}{W}, {T}, sacrifice it: a Bat, Bird, Mouse or Rabbit among six cards", () => {
     const a = scenario({ p1: { battlefield: ["Lupinflower Village"], hand: ["Fleeting Flight", "Savannah Lions"] } });
     expect(castable(a, "p1", idOf(a, "p1", "hand", "Savannah Lions"))).toBe(true);
     expect(castable(a, "p1", idOf(a, "p1", "hand", "Fleeting Flight"))).toBe(false);
@@ -2938,7 +2938,7 @@ describe("Bloomburrow, lot K8 : peu communes (2)", () => {
     expect(namesIn(s, s.players.p1?.library)[0]).toBe("Swamp");
   });
 
-  it("Mabel's Mettle : +2/+2 à une créature ciblée, +1/+1 à jusqu'à une autre", () => {
+  it("Mabel's Mettle: +2/+2 to a targeted creature, +1/+1 to up to one other", () => {
     let s = scenario({ p1: { battlefield: [...lands("Plains", 2), "Bear Cub", "Savannah Lions"], hand: ["Mabel's Mettle"] } });
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
     const lions = idOf(s, "p1", "battlefield", "Savannah Lions");
@@ -2948,7 +2948,7 @@ describe("Bloomburrow, lot K8 : peu communes (2)", () => {
     expect(ptOf(s, lions)).toEqual([3, 2]);
   });
 
-  it("Mindwhisker : surveillance 1 à votre entretien ; seuil — les créatures adverses ont -1/-0", () => {
+  it("Mindwhisker: surveil 1 at your upkeep; threshold — opposing creatures have -1/-0", () => {
     const run = (n: number) => {
       const s = scenario({
         p1: { battlefield: ["Mindwhisker"], graveyard: Array(n).fill("Opt") },
@@ -2968,7 +2968,7 @@ describe("Bloomburrow, lot K8 : peu communes (2)", () => {
     expect(handOf(s)).toEqual(["Forest"]);
   });
 
-  it("Moonstone Harbinger : vol et contact mortel ; gagner ou perdre des PV pendant votre tour donne +1/+0 et le contact mortel à vos Chauves-souris, une fois par tour", () => {
+  it("Moonstone Harbinger: flying and deathtouch; gaining or losing life during your turn gives +1/+0 and deathtouch to your Bats, once per turn", () => {
     let s = scenario({
       p1: {
         battlefield: ["Moonstone Harbinger", "Starscape Cleric", "Vampire Neonate", "Bear Cub", ...lands("Swamp", 2), "Mountain"],
@@ -2994,7 +2994,7 @@ describe("Bloomburrow, lot K8 : peu communes (2)", () => {
     expect(ptOf(t, idOf(t, "p1", "battlefield", "Moonstone Harbinger"))).toEqual([1, 3]);
   });
 
-  it("Mouse Trapper : flash ; vaillance — engage une créature adverse ciblée", () => {
+  it("Mouse Trapper: flash; valiant — taps a targeted opposing creature", () => {
     let s = scenario({
       p1: { battlefield: ["Mouse Trapper", "Forest"], hand: ["Giant Growth"] },
       p2: { battlefield: ["Serra Angel"] },
@@ -3005,7 +3005,7 @@ describe("Bloomburrow, lot K8 : peu communes (2)", () => {
     expect(s.objects[idOf(s, "p2", "battlefield", "Serra Angel")]?.tapped).toBe(true);
   });
 
-  it("Mudflat Village : {1}{B}, {T}, sacrifiez-le : une carte de Chauve-souris, Lézard, Rat ou Écureuil revient en main", () => {
+  it("Mudflat Village: {1}{B}, {T}, sacrifice it: a Bat, Lizard, Rat or Squirrel card returns to hand", () => {
     let s = scenario({ p1: { battlefield: ["Mudflat Village", ...lands("Swamp", 2)], graveyard: ["Bear Cub", "Hired Claw"] } });
     const village = idOf(s, "p1", "battlefield", "Mudflat Village");
     const claw = idOf(s, "p1", "graveyard", "Hired Claw");
@@ -3016,7 +3016,7 @@ describe("Bloomburrow, lot K8 : peu communes (2)", () => {
     expect(graveOf(s).sort()).toEqual(["Bear Cub", "Mudflat Village"]);
   });
 
-  it("Oakhollow Village : {G}, {T} : un marqueur sur chacune de vos Grenouilles, Lapins, Ratons laveurs et Écureuils arrivés ce tour-ci", () => {
+  it("Oakhollow Village: {G}, {T}: a counter on each of your Frogs, Rabbits, Raccoons and Squirrels that entered this turn", () => {
     let s = scenario({
       p1: { battlefield: ["Bushy Bodyguard", ...lands("Forest", 5)], hand: ["Bushy Bodyguard", "Bear Cub", "Oakhollow Village"] },
     });
@@ -3031,7 +3031,7 @@ describe("Bloomburrow, lot K8 : peu communes (2)", () => {
     expect(plusOne(s, idOf(s, "p1", "battlefield", "Bear Cub"))).toBe(0);
   });
 
-  it("Overprotect : +3/+3, piétinement, défense talismanique et indestructible jusqu'à la fin du tour", () => {
+  it("Overprotect: +3/+3, trample, hexproof and indestructible until end of turn", () => {
     let s = scenario({ p1: { battlefield: [...lands("Forest", 2), "Bear Cub"], hand: ["Overprotect"] } });
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
     s = resolve(cast(s, "p1", "Overprotect", { targets: { t: [cub] } }));
@@ -3041,7 +3041,7 @@ describe("Bloomburrow, lot K8 : peu communes (2)", () => {
     expect(ptOf(s, cub)).toEqual([2, 2]);
   });
 
-  it("Parting Gust : exile une créature non-jeton ; sans cadeau, elle revient à l'étape de fin avec un marqueur +1/+1 ; avec, un Poisson engagé pour l'adversaire", () => {
+  it("Parting Gust: exiles a nontoken creature; with no gift, it returns at the end step with a +1/+1 counter; with it, a tapped Fish for the opponent", () => {
     const setup = () =>
       scenario({ p1: { battlefield: lands("Plains", 2), hand: ["Parting Gust"] }, p2: { battlefield: ["Serra Angel"] } });
     let s = setup();
@@ -3056,13 +3056,13 @@ describe("Bloomburrow, lot K8 : peu communes (2)", () => {
     t = advanceUntil(t, (x) => x.turn.active === "p2");
     expect(idsOf(t, "p2", "battlefield", "Serra Angel")).toHaveLength(0);
     expect(exiled(t, "Serra Angel")).toHaveLength(1);
-    // Un jeton n'est pas une cible légale.
+    // A token isn't a legal target.
     const u = addTokens(setup(), "Cat", 1, "p2");
     const { opt } = castOption(u, "Parting Gust");
     expect(opt?.modes[0]?.targets[0]?.legal).not.toContain(idOf(u, "p2", "battlefield", "Cat"));
   });
 
-  it("Patchwork Banner : vos créatures du type choisi +1/+1 ; {T} : un mana de n'importe quelle couleur", () => {
+  it("Patchwork Banner: your creatures of the chosen type +1/+1; {T}: one mana of any color", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Forest", 3), "Bear Cub", "Llanowar Elves"], hand: ["Patchwork Banner"] },
       p2: { battlefield: ["Bear Cub"] },
@@ -3076,7 +3076,7 @@ describe("Bloomburrow, lot K8 : peu communes (2)", () => {
     expect(colors.sort()).toEqual(["B", "G", "R", "U", "W"]);
   });
 
-  it("Pawpatch Formation : détruit une créature avec le vol, ou un enchantement, ou piochez une carte et créez une Nourriture", () => {
+  it("Pawpatch Formation: destroys a creature with flying, or an enchantment, or draw a card and create a Food", () => {
     const setup = () =>
       scenario({
         p1: { battlefield: lands("Forest", 2), hand: ["Pawpatch Formation"], library: lands("Plains", 2) },
@@ -3105,7 +3105,7 @@ describe("Bloomburrow, lot K8 : peu communes (2)", () => {
     expect(idsOf(u, "p1", "battlefield", "Food")).toHaveLength(1);
   });
 
-  it("Peerless Recycling : une carte de permanent du cimetière en main ; deux avec le cadeau", () => {
+  it("Peerless Recycling: a permanent card from the graveyard into hand; two with the gift", () => {
     const setup = () =>
       scenario({
         p1: { battlefield: lands("Forest", 2), hand: ["Peerless Recycling"], graveyard: ["Bear Cub", "Forest", "Opt"] },
@@ -3123,7 +3123,7 @@ describe("Bloomburrow, lot K8 : peu communes (2)", () => {
     expect(t.players.p2?.hand).toHaveLength(1);
   });
 
-  it("Persistent Marshstalker : +1/+0 par autre Rat ; seuil — quand vous attaquez avec des Rats, {2}{B} la renvoie du cimetière engagée et attaquante", () => {
+  it("Persistent Marshstalker: +1/+0 per other Rat; threshold — when you attack with Rats, {2}{B} returns it from the graveyard tapped and attacking", () => {
     const s0 = scenario({ p1: { battlefield: ["Persistent Marshstalker", "Shoreline Looter", "Bear Cub"] } });
     expect(ptOf(s0, idOf(s0, "p1", "battlefield", "Persistent Marshstalker"))).toEqual([4, 1]);
     const setup = (others: number) =>
@@ -3145,7 +3145,7 @@ describe("Bloomburrow, lot K8 : peu communes (2)", () => {
 });
 
 describe("Bloomburrow, lot K8 : peu communes (3)", () => {
-  it("Plumecreed Escort : flash et vol ; en arrivant, une de vos créatures gagne la défense talismanique jusqu'à la fin du tour", () => {
+  it("Plumecreed Escort: flash and flying; on entering, one of your creatures gains hexproof until end of turn", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Island", 2), "Bear Cub"], hand: ["Plumecreed Escort"] },
       p2: { battlefield: ["Bear Cub"] },
@@ -3162,7 +3162,7 @@ describe("Bloomburrow, lot K8 : peu communes (3)", () => {
     expect(chars(s, cub).keywords).not.toContain("hexproof");
   });
 
-  it("Plumecreed Mentor : elle ou une autre de vos créatures volantes arrive — un marqueur sur une de vos créatures sans le vol ; pas pour une créature sans le vol", () => {
+  it("Plumecreed Mentor: it or another of your flying creatures enters — a counter on one of your creatures without flying; not for a creature without flying", () => {
     let s = scenario({
       p1: {
         battlefield: [...lands("Island", 2), ...lands("Plains", 3), "Bear Cub"],
@@ -3178,7 +3178,7 @@ describe("Bloomburrow, lot K8 : peu communes (3)", () => {
     expect(plusOne(s, cub) + plusOne(s, idOf(s, "p1", "battlefield", "Savannah Lions"))).toBe(2);
   });
 
-  it("Quaketusk Boar : portée, piétinement et célérité ; Shrike Force : vol, double initiative et vigilance ; Brightblade Stoat : initiative et lien de vie ; Galewind Moose : flash, portée, vigilance et piétinement", () => {
+  it("Quaketusk Boar: reach, trample and haste; Shrike Force: flying, double strike and vigilance; Brightblade Stoat: first strike and lifelink; Galewind Moose: flash, reach, vigilance and trample", () => {
     const s = scenario({ p1: { battlefield: ["Quaketusk Boar", "Shrike Force", "Brightblade Stoat", "Galewind Moose"] } });
     const kw = (n: string) => chars(s, idOf(s, "p1", "battlefield", n)).keywords;
     expect(kw("Quaketusk Boar")).toEqual(expect.arrayContaining(["reach", "trample", "haste"]));
@@ -3188,13 +3188,13 @@ describe("Bloomburrow, lot K8 : peu communes (3)", () => {
     expect(ptOf(s, idOf(s, "p1", "battlefield", "Galewind Moose"))).toEqual([6, 6]);
   });
 
-  it("Brightblade Stoat : en combat, ses blessures d'initiative font gagner des PV", () => {
+  it("Brightblade Stoat: in combat, its first-strike damage gains life", () => {
     let s = scenario({ p1: { battlefield: ["Brightblade Stoat"] } });
     s = driveUntil(attack(s, [idOf(s, "p1", "battlefield", "Brightblade Stoat")]), (x) => x.turn.step === "main2");
     expect([s.players.p1?.life, s.players.p2?.life]).toEqual([22, 18]);
   });
 
-  it("Rabid Gnaw : votre créature gagne +1/+0, puis inflige des blessures égales à sa force à une créature que vous ne contrôlez pas", () => {
+  it("Rabid Gnaw: your creature gets +1/+0, then deals damage equal to its power to a creature you don't control", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Mountain", 2), "Bear Cub"], hand: ["Rabid Gnaw"] },
       p2: { battlefield: ["Serra Angel"] },
@@ -3207,7 +3207,7 @@ describe("Bloomburrow, lot K8 : peu communes (3)", () => {
     expect(s.objects[cub]?.damage).toBe(0);
   });
 
-  it("Repel Calamity : détruit une créature de force ou d'endurance 4 ou plus", () => {
+  it("Repel Calamity: destroys a creature with power or toughness 4 or greater", () => {
     let s = scenario({
       p1: { battlefield: lands("Plains", 2), hand: ["Repel Calamity"] },
       p2: { battlefield: ["Serra Angel", "Bear Cub", { name: "Vampire Neonate", counters: { "+1/+1": 1 } }] },
@@ -3218,7 +3218,7 @@ describe("Bloomburrow, lot K8 : peu communes (3)", () => {
     expect(idsOf(s, "p2", "battlefield", "Vampire Neonate")).toHaveLength(0);
   });
 
-  it("Reptilian Recruiter : piétinement ; prend jusqu'à la fin du tour une créature de force 2 ou moins (dégagée, célérité), ou n'importe laquelle avec un autre Lézard", () => {
+  it("Reptilian Recruiter: trample; takes control until end of turn of a creature with power 2 or less (untapped, haste), or any with another Lizard", () => {
     const setup = (lizard: boolean) =>
       scenario({
         p1: { battlefield: [...lands("Mountain", 5), ...(lizard ? ["Hired Claw"] : [])], hand: ["Reptilian Recruiter"] },
@@ -3242,7 +3242,7 @@ describe("Bloomburrow, lot K8 : peu communes (3)", () => {
     expect(u.objects[angel]?.controller).toBe("p1");
   });
 
-  it("Rockface Village : {T} : {R} seulement pour un sort de créature ; {R}, {T} : un Lézard, une Souris, une Loutre ou un Raton laveur gagne +1/+0 et la célérité (rituel)", () => {
+  it("Rockface Village: {T}: {R} only for a creature spell; {R}, {T}: a Lizard, Mouse, Otter or Raccoon gains +1/+0 and haste (sorcery)", () => {
     const a = scenario({ p1: { battlefield: ["Rockface Village"], hand: ["Shock", "Fanatical Firebrand"] } });
     expect(castable(a, "p1", idOf(a, "p1", "hand", "Fanatical Firebrand"))).toBe(true);
     expect(castable(a, "p1", idOf(a, "p1", "hand", "Shock"))).toBe(false);
@@ -3259,7 +3259,7 @@ describe("Bloomburrow, lot K8 : peu communes (3)", () => {
     expect(chars(s, claw).keywords).toContain("haste");
   });
 
-  it("Ruthless Negotiation : l'adversaire ciblé exile une carte de sa main ; lancé depuis le cimetière (flashback {4}{B}), piochez une carte", () => {
+  it("Ruthless Negotiation: the targeted opponent exiles a card from their hand; cast from the graveyard (flashback {4}{B}), draw a card", () => {
     let s = scenario({
       p1: { battlefield: lands("Swamp", 6), hand: ["Ruthless Negotiation"], library: lands("Plains", 2) },
       p2: { hand: ["Opt", "Forest"] },
@@ -3275,7 +3275,7 @@ describe("Bloomburrow, lot K8 : peu communes (3)", () => {
     expect(exiled(s, "Ruthless Negotiation")).toHaveLength(1);
   });
 
-  it("Seasoned Warrenguard : +2/+0 quand elle attaque pendant que vous contrôlez un jeton", () => {
+  it("Seasoned Warrenguard: +2/+0 when it attacks while you control a token", () => {
     let s = scenario({ p1: { battlefield: ["Seasoned Warrenguard"] } });
     const guard = idOf(s, "p1", "battlefield", "Seasoned Warrenguard");
     s = resolve(attack(s, [guard]));
@@ -3285,7 +3285,7 @@ describe("Bloomburrow, lot K8 : peu communes (3)", () => {
     expect(ptOf(t, guard)).toEqual([3, 2]);
   });
 
-  it("Seedglaive Mentor : vigilance et célérité ; vaillance — un marqueur +1/+1", () => {
+  it("Seedglaive Mentor: vigilance and haste; valiant — a +1/+1 counter", () => {
     let s = scenario({ p1: { battlefield: ["Seedglaive Mentor", "Forest", "Forest"], hand: ["Giant Growth", "Giant Growth"] } });
     const mentor = idOf(s, "p1", "battlefield", "Seedglaive Mentor");
     expect(chars(s, mentor).keywords).toEqual(expect.arrayContaining(["vigilance", "haste"]));
@@ -3294,7 +3294,7 @@ describe("Bloomburrow, lot K8 : peu communes (3)", () => {
     expect(plusOne(s, mentor)).toBe(1);
   });
 
-  it("Shoreline Looter : imblocable ; blessures de combat à un joueur — piochez, puis défaussez sauf avec sept cartes au cimetière", () => {
+  it("Shoreline Looter: unblockable; combat damage to a player — draw, then discard unless you have seven cards in the graveyard", () => {
     const run = (n: number) => {
       const s = scenario({
         p1: { battlefield: ["Shoreline Looter"], hand: ["Opt"], graveyard: Array(n).fill("Stab"), library: lands("Plains", 2) },
@@ -3309,7 +3309,7 @@ describe("Bloomburrow, lot K8 : peu communes (3)", () => {
     expect(handOf(b).sort()).toEqual(["Opt", "Plains"]);
   });
 
-  it("Short Bow : la créature équipée a +1/+1, la portée et la vigilance ; équiper {1}", () => {
+  it("Short Bow: the equipped creature has +1/+1, reach and vigilance; equip {1}", () => {
     let s = scenario({ p1: { battlefield: ["Short Bow", "Bear Cub", "Forest"] } });
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
     s = resolve(activateK8(s, "p1", idOf(s, "p1", "battlefield", "Short Bow"), "Equip {1}", { targets: { t: [cub] } }));
@@ -3317,7 +3317,7 @@ describe("Bloomburrow, lot K8 : peu communes (3)", () => {
     expect(chars(s, cub).keywords).toEqual(expect.arrayContaining(["reach", "vigilance"]));
   });
 
-  it("Sinister Monolith : au début du combat de votre tour, chaque adversaire perd 1 PV et vous en gagnez 1 ; {T}, 2 PV, sacrifiez-le : piochez deux cartes (rituel)", () => {
+  it("Sinister Monolith: at the beginning of combat on your turn, each opponent loses 1 life and you gain 1; {T}, 2 life, sacrifice it: draw two cards (sorcery)", () => {
     let s = scenario({ p1: { battlefield: ["Sinister Monolith"], library: lands("Plains", 3) } });
     const mono = idOf(s, "p1", "battlefield", "Sinister Monolith");
     s = resolve(activateK8(s, "p1", mono, "Draw two cards"));
@@ -3329,7 +3329,7 @@ describe("Bloomburrow, lot K8 : peu communes (3)", () => {
     expect([t.players.p1?.life, t.players.p2?.life]).toEqual([21, 19]);
   });
 
-  it("Spellgyre : contrecarre un sort, ou surveillance 2 puis piochez deux cartes", () => {
+  it("Spellgyre: counters a spell, or surveil 2 then draw two cards", () => {
     let s = scenario({
       active: "p2",
       p1: { battlefield: lands("Island", 4), hand: ["Spellgyre"], library: ["Opt", "Stab", "Plains", "Island"] },
@@ -3349,7 +3349,7 @@ describe("Bloomburrow, lot K8 : peu communes (3)", () => {
     expect(handOf(u)).toEqual(["Plains", "Island"]);
   });
 
-  it("Splash Lasher : engage jusqu'à une créature ciblée et met un marqueur d'étourdissement ; progéniture {1}{U}", () => {
+  it("Splash Lasher: taps up to one targeted creature and puts a stun counter; offspring {1}{U}", () => {
     let s = scenario({
       p1: { battlefield: lands("Island", 6), hand: ["Splash Lasher"] },
       p2: { battlefield: ["Serra Angel", "Bear Cub"] },
@@ -3367,7 +3367,7 @@ describe("Bloomburrow, lot K8 : peu communes (3)", () => {
     }
   });
 
-  it("Splash Portal : exile une de vos créatures puis la renvoie ; piochez si c'est un Oiseau, une Grenouille, une Loutre ou un Rat", () => {
+  it("Splash Portal: exiles one of your creatures then returns it; draw if it's a Bird, Frog, Otter or Rat", () => {
     const run = (name: string) => {
       const s = scenario({ p1: { battlefield: ["Island", name], hand: ["Splash Portal"], library: lands("Plains", 2) } });
       const id = idOf(s, "p1", "battlefield", name);
@@ -3379,7 +3379,7 @@ describe("Bloomburrow, lot K8 : peu communes (3)", () => {
     expect(run("Bear Cub")).toBe(0);
   });
 
-  it("Star Charter : vol ; à votre étape de fin, si vous avez gagné ou perdu des PV, une créature de force 3 ou moins parmi quatre cartes en main", () => {
+  it("Star Charter: flying; at your end step, if you gained or lost life, a creature with power 3 or less among four cards into hand", () => {
     const run = (gain: boolean) => {
       let s = scenario({
         p1: {
@@ -3400,14 +3400,14 @@ describe("Bloomburrow, lot K8 : peu communes (3)", () => {
 });
 
 describe("Bloomburrow, lot K8 : peu communes (4)", () => {
-  /** Lance deux Lightning Strike sur p2 : le quatrième mana dépensé pour des sorts ce tour-ci (dépense 4). */
+  /** Casts two Lightning Strikes at p2: the fourth mana spent on spells this turn (expend 4). */
   const expend4 = (s: S, ans: Answer = () => undefined) => {
     const a = resolve(cast(s, "p1", "Lightning Strike", { targets: { t: ["p2"] } }), ans);
     return resolve(cast(a, "p1", "Lightning Strike", { targets: { t: ["p2"] } }), ans);
   };
   const strikes = { hand: ["Lightning Strike", "Lightning Strike"] };
 
-  it("Bark-Knuckle Boxer : dépense 4 — indestructible jusqu'à la fin du tour", () => {
+  it("Bark-Knuckle Boxer: expend 4 — indestructible until end of turn", () => {
     let s = scenario({ p1: { battlefield: ["Bark-Knuckle Boxer", ...lands("Mountain", 4)], ...strikes } });
     const boxer = idOf(s, "p1", "battlefield", "Bark-Knuckle Boxer");
     s = resolve(cast(s, "p1", "Lightning Strike", { targets: { t: ["p2"] } }));
@@ -3418,7 +3418,7 @@ describe("Bloomburrow, lot K8 : peu communes (4)", () => {
     expect(chars(s, boxer).keywords).not.toContain("indestructible");
   });
 
-  it("Bonecache Overseer : {T}, 1 PV : piochez, seulement si trois cartes ont quitté votre cimetière ou si vous avez sacrifié une Nourriture ce tour-ci", () => {
+  it("Bonecache Overseer: {T}, 1 life: draw, only if three cards left your graveyard or you sacrificed a Food this turn", () => {
     let s = addTokens(
       scenario({ p1: { battlefield: ["Bonecache Overseer", ...lands("Forest", 2)], library: lands("Plains", 2) } }),
       "Food",
@@ -3442,14 +3442,14 @@ describe("Bloomburrow, lot K8 : peu communes (4)", () => {
     expect(canActivateK8(t, "p1", idOf(t, "p1", "battlefield", "Bonecache Overseer"), "Draw")).toBe(true);
   });
 
-  it("Brambleguard Captain : au début du combat de votre tour, une de vos créatures gagne +X/+0 (X = la force du Capitaine)", () => {
+  it("Brambleguard Captain: at the beginning of combat on your turn, one of your creatures gains +X/+0 (X = the Captain's power)", () => {
     let s = scenario({ p1: { battlefield: ["Brambleguard Captain", "Bear Cub"] } });
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
     s = driveUntil(s, (x) => x.pending?.kind === "declareAttackers", answer({ pick: [cub] }));
     expect(ptOf(s, cub)).toEqual([4, 2]);
   });
 
-  it("Brambleguard Veteran : dépense 4 — vos Ratons laveurs +1/+1 et vigilance jusqu'à la fin du tour", () => {
+  it("Brambleguard Veteran: expend 4 — your Raccoons +1/+1 and vigilance until end of turn", () => {
     let s = scenario({
       p1: { battlefield: ["Brambleguard Veteran", "Bark-Knuckle Boxer", "Bear Cub", ...lands("Mountain", 4)], ...strikes },
     });
@@ -3459,7 +3459,7 @@ describe("Bloomburrow, lot K8 : peu communes (4)", () => {
     expect(ptOf(s, idOf(s, "p1", "battlefield", "Bear Cub"))).toEqual([2, 2]);
   });
 
-  it("Brazen Collector : initiative ; en attaquant, ajoute {R}, qui reste jusqu'à la fin du tour", () => {
+  it("Brazen Collector: first strike; on attacking, adds {R}, which stays until end of turn", () => {
     let s = scenario({ p1: { battlefield: ["Brazen Collector"] } });
     const col = idOf(s, "p1", "battlefield", "Brazen Collector");
     expect(chars(s, col).keywords).toContain("firstStrike");
@@ -3469,7 +3469,7 @@ describe("Bloomburrow, lot K8 : peu communes (4)", () => {
     expect(s.players.p1?.manaPool.R ?? 0).toBe(0);
   });
 
-  it("Burrowguard Mentor : piétinement ; F/E égales au nombre de créatures que vous contrôlez", () => {
+  it("Burrowguard Mentor: trample; P/T equal to the number of creatures you control", () => {
     const s = scenario({
       p1: { battlefield: ["Burrowguard Mentor", "Bear Cub", "Llanowar Elves"] },
       p2: { battlefield: ["Bear Cub"] },
@@ -3479,7 +3479,7 @@ describe("Bloomburrow, lot K8 : peu communes (4)", () => {
     expect(chars(s, m).keywords).toContain("trample");
   });
 
-  it("Calamitous Tide : jusqu'à deux créatures renvoyées dans la main de leur propriétaire ; piochez deux cartes, puis défaussez-en une", () => {
+  it("Calamitous Tide: up to two creatures returned to their owner's hand; draw two cards, then discard one", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Island", 6), "Bear Cub"], hand: ["Calamitous Tide"], library: ["Opt", "Plains"] },
       p2: { battlefield: ["Serra Angel"] },
@@ -3491,7 +3491,7 @@ describe("Bloomburrow, lot K8 : peu communes (4)", () => {
     expect(graveOf(s).sort()).toEqual(["Calamitous Tide", "Plains"]);
   });
 
-  it("Clifftop Lookout : portée ; révèle jusqu'à un terrain, mis sur le champ de bataille engagé, le reste dessous", () => {
+  it("Clifftop Lookout: reach; reveals up to one land, put onto the battlefield tapped, the rest on the bottom", () => {
     let s = scenario({
       p1: { battlefield: lands("Forest", 3), hand: ["Clifftop Lookout"], library: ["Opt", "Bear Cub", "Island", "Swamp"] },
     });
@@ -3503,7 +3503,7 @@ describe("Bloomburrow, lot K8 : peu communes (4)", () => {
     expect(lib.slice(1).sort()).toEqual(["Bear Cub", "Opt"]);
   });
 
-  it("Curious Forager : en arrivant, vous pouvez fourrager ; si vous le faites, une carte de permanent revient du cimetière en main", () => {
+  it("Curious Forager: on entering, you may forage; if you do, a permanent card returns from the graveyard to hand", () => {
     const setup = () =>
       addTokens(
         scenario({ p1: { battlefield: lands("Forest", 3), hand: ["Curious Forager"], graveyard: ["Bear Cub", "Opt"] } }),
@@ -3525,7 +3525,7 @@ describe("Bloomburrow, lot K8 : peu communes (4)", () => {
     expect(t.players.p1?.hand).toHaveLength(0);
   });
 
-  it("Daring Waverider : en arrivant, lance gratuitement un éphémère ou un rituel de VM 4 ou moins de votre cimetière, exilé ensuite", () => {
+  it("Daring Waverider: on entering, casts for free an instant or sorcery with MV 4 or less from your graveyard, exiled afterward", () => {
     let s = scenario({
       p1: { battlefield: lands("Island", 6), hand: ["Daring Waverider"], graveyard: ["Lightning Strike", "Opt"] },
     });
@@ -3538,7 +3538,7 @@ describe("Bloomburrow, lot K8 : peu communes (4)", () => {
     expect(graveOf(s)).toEqual(["Opt"]);
   });
 
-  it("Harnesser of Storms : un sort non-créature ou de Loutre — vous pouvez exiler la carte du dessus, jouable ce tour-ci ; une fois par tour", () => {
+  it("Harnesser of Storms: a noncreature or Otter spell — you may exile the top card, playable this turn; once per turn", () => {
     let s = scenario({
       p1: {
         battlefield: ["Harnesser of Storms", ...lands("Island", 2)],
@@ -3557,7 +3557,7 @@ describe("Bloomburrow, lot K8 : peu communes (4)", () => {
     expect(t.exile.length).toBe(t0 + 1);
   });
 
-  it("Harvestrite Host : elle ou un autre Lapin arrive — une de vos créatures +1/+0 ; piochez à la deuxième résolution du tour, pas à la troisième", () => {
+  it("Harvestrite Host: it or another Rabbit enters — one of your creatures +1/+0; draw on the second resolution of the turn, not the third", () => {
     let s = scenario({
       p1: {
         battlefield: [...lands("Plains", 7), "Bear Cub"],
@@ -3575,7 +3575,7 @@ describe("Bloomburrow, lot K8 : peu communes (4)", () => {
     expect(handOf(s)).toEqual(["Island"]);
   });
 
-  it("Hazardroot Herbalist : chaque fois que vous attaquez, une de vos créatures +1/+0 ; un jeton gagne aussi le contact mortel", () => {
+  it("Hazardroot Herbalist: whenever you attack, one of your creatures +1/+0; a token also gains deathtouch", () => {
     let s = addTokens(scenario({ p1: { battlefield: ["Hazardroot Herbalist", "Bear Cub"] } }), "Cat", 1);
     const cat = idOf(s, "p1", "battlefield", "Cat");
     s = resolve(attack(s, [idOf(s, "p1", "battlefield", "Bear Cub")]), answer({ pick: [cat] }));
@@ -3588,7 +3588,7 @@ describe("Bloomburrow, lot K8 : peu communes (4)", () => {
     expect(chars(t, cub).keywords).not.toContain("deathtouch");
   });
 
-  it("Heirloom Epic : {4}, {T} : piochez une carte (rituel)", () => {
+  it("Heirloom Epic: {4}, {T}: draw a card (sorcery)", () => {
     let s = scenario({ p1: { battlefield: ["Heirloom Epic", ...lands("Plains", 4)], library: lands("Island", 2) } });
     const epic = idOf(s, "p1", "battlefield", "Heirloom Epic");
     s = resolve(activateK8(s, "p1", epic, "Draw"));
@@ -3597,7 +3597,7 @@ describe("Bloomburrow, lot K8 : peu communes (4)", () => {
     expect(canActivateK8(act(t, "p2", { type: "pass" }), "p1", epic, "Draw")).toBe(false);
   });
 
-  it("Starforged Sword : avec le cadeau (un Poisson engagé), s'attache en arrivant ; +3/+3 et perd le vol ; équiper {3}", () => {
+  it("Starforged Sword: with the gift (a tapped Fish), attaches on entering; +3/+3 and loses flying; equip {3}", () => {
     let s = scenario({ p1: { battlefield: [...lands("Plains", 4), "Healer's Hawk"], hand: ["Starforged Sword"] } });
     const hawk = idOf(s, "p1", "battlefield", "Healer's Hawk");
     s = resolve(cast(s, "p1", "Starforged Sword", { kicked: true }), answer({ pick: [hawk] }));
@@ -3612,7 +3612,7 @@ describe("Bloomburrow, lot K8 : peu communes (4)", () => {
     expect(t.objects[sword]?.attachedTo).toBe(idOf(t, "p1", "battlefield", "Healer's Hawk"));
   });
 
-  it("Stargaze : regardez deux fois X cartes, X en main et le reste au cimetière ; vous perdez X PV", () => {
+  it("Stargaze: look at X cards twice, X into hand and the rest into the graveyard; you lose X life", () => {
     let s = scenario({
       p1: { battlefield: lands("Swamp", 4), hand: ["Stargaze"], library: ["Opt", "Stab", "Forest", "Island", "Plains"] },
     });
@@ -3627,7 +3627,7 @@ describe("Bloomburrow, lot K8 : peu communes (4)", () => {
     expect(s.players.p1?.life).toBe(18);
   });
 
-  it("Starseer Mentor : vol et vigilance ; à votre étape de fin, si vous avez gagné ou perdu des PV, l'adversaire perd 3 PV sauf sacrifice ou défausse", () => {
+  it("Starseer Mentor: flying and vigilance; at your end step, if you gained or lost life, the opponent loses 3 life unless they sacrifice or discard", () => {
     const run = (gain: boolean, p2: { battlefield?: string[]; hand?: string[] } = {}) => {
       let s = scenario({
         p1: { battlefield: ["Starseer Mentor", "Vampire Neonate", ...lands("Swamp", 2)] },
@@ -3640,16 +3640,16 @@ describe("Bloomburrow, lot K8 : peu communes (4)", () => {
       expect.arrayContaining(["flying", "vigilance"]),
     );
     expect(run(false).players.p2?.life).toBe(20);
-    // Neonate : 1 PV, puis 3 PV faute de permanent ou de carte.
+    // Neonate: 1 life, then 3 life for lack of a permanent or card.
     expect(run(true).players.p2?.life).toBe(16);
     const c = run(true, { hand: ["Opt"] });
-    // Avec une carte en main, l'adversaire peut la défausser plutôt que perdre 3 PV.
+    // With a card in hand, the opponent may discard it rather than lose 3 life.
     expect([c.players.p2?.life, c.players.p2?.graveyard.length]).toEqual(c.players.p2?.graveyard.length ? [19, 1] : [16, 0]);
   });
 });
 
 describe("Bloomburrow, lot K8 : peu communes (5)", () => {
-  it("Fireglass Mentor : au début de votre seconde phase principale, si un adversaire a perdu des PV, exile deux cartes ; l'une est jouable ce tour-ci", () => {
+  it("Fireglass Mentor: at the beginning of your second main phase, if an opponent lost life, exiles two cards; one is playable this turn", () => {
     const run = (shock: boolean) => {
       let s = scenario({
         p1: { battlefield: ["Fireglass Mentor", "Mountain"], hand: ["Shock"], library: ["Forest", "Opt", "Plains"] },
@@ -3669,7 +3669,7 @@ describe("Bloomburrow, lot K8 : peu communes (5)", () => {
     expect(run(false).exile).toHaveLength(0);
   });
 
-  it("Stormcatch Mentor : célérité et prouesse ; vos éphémères et rituels coûtent {1} de moins", () => {
+  it("Stormcatch Mentor: haste and prowess; your instants and sorceries cost {1} less", () => {
     const s = scenario({ p1: { battlefield: ["Stormcatch Mentor", "Mountain"], hand: ["Lightning Strike", "Bear Cub"] } });
     expect(chars(s, idOf(s, "p1", "battlefield", "Stormcatch Mentor")).keywords).toEqual(
       expect.arrayContaining(["haste", "prowess"]),
@@ -3679,7 +3679,7 @@ describe("Bloomburrow, lot K8 : peu communes (5)", () => {
     expect(castable(t, "p1", idOf(t, "p1", "hand", "Bear Cub"))).toBe(false);
   });
 
-  it("Sugar Coat : flash ; la créature enchantée devient une Nourriture artefact incolore, sans ses autres types ni capacités", () => {
+  it("Sugar Coat: flash; the enchanted creature becomes a colorless artifact Food, without its other types or abilities", () => {
     let s = scenario({
       p1: { battlefield: lands("Island", 3), hand: ["Sugar Coat"] },
       p2: { battlefield: ["Serra Angel", ...lands("Plains", 2)] },
@@ -3697,7 +3697,7 @@ describe("Bloomburrow, lot K8 : peu communes (5)", () => {
     expect(s.players.p2?.life).toBe(23);
   });
 
-  it("Tangle Tumbler : vigilance ; {3}, {T} : un marqueur +1/+1 sur une créature ciblée ; engagez deux jetons : il devient une créature-artefact", () => {
+  it("Tangle Tumbler: vigilance; {3}, {T}: a +1/+1 counter on a targeted creature; tap two tokens: it becomes an artifact creature", () => {
     let s = addTokens(scenario({ p1: { battlefield: ["Tangle Tumbler", "Bear Cub", ...lands("Forest", 3)] } }), "Food", 2);
     const tumbler = idOf(s, "p1", "battlefield", "Tangle Tumbler");
     expect(chars(s, tumbler).types).not.toContain("Creature");
@@ -3712,7 +3712,7 @@ describe("Bloomburrow, lot K8 : peu communes (5)", () => {
     expect(chars(s, tumbler).types).not.toContain("Creature");
   });
 
-  it("Thought-Stalker Warlock : menace ; si l'adversaire ciblé a perdu des PV ce tour-ci, vous choisissez une carte non-terrain de sa main ; sinon il défausse une carte", () => {
+  it("Thought-Stalker Warlock: menace; if the targeted opponent lost life this turn, you choose a nonland card from their hand; otherwise they discard a card", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Swamp", 3), "Mountain"], hand: ["Shock", "Thought-Stalker Warlock"] },
       p2: { hand: ["Forest", "Opt", "Stab"] },
@@ -3739,7 +3739,7 @@ describe("Bloomburrow, lot K8 : peu communes (5)", () => {
     expect(t.players.p2?.graveyard).toHaveLength(1);
   });
 
-  it("Three Tree Scribe : elle ou une autre de vos créatures quitte le champ de bataille sans mourir — un marqueur sur une de vos créatures ; pas en mourant", () => {
+  it("Three Tree Scribe: it or another of your creatures leaves the battlefield without dying — a counter on one of your creatures; not when dying", () => {
     let s = scenario({
       p1: { battlefield: ["Three Tree Scribe", "Bear Cub", "Llanowar Elves", "Island"], hand: ["Splash Portal"] },
     });
@@ -3754,7 +3754,7 @@ describe("Bloomburrow, lot K8 : peu communes (5)", () => {
     expect(plusOne(s, scribe)).toBe(1);
   });
 
-  it("Tidecaller Mentor : menace ; seuil — en arrivant, renvoie jusqu'à un permanent non-terrain dans la main de son propriétaire", () => {
+  it("Tidecaller Mentor: menace; threshold — on entering, returns up to one nonland permanent to its owner's hand", () => {
     const run = (n: number) => {
       const s = scenario({
         p1: { battlefield: [...lands("Island", 2), "Swamp"], hand: ["Tidecaller Mentor"], graveyard: Array(n).fill("Opt") },
@@ -3768,7 +3768,7 @@ describe("Bloomburrow, lot K8 : peu communes (5)", () => {
     expect(idsOf(run(6), "p2", "battlefield", "Serra Angel")).toHaveLength(1);
   });
 
-  it("Valley Rally : vos créatures +2/+0 ; avec le cadeau (une Nourriture), une de vos créatures gagne l'initiative", () => {
+  it("Valley Rally: your creatures +2/+0; with the gift (a Food), one of your creatures gains first strike", () => {
     const run = (kicked: boolean) => {
       const s = scenario({
         p1: { battlefield: [...lands("Mountain", 3), "Bear Cub", "Llanowar Elves"], hand: ["Valley Rally"] },
@@ -3787,7 +3787,7 @@ describe("Bloomburrow, lot K8 : peu communes (5)", () => {
     expect(idsOf(b.s, "p2", "battlefield", "Food")).toHaveLength(1);
   });
 
-  it("Vinereap Mentor : une Nourriture en arrivant et une en mourant", () => {
+  it("Vinereap Mentor: a Food on entering and one on dying", () => {
     let s = scenario({ p1: { battlefield: ["Swamp", "Forest"], hand: ["Vinereap Mentor"] } });
     s = resolve(cast(s, "p1", "Vinereap Mentor"));
     expect(idsOf(s, "p1", "battlefield", "Food")).toHaveLength(1);
@@ -3796,7 +3796,7 @@ describe("Bloomburrow, lot K8 : peu communes (5)", () => {
     expect(idsOf(s, "p1", "battlefield", "Food")).toHaveLength(2);
   });
 
-  it("Wandertale Mentor : dépense 4 — un marqueur +1/+1 ; {T} : {R} ou {G}", () => {
+  it("Wandertale Mentor: expend 4 — a +1/+1 counter; {T}: {R} or {G}", () => {
     let s = scenario({
       p1: { battlefield: ["Wandertale Mentor", ...lands("Mountain", 4)], hand: ["Lightning Strike", "Lightning Strike"] },
     });
@@ -3809,7 +3809,7 @@ describe("Bloomburrow, lot K8 : peu communes (5)", () => {
     expect(plusOne(s, m)).toBe(1);
   });
 
-  it("Wear Down : détruit un artefact ou un enchantement ; deux avec le cadeau", () => {
+  it("Wear Down: destroys an artifact or an enchantment; two with the gift", () => {
     const setup = () =>
       scenario({
         p1: { battlefield: lands("Forest", 2), hand: ["Wear Down"] },
@@ -3829,7 +3829,7 @@ describe("Bloomburrow, lot K8 : peu communes (5)", () => {
     expect(t.players.p2?.hand).toHaveLength(1);
   });
 
-  it("Wick's Patrol : en arrivant, meule trois cartes ; une créature adverse ciblée a -X/-X (X = la plus grande VM de votre cimetière)", () => {
+  it("Wick's Patrol: on entering, mills three cards; a targeted opposing creature gets -X/-X (X = the greatest MV in your graveyard)", () => {
     let s = scenario({
       p1: {
         battlefield: lands("Swamp", 6),
@@ -3846,7 +3846,7 @@ describe("Bloomburrow, lot K8 : peu communes (5)", () => {
     expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
   });
 
-  it("Wildfire Howl : 2 blessures à chaque créature ; avec le cadeau, aussi 1 blessure à n'importe quelle cible", () => {
+  it("Wildfire Howl: 2 damage to each creature; with the gift, also 1 damage to any target", () => {
     const run = (kicked: boolean) => {
       const s = scenario({
         p1: { battlefield: [...lands("Mountain", 3), "Bear Cub"], hand: ["Wildfire Howl"] },

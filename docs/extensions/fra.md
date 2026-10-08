@@ -44,7 +44,7 @@
 - Lot B: ✅. It covers:
   - abilities activated from the hand (`fromHand` and the cost `discardSelf`), with a "Cast / Cycle" menu when a card in hand has several options;
   - cycling, landcycling and typecycling, read from the text;
-  - the casting condition (`castCondition`), the shared second spell (Samut), convoke, exhaust (`once`);
+  - the casting condition (`castCondition`), split second (Samut), convoke, exhaust (`once`);
   - domain (`basicLandTypes`), searching for cards "with different names" and "when you discard this card".
 
   The Jace cards of lot B (Hexhaven Battalion, Countersculpt, Theorist's Sanctum) move to lot D, Tam to lot E and Emrakul to lot F.

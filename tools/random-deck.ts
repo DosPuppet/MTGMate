@@ -2,7 +2,7 @@
  * Random decks for the fuzz and the AI tournament: 60 cards in two colors (three once in four), 24 lands (of which up
  * to 8 nonbasic lands that produce these colors), 36 cards handled by the engine, colorless ones included (`set`: those
  * of the set first). The whole pool can come up: three-color cards, colorless cards, nonbasic lands
- * (docs/plans/PLAN-C.md, lot C2).
+ * (PLAN-C in docs/history.md, lot C2).
  */
 import { mulberry32 } from "@mtgx/ai";
 import { implementedCards, legalityIssue } from "@mtgx/cards";

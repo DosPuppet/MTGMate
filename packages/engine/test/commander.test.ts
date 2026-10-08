@@ -1,8 +1,8 @@
 /**
- * Commander (903, PLAN-E, E2) : mise en place (40 PV, commandant dans la zone de commandement), lancer depuis la zone de
- * commandement et taxe (903.8), aucune capacité active dans cette zone (113.6), retour dans la zone de commandement
- * depuis le cimetière ou l'exil (903.9a) et à la place de la bibliothèque (903.9b), 21 blessures de combat d'un même
- * commandant (903.10a, 704.6c), vue et enregistrement.
+ * Commander (903, PLAN-E, E2): setup (40 life, commander in the command zone), casting from the command zone
+ * and tax (903.8), no activated ability in that zone (113.6), return to the command zone
+ * from the graveyard or exile (903.9a) and instead of the library (903.9b), 21 combat damage from a single
+ * commander (903.10a, 704.6c), view and record.
  */
 import { card } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
@@ -17,10 +17,10 @@ import type { Decision, GameState, ObjectId, PlayerId } from "../src/types";
 import { projectView } from "../src/view";
 import { act, attack, idOf, passAccepting, passBoth, scenario, throughCombat } from "./helpers";
 
-const ARAHBO = "Arahbo, the First Fang"; // {2}{W}, « les autres Chats que vous contrôlez gagnent +1/+1 »
+const ARAHBO = "Arahbo, the First Fang"; // {2}{W}, "other Cats you control get +1/+1"
 const LIONS = "Savannah Lions"; // Chat 2/1
 
-/** L'objet du commandant de `player` (où qu'il soit). */
+/** The commander's object of `player` (wherever it is). */
 function commanderId(s: GameState, player: PlayerId): ObjectId {
   const entry = Object.entries(s.commander?.cards ?? {}).find(([, c]) => c.owner === player);
   const o = Object.values(s.objects).find((x) => x.uid === entry?.[0] && !x.isToken);
@@ -30,7 +30,7 @@ function commanderId(s: GameState, player: PlayerId): ObjectId {
 const rec = (s: GameState, player: PlayerId) =>
   Object.values(s.commander?.cards ?? {}).find((c) => c.owner === player) as NonNullable<GameState["commander"]>["cards"][string];
 
-/** Fait de l'objet un commandant (commandant déjà sur le champ de bataille, dans un cimetière…). */
+/** Makes the object a commander (commander already on the battlefield, in a graveyard...). */
 function makeCommander(s: GameState, id: ObjectId): GameState {
   const o = s.objects[id];
   if (!o) throw new Error("objet introuvable");
@@ -39,7 +39,7 @@ function makeCommander(s: GameState, id: ObjectId): GameState {
   return s;
 }
 
-/** Actions basées sur l'état vérifiées à nouveau (après un déplacement fait directement par le test). */
+/** State-based actions checked again (after a move made directly by the test). */
 function recheck(s: GameState): GameState {
   s.pending = null;
   s.flow = "priority";
@@ -53,7 +53,7 @@ const answer = (s: GameState, yes: boolean) => act(s, s.pending?.player as Playe
 describe("Commander : mise en place (903.6, 903.7)", () => {
   const deck = [card(ARAHBO), ...Array.from({ length: 99 }, () => card("Plains"))];
 
-  it("40 points de vie ; le commandant commence dans la zone de commandement, les 99 autres cartes dans la bibliothèque", () => {
+  it("40 life; the commander starts in the command zone, the other 99 cards in the library", () => {
     const { state } = createGame({
       seed: 7,
       variant: "commander",
@@ -72,7 +72,7 @@ describe("Commander : mise en place (903.6, 903.7)", () => {
     expect(Object.values(state.commander?.cards ?? {}).map((c) => c.owner)).toEqual(["p1", "p2"]);
   });
 
-  it("hors Commander, rien ne change : 20 PV, pas d'état Commander, toutes les cartes dans la bibliothèque", () => {
+  it("outside Commander, nothing changes: 20 life, no Commander state, all cards in the library", () => {
     const { state } = createGame({
       seed: 7,
       players: [
@@ -85,7 +85,7 @@ describe("Commander : mise en place (903.6, 903.7)", () => {
     expect(state.players.p1?.command).toEqual([]);
   });
 
-  it("l'enregistrement garde la variante et les commandants ; le rejeu redonne le même état", () => {
+  it("the record keeps the variant and the commanders; the replay gives back the same state", () => {
     const opts = {
       seed: 11,
       variant: "commander" as const,
@@ -111,30 +111,30 @@ describe("Commander : mise en place (903.6, 903.7)", () => {
 describe("Commander : lancer depuis la zone de commandement (903.8)", () => {
   const base = () => scenario({ p1: { command: [ARAHBO], battlefield: ["Plains", "Plains", "Plains", LIONS], hand: [] } });
 
-  it("le commandant se lance depuis la zone de commandement ; il n'y a aucune capacité active (113.6)", () => {
+  it("the commander is cast from the command zone; there is no activated ability (113.6)", () => {
     let s = base();
     const lions = idOf(s, "p1", "battlefield", LIONS);
-    // Arahbo dans la zone de commandement : les Chats ne gagnent rien.
+    // Arahbo in the command zone: the Cats gain nothing.
     expect(chars(s, lions).power).toBe(2);
     const id = commanderId(s, "p1");
     expect(legalActions(s, "p1").some((a) => a.type === "cast" && a.card === id)).toBe(true);
-    // Un adversaire ne peut pas le lancer.
+    // An opponent cannot cast it.
     expect(castTerms(s, "p2", id)).toBeNull();
     s = act(s, "p1", { type: "cast", card: id });
     expect(rec(s, "p1").casts).toBe(1);
     s = passBoth(s);
     const arahbo = idOf(s, "p1", "battlefield", ARAHBO);
     expect(s.objects[arahbo]?.zone).toBe("battlefield");
-    // Sur le champ de bataille, sa statique s'applique.
+    // On the battlefield, its static ability applies.
     expect(chars(s, lions).power).toBe(3);
   });
 
-  it("taxe : {2} de plus par lancer précédent depuis la zone de commandement, montrée par la vue", () => {
+  it("tax: {2} more per previous cast from the command zone, shown by the view", () => {
     let s = base();
     rec(s, "p1").casts = 1;
     const id = commanderId(s, "p1");
     expect(castTerms(s, "p1", id)?.extraCost).toBe(2);
-    // Trois Plaines pour un coût de {4}{W} : impossible.
+    // Three Plains for a cost of {4}{W}: impossible.
     expect(legalActions(s, "p1").some((a) => a.type === "cast" && a.card === id)).toBe(false);
     const shown = projectView(s, "p1").playableElsewhere.find((o) => o.id === id);
     expect(shown?.castCost?.text).toBe("{4}{W}");
@@ -147,16 +147,16 @@ describe("Commander : lancer depuis la zone de commandement (903.8)", () => {
   });
 });
 
-describe("Commander : retour dans la zone de commandement (903.9)", () => {
-  /** p1 a son commandant sur le champ de bataille. */
+describe("Commander: return to the command zone (903.9)", () => {
+  /** p1 has their commander on the battlefield. */
   const onBattlefield = () => {
     const s = scenario({ p1: { battlefield: [ARAHBO] } });
     return makeCommander(s, idOf(s, "p1", "battlefield", ARAHBO));
   };
 
-  it("903.9a : au cimetière, son propriétaire choisit de le remettre dans la zone de commandement ; les déclencheurs « meurt » le voient mourir", () => {
-    // Vengeful Bloodwitch : « chaque fois que cette créature ou une autre créature que vous contrôlez meurt, l'adversaire
-    // ciblé perd 1 point de vie et vous en gagnez 1 ».
+  it('903.9a: in the graveyard, its owner chooses to put it back in the command zone; "dies" triggers see it die', () => {
+    // Vengeful Bloodwitch: "whenever this creature or another creature you control dies, target opponent
+    // loses 1 life and you gain 1 life".
     let s = scenario({ p1: { battlefield: [ARAHBO, "Vengeful Bloodwitch"] } });
     makeCommander(s, idOf(s, "p1", "battlefield", ARAHBO));
     moveObject(s, idOf(s, "p1", "battlefield", ARAHBO), "graveyard");
@@ -172,7 +172,7 @@ describe("Commander : retour dans la zone de commandement (903.9)", () => {
     expect(s.players.p2?.life).toBe(19);
   });
 
-  it("903.9a : un refus le laisse au cimetière, sans nouvelle question ; une nouvelle zone (exil) repose la question", () => {
+  it("903.9a: a refusal leaves it in the graveyard, with no new question; a new zone (exile) asks the question again", () => {
     let s = onBattlefield();
     moveObject(s, idOf(s, "p1", "battlefield", ARAHBO), "graveyard");
     s = answer(recheck(s), false);
@@ -188,8 +188,8 @@ describe("Commander : retour dans la zone de commandement (903.9)", () => {
     expect(s.players.p1?.command).toHaveLength(1);
   });
 
-  it("903.9b : vers la bibliothèque ou la main, le propriétaire choisit ; un refus le laisse où il est", () => {
-    // Vers la bibliothèque : la question est posée ; oui, il va dans la zone de commandement.
+  it("903.9b: to the library or the hand, the owner chooses; a refusal leaves it where it is", () => {
+    // To the library: the question is asked; yes, it goes to the command zone.
     let s = onBattlefield();
     moveObject(s, idOf(s, "p1", "battlefield", ARAHBO), "library");
     s = recheck(s);
@@ -198,7 +198,7 @@ describe("Commander : retour dans la zone de commandement (903.9)", () => {
     s = answer(s, true);
     expect(s.players.p1?.command.map((x) => s.objects[x]?.defId)).toEqual([card(ARAHBO).id]);
     expect(s.players.p1?.library.some((x) => s.objects[x]?.defId === card(ARAHBO).id)).toBe(false);
-    // Vers la main : non, il reste en main et se relance sans taxe.
+    // To the hand: no, it stays in hand and is cast again without tax.
     let s2 = onBattlefield();
     moveObject(s2, idOf(s2, "p1", "battlefield", ARAHBO), "hand");
     s2 = answer(recheck(s2), false);
@@ -206,7 +206,7 @@ describe("Commander : retour dans la zone de commandement (903.9)", () => {
     expect(s2.pending?.kind).toBe("priority");
     expect(castTerms(s2, "p1", inHand)).toMatchObject({ source: "hand" });
     expect(castTerms(s2, "p1", inHand)?.extraCost).toBeUndefined();
-    // Vers la main : oui, il va dans la zone de commandement.
+    // To the hand: yes, it goes to the command zone.
     let s3 = onBattlefield();
     moveObject(s3, idOf(s3, "p1", "battlefield", ARAHBO), "hand");
     s3 = answer(recheck(s3), true);
@@ -214,7 +214,7 @@ describe("Commander : retour dans la zone de commandement (903.9)", () => {
     expect(s3.players.p1?.command).toHaveLength(1);
   });
 
-  it("903.9b : laissé dans la bibliothèque puis pioché, la question est posée de nouveau (vers la main)", () => {
+  it("903.9b: left in the library then drawn, the question is asked again (to the hand)", () => {
     let s = onBattlefield();
     moveObject(s, idOf(s, "p1", "battlefield", ARAHBO), "library", { position: "top" });
     s = answer(recheck(s), false);
@@ -225,7 +225,7 @@ describe("Commander : retour dans la zone de commandement (903.9)", () => {
 });
 
 describe("Commander : blessures de commandant (903.10a, 704.6c)", () => {
-  it("21 blessures de combat d'un même commandant au cours de la partie : le joueur perd, même avec des PV", () => {
+  it("21 combat damage from a single commander over the game: the player loses, even with life", () => {
     let s = scenario({ p1: { battlefield: [ARAHBO] }, p2: { life: 40 } });
     const arahbo = idOf(s, "p1", "battlefield", ARAHBO);
     makeCommander(s, arahbo);
@@ -236,12 +236,12 @@ describe("Commander : blessures de commandant (903.10a, 704.6c)", () => {
     expect(s.winner).toBe("p1");
   });
 
-  it("les blessures se cumulent par joueur ; la vue les montre ; celles d'une autre créature ne comptent pas", () => {
+  it("damage accumulates per player; the view shows it; that of another creature does not count", () => {
     let s = scenario({ players: 3, p1: { battlefield: [ARAHBO, LIONS] } });
     const arahbo = idOf(s, "p1", "battlefield", ARAHBO);
     makeCommander(s, arahbo);
     s = throughCombat(attack(s, [arahbo, idOf(s, "p1", "battlefield", LIONS)]));
-    // Arahbo (2/2) et les Lions (2/1 +1/+1) attaquent p2 : seules les blessures d'Arahbo comptent.
+    // Arahbo (2/2) and the Lions (2/1 +1/+1) attack p2: only Arahbo's damage counts.
     expect(rec(s, "p1").damage).toEqual({ p2: 2 });
     expect(projectView(s, "p3").players.p2?.commanderDamage).toEqual([{ defId: card(ARAHBO).id, owner: "p1", amount: 2 }]);
   });

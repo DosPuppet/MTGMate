@@ -1,10 +1,10 @@
-/** Images des jetons (`tokenImage`, data/tokens.json). */
+/** Token images (`tokenImage`, data/tokens.json). */
 import { describe, expect, it } from "vitest";
 import TOKENS from "../data/tokens.json";
 import { TOKEN_SPECS, tokenImage } from "../src/index";
 
-describe("images des jetons", () => {
-  it("les jetons courants ont une image, au bon profil (F/E et couleurs)", () => {
+describe("token images", () => {
+  it("common tokens have an image, with the right profile (P/T and colors)", () => {
     for (const name of ["Treasure", "Food", "Clue", "Map", "Goblin", "Soldier", "Rabbit", "Spirit", "Cat", "Dog"]) {
       const t = TOKEN_SPECS[name];
       if (!t) throw new Error(name);
@@ -19,9 +19,9 @@ describe("images des jetons", () => {
     }
   });
 
-  it("à nom égal, le jeton aux mêmes F/E et couleurs est préféré", () => {
+  it("for an equal name, the token with the same P/T and colors is preferred", () => {
     const arts = TOKENS as { name: string; power?: number; toughness?: number; colors: string[]; image: string }[];
-    // Un nom décliné en plusieurs profils (Spirit 1/1 blanc, 1/1 volant, 4/4…) : chaque profil retrouve le sien.
+    // A name split across several profiles (white 1/1 Spirit, flying 1/1, 4/4…): each profile finds its own.
     const spirits = arts.filter((a) => a.name === "Spirit");
     expect(new Set(spirits.map((a) => `${a.power}/${a.toughness}`)).size).toBeGreaterThan(1);
     for (const a of spirits) {
@@ -37,7 +37,7 @@ describe("images des jetons", () => {
     }
   });
 
-  it("aucun jeton de ce nom : pas d'image (cadre texte)", () => {
-    expect(tokenImage({ name: "Jeton inventé", typeLine: "Token Creature" })).toBeUndefined();
+  it("no token of that name: no image (text frame)", () => {
+    expect(tokenImage({ name: "Invented Token", typeLine: "Token Creature" })).toBeUndefined();
   });
 });

@@ -1,6 +1,6 @@
 /**
- * Commander (pseudo-ensemble EDH) : tests de règles du préconstruit « Mutant Menace » (Fallout). Marqueurs de
- * radiation et radiation, cartes meulées (déclencheurs groupés, « meulée ce tour-ci »), prolifération des joueurs.
+ * Commander (EDH pseudo-set): rules tests of the "Mutant Menace" precon (Fallout). Rad counters and
+ * radiation, milled cards (grouped triggers, "milled this turn"), player proliferate.
  */
 import { describe, expect, it } from "vitest";
 import { dealDamage, sourceFromObject } from "../src/actions";
@@ -34,7 +34,7 @@ const plusOne = (s: GameState, id: string) => s.objects[id]?.counters["+1/+1"] ?
 const activate = (s: GameState, p: PlayerId, name: string, extra: object = {}) => {
   const source = idOf(s, p, "battlefield", name);
   const o = legalActions(s, p).find((a) => a.type === "activate" && a.source === source);
-  if (o?.type !== "activate") throw new Error(`pas de capacité pour ${name}`);
+  if (o?.type !== "activate") throw new Error(`no ability for ${name}`);
   return act(s, p, { type: "activate", source, ability: o.ability, ...extra } as never);
 };
 const toMain1Of = (s: GameState, p: PlayerId) =>
@@ -42,44 +42,44 @@ const toMain1Of = (s: GameState, p: PlayerId) =>
 
 describe("Mutant Menace (EDH)", () => {
   describe("radiation", () => {
-    it("au début de sa première phase principale, le joueur meule ; chaque carte non-terrain : 1 PV et un marqueur en moins", () => {
+    it("at the beginning of their first main phase, the player mills; each nonland card: 1 life and one counter fewer", () => {
       let s = scenario({ active: "p2", p1: { library: ["Opt", "Forest", "Shock", "Opt", "Opt"] } });
       const p1 = s.players.p1;
       if (p1) p1.counters = { ...p1.counters, rad: 3 };
       s = toMain1Of(s, "p1");
-      // La radiation est une capacité déclenchée : sur la pile au début de la phase principale.
+      // Radiation is a triggered ability: on the stack at the beginning of the main phase.
       expect(s.stack.map((x) => [x.sourceDefId, x.controller])).toEqual([["rules:radiation", "p1"]]);
       expect(s.players.p1?.graveyard.length).toBe(0);
       s = settle(s);
-      // Pioche (Opt), puis meule de trois : Forest, Shock, Opt → deux cartes non-terrain.
+      // Draw (Opt), then mill three: Forest, Shock, Opt → two nonland cards.
       expect([s.players.p1?.counters?.rad, s.players.p1?.life, s.players.p1?.graveyard.length]).toEqual([1, 18, 3]);
     });
 
-    it("radiation : « si ce joueur a un ou plusieurs marqueurs », revérifié à la résolution ; le nombre est lu à la résolution", () => {
+    it('radiation: "if that player has one or more counters", rechecked on resolution; the number is read on resolution', () => {
       let s = scenario({ active: "p2", p1: { library: ["Opt", "Shock", "Shock", "Shock", "Opt"] } });
       const p1 = s.players.p1;
       if (p1) p1.counters = { ...p1.counters, rad: 1 };
       s = toMain1Of(s, "p1");
       const item = projectView(s, "p2").stack[0];
       expect([item?.fr?.name, item?.effect]).toEqual(["Radiation", "Radiation: mill a card per counter"]);
-      // Plus de marqueurs avant la résolution : la capacité ne fait rien.
+      // No more counters before resolution: the ability does nothing.
       const q = s.players.p1;
       if (q) q.counters = { ...q.counters, rad: 0 };
       let t = settle(s);
       expect([t.players.p1?.graveyard.length, t.players.p1?.life]).toEqual([0, 20]);
-      // Un marqueur de plus en réponse : le joueur meule selon le nombre au moment de la résolution.
+      // One more counter in response: the player mills according to the number at the time of resolution.
       if (q) q.counters = { ...q.counters, rad: 2 };
       t = settle(s);
       expect([t.players.p1?.graveyard.length, t.players.p1?.life, t.players.p1?.counters?.rad]).toEqual([2, 18, 0]);
     });
 
-    it("radiation : sans marqueur au début de la phase principale, rien ne se déclenche", () => {
+    it("radiation: with no counter at the beginning of the main phase, nothing triggers", () => {
       let s = scenario({ active: "p2", p1: { library: ["Opt", "Shock", "Opt"] } });
       s = toMain1Of(s, "p1");
       expect(s.stack).toEqual([]);
     });
 
-    it("Strong, the Brutish Thespian : la radiation fait gagner des PV", () => {
+    it("Strong, the Brutish Thespian: radiation makes you gain life", () => {
       let s = scenario({ active: "p2", p1: { battlefield: ["Strong, the Brutish Thespian"], library: ["Opt", "Shock", "Opt"] } });
       const p1 = s.players.p1;
       if (p1) p1.counters = { ...p1.counters, rad: 2 };
@@ -87,7 +87,7 @@ describe("Mutant Menace (EDH)", () => {
       expect([s.players.p1?.counters?.rad, s.players.p1?.life]).toEqual([0, 22]);
     });
 
-    it("The Wise Mothman : chaque joueur reçoit un marqueur ; des cartes non-terrain meulées mettent des marqueurs +1/+1", () => {
+    it("The Wise Mothman: each player gets a counter; milled nonland cards put +1/+1 counters", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Island", 2), "Swamp", "Forest", "Bear Cub"], hand: ["The Wise Mothman"] },
         p2: { library: ["Opt", "Shock", "Forest"] },
@@ -96,13 +96,13 @@ describe("Mutant Menace (EDH)", () => {
       expect([s.players.p1?.counters?.rad, s.players.p2?.counters?.rad]).toEqual([1, 1]);
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       const moth = idOf(s, "p1", "battlefield", "The Wise Mothman");
-      // L'adversaire subit la radiation à son tour : il meule une carte non-terrain (Shock, sous Opt pioché).
+      // The opponent suffers radiation on their turn: they mill a nonland card (Shock, under the drawn Opt).
       s = toMain1Of(s, "p2");
       s = settle(s, picking([bear]));
       expect(plusOne(s, bear) + plusOne(s, moth)).toBe(1);
     });
 
-    it("la prolifération donne un marqueur de radiation de plus à un joueur qui en a", () => {
+    it("proliferate gives one more rad counter to a player who has some", () => {
       let s = scenario({
         p1: { battlefield: lands("Forest", 2).concat(["Swamp", "Swamp"]), hand: ["Atomize"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -116,8 +116,8 @@ describe("Mutant Menace (EDH)", () => {
     });
   });
 
-  describe("cartes meulées", () => {
-    it("Raul : chaque joueur meule ; une fois par tour, un sort meulé ce tour-ci se lance depuis le cimetière", () => {
+  describe("milled cards", () => {
+    it("Raul: each player mills; once each turn, a spell milled this turn is cast from the graveyard", () => {
       let s = scenario({
         p1: { battlefield: ["Raul, Trouble Shooter", "Mountain"], library: ["Shock", "Forest"] },
         p2: { library: ["Opt"] },
@@ -127,7 +127,7 @@ describe("Mutant Menace (EDH)", () => {
       expect(legalActions(s, "p1").some((a) => a.type === "cast" && a.card === shock)).toBe(true);
     });
 
-    it("Tato Farmer : un terrain meulé ce tour-ci arrive engagé sous votre contrôle", () => {
+    it("Tato Farmer: a land milled this turn enters tapped under your control", () => {
       let s = scenario({
         p1: { battlefield: ["Tato Farmer", "Raul, Trouble Shooter"] },
         p2: { library: ["Plains", "Opt"] },
@@ -140,7 +140,7 @@ describe("Mutant Menace (EDH)", () => {
       expect(s.objects[mine[0] ?? ""]?.tapped).toBe(true);
     });
 
-    it("Screeching Scorchbeast : des cartes non-terrain meulées créent autant de Zombies Mutants, une fois par tour", () => {
+    it("Screeching Scorchbeast: milled nonland cards create as many Mutant Zombies, once each turn", () => {
       let s = scenario({
         p1: { battlefield: ["Screeching Scorchbeast", "Raul, Trouble Shooter"], library: ["Opt"] },
         p2: { library: ["Shock"] },
@@ -150,8 +150,8 @@ describe("Mutant Menace (EDH)", () => {
     });
   });
 
-  describe("créatures et sorts", () => {
-    it("Alpha Deathclaw : en arrivant, détruit un permanent ciblé, quel que soit son type (« permanent ciblé »)", () => {
+  describe("creatures and spells", () => {
+    it('Alpha Deathclaw: when it enters, destroys a targeted permanent, whatever its type ("target permanent")', () => {
       let s = scenario({
         p1: { battlefield: [...lands("Swamp", 5), "Forest", "Forest"], hand: ["Alpha Deathclaw"] },
         p2: { battlefield: ["Plains", "Bear Cub"] },
@@ -161,13 +161,13 @@ describe("Mutant Menace (EDH)", () => {
       expect(idsOf(s, "p2", "graveyard", "Plains")).toHaveLength(1);
     });
 
-    it("Glowing One : il donne quatre marqueurs de radiation au joueur qu'il blesse", () => {
+    it("Glowing One: it gives four rad counters to the player it damages", () => {
       let s = scenario({ p1: { battlefield: ["Glowing One"] } });
       s = throughCombat(attack(s, [idOf(s, "p1", "battlefield", "Glowing One")]));
       expect(s.players.p2?.counters?.rad).toBe(4);
     });
 
-    it("Bloatfly Swarm : les blessures retirent des marqueurs +1/+1 et irradient chaque joueur", () => {
+    it("Bloatfly Swarm: damage removes +1/+1 counters and irradiates each player", () => {
       let s = scenario({
         p1: { battlefield: ["Mountain", { name: "Bloatfly Swarm", counters: { "+1/+1": 5 } }], hand: ["Shock"] },
       });
@@ -178,18 +178,18 @@ describe("Mutant Menace (EDH)", () => {
       ]);
     });
 
-    it("Hancock : +X/+X aux autres Zombies et Mutants, X ses marqueurs ; undying le ramène avec un marqueur", () => {
+    it("Hancock: +X/+X to other Zombies and Mutants, X its counters; undying brings it back with a counter", () => {
       let s = scenario({ p1: { battlefield: ["Hancock, Ghoulish Mayor", "Glowing One", "Mountain"], hand: ["Shock"] } });
       const hancock = idOf(s, "p1", "battlefield", "Hancock, Ghoulish Mayor");
       s = settle(castIt(s, "p1", "Shock", { targets: { t: [hancock] } }));
       const back = idOf(s, "p1", "battlefield", "Hancock, Ghoulish Mayor");
       expect(plusOne(s, back)).toBe(1);
       expect(chars(s, idOf(s, "p1", "battlefield", "Glowing One")).power).toBe(3);
-      // « Chaque autre créature » : Hancock (2/1, un marqueur +1/+1) ne se renforce pas lui-même.
+      // "Each other creature": Hancock (2/1, one +1/+1 counter) doesn't pump itself.
       expect([chars(s, back).power, chars(s, back).toughness]).toEqual([3, 2]);
     });
 
-    it("Nuclear Fallout : chaque créature -2X/-2X, chaque joueur X marqueurs de radiation", () => {
+    it("Nuclear Fallout: each creature -2X/-2X, each player X rad counters", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Swamp", 3)], hand: ["Nuclear Fallout"] },
         p2: { battlefield: ["Bear Cub", "Serra Angel"] },
@@ -199,7 +199,7 @@ describe("Mutant Menace (EDH)", () => {
       expect([s.players.p1?.counters?.rad, s.players.p2?.counters?.rad]).toEqual([1, 1]);
     });
 
-    it("Vault 12 : chapitre II, un Zombie Mutant par marqueur de radiation parmi les joueurs", () => {
+    it("Vault 12: chapter II, a Mutant Zombie per rad counter among the players", () => {
       let s = scenario({ p1: { battlefield: lands("Swamp", 6), hand: ["Vault 12: The Necropolis"] } });
       s = settle(castIt(s, "p1", "Vault 12: The Necropolis"));
       expect([s.players.p1?.counters?.rad, s.players.p2?.counters?.rad]).toEqual([3, 3]);
@@ -215,11 +215,11 @@ describe("Mutant Menace (EDH)", () => {
           x.turn.number > 3,
         600,
       );
-      // p2 a subi la radiation pendant son tour (bibliothèque de Forêts : aucune carte non-terrain, il garde ses 3).
+      // p2 suffered radiation during their turn (library of Forests: no nonland card, they keep their 3).
       expect(tokens(s, "p1", "Zombie Mutant").length).toBe(3);
     });
 
-    it("Contaminated Drink : piochez X, puis la moitié de X (arrondie au supérieur) en marqueurs de radiation", () => {
+    it("Contaminated Drink: draw X, then half of X (rounded up) as rad counters", () => {
       let s = scenario({
         p1: { battlefield: ["Island", "Swamp", "Island", "Island"], hand: ["Contaminated Drink"], library: lands("Island", 5) },
       });
@@ -231,8 +231,8 @@ describe("Mutant Menace (EDH)", () => {
   });
 });
 
-describe("Mutant Menace : approximations levées (PLAN-H, H2c)", () => {
-  it("Finality : vous pouvez mettre deux marqueurs +1/+1 sur une de vos créatures (choisie, pas ciblée) ; puis -4/-4 à toutes", () => {
+describe("Mutant Menace: approximations lifted (PLAN-H, H2c)", () => {
+  it("Finality: you may put two +1/+1 counters on one of your creatures (chosen, not targeted); then -4/-4 to all", () => {
     const start = () =>
       scenario({
         p1: { battlefield: [...lands("Swamp", 3), ...lands("Forest", 3), "Serra Angel"], hand: ["Find // Finality"] },
@@ -246,12 +246,12 @@ describe("Mutant Menace : approximations levées (PLAN-H, H2c)", () => {
       offered.push(req.options.map(String));
       return [mine];
     });
-    // Le choix se fait à la résolution, parmi vos créatures seulement.
+    // The choice is made on resolution, among your creatures only.
     expect(offered).toEqual([[mine]]);
     expect(plusOne(s, mine)).toBe(2);
     expect(chars(s, mine).power).toBe(2);
     expect(onField(s, "p2", "Serra Angel")).toBe(0);
-    // « Vous pouvez » : sans créature choisie, pas de marqueurs, et votre Ange meurt aussi.
+    // "You may": with no creature chosen, no counters, and your Angel dies too.
     let t = start();
     t = settle(act(t, "p1", { type: "cast", card: idOf(t, "p1", "hand", "Find // Finality"), face: 1 }), (req) =>
       req.type === "pick" ? [] : undefined,
@@ -259,7 +259,7 @@ describe("Mutant Menace : approximations levées (PLAN-H, H2c)", () => {
     expect(onField(t, "p1", "Serra Angel")).toBe(0);
   });
 
-  it("Nightkin Ambusher : imblocable tant que le joueur défenseur (pas un autre adversaire) a un marqueur de radiation", () => {
+  it("Nightkin Ambusher: unblockable as long as the defending player (not another opponent) has a rad counter", () => {
     const run = (defender: PlayerId) => {
       let s = scenario({ players: 3, p1: { battlefield: ["Nightkin Ambusher"] } });
       const p2 = s.players.p2;
@@ -272,7 +272,7 @@ describe("Mutant Menace : approximations levées (PLAN-H, H2c)", () => {
     expect(run("p3")).toBe(false);
   });
 
-  it("Mutational Advantage : blessures prévenues sur les permanents qui avaient des marqueurs à la résolution, pas sur ceux qui en reçoivent ensuite", () => {
+  it("Mutational Advantage: damage prevented on permanents that had counters on resolution, not on those that get them later", () => {
     let s = scenario({
       p1: {
         battlefield: [
@@ -289,7 +289,7 @@ describe("Mutant Menace : approximations levées (PLAN-H, H2c)", () => {
     s = settle(castIt(s, "p1", "Mutational Advantage"), picking([cub]));
     expect(plusOne(s, cub)).toBe(2);
     expect(chars(s, cub).keywords).toEqual(expect.arrayContaining(["hexproof", "indestructible"]));
-    // Les Elfes reçoivent un marqueur après la résolution : ils ne sont pas protégés.
+    // The Elves get a counter after resolution: they aren't protected.
     changeCounters(s, s.objects[elves] as never, "+1/+1", 1);
     dealDamage(s, sourceFromObject(s, elves), cub, 3, false);
     dealDamage(s, sourceFromObject(s, cub), elves, 1, false);
@@ -297,7 +297,7 @@ describe("Mutant Menace : approximations levées (PLAN-H, H2c)", () => {
     expect(s.objects[elves]?.damage).toBe(1);
   });
 
-  it("Mutational Advantage : la prévention est un effet, pas une capacité : Final Showdown (perte des capacités) ne la retire pas", () => {
+  it("Mutational Advantage: prevention is an effect, not an ability: Final Showdown (loses abilities) doesn't remove it", () => {
     let s = scenario({
       p1: {
         battlefield: [
@@ -315,23 +315,23 @@ describe("Mutant Menace : approximations levées (PLAN-H, H2c)", () => {
     const mode = opt?.type === "cast" ? opt.modes.find((m) => m.label === "Creatures lose all abilities") : undefined;
     expect(mode).toBeDefined();
     s = settle(castIt(s, "p1", "Final Showdown", { mode: mode?.index }));
-    // Défense talismanique et indestructible sont des capacités accordées : elles sont perdues.
+    // Hexproof and indestructible are granted abilities: they are lost.
     expect(chars(s, cub).keywords).not.toContain("hexproof");
     expect(chars(s, cub).keywords).not.toContain("indestructible");
-    // Les blessures restent prévenues, de combat ou non.
+    // The damage stays prevented, combat damage or not.
     dealDamage(s, sourceFromObject(s, cub), cub, 3, false);
     dealDamage(s, sourceFromObject(s, cub), cub, 2, true);
     expect(s.objects[cub]?.damage).toBe(0);
   });
 });
 
-describe("Mutant Menace : marqueurs de radiation du joueur ciblé à l'arrivée", () => {
-  // Le joueur ciblé (ici le second adversaire) reçoit bien les marqueurs : la cible était demandée, puis perdue.
+describe("Mutant Menace: rad counters of the targeted player on entering", () => {
+  // The targeted player (here the second opponent) does get the counters: the target was asked for, then lost.
   it.each([
     ["Mirelurk Queen", lands("Island", 5), 2],
     ["Nightkin Ambusher", [...lands("Island", 2), ...lands("Swamp", 2)], 4],
     ["The Master, Transcendent", ["Plains", "Swamp", "Forest", "Island"], 2],
-  ] as const)("%s : le joueur ciblé reçoit ses marqueurs de radiation", (name, mana, n) => {
+  ] as const)("%s: the targeted player gets their rad counters", (name, mana, n) => {
     let s = scenario({ players: 3, p1: { battlefield: [...mana], hand: [name] } });
     s = settle(castIt(s, "p1", name), picking(["p3"]));
     expect(idsOf(s, "p1", "battlefield", name)).toHaveLength(1);
@@ -339,8 +339,8 @@ describe("Mutant Menace : marqueurs de radiation du joueur ciblé à l'arrivée"
   });
 });
 
-describe("joueur attaqué en multijoueur (PLAN-H, lot H5)", () => {
-  it("Struggle for Project Purity (Enclave) : seules comptent les créatures qui vous attaquent, pas celles qui attaquent vos planeswalkers", () => {
+describe("player attacked in multiplayer (PLAN-H, lot H5)", () => {
+  it("Struggle for Project Purity (Enclave): only creatures attacking you count, not those attacking your planeswalkers", () => {
     const run = (attackers: [string, "p2" | "walker"][]) => {
       let s = scenario({
         players: 3,

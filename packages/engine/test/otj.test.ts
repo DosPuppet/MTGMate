@@ -1,6 +1,6 @@
 /**
- * Outlaws of Thunder Junction, lot A : plot (702.170), spree (702.172), crimes (700.13), marqueurs de capacité (122.1b),
- * terrains rapides.
+ * Outlaws of Thunder Junction, lot A: plot (702.170), spree (702.172), crimes (700.13), ability counters (122.1b),
+ * fast lands.
  */
 import { TOKEN_SPECS } from "@mtgx/cards/tokens";
 import { describe, expect, it } from "vitest";
@@ -47,18 +47,18 @@ const abilityIndex = (s: S, id: string, label: string) =>
     (a) => a.kind === "activated" && plainText(a.label ?? "").startsWith(label),
   );
 
-/** Crimes commis par p1 ce tour-ci (journal du tour). */
+/** Crimes committed by p1 this turn (turn log). */
 const crimesOf = (s: GameState) => s.turnLog.filter((e) => e.e === "crime" && e.player === "p1").length;
 describe("Outlaws of Thunder Junction", () => {
-  it("plot : action spéciale depuis la main, puis lancement gratuit à un tour ultérieur, au moment d'un rituel", () => {
+  it("plot: special action from hand, then free cast on a later turn, at sorcery timing", () => {
     let s = scenario({ p1: { battlefield: lands("Island", 4), hand: ["Djinn of Fool's Fall"] } });
     const djinn = idOf(s, "p1", "hand", "Djinn of Fool's Fall");
     s = act(s, "p1", { type: "activate", source: djinn, ability: abilityIndex(s, djinn, "Plot") });
-    // Action spéciale : pas de pile, la carte est exilée et complotée.
+    // Special action: no stack, the card is exiled and plotted.
     expect(s.stack).toHaveLength(0);
     const plotted = s.exile.find((id) => s.objects[id]?.exiledVia?.kind === "plot") as string;
     expect(plotted).toBeDefined();
-    // Pas ce tour-ci.
+    // Not this turn.
     expect(legalActions(s, "p1").some((a) => a.type === "cast" && a.card === plotted)).toBe(false);
     s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number > 3);
     const cast = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === plotted);
@@ -69,11 +69,11 @@ describe("Outlaws of Thunder Junction", () => {
     expect(s.players.p1?.manaPool.U ?? 0).toBe(0);
   });
 
-  it("spree : les coûts des modes choisis s'ajoutent ; un mode trop cher n'est pas proposé", () => {
+  it("spree: the costs of the chosen modes add up; a mode that is too expensive is not offered", () => {
     const s = scenario({ p1: { battlefield: lands("Forest", 3), hand: ["Trash the Town"] }, p2: { battlefield: ["Bear Cub"] } });
     const opt = legalActions(s, "p1").find((a) => a.type === "cast");
     const labels = opt?.type === "cast" ? opt.modes.map((m) => plainText(m.label ?? "")) : [];
-    // {G} + {2} + {1} = 4 mana pour deux modes, 5 pour les trois : seulement 3 Forêts.
+    // {G} + {2} + {1} = 4 mana for two modes, 5 for all three: only 3 Forests.
     expect(labels).toContain("Two +1/+1 counters");
     expect(labels).toContain("Trample + Combat damage: draw two cards");
     expect(labels).not.toContain("Two +1/+1 counters + Trample + Combat damage: draw two cards");
@@ -90,7 +90,7 @@ describe("Outlaws of Thunder Junction", () => {
     expect(t.objects[bear]?.counters["+1/+1"]).toBe(2);
   });
 
-  it("crime : cibler un adversaire ou ce qu'il contrôle déclenche « chaque fois que vous commettez un crime »", () => {
+  it('crime: targeting an opponent or something they control triggers "whenever you commit a crime"', () => {
     let s = scenario({
       p1: { battlefield: ["Blood Hustler", ...lands("Mountain", 2)], hand: ["Scorching Shot"] },
       p2: { battlefield: ["Bear Cub"] },
@@ -104,7 +104,7 @@ describe("Outlaws of Thunder Junction", () => {
     expect(crimesOf(s)).toBe(1);
     s = passAccepting(s, (x) => x.stack.length === 0 && x.pending?.kind === "priority");
     expect(s.objects[hustler]?.counters["+1/+1"]).toBe(1);
-    // Cibler sa propre créature n'est pas un crime.
+    // Targeting your own creature is not a crime.
     let t = scenario({ p1: { battlefield: ["Omenport Vigilante", ...lands("Mountain", 2)], hand: ["Scorching Shot"] } });
     const vig = idOf(t, "p1", "battlefield", "Omenport Vigilante");
     t = act(t, "p1", { type: "cast", card: idOf(t, "p1", "hand", "Scorching Shot"), targets: { t: [vig] } });
@@ -112,7 +112,7 @@ describe("Outlaws of Thunder Junction", () => {
     expect(chars(t, vig).keywords).not.toContain("doubleStrike");
   });
 
-  it("marqueurs de capacité : un marqueur contact mortel donne le contact mortel (Vraska Joins Up)", () => {
+  it("ability counters: a deathtouch counter gives deathtouch (Vraska Joins Up)", () => {
     let s = scenario({
       p1: { battlefield: ["Bear Cub", ...lands("Swamp", 1), ...lands("Forest", 1)], hand: ["Vraska Joins Up"] },
     });
@@ -121,7 +121,7 @@ describe("Outlaws of Thunder Junction", () => {
     expect(chars(s, idOf(s, "p1", "battlefield", "Bear Cub")).keywords).toContain("deathtouch");
   });
 
-  it("terrains rapides : dégagés avec deux autres terrains ou moins, engagés au-delà", () => {
+  it("fast lands: untapped with two or fewer other lands, tapped beyond that", () => {
     let s = scenario({ p1: { battlefield: lands("Swamp", 2), hand: ["Blooming Marsh"] } });
     s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Blooming Marsh") });
     expect(s.objects[idOf(s, "p1", "battlefield", "Blooming Marsh")]?.tapped).toBe(false);
@@ -130,7 +130,7 @@ describe("Outlaws of Thunder Junction", () => {
     expect(t.objects[idOf(t, "p1", "battlefield", "Blooming Marsh")]?.tapped).toBe(true);
   });
 
-  it("« quand cette carte devient complotée » se déclenche depuis l'exil (Longhorn Sharpshooter)", () => {
+  it('"when this card becomes plotted" triggers from exile (Longhorn Sharpshooter)', () => {
     let s = scenario({ p1: { battlefield: lands("Mountain", 4), hand: ["Longhorn Sharpshooter"] } });
     const card = idOf(s, "p1", "hand", "Longhorn Sharpshooter");
     s = act(s, "p1", { type: "activate", source: card, ability: abilityIndex(s, card, "Plot") });
@@ -138,7 +138,7 @@ describe("Outlaws of Thunder Junction", () => {
     expect(s.players.p2?.life).toBe(18);
   });
 
-  it("Archangel of Tithes : attaquer coûte {1} par créature", () => {
+  it("Archangel of Tithes: attacking costs {1} per creature", () => {
     const s = scenario({
       p1: { battlefield: ["Bear Cub", "Serra Angel"] },
       p2: { battlefield: ["Archangel of Tithes"] },
@@ -155,7 +155,7 @@ describe("Outlaws of Thunder Junction", () => {
     expect(t.objects[idOf(t, "p1", "battlefield", "Plains")]?.tapped).toBe(true);
   });
 
-  it("High Noon : un seul sort par joueur et par tour", () => {
+  it("High Noon: only one spell per player each turn", () => {
     let s = scenario({
       p1: { battlefield: ["High Noon", ...lands("Mountain", 4)], hand: ["Scorching Shot", "Lightning Strike"] },
       p2: { battlefield: ["Bear Cub"] },
@@ -165,7 +165,7 @@ describe("Outlaws of Thunder Junction", () => {
     expect(legalActions(s, "p1").some((a) => a.type === "cast")).toBe(false);
   });
 
-  it("Double Down : la copie d'un sort de créature hors-la-loi devient un jeton", () => {
+  it("Double Down: the copy of an outlaw creature spell becomes a token", () => {
     let s = scenario({ p1: { battlefield: ["Double Down", ...lands("Swamp", 3)], hand: ["Vault Plunderer"] } });
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Vault Plunderer") });
     s = passAccepting(s, (x) => x.stack.length === 0 && x.triggers.length === 0 && x.pending?.kind === "priority");
@@ -173,7 +173,7 @@ describe("Outlaws of Thunder Junction", () => {
     expect(s.battlefield.filter((id) => s.objects[id]?.isToken)).toHaveLength(1);
   });
 
-  it("Terror of the Peaks : un sort adverse qui la cible coûte 3 PV de plus", () => {
+  it("Terror of the Peaks: an opposing spell that targets it costs 3 more life", () => {
     let s = scenario({
       p1: { battlefield: lands("Mountain", 2), hand: ["Lightning Strike"] },
       p2: { battlefield: ["Terror of the Peaks"] },
@@ -186,7 +186,7 @@ describe("Outlaws of Thunder Junction", () => {
     expect(s.players.p1?.life).toBe(17);
   });
 
-  it("Step Between Worlds est exilé en se résolvant ; Magebane Lizard blesse le lanceur", () => {
+  it("Step Between Worlds is exiled as it resolves; Magebane Lizard damages the caster", () => {
     let s = scenario({ p1: { battlefield: lands("Island", 6), hand: ["Step Between Worlds"] } });
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Step Between Worlds") });
     s = passAccepting(s, (x) => x.stack.length === 0 && x.pending?.kind === "priority");
@@ -213,18 +213,18 @@ describe("Outlaws of Thunder Junction", () => {
     s = passBoth(s);
     expect(s.players.p2?.graveyard).toHaveLength(0);
     expect(s.players.p1?.graveyard).toHaveLength(0);
-    // Grand Abolisher : pendant le tour de p1, p2 ne lance rien.
+    // Grand Abolisher: during p1's turn, p2 casts nothing.
     const t = scenario({
       p1: { battlefield: ["Grand Abolisher"] },
       p2: { battlefield: lands("Mountain", 2), hand: ["Lightning Strike"] },
     });
     expect(legalActions(t, "p2").some((a) => a.type === "cast")).toBe(false);
-    // Torpor Orb : l'arrivée d'une créature ne déclenche rien.
+    // Torpor Orb: a creature entering triggers nothing.
     let u = scenario({ p1: { battlefield: ["Torpor Orb", ...lands("Plains", 3)], hand: ["Holy Cow"] } });
     u = act(u, "p1", { type: "cast", card: idOf(u, "p1", "hand", "Holy Cow") });
     u = passBoth(u);
     expect(u.players.p1?.life).toBe(20);
-    // Worldwalker Helm : un Trésor s'accompagne d'une Carte.
+    // Worldwalker Helm: a Treasure comes with a Clue.
     let v = scenario({ p1: { battlefield: ["Worldwalker Helm", "Treasure Dredger", ...lands("Swamp", 1)] } });
     const dredger = idOf(v, "p1", "battlefield", "Treasure Dredger");
     v = act(v, "p1", { type: "activate", source: dredger, ability: 0 });
@@ -234,8 +234,8 @@ describe("Outlaws of Thunder Junction", () => {
   });
 });
 
-describe("Outlaws of Thunder Junction : montants à l'arrivée", () => {
-  it("Sheriff of Safe Passage : un marqueur +1/+1 plus un par autre créature que vous contrôlez", () => {
+describe("Outlaws of Thunder Junction: amounts on entering", () => {
+  it("Sheriff of Safe Passage: a +1/+1 counter plus one for each other creature you control", () => {
     let s = scenario({
       p1: { battlefield: ["Bear Cub", "Bear Cub", "Plains", "Plains", "Plains"], hand: ["Sheriff of Safe Passage"] },
     });
@@ -247,18 +247,18 @@ describe("Outlaws of Thunder Junction : montants à l'arrivée", () => {
   });
 });
 
-describe("Outlaws of Thunder Junction : cartes du méta confrontées à leur texte Oracle (PLAN-C, lot C13)", () => {
-  /** Index du mode (ou de la combinaison de modes d'un sort à spree) dont le libellé est `label`. */
+describe("Outlaws of Thunder Junction: meta cards checked against their Oracle text (PLAN-C, lot C13)", () => {
+  /** Index of the mode (or the combination of modes of a spree spell) whose label is `label`. */
   const modeOf = (s: S, name: string, label: string) => {
     const card = idOf(s, "p1", "hand", name);
     const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === card);
     const mode = opt?.type === "cast" ? opt.modes.find((m) => plainText(m.label ?? "") === label) : undefined;
-    if (!mode) throw new Error(`mode « ${label} » introuvable pour ${name}`);
+    if (!mode) throw new Error(`mode "${label}" not found for ${name}`);
     return mode.index;
   };
   const yes: Answer = (req) => (req.type === "yesNo" ? [1] : undefined);
 
-  it("Inspiring Vantage, Spirebluff Canal, Concealed Courtyard : dégagés avec deux autres terrains ou moins ; deux couleurs", () => {
+  it("Inspiring Vantage, Spirebluff Canal, Concealed Courtyard: untapped with two or fewer other lands; two colors", () => {
     const fast: [string, string[]][] = [
       ["Inspiring Vantage", ["R", "W"]],
       ["Spirebluff Canal", ["U", "R"]],
@@ -277,12 +277,12 @@ describe("Outlaws of Thunder Junction : cartes du méta confrontées à leur tex
     }
   });
 
-  it("Shoot the Sheriff : détruit une créature qui n'est pas hors-la-loi", () => {
+  it("Shoot the Sheriff: destroys a creature that is not an outlaw", () => {
     let s = scenario({
       p1: { battlefield: lands("Swamp", 2), hand: ["Shoot the Sheriff"] },
       p2: { battlefield: ["Bear Cub", "Forsaken Miner"] },
     });
-    // Forsaken Miner est un Rogue : un hors-la-loi, pas une cible.
+    // Forsaken Miner is a Rogue: an outlaw, not a target.
     expect(() =>
       act(s, "p1", {
         type: "cast",
@@ -297,7 +297,7 @@ describe("Outlaws of Thunder Junction : cartes du méta confrontées à leur tex
     expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
   });
 
-  it("Three Steps Ahead : contrecarre un sort ; jeton copie d'une créature à vous ; piochez deux puis défaussez une", () => {
+  it("Three Steps Ahead: counters a spell; token copy of a creature you control; draw two then discard one", () => {
     let s = scenario({
       p1: { battlefield: ["Bear Cub", ...lands("Island", 6)], hand: ["Three Steps Ahead"], library: lands("Forest", 3) },
     });
@@ -314,7 +314,7 @@ describe("Outlaws of Thunder Junction : cartes du méta confrontées à leur tex
     expect(cubs.filter((id) => s.objects[id]?.isToken)).toHaveLength(1);
     expect(s.players.p1?.hand).toHaveLength(1);
     expect(s.players.p1?.graveyard).toHaveLength(2);
-    // Mode « contrecarrez » sur un sort adverse.
+    // "Counter" mode on an opposing spell.
     let t = scenario({
       active: "p2",
       p1: { battlefield: lands("Island", 3), hand: ["Three Steps Ahead"] },
@@ -334,13 +334,13 @@ describe("Outlaws of Thunder Junction : cartes du méta confrontées à leur tex
     expect(idsOf(t, "p2", "graveyard", "Lightning Strike")).toHaveLength(1);
   });
 
-  it("Doc Aurlock, Grizzled Genius : sorts depuis le cimetière ou l'exil et complot coûtent {2} de moins", () => {
-    // Think Twice : flashback {2}{U}, donc {U} avec Doc Aurlock.
+  it("Doc Aurlock, Grizzled Genius: spells from the graveyard or exile and plot cost {2} less", () => {
+    // Think Twice: flashback {2}{U}, so {U} with Doc Aurlock.
     const withDoc = scenario({ p1: { battlefield: ["Doc Aurlock, Grizzled Genius", "Island"], graveyard: ["Think Twice"] } });
     expect(castable(withDoc, "p1", idOf(withDoc, "p1", "graveyard", "Think Twice"))).toBe(true);
     const without = scenario({ p1: { battlefield: ["Island"], graveyard: ["Think Twice"] } });
     expect(castable(without, "p1", idOf(without, "p1", "graveyard", "Think Twice"))).toBe(false);
-    // Longhorn Sharpshooter : complot {3}{R}, donc {1}{R}.
+    // Longhorn Sharpshooter: plot {3}{R}, so {1}{R}.
     let s = scenario({
       p1: { battlefield: ["Doc Aurlock, Grizzled Genius", ...lands("Mountain", 2)], hand: ["Longhorn Sharpshooter"] },
     });
@@ -355,7 +355,7 @@ describe("Outlaws of Thunder Junction : cartes du méta confrontées à leur tex
     expect(canActivate(noDoc, "p1", idOf(noDoc, "p1", "hand", "Longhorn Sharpshooter"))).toBe(false);
   });
 
-  it("Requisition Raid : détruit un artefact et met un marqueur +1/+1 sur chaque créature d'un joueur ciblé", () => {
+  it("Requisition Raid: destroys an artifact and puts a +1/+1 counter on each creature of a targeted player", () => {
     let s = scenario({
       p1: { battlefield: ["Bear Cub", "Llanowar Elves", ...lands("Plains", 3)], hand: ["Requisition Raid"] },
       p2: { battlefield: ["Ghost Vacuum", "Shivan Dragon"] },
@@ -374,7 +374,7 @@ describe("Outlaws of Thunder Junction : cartes du méta confrontées à leur tex
     expect(s.objects[idOf(s, "p2", "battlefield", "Shivan Dragon")]?.counters["+1/+1"] ?? 0).toBe(0);
   });
 
-  it("Lively Dirge : une carte de la bibliothèque au cimetière ; jusqu'à deux créatures de VM totale 4 ou moins reviennent", () => {
+  it("Lively Dirge: a card from the library to the graveyard; up to two creatures with total mana value 4 or less return", () => {
     const start = () =>
       scenario({
         p1: {
@@ -390,7 +390,7 @@ describe("Outlaws of Thunder Junction : cartes du méta confrontées à leur tex
       "Lively Dirge",
       "A card from your library into your graveyard + Up to two creatures (total mana value 4 or less)",
     );
-    // Bear Cub (2) et Shivan Dragon (6) : plus de 4 au total.
+    // Bear Cub (2) and Shivan Dragon (6): more than 4 in total.
     expect(() =>
       act(s, "p1", {
         type: "cast",
@@ -413,7 +413,7 @@ describe("Outlaws of Thunder Junction : cartes du méta confrontées à leur tex
     expect(s.players.p1?.library).toHaveLength(2);
   });
 
-  it("Forsaken Miner : ne peut pas bloquer ; quand vous commettez un crime, payez {B} pour le renvoyer du cimetière", () => {
+  it("Forsaken Miner: can't block; when you commit a crime, pay {B} to return it from the graveyard", () => {
     const board = scenario({ p1: { battlefield: ["Forsaken Miner"] } });
     expect(chars(board, idOf(board, "p1", "battlefield", "Forsaken Miner")).keywords).toContain("cantBlock");
     let s = scenario({ p1: { battlefield: ["Mountain", "Swamp"], hand: ["Burst Lightning"], graveyard: ["Forsaken Miner"] } });
@@ -421,14 +421,14 @@ describe("Outlaws of Thunder Junction : cartes du méta confrontées à leur tex
     s = settle(s, yes);
     expect(idsOf(s, "p1", "battlefield", "Forsaken Miner")).toHaveLength(1);
     expect(s.players.p2?.life).toBe(18);
-    // Sans crime (cible : vous-même), rien.
+    // Without a crime (target: yourself), nothing.
     let t = scenario({ p1: { battlefield: ["Mountain", "Swamp"], hand: ["Burst Lightning"], graveyard: ["Forsaken Miner"] } });
     t = act(t, "p1", { type: "cast", card: idOf(t, "p1", "hand", "Burst Lightning"), targets: { t: ["p1"] } });
     t = settle(t, yes);
     expect(idsOf(t, "p1", "graveyard", "Forsaken Miner")).toHaveLength(1);
   });
 
-  it("Nurturing Pixie : renvoie un permanent non-Faerie à vous et prend un marqueur +1/+1 ; sans renvoi, pas de marqueur", () => {
+  it("Nurturing Pixie: returns a non-Faerie permanent you control and gets a +1/+1 counter; without a return, no counter", () => {
     let s = scenario({ p1: { battlefield: ["Bear Cub", "Plains"], hand: ["Nurturing Pixie"] } });
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Nurturing Pixie") });
@@ -443,7 +443,7 @@ describe("Outlaws of Thunder Junction : cartes du méta confrontées à leur tex
     expect(t.objects[idOf(t, "p1", "battlefield", "Nurturing Pixie")]?.counters["+1/+1"] ?? 0).toBe(0);
   });
 
-  it("Bovine Intervention : détruit un artefact ou une créature ; son contrôleur crée un Bœuf 2/2 blanc", () => {
+  it("Bovine Intervention: destroys an artifact or a creature; its controller creates a 2/2 white Ox", () => {
     let s = scenario({
       p1: { battlefield: lands("Plains", 2), hand: ["Bovine Intervention"] },
       p2: { battlefield: ["Shivan Dragon"] },
@@ -457,7 +457,7 @@ describe("Outlaws of Thunder Junction : cartes du méta confrontées à leur tex
     expect(idsOf(s, "p1", "battlefield", "Ox")).toHaveLength(0);
   });
 
-  it("Return the Favor : copie un sort (nouvelles cibles possibles) ; change la cible d'un sort à cible unique", () => {
+  it("Return the Favor: copies a spell (new targets possible); changes the target of a single-target spell", () => {
     let s = scenario({ p1: { battlefield: lands("Mountain", 5), hand: ["Lightning Strike", "Return the Favor"] } });
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Lightning Strike"), targets: { t: ["p2"] } });
     const strike = s.stack[0]?.id as string;
@@ -469,7 +469,7 @@ describe("Outlaws of Thunder Junction : cartes du méta confrontées à leur tex
     });
     s = settle(s);
     expect(s.players.p2?.life).toBe(14);
-    // Le sort adverse qui vous vise est renvoyé vers son lanceur.
+    // The opposing spell that targets you is sent back to its caster.
     let t = scenario({
       active: "p2",
       p1: { battlefield: lands("Mountain", 3), hand: ["Return the Favor"] },
@@ -489,7 +489,7 @@ describe("Outlaws of Thunder Junction : cartes du méta confrontées à leur tex
     expect(t.players.p2?.life).toBe(17);
   });
 
-  it("Aven Interrupter : exile un sort qui devient comploté ; les sorts adverses depuis l'exil coûtent {2} de plus", () => {
+  it("Aven Interrupter: exiles a spell that becomes plotted; opposing spells from exile cost {2} more", () => {
     let s = scenario({
       active: "p2",
       p1: { battlefield: lands("Plains", 3), hand: ["Aven Interrupter"] },
@@ -505,7 +505,7 @@ describe("Outlaws of Thunder Junction : cartes du méta confrontées à leur tex
     expect(plotted).toBeDefined();
     expect(s.objects[plotted]?.exiledVia?.kind).toBe("plot");
     expect(idsOf(s, "p2", "battlefield", "Shivan Dragon")).toHaveLength(0);
-    // Au tour suivant de p2 : lancé sans payer son coût de mana, mais {2} de plus.
+    // On p2's next turn: cast without paying its mana cost, but {2} more.
     s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.number > 3 && x.turn.step === "main1" && x.stack.length === 0);
     s = act(s, "p2", { type: "cast", card: plotted });
     expect(s.battlefield.filter((id) => s.objects[id]?.controller === "p2" && s.objects[id]?.tapped)).toHaveLength(2);
@@ -513,7 +513,7 @@ describe("Outlaws of Thunder Junction : cartes du méta confrontées à leur tex
     expect(idsOf(s, "p2", "battlefield", "Shivan Dragon")).toHaveLength(1);
   });
 
-  it("Magda, the Hoardmaster : un Trésor engagé au premier crime du tour ; trois Trésors sacrifiés pour un Dragon Scorpion 4/4", () => {
+  it("Magda, the Hoardmaster: a tapped Treasure on the first crime of the turn; three Treasures sacrificed for a 4/4 Scorpion Dragon", () => {
     let s = scenario({
       p1: { battlefield: ["Magda, the Hoardmaster", ...lands("Mountain", 2)], hand: ["Burst Lightning", "Burst Lightning"] },
     });
@@ -537,8 +537,8 @@ describe("Outlaws of Thunder Junction : cartes du méta confrontées à leur tex
   });
 });
 
-describe("« Au choix » choisi à la résolution (lot K3)", () => {
-  it("Rattleback Apothecary : la créature ciblée gagne au choix la menace OU le lien de vie, pas les deux", () => {
+describe('"Choose one" chosen on resolution (lot K3)', () => {
+  it("Rattleback Apothecary: the targeted creature gains your choice of menace OR lifelink, not both", () => {
     const run = (menace: 0 | 1) => {
       let s = scenario({
         p1: { battlefield: ["Rattleback Apothecary", ...lands("Mountain", 2)], hand: ["Scorching Shot"] },
@@ -568,8 +568,8 @@ describe("« Au choix » choisi à la résolution (lot K3)", () => {
   });
 });
 
-describe("Outlaws of Thunder Junction, lot K6 : choix rendus au joueur", () => {
-  /** Joue Arid Archway, renvoie le terrain nommé `back` et note les choix posés. */
+describe("Outlaws of Thunder Junction, lot K6: choices handed back to the player", () => {
+  /** Plays Arid Archway, returns the land named `back` and notes the choices posed. */
   const archway = (back: string) => {
     let s = scenario({ p1: { battlefield: ["Plains", "Forlorn Flats"], hand: ["Arid Archway"] } });
     s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Arid Archway") });
@@ -589,16 +589,16 @@ describe("Outlaws of Thunder Junction, lot K6 : choix rendus au joueur", () => {
     return { s, intents, options, targets };
   };
 
-  it("Arid Archway : le terrain renvoyé est choisi à la résolution (pas ciblé), elle-même comprise", () => {
+  it("Arid Archway: the returned land is chosen on resolution (not targeted), itself included", () => {
     const self = archway("Arid Archway");
     expect(self.options.sort()).toEqual(["Arid Archway", "Forlorn Flats", "Plains"]);
     expect(self.targets).toHaveLength(0);
     expect(idsOf(self.s, "p1", "hand", "Arid Archway")).toHaveLength(1);
-    // Elle-même n'est pas « un autre Désert » : pas de surveillance.
+    // It is not \"another Desert\" itself: no scry.
     expect(self.intents).not.toContain("surveilGraveyard");
   });
 
-  it("Arid Archway : un autre Désert renvoyé, surveillance 1 ; un terrain qui n'est pas un Désert, rien", () => {
+  it("Arid Archway: another Desert returned, scry 1; a land that is not a Desert, nothing", () => {
     const desert = archway("Forlorn Flats");
     expect(idsOf(desert.s, "p1", "hand", "Forlorn Flats")).toHaveLength(1);
     expect(desert.intents).toContain("surveilGraveyard");
@@ -609,8 +609,8 @@ describe("Outlaws of Thunder Junction, lot K6 : choix rendus au joueur", () => {
   });
 });
 
-describe("Montures : « une créature qui l'a montée ce tour-ci » (lot K6)", () => {
-  /** Monte la Monture (engage les créatures suggérées), puis attaque avec elle ; `answer` répond aux choix. */
+describe('Mounts: "a creature that mounted it this turn" (lot K6)', () => {
+  /** Saddles the Mount (taps the suggested creatures), then attacks with it; `answer` answers the choices. */
   const saddleAndAttack = (
     s0: GameState,
     mountName: string,
@@ -638,7 +638,7 @@ describe("Montures : « une créature qui l'a montée ce tour-ci » (lot K6)", (
     return s;
   };
 
-  it("Giant Beaver : le marqueur va sur une créature qui l'a montée (seule cible possible)", () => {
+  it("Giant Beaver: the counter goes on a creature that saddled it (only possible target)", () => {
     let s = scenario({ p1: { battlefield: ["Giant Beaver", "Serra Angel", "Bear Cub"] } });
     const angel = idOf(s, "p1", "battlefield", "Serra Angel");
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -652,12 +652,12 @@ describe("Montures : « une créature qui l'a montée ce tour-ci » (lot K6)", (
       },
       [angel],
     );
-    // La Monture 3 engage l'Ange (force 4) ; l'Ours ne l'a pas montée.
+    // The Mount 3 taps the Angel (power 4); the Bear did not saddle it.
     expect(targetOptions.every((o) => !o.includes(bear))).toBe(true);
     expect(s.objects[angel]?.counters["+1/+1"]).toBe(1);
   });
 
-  it("Rambling Possum : +1/+2, puis vous pouvez renvoyer en main celles qui l'ont montée", () => {
+  it("Rambling Possum: +1/+2, then you may return to hand the ones that saddled it", () => {
     const setup = () => scenario({ p1: { battlefield: ["Rambling Possum", "Bear Cub"] } });
     const back = saddleAndAttack(setup(), "Rambling Possum", (req) => (req.type === "pick" ? (req.options ?? []) : [1]));
     expect(idOf(back, "p1", "hand", "Bear Cub")).toBeDefined();
@@ -670,15 +670,15 @@ describe("Montures : « une créature qui l'a montée ce tour-ci » (lot K6)", (
 
 describe("Outlaws of Thunder Junction, lot K8 : mythiques", () => {
   type S = GameState;
-  /** Active la capacité de `source` dont le libellé commence par `label`. */
+  /** Activates the ability of `source` whose label starts with `label`. */
   const activate = (s: S, source: string, label: string, extra: object = {}, player: PlayerId = "p1") => {
     const a = legalActions(s, player).find(
       (x) => x.type === "activate" && x.source === source && plainText(x.label ?? "").startsWith(label),
     );
-    if (a?.type !== "activate") throw new Error(`capacité « ${label} » introuvable`);
+    if (a?.type !== "activate") throw new Error(`ability "${label}" not found`);
     return act(s, player, { type: "activate", source, ability: a.ability, ...extra });
   };
-  /** Répond oui/non aux questions et choisit les objets voulus. */
+  /** Answers yes/no to questions and chooses the wanted objects. */
   const answering =
     (opts: { yes?: boolean; pick?: string[] }) =>
     (req: ChoiceRequest): ChoiceValue[] | undefined => {
@@ -696,7 +696,7 @@ describe("Outlaws of Thunder Junction, lot K8 : mythiques", () => {
     toughness: 1,
   };
 
-  it("Annie Flash, the Veteran : lancée, elle ramène engagé un permanent de VM 3 ou moins de votre cimetière", () => {
+  it("Annie Flash, the Veteran: cast, it returns tapped a permanent with mana value 3 or less from your graveyard", () => {
     let s = scenario({
       p1: {
         battlefield: ["Mountain", "Forest", ...lands("Plains", 4)],
@@ -721,7 +721,7 @@ describe("Outlaws of Thunder Junction, lot K8 : mythiques", () => {
     expect(namesIn(s, s.players.p1?.graveyard).sort()).toEqual(["Serra Angel", "Swab Goblin"]);
   });
 
-  it("Annie Flash, the Veteran : engagée, elle exile les deux cartes du dessus, jouables ce tour-ci seulement", () => {
+  it("Annie Flash, the Veteran: tapped, it exiles the top two cards, playable this turn only", () => {
     let s = scenario({
       p1: {
         battlefield: ["Annie Flash, the Veteran", ...lands("Forest", 2)],
@@ -742,7 +742,7 @@ describe("Outlaws of Thunder Junction, lot K8 : mythiques", () => {
     expect(castable(later, "p1", cub)).toBe(false);
   });
 
-  it("Bristly Bill, Spine Sower : un terrain arrive, un marqueur sur une créature ciblée ; {3}{G}{G} double les marqueurs de vos créatures seulement", () => {
+  it("Bristly Bill, Spine Sower: a land enters, a counter on a targeted creature; {3}{G}{G} doubles the counters on your creatures only", () => {
     let s = scenario({
       p1: {
         battlefield: ["Bristly Bill, Spine Sower", { name: "Bear Cub", counters: { "+1/+1": 1 } }, ...lands("Forest", 5)],
@@ -762,7 +762,7 @@ describe("Outlaws of Thunder Junction, lot K8 : mythiques", () => {
     expect(s.objects[angel]?.counters["+1/+1"]).toBe(1);
   });
 
-  it("Final Showdown : les créatures perdent leurs capacités jusqu'à la fin du tour", () => {
+  it("Final Showdown: creatures lose their abilities until end of turn", () => {
     let s = scenario({ p1: { battlefield: lands("Plains", 2), hand: ["Final Showdown"] }, p2: { battlefield: ["Serra Angel"] } });
     const angel = idOf(s, "p2", "battlefield", "Serra Angel");
     const opt = legalActions(s, "p1").find((a) => a.type === "cast");
@@ -774,7 +774,7 @@ describe("Outlaws of Thunder Junction, lot K8 : mythiques", () => {
     expect(chars(s, angel).keywords).toContain("flying");
   });
 
-  it("Final Showdown : la créature choisie (sans cible) devient indestructible et survit à « détruisez toutes les créatures »", () => {
+  it('Final Showdown: the chosen creature (no target) becomes indestructible and survives "destroy all creatures"', () => {
     let s = scenario({
       p1: { battlefield: ["Bear Cub", "Llanowar Elves", ...lands("Plains", 7)], hand: ["Final Showdown"] },
       p2: { battlefield: ["Serra Angel"] },
@@ -789,7 +789,7 @@ describe("Outlaws of Thunder Junction, lot K8 : mythiques", () => {
         : undefined;
     expect(mode).toBeDefined();
     s = cast(s, "p1", "Final Showdown", { mode: mode?.index });
-    // Pas de cible : le choix se fait à la résolution.
+    // No target: the choice is made on resolution.
     expect(s.stack[0]?.targets ?? {}).toEqual({});
     s = settle(s, picking([cub]));
     expect(
@@ -802,7 +802,7 @@ describe("Outlaws of Thunder Junction, lot K8 : mythiques", () => {
     expect(namesIn(s, s.players.p2?.graveyard)).toEqual(["Serra Angel"]);
   });
 
-  it("Geralf, the Fleshwright : un Zombie Voleur 2/2 à partir du deuxième sort de votre tour ; un marqueur par autre Zombie arrivé ce tour-ci", () => {
+  it("Geralf, the Fleshwright: a 2/2 Zombie Rogue from your second spell of the turn; a counter per other Zombie that entered this turn", () => {
     let s = scenario({
       p1: { battlefield: ["Geralf, the Fleshwright", ...lands("Island", 3)], hand: ["Opt", "Opt", "Opt"] },
     });
@@ -819,7 +819,7 @@ describe("Outlaws of Thunder Junction, lot K8 : mythiques", () => {
     const second = zombies(s).find((id) => id !== first) as string;
     expect(s.objects[second]?.counters["+1/+1"]).toBe(1);
     expect(s.objects[first]?.counters["+1/+1"] ?? 0).toBe(0);
-    // Pendant le tour adverse, pas de Zombie.
+    // During the opponent's turn, no Zombie.
     let t = scenario({
       active: "p2",
       p1: { battlefield: ["Geralf, the Fleshwright", ...lands("Island", 2)], hand: ["Opt", "Opt"] },
@@ -831,7 +831,7 @@ describe("Outlaws of Thunder Junction, lot K8 : mythiques", () => {
     expect(zombies(t)).toHaveLength(0);
   });
 
-  it("Ghired, Mirror of the Wilds : vos créatures non-jetons copient un jeton à vous arrivé ce tour-ci", () => {
+  it("Ghired, Mirror of the Wilds: your nontoken creatures copy a token you control that entered this turn", () => {
     let s = scenario({
       p1: { battlefield: ["Ghired, Mirror of the Wilds", "Bear Cub"] },
       p2: { battlefield: ["Llanowar Elves"] },
@@ -843,7 +843,7 @@ describe("Outlaws of Thunder Junction, lot K8 : mythiques", () => {
     if (oldObj) oldObj.controlledSince = 0;
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
     expect(chars(s, idOf(s, "p1", "battlefield", "Ghired, Mirror of the Wilds")).keywords).toContain("haste");
-    // Les jetons et les créatures adverses n'ont pas la capacité.
+    // Tokens and opposing creatures do not have the ability.
     expect(canActivate(s, "p1", fresh)).toBe(false);
     expect(canActivate(s, "p2", idOf(s, "p2", "battlefield", "Llanowar Elves"))).toBe(false);
     expect(canActivate(s, "p1", cub)).toBe(true);
@@ -853,7 +853,7 @@ describe("Outlaws of Thunder Junction, lot K8 : mythiques", () => {
     expect(s.objects[cub]?.tapped).toBe(true);
   });
 
-  it("Gisa, the Hellraiser : Squelettes et Zombies +1/+1 et menace ; un crime crée deux Zombies engagés, une fois par tour", () => {
+  it("Gisa, the Hellraiser: Skeletons and Zombies +1/+1 and menace; a crime creates two tapped Zombies, once each turn", () => {
     let s = scenario({
       p1: { battlefield: ["Gisa, the Hellraiser", "Bear Cub", ...lands("Mountain", 2)], hand: ["Shock", "Shock"] },
     });
@@ -873,7 +873,7 @@ describe("Outlaws of Thunder Junction, lot K8 : mythiques", () => {
     expect(s.players.p2?.life).toBe(16);
   });
 
-  it("Goldvein Hydra : arrive avec X marqueurs ; en mourant, autant de Trésors engagés que sa force", () => {
+  it("Goldvein Hydra: enters with X counters; when it dies, as many tapped Treasures as its power", () => {
     let s = scenario({ p1: { battlefield: [...lands("Forest", 4), ...lands("Swamp", 3)], hand: ["Goldvein Hydra", "Murder"] } });
     s = settle(cast(s, "p1", "Goldvein Hydra", { x: 3 }));
     const hydra = idOf(s, "p1", "battlefield", "Goldvein Hydra");
@@ -885,7 +885,7 @@ describe("Outlaws of Thunder Junction, lot K8 : mythiques", () => {
     expect(treasures.every((id) => s.objects[id]?.tapped)).toBe(true);
   });
 
-  it("Kellan, the Kid : un sort lancé hors de la main permet de lancer gratuitement un sort de permanent de VM inférieure ou égale de la main, sinon de mettre un terrain", () => {
+  it("Kellan, the Kid: a spell cast from anywhere but hand lets you cast for free a permanent spell with lesser or equal mana value from hand, otherwise put a land", () => {
     const setup = () => {
       let s = scenario({
         p1: {
@@ -899,30 +899,30 @@ describe("Outlaws of Thunder Junction, lot K8 : mythiques", () => {
       return untilCastNow(act(s, "p1", { type: "cast", card: plotted }));
     };
     let s = setup();
-    // Seul le sort de permanent de VM 5 ou moins est proposé (ni le Dragon de VM 6, ni le terrain).
+    // Only the permanent spell with mana value 5 or less is offered (neither the mana value 6 Dragon, nor the land).
     expect(namesIn(s, castNowOf(s)?.cards)).toEqual(["Serra Angel"]);
     const lands0 = s.battlefield.filter((id) => nameOf(s, id) === "Island" && !s.objects[id]?.tapped).length;
     s = act(s, "p1", { type: "cast", card: castNowOf(s)?.cards[0] as string });
-    // Lancé (sur la pile, sans payer son coût de mana), et non mis sur le champ de bataille.
+    // Cast (on the stack, without paying its mana cost), and not put onto the battlefield.
     expect(s.stack.some((i) => i.kind === "spell" && s.defs[i.sourceDefId]?.name === "Serra Angel")).toBe(true);
     expect(s.battlefield.filter((id) => nameOf(s, id) === "Island" && !s.objects[id]?.tapped)).toHaveLength(lands0);
     s = settle(s);
     expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
     expect(idsOf(s, "p1", "battlefield", "Plains")).toHaveLength(0);
-    // Sans sort lancé : un terrain de la main.
+    // Without a cast spell: a land from hand.
     let t = setup();
     t = settle(t, (req) =>
       req.type === "pick" ? req.options.filter((id) => nameOf(t, id) === "Plains").slice(0, 1) : undefined,
     );
     expect(idsOf(t, "p1", "battlefield", "Serra Angel")).toHaveLength(0);
     expect(idsOf(t, "p1", "battlefield", "Plains")).toHaveLength(1);
-    // Un sort lancé de la main ne déclenche rien.
+    // A spell cast from hand triggers nothing.
     let u = scenario({ p1: { battlefield: ["Kellan, the Kid", ...lands("Forest", 2)], hand: ["Bear Cub", "Llanowar Elves"] } });
     u = cast(u, "p1", "Bear Cub");
     expect(u.stack.filter((i) => i.kind === "ability")).toHaveLength(0);
   });
 
-  it("Oko, the Ringleader : au début du combat, copie d'une de vos créatures avec la défense talismanique, jusqu'à la fin du tour", () => {
+  it("Oko, the Ringleader: at the beginning of combat, copy of one of your creatures with hexproof, until end of turn", () => {
     let s = scenario({ p1: { battlefield: ["Oko, the Ringleader", "Bear Cub"] } });
     const oko = idOf(s, "p1", "battlefield", "Oko, the Ringleader");
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -937,7 +937,7 @@ describe("Outlaws of Thunder Junction, lot K8 : mythiques", () => {
     expect(chars(s, oko).keywords).not.toContain("hexproof");
   });
 
-  it("Oko, the Ringleader : +1 pioche deux et défausse deux (une seule après un crime) ; −1 Élan 3/3 ; −5 copie vos autres permanents non-terrain", () => {
+  it("Oko, the Ringleader: +1 draw two and discard two (only one after a crime); −1 3/3 Elk; −5 copy your other nonland permanents", () => {
     const base = { battlefield: ["Oko, the Ringleader", "Mountain"], hand: ["Shock", "Bear Cub", "Opt"] };
     let s = scenario({ p1: base });
     const oko = idOf(s, "p1", "battlefield", "Oko, the Ringleader");
@@ -965,7 +965,7 @@ describe("Outlaws of Thunder Junction, lot K8 : mythiques", () => {
     expect(idsOf(c, "p1", "battlefield", "Serra Angel")).toHaveLength(0);
   });
 
-  it("Railway Brawler : une autre créature à vous qui arrive reçoit autant de marqueurs que sa force ; complot {3}{G}", () => {
+  it("Railway Brawler: another creature you control that enters gets as many counters as its power; plot {3}{G}", () => {
     let s = scenario({
       p1: { battlefield: ["Railway Brawler", ...lands("Forest", 2)], hand: ["Bear Cub"] },
       p2: { hand: ["Llanowar Elves"] },
@@ -981,7 +981,7 @@ describe("Outlaws of Thunder Junction, lot K8 : mythiques", () => {
     );
   });
 
-  it("Rakdos, the Muscle : sacrifier une autre créature exile autant de cartes que sa VM, jouables avec tout mana jusqu'à votre prochaine étape de fin", () => {
+  it("Rakdos, the Muscle: sacrificing another creature exiles as many cards as its mana value, playable with any mana until your next end step", () => {
     let s = scenario({
       p1: { battlefield: ["Rakdos, the Muscle", "Bear Cub", "Llanowar Elves", "Swamp"] },
       p2: { library: ["Shock", "Mountain", ...lands("Forest", 8)] },
@@ -992,7 +992,7 @@ describe("Outlaws of Thunder Junction, lot K8 : mythiques", () => {
     expect(namesIn(s, s.players.p1?.graveyard)).toEqual(["Bear Cub"]);
     expect(chars(s, rakdos).keywords).toContain("indestructible");
     expect(s.objects[rakdos]?.tapped).toBe(true);
-    // Une fois par tour.
+    // Once each turn.
     expect(canActivate(s, "p1", rakdos)).toBe(false);
     const shock = s.exile.find((id) => nameOf(s, id) === "Shock") as string;
     const mountain = s.exile.find((id) => nameOf(s, id) === "Mountain") as string;
@@ -1001,19 +1001,19 @@ describe("Outlaws of Thunder Junction, lot K8 : mythiques", () => {
     expect(legalActions(s, "p1").some((a) => a.type === "playLand" && a.card === mountain)).toBe(true);
     // Le Marais paie {R}.
     expect(castable(s, "p1", shock)).toBe(true);
-    // Après votre étape de fin, plus jouables (même pendant le tour adverse).
+    // After your end step, no longer playable (even during the opponent's turn).
     s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
     expect(castable(s, "p1", shock)).toBe(false);
   });
 
-  it("Selvala, Eager Trailblazer : un sort de créature crée un Mercenaire 1/1 ; {T} : un mana d'une couleur par force différente", () => {
+  it("Selvala, Eager Trailblazer: a creature spell creates a 1/1 Mercenary; {T}: one mana of a color per different power", () => {
     let s = scenario({
       p1: { battlefield: ["Selvala, Eager Trailblazer", ...lands("Forest", 2)], hand: ["Bear Cub", "Opt"] },
     });
     s = settle(cast(s, "p1", "Bear Cub"));
     const [merc] = tokensOf(s, "p1", "Mercenary") as [string];
     expect(chars(s, merc)).toMatchObject({ power: 1, toughness: 1, colors: ["R"] });
-    // Forces 4, 2 et 1 : trois mana.
+    // Powers 4, 2 and 1: three mana.
     const selvala = idOf(s, "p1", "battlefield", "Selvala, Eager Trailblazer");
     const mana = legalActions(s, "p1").find((a) => a.type === "tapForMana" && a.source === selvala);
     s = act(s, "p1", {
@@ -1023,12 +1023,12 @@ describe("Outlaws of Thunder Junction, lot K8 : mythiques", () => {
       color: "U",
     });
     expect(s.players.p1?.manaPool.U).toBe(3);
-    // Un sort qui n'est pas de créature : pas de Mercenaire.
+    // A spell that is not a creature: no Mercenary.
     s = settle(cast(s, "p1", "Opt"));
     expect(tokensOf(s, "p1", "Mercenary")).toHaveLength(1);
   });
 
-  it("The Gitrog, Ravenous Ride : blessures de combat à un joueur, sacrifier celle qui l'a montée pioche X et met jusqu'à X terrains engagés", () => {
+  it("The Gitrog, Ravenous Ride: combat damage to a player, sacrificing the one that saddled it draws X and puts up to X tapped lands", () => {
     let s = scenario({
       p1: {
         battlefield: ["The Gitrog, Ravenous Ride", "Bear Cub"],
@@ -1050,12 +1050,12 @@ describe("Outlaws of Thunder Junction, lot K8 : mythiques", () => {
     });
     expect(s.players.p2?.life).toBe(14);
     expect(namesIn(s, s.players.p1?.graveyard)).toEqual(["Bear Cub"]);
-    // Deux cartes piochées, deux terrains mis en jeu engagés.
+    // Two cards drawn, two lands put onto the battlefield tapped.
     const landsIn = s.battlefield.filter((id) => s.objects[id]?.controller === "p1" && chars(s, id).types.includes("Land"));
     expect(landsIn).toHaveLength(2);
     expect(landsIn.every((id) => s.objects[id]?.tapped)).toBe(true);
     expect(s.players.p1?.hand).toHaveLength(3);
-    // Sans créature qui l'a montée, rien.
+    // Without a creature that saddled it, nothing.
     let t = scenario({ p1: { battlefield: ["The Gitrog, Ravenous Ride", "Bear Cub"], hand: ["Plains"] } });
     t = attack(t, [idOf(t, "p1", "battlefield", "The Gitrog, Ravenous Ride")]);
     t = throughCombat(t);
@@ -1064,7 +1064,7 @@ describe("Outlaws of Thunder Junction, lot K8 : mythiques", () => {
     expect(idsOf(t, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
   });
 
-  it("Tinybones, the Pickpocket : blessures de combat à un joueur, lancez un permanent non-terrain de son cimetière avec tout mana", () => {
+  it("Tinybones, the Pickpocket: combat damage to a player, cast a nonland permanent from their graveyard with any mana", () => {
     let s = scenario({
       p1: { battlefield: ["Tinybones, the Pickpocket", ...lands("Island", 2)] },
       p2: { graveyard: ["Cathar Commando", "Forest", "Bear Cub"] },
@@ -1085,15 +1085,15 @@ describe("Outlaws of Thunder Junction, lot K8 : mythiques", () => {
     }
     expect(offered).toEqual(expect.arrayContaining([commando, cub]));
     expect(offered).not.toContain(forest);
-    // Cibler une carte du cimetière adverse est un crime.
+    // Targeting a card in the opposing graveyard is a crime.
     expect(crimesOf(s)).toBeGreaterThan(0);
-    // Deux Îles paient {1}{W} : n'importe quel type de mana.
+    // Two Islands pay {1}{W}: any type of mana.
     expect(namesIn(s, castNowOf(s)?.cards)).toEqual(["Cathar Commando"]);
     s = act(s, "p1", { type: "cast", card: castNowOf(s)?.cards[0] as string });
     s = settle(s);
     expect(idsOf(s, "p1", "battlefield", "Cathar Commando")).toHaveLength(1);
     expect(s.players.p2?.life).toBe(19);
-    // Une carte sans le flash se lance aussi pendant la résolution (608.2g ; PLAN-D, D8).
+    // A card without flash is also cast during resolution (608.2g; PLAN-D, D8).
     let t = scenario({
       p1: { battlefield: ["Tinybones, the Pickpocket", ...lands("Island", 2)] },
       p2: { graveyard: ["Bear Cub"] },
@@ -1111,7 +1111,7 @@ describe("Outlaws of Thunder Junction, lot K8 : mythiques", () => {
     expect(idsOf(t, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
   });
 
-  it("Vraska, the Silencer : une créature non-jeton adverse meurt, payer {1} la ramène engagée sous votre contrôle, Trésor artefact seulement", () => {
+  it("Vraska, the Silencer: an opposing nontoken creature dies, paying {1} returns it tapped under your control, an artifact Treasure only", () => {
     let s = scenario({
       p1: { battlefield: ["Vraska, the Silencer", "Llanowar Elves", ...lands("Mountain", 3)], hand: ["Pyroclasm"] },
       p2: { battlefield: ["Bear Cub"] },
@@ -1125,11 +1125,11 @@ describe("Outlaws of Thunder Junction, lot K8 : mythiques", () => {
     expect(s.objects[back]?.tapped).toBe(true);
     expect(chars(s, back).types).toEqual(["Artifact"]);
     expect(chars(s, back).subtypes).toEqual(["Treasure"]);
-    // Les Elfes (à vous) restent au cimetière ; un seul {1} payé.
+    // The Elves (yours) stay in the graveyard; a single {1} paid.
     expect(namesIn(s, s.players.p1?.graveyard)).toEqual(expect.arrayContaining(["Llanowar Elves", "Pyroclasm"]));
     expect(s.battlefield.filter((id) => nameOf(s, id) === "Mountain" && s.objects[id]?.tapped)).toHaveLength(3);
     expect(cub).toBeDefined();
-    // Refuser de payer : la carte reste au cimetière.
+    // Declining to pay: the card stays in the graveyard.
     let t = scenario({
       p1: { battlefield: ["Vraska, the Silencer", ...lands("Mountain", 3)], hand: ["Pyroclasm"] },
       p2: { battlefield: ["Bear Cub"] },
@@ -1140,15 +1140,15 @@ describe("Outlaws of Thunder Junction, lot K8 : mythiques", () => {
 });
 
 describe("Outlaws of Thunder Junction, lot K8 : rares (1)", () => {
-  /** Active la capacité de `source` (la première, ou celle dont l'étiquette commence par `label`). */
+  /** Activates the ability of `source` (the first one, or the one whose label starts with `label`). */
   const activate = (s: GameState, source: string, label?: string, extra: object = {}) => {
     const opt = legalActions(s, "p1").find(
       (a) => a.type === "activate" && a.source === source && (!label || plainText(a.label ?? "").startsWith(label)),
     );
-    if (opt?.type !== "activate") throw new Error(`capacité introuvable : ${label ?? source}`);
+    if (opt?.type !== "activate") throw new Error(`ability not found: ${label ?? source}`);
     return act(s, "p1", { type: "activate", source, ability: opt.ability, ...extra });
   };
-  /** Une valeur du générateur telle que le prochain lancer de pièce soit gagné (ou perdu). */
+  /** A generator value such that the next coin flip is won (or lost). */
   const rngFor = (won: boolean) => {
     for (let r = 0; r < 1000; r++) if (random({ rng: r } as unknown as GameState) < 0.5 === won) return r;
     return 0;
@@ -1162,7 +1162,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (1)", () => {
       abilities: [triggered(when.entersSelf, [fx.gainLife(1)], { label: "1 PV" })],
     });
 
-  it("Akul the Unrepentant : sacrifiez trois autres créatures : une créature de votre main sur le champ de bataille, une fois par tour", () => {
+  it("Akul the Unrepentant: sacrifice three other creatures: a creature from your hand onto the battlefield, once each turn", () => {
     const two = scenario({ p1: { battlefield: ["Akul the Unrepentant", "Bear Cub", "Bear Cub"], hand: ["Serra Angel"] } });
     expect(canActivate(two, "p1", idOf(two, "p1", "battlefield", "Akul the Unrepentant"))).toBe(false);
     let s = scenario({
@@ -1179,15 +1179,15 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (1)", () => {
     expect(offered).toEqual(["Serra Angel"]);
     expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
     expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(3);
-    // Une seule fois par tour.
+    // Only once each turn.
     expect(canActivate(s, "p1", akul)).toBe(false);
   });
 
-  it("Annie Joins Up : 5 blessures à une créature adverse ; les déclencheurs de vos créatures légendaires se déclenchent une fois de plus", () => {
+  it("Annie Joins Up: 5 damage to an opposing creature; triggers of your legendary creatures trigger one more time", () => {
     let s = scenario({
       p1: {
         battlefield: [...lands("Mountain", 2), "Forest", "Plains", ...lands("Plains", 4)],
-        hand: ["Annie Joins Up", etbLife("Héros légendaire", true), etbLife("Recrue", false)],
+        hand: ["Annie Joins Up", etbLife("Legendary Hero", true), etbLife("Recruit", false)],
       },
       p2: { battlefield: ["Serra Angel"] },
     });
@@ -1195,15 +1195,15 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (1)", () => {
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Annie Joins Up") });
     s = settle(s, (req) => (req.type === "pick" && req.options.includes(angel) ? [angel] : undefined));
     expect(s.objects[angel]?.zone).not.toBe("battlefield");
-    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Héros légendaire") });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Legendary Hero") });
     s = settle(s);
     expect(s.players.p1?.life).toBe(22);
-    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Recrue") });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Recruit") });
     s = settle(s);
     expect(s.players.p1?.life).toBe(23);
   });
 
-  it("Another Round : X = 1, la créature choisie est exilée puis renvoyée deux fois (deux déclenchements d'arrivée)", () => {
+  it("Another Round: X = 1, the chosen creature is exiled then returned twice (two enter triggers)", () => {
     let s = scenario({
       p1: {
         battlefield: [...lands("Plains", 5), "Inspiring Overseer", { name: "Bear Cub", counters: { "+1/+1": 1 } }],
@@ -1216,11 +1216,11 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (1)", () => {
     s = settle(s, (req) => (req.type === "pick" && req.options.includes(overseer) ? [overseer] : undefined));
     expect(s.players.p1?.life).toBe(22);
     expect(idsOf(s, "p1", "battlefield", "Inspiring Overseer")).toHaveLength(1);
-    // La créature non choisie reste en place (même objet, marqueur gardé).
+    // The unchosen creature stays in place (same object, counter kept).
     expect(s.objects[bear]?.counters["+1/+1"]).toBe(1);
   });
 
-  it("Bonny Pall, Clearcutter : Beau a F/E égales au nombre de vos terrains ; quand vous attaquez, piochez puis un terrain de la main ou du cimetière", () => {
+  it("Bonny Pall, Clearcutter: Beau has P/T equal to the number of your lands; when you attack, draw then a land from hand or graveyard", () => {
     let s = scenario({ p1: { battlefield: [...lands("Island", 4), ...lands("Forest", 2)], hand: ["Bonny Pall, Clearcutter"] } });
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Bonny Pall, Clearcutter") });
     s = settle(s);
@@ -1234,14 +1234,14 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (1)", () => {
     t = attack(t, [idOf(t, "p1", "battlefield", "Bear Cub")]);
     t = settle(t, (req, _p, cur) => {
       if (req.type !== "pick") return undefined;
-      // Rien de la main ; la Plaine du cimetière.
+      // Nothing from hand; the Plains from the graveyard.
       return namesIn(cur, req.options).includes("Plains") ? pickNamed(cur, req, "Plains") : [];
     });
     expect(namesIn(t, t.players.p1?.hand)).toEqual(["Island"]);
     expect(idsOf(t, "p1", "battlefield", "Plains")).toHaveLength(1);
   });
 
-  it("Botanical Sanctum : dégagé avec deux autres terrains ou moins, engagé au-delà ; produit {G} ou {U}", () => {
+  it("Botanical Sanctum: untapped with two or fewer other lands, tapped beyond that; produces {G} or {U}", () => {
     let s = scenario({ p1: { battlefield: lands("Forest", 2), hand: ["Botanical Sanctum"] } });
     s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Botanical Sanctum") });
     const sanctum = idOf(s, "p1", "battlefield", "Botanical Sanctum");
@@ -1253,7 +1253,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (1)", () => {
     expect(t.objects[idOf(t, "p1", "battlefield", "Botanical Sanctum")]?.tapped).toBe(true);
   });
 
-  it("Breeches, the Blastmaker : au deuxième sort, sacrifiez un artefact : pile gagnée, copie ; perdue, blessures égales à la VM", () => {
+  it("Breeches, the Blastmaker: on the second spell, sacrifice an artifact: coin flip won, copy; lost, damage equal to mana value", () => {
     const artifact = customCard({ name: "Bibelot", typeLine: "Artifact", types: ["Artifact"] });
     const run = (sacrifice: boolean, won: boolean) => {
       let s = scenario({
@@ -1263,7 +1263,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (1)", () => {
         },
       });
       s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Opt") });
-      // Premier sort : pas de déclenchement.
+      // First spell: no trigger.
       expect(s.triggers.length + s.stack.filter((i) => i.kind === "ability").length).toBe(0);
       s = settle(s);
       s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Lightning Strike"), targets: { t: ["p2"] } });
@@ -1282,12 +1282,12 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (1)", () => {
     const copied = run(true, true);
     expect(copied.players.p2?.life).toBe(14);
     expect(idsOf(copied, "p1", "battlefield", "Bibelot")).toHaveLength(0);
-    // Pile perdue : 2 blessures (VM de Lightning Strike) en plus des 3 du sort.
+    // Flip lost: 2 damage (mana value of Lightning Strike) on top of the spell's 3.
     const lost = run(true, false);
     expect(lost.players.p2?.life).toBe(15);
   });
 
-  it("Bruse Tarl, Roving Rancher : vos Bœufs ont la double initiative ; à l'arrivée, carte du dessus exilée : terrain, un Bœuf 2/2", () => {
+  it("Bruse Tarl, Roving Rancher: your Oxen have double strike; on entering, top card exiled: land, a 2/2 Ox", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Mountain", 2), ...lands("Plains", 2)], hand: ["Bruse Tarl, Roving Rancher"] },
     });
@@ -1301,7 +1301,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (1)", () => {
     expect(chars(s, idOf(s, "p1", "battlefield", "Bruse Tarl, Roving Rancher")).keywords).not.toContain("doubleStrike");
   });
 
-  it("Bruse Tarl, Roving Rancher : en attaquant, une carte non-terrain exilée se lance jusqu'à la fin de votre prochain tour", () => {
+  it("Bruse Tarl, Roving Rancher: when attacking, an exiled nonland card is cast until the end of your next turn", () => {
     let s = scenario({
       p1: { battlefield: ["Bruse Tarl, Roving Rancher", ...lands("Forest", 2)], library: ["Bear Cub", ...lands("Forest", 8)] },
     });
@@ -1312,7 +1312,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (1)", () => {
     expect(idsOf(s, "p1", "battlefield", "Ox")).toHaveLength(0);
     s = throughCombat(s);
     expect(castable(s, "p1", cub)).toBe(true);
-    // Encore pendant votre prochain tour, plus après.
+    // Still during your next turn, not after.
     s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number === 5);
     expect(castable(s, "p1", cub)).toBe(true);
     s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number === 7);
@@ -1320,10 +1320,10 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (1)", () => {
     expect(castable(s, "p1", cub)).toBe(false);
   });
 
-  it("Calamity, Galloping Inferno : montée, deux copies engagées et attaquantes d'une créature non légendaire qui l'a montée, sacrifiées à l'étape de fin", () => {
+  it("Calamity, Galloping Inferno: saddled, two tapped and attacking copies of a nonlegendary creature that saddled it, sacrificed at the end step", () => {
     const setup = () =>
       scenario({ p1: { battlefield: ["Calamity, Galloping Inferno", "Bear Cub", "Bruse Tarl, Roving Rancher"] } });
-    // Sans monture : rien.
+    // Without a Mount: nothing.
     let n = setup();
     n = attack(n, [idOf(n, "p1", "battlefield", "Calamity, Galloping Inferno")]);
     n = settleNoBlocks(n);
@@ -1340,11 +1340,11 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (1)", () => {
     const copies = idsOf(s, "p1", "battlefield", "Bear Cub").filter((id) => id !== bear);
     expect(copies).toHaveLength(2);
     expect(copies.every((id) => s.objects[id]?.tapped && s.combat?.attackers.some((a) => a.id === id))).toBe(true);
-    // Bruse Tarl est légendaire : pas de copie.
+    // Bruse Tarl is legendary: no copy.
     expect(idsOf(s, "p1", "battlefield", "Bruse Tarl, Roving Rancher")).toHaveLength(1);
     s = advanceUntil(s, (x) => x.turn.active === "p2");
     expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toEqual([bear]);
-    // Deux créatures non légendaires l'ont montée : une copie de chacune, au choix.
+    // Two nonlegendary creatures saddled it: a copy of each, your choice.
     let m = scenario({ p1: { battlefield: ["Calamity, Galloping Inferno", "Bear Cub", "Swab Goblin"] } });
     const cal = idOf(m, "p1", "battlefield", "Calamity, Galloping Inferno");
     const cub = idOf(m, "p1", "battlefield", "Bear Cub");
@@ -1362,7 +1362,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (1)", () => {
     expect(idsOf(m, "p1", "battlefield", "Swab Goblin")).toHaveLength(2);
   });
 
-  it("Caustic Bronco : en attaquant, la carte du dessus en main ; vous perdez sa VM en PV, ou chaque adversaire si elle est montée", () => {
+  it("Caustic Bronco: when attacking, the top card to hand; you lose life equal to its mana value, or each opponent does if it is saddled", () => {
     const run = (saddled: boolean) => {
       let s = scenario({ p1: { battlefield: ["Caustic Bronco", "Serra Angel"], library: ["Shivan Dragon", "Forest"] } });
       const bronco = idOf(s, "p1", "battlefield", "Caustic Bronco");
@@ -1379,7 +1379,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (1)", () => {
     expect(run(true)).toEqual([20, 14]);
   });
 
-  it("Claim Jumper : si un adversaire a plus de terrains, une Plaine engagée, puis une seconde s'il en a encore plus", () => {
+  it("Claim Jumper: if an opponent has more lands, a tapped Plains, then a second one if they still have more", () => {
     const run = (opponentLands: number) => {
       let s = scenario({
         p1: { battlefield: lands("Plains", 3), hand: ["Claim Jumper"], library: [...lands("Plains", 3), "Forest"] },
@@ -1397,7 +1397,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (1)", () => {
     expect(run(3)).toBe(0);
   });
 
-  it("Colossal Rattlewurm : flash si vous contrôlez un Désert ; {1}{G}, exilez-le du cimetière : un Désert engagé", () => {
+  it("Colossal Rattlewurm: flash if you control a Desert; {1}{G}, exile it from the graveyard: a tapped Desert", () => {
     const flash = (desert: boolean) => {
       let s = scenario({
         active: "p2",
@@ -1417,7 +1417,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (1)", () => {
     expect(s.objects[idOf(s, "p1", "battlefield", "Conduit Pylons")]?.tapped).toBe(true);
   });
 
-  it("Duelist of the Mind : force égale aux cartes piochées ce tour-ci ; au premier crime du tour seulement, piochez puis défaussez", () => {
+  it("Duelist of the Mind: power equal to cards drawn this turn; on the first crime of the turn only, draw then discard", () => {
     let s = scenario({
       p1: {
         battlefield: ["Duelist of the Mind", ...lands("Mountain", 4)],
@@ -1433,12 +1433,12 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (1)", () => {
     expect(chars(s, duelist).power).toBe(1);
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Lightning Strike"), targets: { t: ["p2"] } });
     s = settle(s);
-    // Deuxième crime : pas de nouveau déclenchement.
+    // Second crime: no new trigger.
     expect(namesIn(s, s.players.p1?.hand)).toEqual(["Forest"]);
     expect(chars(s, duelist).power).toBe(1);
   });
 
-  it("Dust Animus : avec cinq terrains dégagés ou plus, arrive avec deux marqueurs +1/+1 et un marqueur lien de vie ; complot {1}{W}", () => {
+  it("Dust Animus: with five or more untapped lands, enters with two +1/+1 counters and a lifelink counter; plot {1}{W}", () => {
     const run = (n: number) => {
       let s = scenario({ p1: { battlefield: lands("Plains", n), hand: ["Dust Animus"] } });
       s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Dust Animus") });
@@ -1457,7 +1457,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (1)", () => {
     expect(p.exile.some((id) => nameOf(p, id) === "Dust Animus" && p.objects[id]?.exiledVia?.kind === "plot")).toBe(true);
   });
 
-  it("Eriette, the Beguiler : une Aura attachée à un permanent adverse de VM inférieure ou égale à la sienne vous en donne le contrôle", () => {
+  it("Eriette, the Beguiler: an Aura attached to an opposing permanent with mana value less than or equal to its own gives you control of it", () => {
     let s = scenario({
       p1: { battlefield: ["Eriette, the Beguiler", ...lands("Plains", 4)], hand: ["Pacifism", "Pacifism"] },
       p2: { battlefield: ["Bear Cub", "Serra Angel"] },
@@ -1468,13 +1468,13 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (1)", () => {
     s = act(s, "p1", { type: "cast", card: idsOf(s, "p1", "hand", "Pacifism")[0] as string, targets: { enchant: [bear] } });
     s = settle(s);
     expect(s.objects[bear]?.controller).toBe("p1");
-    // Serra Angel (VM 5) est plus chère que Pacifism (VM 2).
+    // Serra Angel (mana value 5) costs more than Pacifism (mana value 2).
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Pacifism"), targets: { enchant: [angel] } });
     s = settle(s);
     expect(s.objects[angel]?.controller).toBe("p2");
   });
 
-  it("Fblthp, Lost on the Range : complotez la carte non-terrain du dessus en payant son coût de mana ; garde {2}", () => {
+  it("Fblthp, Lost on the Range: plot the top nonland card by paying its mana cost; ward {2}", () => {
     let s = scenario({
       p1: { battlefield: ["Fblthp, Lost on the Range", ...lands("Forest", 2)], library: ["Bear Cub", ...lands("Forest", 6)] },
     });
@@ -1484,13 +1484,13 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (1)", () => {
     const cub = s.exile.find((id) => nameOf(s, id) === "Bear Cub") as string;
     expect(s.objects[cub]?.exiledVia?.kind).toBe("plot");
     expect(idsOf(s, "p1", "battlefield", "Forest").every((id) => s.objects[id]?.tapped)).toBe(true);
-    // Un terrain sur le dessus : rien.
+    // A land on top: nothing.
     let l = scenario({ p1: { battlefield: ["Fblthp, Lost on the Range", ...lands("Forest", 2)] } });
     const top = l.players.p1?.library[0];
     l = activate(l, idOf(l, "p1", "battlefield", "Fblthp, Lost on the Range"), "Plot the top card");
     l = settle(l, (req) => (req.type === "yesNo" ? [1] : undefined));
     expect(l.players.p1?.library[0]).toBe(top);
-    // Garde {2} : un sort adverse qui le cible est contrecarré faute de paiement.
+    // Ward {2}: an opposing spell that targets it is countered for lack of payment.
     let w = scenario({
       active: "p2",
       p1: { battlefield: ["Fblthp, Lost on the Range"] },
@@ -1503,7 +1503,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (1)", () => {
     expect(namesIn(w, w.players.p2?.graveyard)).toEqual(["Lightning Strike"]);
   });
 
-  it("Fortune, Loyal Steed : regard 2 à l'arrivée ; montée et attaquante, à la fin du combat elle et la créature qui l'a montée sont exilées puis renvoyées", () => {
+  it("Fortune, Loyal Steed: scry 2 on entering; saddled and attacking, at end of combat it and the creature that saddled it are exiled then returned", () => {
     let e = scenario({ p1: { battlefield: lands("Plains", 3), hand: ["Fortune, Loyal Steed"] } });
     e = act(e, "p1", { type: "cast", card: idOf(e, "p1", "hand", "Fortune, Loyal Steed") });
     let scried = 0;
@@ -1532,17 +1532,17 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (1)", () => {
 describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
   type S = GameState;
   const no: Answer = (req) => (req.type === "yesNo" ? [0] : undefined);
-  /** Index du mode (ou de la combinaison de modes d'un sort à spree) dont le libellé est `label`. */
+  /** Index of the mode (or the combination of modes of a spree spell) whose label is `label`. */
   const modeOf = (s: S, name: string, label: string) => {
     const card = idOf(s, "p1", "hand", name);
     const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === card);
     const mode = opt?.type === "cast" ? opt.modes.find((m) => plainText(m.label ?? "") === label) : undefined;
-    if (!mode) throw new Error(`mode « ${label} » introuvable pour ${name}`);
+    if (!mode) throw new Error(`mode "${label}" not found for ${name}`);
     return mode.index;
   };
   const treasures = (s: S, p: "p1" | "p2") => idsOf(s, p, "battlefield", "Treasure");
 
-  it("Freestrider Lookout : au premier crime du tour, un terrain parmi les cinq du dessus arrive engagé ; une fois par tour", () => {
+  it("Freestrider Lookout: on the first crime of the turn, a land among the top five enters tapped; once each turn", () => {
     let s = scenario({
       p1: {
         battlefield: ["Freestrider Lookout", ...lands("Mountain", 4)],
@@ -1556,18 +1556,18 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
     s = settle(s, (req, _p, x) => pickNamed(x, req, "Plains"));
     const plains = idOf(s, "p1", "battlefield", "Plains");
     expect(s.objects[plains]?.tapped).toBe(true);
-    // Les quatre autres cartes regardées vont au-dessous ; Swamp (sixième) est désormais au-dessus.
+    // The four other cards looked at go to the bottom; Swamp (sixth) is now on top.
     const lib = namesIn(s, s.players.p1?.library);
     expect(lib[0]).toBe("Swamp");
     expect(lib.slice(1).sort()).toEqual(["Bear Cub", "Giant Growth", "Island", "Serra Angel"]);
-    // Second crime du même tour : pas de nouveau déclenchement.
+    // Second crime of the same turn: no new trigger.
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Shock"), targets: { t: ["p2"] } });
     s = settle(s);
     expect(s.players.p1?.library).toHaveLength(5);
     expect(idsOf(s, "p1", "battlefield", "Island")).toHaveLength(0);
   });
 
-  it("Great Train Heist : +1/+0 et l'initiative jusqu'à la fin du tour ; un Trésor engagé par créature qui blesse l'adversaire", () => {
+  it("Great Train Heist: +1/+0 and first strike until end of turn; a tapped Treasure per creature that damages the opponent", () => {
     let s = scenario({
       p1: { battlefield: ["Bear Cub", "Llanowar Elves", ...lands("Mountain", 4)], hand: ["Great Train Heist"] },
     });
@@ -1590,7 +1590,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
     expect(chars(s, cub).keywords).not.toContain("firstStrike");
   });
 
-  it("Great Train Heist : dégage vos créatures et ajoute une phase de combat", () => {
+  it("Great Train Heist: untaps your creatures and adds a combat phase", () => {
     let s = scenario({
       p1: { battlefield: ["Bear Cub", ...lands("Mountain", 4)], hand: ["Great Train Heist"] },
     });
@@ -1610,7 +1610,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
     expect(s.players.p2?.life).toBe(16);
   });
 
-  it("Great Train Heist : hors de votre phase de combat, le premier mode dégage vos créatures sans combat supplémentaire", () => {
+  it("Great Train Heist: outside your combat phase, the first mode untaps your creatures without an extra combat", () => {
     let s = scenario({
       p1: { battlefield: [{ name: "Bear Cub", tapped: true }, ...lands("Mountain", 4)], hand: ["Great Train Heist"] },
     });
@@ -1619,7 +1619,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
     s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Great Train Heist"), mode }));
     expect(s.objects[cub]?.tapped).toBe(false);
     expect(s.turn.addedPhases).toBeUndefined();
-    // Une seule phase de combat ce tour-ci.
+    // Only one combat phase this turn.
     s = attack(s, [cub]);
     s = throughCombat(s);
     expect(s.players.p2?.life).toBe(18);
@@ -1627,12 +1627,12 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
     expect(s.turn.active).toBe("p2");
   });
 
-  it("Hell to Pay : X blessures à une créature ; autant de Trésors engagés que de blessures excédentaires", () => {
+  it("Hell to Pay: X damage to a creature; as many tapped Treasures as excess damage", () => {
     let s = scenario({
       p1: { battlefield: lands("Mountain", 7), hand: ["Hell to Pay", "Hell to Pay"] },
       p2: { battlefield: ["Bear Cub", { name: "Serra Angel", damage: 1 }] },
     });
-    // 4 blessures à un 2/2 : 2 excédentaires.
+    // 4 damage to a 2/2: 2 excess.
     s = act(s, "p1", {
       type: "cast",
       card: idsOf(s, "p1", "hand", "Hell to Pay")[0] as string,
@@ -1643,14 +1643,14 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
     expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(0);
     expect(treasures(s, "p1")).toHaveLength(2);
     expect(treasures(s, "p1").every((id) => s.objects[id]?.tapped)).toBe(true);
-    // 1 blessure à un 4/4 déjà blessé une fois : pas mortelle, aucun Trésor.
+    // 1 damage to a 4/4 already damaged once: not lethal, no Treasure.
     const angel = idOf(s, "p2", "battlefield", "Serra Angel");
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Hell to Pay"), x: 1, targets: { t: [angel] } });
     s = settle(s);
     expect(s.objects[angel]?.damage).toBe(2);
     expect(treasures(s, "p1")).toHaveLength(2);
   });
-  it("Hellspur Posse Boss : deux Mercenaires 1/1 rouges à l'arrivée ; vos autres hors-la-loi ont la célérité", () => {
+  it("Hellspur Posse Boss: two 1/1 red Mercenaries on entering; your other outlaws have haste", () => {
     let s = scenario({
       p1: {
         battlefield: [{ name: "Bear Cub", sick: true }, { name: "Forsaken Miner", sick: true }, ...lands("Mountain", 4)],
@@ -1669,10 +1669,10 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
     expect(chars(s, merc).colors).toEqual(["R"]);
     expect(chars(s, merc).keywords).toContain("haste");
     expect(chars(s, idOf(s, "p1", "battlefield", "Forsaken Miner")).keywords).toContain("haste");
-    // Ni Bear Cub (pas un hors-la-loi) ni le Boss lui-même (« autres »).
+    // Neither Bear Cub (not an outlaw) nor the Boss itself (\"other\").
     expect(chars(s, idOf(s, "p1", "battlefield", "Bear Cub")).keywords).not.toContain("haste");
     expect(chars(s, boss).keywords).not.toContain("haste");
-    // Jeton : {T} : une de vos créatures gagne +1/+0 ; pas une créature adverse.
+    // Token: {T}: one of your creatures gets +1/+0; not an opposing creature.
     const elves = idOf(s, "p2", "battlefield", "Llanowar Elves");
     expect(() => act(s, "p1", { type: "activate", source: merc, ability: 0, targets: { t: [elves] } })).toThrow();
     s = act(s, "p1", { type: "activate", source: merc, ability: 0, targets: { t: [boss] } });
@@ -1681,7 +1681,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
     expect(chars(s, boss).toughness).toBe(4);
   });
 
-  it("Insatiable Avarice : cherchez une carte et mettez-la au-dessus ; un joueur ciblé pioche trois cartes et perd 3 PV", () => {
+  it("Insatiable Avarice: search for a card and put it on top; a targeted player draws three cards and loses 3 life", () => {
     let s = scenario({
       p1: { battlefield: lands("Swamp", 5), hand: ["Insatiable Avarice"], library: [...lands("Forest", 6), "Serra Angel"] },
     });
@@ -1692,10 +1692,10 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
     );
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Insatiable Avarice"), mode, targets: { p: ["p1"] } });
     s = settle(s, (req, _p, x) => pickNamed(x, req, "Serra Angel"));
-    // La carte cherchée est au-dessus après le mélange : elle fait partie des trois cartes piochées.
+    // The searched card is on top after the shuffle: it is one of the three drawn cards.
     expect(namesIn(s, s.players.p1?.hand).sort()).toEqual(["Forest", "Forest", "Serra Angel"]);
     expect(s.players.p1?.life).toBe(17);
-    // Mode seul sur l'adversaire.
+    // Mode alone on the opponent.
     let t = scenario({ p1: { battlefield: lands("Swamp", 3), hand: ["Insatiable Avarice"] } });
     const m2 = modeOf(t, "Insatiable Avarice", "A player draws three cards and loses 3 life");
     t = act(t, "p1", { type: "cast", card: idOf(t, "p1", "hand", "Insatiable Avarice"), mode: m2, targets: { p: ["p2"] } });
@@ -1705,7 +1705,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
     expect(t.players.p1?.life).toBe(20);
   });
 
-  it("Kaervek, the Punisher : à chaque crime, exilez une carte noire de votre cimetière et copiez-la ; lancer la copie coûte 2 PV", () => {
+  it("Kaervek, the Punisher: on each crime, exile a black card from your graveyard and copy it; casting the copy costs 2 life", () => {
     const start = () =>
       scenario({
         p1: {
@@ -1718,7 +1718,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
     const sage = idOf(s, "p1", "graveyard", "Infestation Sage");
     const cub = idOf(s, "p1", "graveyard", "Bear Cub");
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Shock"), targets: { t: ["p2"] } });
-    // Bear Cub (verte) n'est pas une cible possible.
+    // Bear Cub (green) is not a possible target.
     expect(s.pending?.kind === "choice" && s.pending.request.type === "pick" && s.pending.request.options).not.toContain(cub);
     s = act(s, "p1", { type: "choose", values: [sage] });
     s = untilCastNow(s);
@@ -1732,7 +1732,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
     expect(tokens).toHaveLength(1);
     expect(s.objects[tokens[0] as string]?.isToken).toBe(true);
     expect(s.players.p2?.life).toBe(18);
-    // Copie non lancée : pas de perte de PV ; la carte reste exilée.
+    // Copy not cast: no life loss; the card stays exiled.
     let t = start();
     t = act(t, "p1", { type: "cast", card: idOf(t, "p1", "hand", "Shock"), targets: { t: ["p2"] } });
     t = act(t, "p1", { type: "choose", values: [idOf(t, "p1", "graveyard", "Infestation Sage")] });
@@ -1744,7 +1744,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
     expect(idsOf(t, "p1", "battlefield", "Infestation Sage")).toHaveLength(0);
   });
 
-  it("Kambal, Profiteering Mayor : copies engagées des jetons adverses une fois par tour ; vos jetons font perdre 1 PV et en gagner 1", () => {
+  it("Kambal, Profiteering Mayor: tapped copies of opposing tokens once each turn; your tokens make each opponent lose 1 life and you gain 1", () => {
     let s = scenario({
       active: "p2",
       p1: { battlefield: ["Kambal, Profiteering Mayor"] },
@@ -1756,10 +1756,10 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
     expect(mine).toHaveLength(2);
     expect(mine.every((id) => s.objects[id]?.isToken && s.objects[id]?.tapped)).toBe(true);
     expect(chars(s, mine[0] as string).power).toBe(1);
-    // Un seul lot de jetons arrivés : un seul drain.
+    // A single batch of tokens entered: a single drain.
     expect(s.players.p2?.life).toBe(19);
     expect(s.players.p1?.life).toBe(21);
-    // Second lot adverse du même tour : pas de copie (une fois par tour), pas de drain (jetons adverses).
+    // Second opposing batch of the same turn: no copy (once each turn), no drain (opposing tokens).
     s = act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Dragon Fodder") });
     s = settle(s);
     expect(idsOf(s, "p1", "battlefield", "Goblin")).toHaveLength(2);
@@ -1768,13 +1768,13 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
     expect(s.players.p1?.life).toBe(21);
   });
 
-  it("Kambal, Profiteering Mayor : seulement une copie de chacun des jetons du lot (pas des jetons arrivés plus tôt dans le tour)", () => {
+  it("Kambal, Profiteering Mayor: only a copy of each token of the batch (not of tokens that entered earlier in the turn)", () => {
     let s = scenario({
       active: "p2",
       p1: { hand: ["Kambal, Profiteering Mayor"] },
       p2: { battlefield: lands("Mountain", 2), hand: ["Dragon Fodder"] },
     });
-    // Un Chat adverse arrivé ce tour-ci, avant Kambal.
+    // An opposing Cat that entered this turn, before Kambal.
     createTokens(s, "p2", TOKEN_SPECS.Cat as TokenSpec, 1);
     moveObject(s, idOf(s, "p1", "hand", "Kambal, Profiteering Mayor"), "battlefield");
     expect(s.triggers).toHaveLength(0);
@@ -1784,7 +1784,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
     expect(idsOf(s, "p1", "battlefield", "Cat")).toHaveLength(0);
   });
 
-  it("Kellan Joins Up : complotez une carte non-terrain de VM 3 ou moins de votre main ; une créature légendaire qui arrive donne un marqueur à vos créatures", () => {
+  it("Kellan Joins Up: plot a nonland card with mana value 3 or less from your hand; a legendary creature entering gives a counter to your creatures", () => {
     let s = scenario({
       p1: {
         battlefield: [
@@ -1814,12 +1814,12 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
     });
     expect(options.sort()).toEqual(["Llanowar Elves", "Malcolm, the Eyes", "Swab Goblin"]);
     expect(s.exile.some((id) => nameOf(s, id) === "Llanowar Elves" && s.objects[id]?.exiledVia?.kind === "plot")).toBe(true);
-    // Une créature non légendaire : rien.
+    // A nonlegendary creature: nothing.
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Swab Goblin") });
     s = settle(s);
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
     expect(s.objects[cub]?.counters["+1/+1"] ?? 0).toBe(0);
-    // Une créature légendaire : un marqueur sur chacune de vos créatures, elle comprise.
+    // A legendary creature: a counter on each of your creatures, itself included.
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Malcolm, the Eyes") });
     s = settle(s);
     expect(s.objects[cub]?.counters["+1/+1"]).toBe(1);
@@ -1827,14 +1827,14 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
     expect(s.objects[idOf(s, "p1", "battlefield", "Malcolm, the Eyes")]?.counters["+1/+1"]).toBe(1);
   });
 
-  it("Laughing Jasper Flint : à l'entretien, exilez autant de cartes adverses que de hors-la-loi, lançables ce tour avec n'importe quel mana", () => {
+  it("Laughing Jasper Flint: at upkeep, exile as many opposing cards as outlaws, castable this turn with any mana", () => {
     let s = scenario({
       active: "p2",
       p1: { battlefield: ["Laughing Jasper Flint", "Forsaken Miner", "Bear Cub", ...lands("Forest", 4)] },
       p2: { library: ["Lightning Strike", "Shock", "Giant Growth", ...lands("Forest", 5)] },
     });
     s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.pending?.kind === "priority");
-    // Deux hors-la-loi (Jasper, Forsaken Miner) : deux cartes exilées.
+    // Two outlaws (Jasper, Forsaken Miner): two cards exiled.
     expect(exiled(s, "Lightning Strike")).toHaveLength(1);
     expect(exiled(s, "Shock")).toHaveLength(1);
     expect(exiled(s, "Giant Growth")).toHaveLength(0);
@@ -1842,13 +1842,13 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
     s = act(s, "p1", { type: "cast", card: strike, targets: { t: ["p2"] } });
     s = settle(s);
     expect(s.players.p2?.life).toBe(17);
-    // Fin du tour : Shock n'est plus lançable.
+    // End of turn: Shock is no longer castable.
     s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
     const shock = exiled(s, "Shock")[0] as string;
     expect(legalActions(s, "p1").some((a) => a.type === "cast" && a.card === shock)).toBe(false);
   });
 
-  it("Laughing Jasper Flint : les créatures que vous contrôlez sans les posséder sont des Mercenaires", () => {
+  it("Laughing Jasper Flint: creatures you control but don't own are Mercenaries", () => {
     let s = scenario({
       p1: { battlefield: ["Laughing Jasper Flint", "Llanowar Elves", ...lands("Mountain", 3)], hand: ["Take for a Ride"] },
       p2: { battlefield: ["Bear Cub"] },
@@ -1862,7 +1862,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
     expect(chars(s, idOf(s, "p1", "battlefield", "Llanowar Elves")).subtypes).not.toContain("Mercenary");
   });
 
-  it("Lilah, Undefeated Slickshot : prouesse ; un éphémère multicolore lancé de la main est exilé et comploté en se résolvant", () => {
+  it("Lilah, Undefeated Slickshot: prowess; a multicolored instant or sorcery cast from hand is exiled and plotted as it resolves", () => {
     let s = scenario({
       p1: { battlefield: ["Lilah, Undefeated Slickshot", "Island", ...lands("Mountain", 2)], hand: ["Slick Sequence", "Shock"] },
     });
@@ -1873,20 +1873,20 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
     const plotted = exiled(s, "Slick Sequence")[0] as string;
     expect(s.objects[plotted]?.exiledVia?.kind).toBe("plot");
     expect(idsOf(s, "p1", "graveyard", "Slick Sequence")).toHaveLength(0);
-    // Un éphémère monocolore va au cimetière.
+    // A monocolored instant goes to the graveyard.
     s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Shock"), targets: { t: ["p2"] } }));
     expect(idsOf(s, "p1", "graveyard", "Shock")).toHaveLength(1);
     expect(chars(s, lilah).power).toBe(5);
-    // Comploté : lancé gratuitement à un tour ultérieur.
+    // Plotted: cast for free on a later turn.
     s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number > 3);
     const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === plotted);
     expect(opt?.type === "cast" && opt.free).toBe(true);
-    // Lancé depuis l'exil : il va au cimetière.
+    // Cast from exile: it goes to the graveyard.
     s = settle(act(s, "p1", { type: "cast", card: plotted, targets: { t: ["p2"] } }));
     expect(idsOf(s, "p1", "graveyard", "Slick Sequence")).toHaveLength(1);
   });
 
-  it("Marchesa, Dealer of Death : à chaque crime, payer {1} : une des deux cartes du dessus en main (obligatoirement), l'autre au cimetière", () => {
+  it("Marchesa, Dealer of Death: on each crime, pay {1}: one of the top two cards to hand (mandatory), the other to the graveyard", () => {
     const setup = () =>
       scenario({
         p1: {
@@ -1909,14 +1909,14 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
     expect(namesIn(s, s.players.p1?.hand)).toEqual(["Opt"]);
     expect(namesIn(s, s.players.p1?.graveyard).sort()).toEqual(["Plains", "Shock"]);
     expect(idsOf(s, "p1", "battlefield", "Island").every((id) => s.objects[id]?.tapped)).toBe(true);
-    // Sans payer : rien.
+    // Without paying: nothing.
     let t = setup();
     t = settle(act(t, "p1", { type: "cast", card: idOf(t, "p1", "hand", "Shock"), targets: { t: ["p2"] } }), no);
     expect(t.players.p1?.hand).toHaveLength(0);
     expect(namesIn(t, t.players.p1?.graveyard)).toEqual(["Shock"]);
   });
 
-  it("Obeka, Splitter of Seconds : blessures de combat à un joueur, autant d'étapes d'entretien supplémentaires après le combat", () => {
+  it("Obeka, Splitter of Seconds: combat damage to a player, as many additional upkeep steps after combat", () => {
     const UPKEEP = customCard({
       name: "Horloge d'entretien",
       types: ["Artifact"],
@@ -1929,14 +1929,14 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
     const { s: after, steps } = stepTrail(attack(s, [obeka]), (x) => x.turn.step === "main2");
     s = after;
     expect(s.players.p2?.life).toBe(18);
-    // Deux vraies étapes d'entretien après la phase de combat (ni dégagement ni pioche), puis la phase principale.
+    // Two real upkeep steps after the combat phase (neither untap nor draw), then the main phase.
     expect(steps.slice(-4)).toEqual(["endCombat", "upkeep", "upkeep", "main2"]);
     expect(s.players.p1?.hand).toHaveLength(0);
-    // La capacité « au début de votre entretien » se déclenche à chacune.
+    // The \"at the beginning of your upkeep\" ability triggers at each.
     expect(s.players.p1?.life).toBe(22);
   });
 
-  it("One Last Job : les trois modes, une Aura ou un Équipement revient attaché à une créature choisie à la résolution", () => {
+  it("One Last Job: the three modes, an Aura or an Equipment returns attached to a creature chosen on resolution", () => {
     let s = scenario({
       p1: {
         battlefield: ["Swab Goblin", ...lands("Plains", 7)],
@@ -1952,7 +1952,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
     const job = idOf(s, "p1", "hand", "One Last Job");
     const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === job);
     const mode = opt?.type === "cast" ? opt.modes.find((m) => plainText(m.label ?? "") === label) : undefined;
-    // Bear Cub n'est pas une Monture ; Lavaspur Boots n'est pas une créature.
+    // Bear Cub is not a Mount; Lavaspur Boots is not a creature.
     expect(mode?.targets.find((t) => t.id === "m")?.legal).toEqual([felidar]);
     expect(mode?.targets.find((t) => t.id === "c")?.legal).not.toContain(boots);
     s = act(s, "p1", {
@@ -1961,8 +1961,8 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
       mode: modeOf(s, "One Last Job", label),
       targets: { c: [cub], m: [felidar], a: [boots] },
     });
-    // La créature qui reçoit l'Équipement est choisie à la résolution (PLAN-D, D7) : celle que renvoie le premier mode
-    // peut l'être.
+    // The creature that receives the Equipment is chosen on resolution (PLAN-D, D7): the one returned by the first mode
+    // may be it.
     const offered: string[] = [];
     s = settle(s, (req, _p, cur) => {
       if (req.type !== "pick" || !req.prompt.startsWith("One Last Job")) return undefined;
@@ -1978,7 +1978,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
     expect(namesIn(s, s.players.p1?.graveyard)).toEqual(["One Last Job"]);
   });
 
-  it("Ornery Tumblewagg : au début du combat, un marqueur +1/+1 sur la créature ciblée ; montée et attaquante, double ses marqueurs", () => {
+  it("Ornery Tumblewagg: at the beginning of combat, a +1/+1 counter on the targeted creature; saddled and attacking, doubles its counters", () => {
     let s = scenario({ p1: { battlefield: ["Ornery Tumblewagg", "Bear Cub", "Swab Goblin"] } });
     const wagg = idOf(s, "p1", "battlefield", "Ornery Tumblewagg");
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -2005,7 +2005,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
     expect(s.objects[cub]?.counters["+1/+1"]).toBe(2);
   });
 
-  it("Outcaster Trailblazer : un mana de la couleur choisie en arrivant ; une autre créature de force 4 ou plus qui arrive fait piocher", () => {
+  it("Outcaster Trailblazer: one mana of the color chosen on entering; another creature with power 4 or more entering draws", () => {
     let s = scenario({
       p1: { battlefield: lands("Forest", 3), hand: ["Outcaster Trailblazer"], library: ["Island", "Island", "Island"] },
     });
@@ -2033,26 +2033,26 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
 });
 
 describe("Outlaws of Thunder Junction, lot K8 : rares (3)", () => {
-  /** Index du mode (sort à mode ou spree) dont l'étiquette est `label`. */
+  /** Index of the mode (modal spell or spree) whose label is `label`. */
   const modeOf = (s: GameState, name: string, label: string) => {
     const card = idOf(s, "p1", "hand", name);
     const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === card);
     const mode = opt?.type === "cast" ? opt.modes.find((m) => plainText(m.label ?? "") === label) : undefined;
-    if (!mode) throw new Error(`mode « ${label} » introuvable pour ${name}`);
+    if (!mode) throw new Error(`mode "${label}" not found for ${name}`);
     return mode.index;
   };
-  /** Active la capacité de `source` dont l'étiquette commence par `label`. */
+  /** Activates the ability of `source` whose label starts with `label`. */
   const activate = (s: GameState, source: string, label: string, extra: object = {}) => {
     const opt = legalActions(s, "p1").find(
       (a) => a.type === "activate" && a.source === source && plainText(a.label ?? "").startsWith(label),
     );
-    if (opt?.type !== "activate") throw new Error(`capacité « ${label} » introuvable`);
+    if (opt?.type !== "activate") throw new Error(`ability "${label}" not found`);
     return act(s, "p1", { type: "activate", source, ability: opt.ability, ...extra });
   };
-  /** Monte la Monture `mount` en engageant `riders`. */
+  /** Saddles the Mount `mount` by tapping `riders`. */
   const saddle = (s: GameState, mount: string, riders: string[]) => activate(s, mount, "Saddle", { tap: riders });
 
-  it("Pillage the Bog : regardez deux fois autant de cartes que vos terrains, prenez-en exactement une, le reste dessous", () => {
+  it("Pillage the Bog: look at twice as many cards as your lands, take exactly one, the rest on the bottom", () => {
     let s = scenario({
       p1: {
         battlefield: ["Swamp", "Forest", "Forest"],
@@ -2067,17 +2067,17 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (3)", () => {
       return pickNamed(cur, req, "Serra Angel");
     });
     const pick = seen.find((r) => r.type === "pick");
-    // Trois terrains : les six cartes du dessus ; une carte à prendre obligatoirement.
+    // Three lands: the top six cards; one card to take, mandatory.
     expect(pick?.type === "pick" && pick.options.length).toBe(6);
     expect(pick?.type === "pick" && pick.min).toBe(1);
     expect(namesIn(s, s.players.p1?.hand)).toEqual(["Serra Angel"]);
-    // Les deux cartes non regardées restent au-dessus, les cinq autres vont dessous.
+    // The two cards not looked at stay on top, the other five go to the bottom.
     const lib = namesIn(s, s.players.p1?.library);
     expect(lib.slice(0, 2)).toEqual(["Opt", "Swamp"]);
     expect([...lib.slice(2)].sort()).toEqual(["Bear Cub", "Island", "Mountain", "Plains", "Shock"]);
   });
 
-  it("Pitiless Carnage : sacrifiez autant de permanents que voulu, puis piochez autant de cartes", () => {
+  it("Pitiless Carnage: sacrifice any number of permanents, then draw that many cards", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Swamp", 4), "Bear Cub", "Serra Angel"], hand: ["Pitiless Carnage"] },
     });
@@ -2087,7 +2087,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (3)", () => {
     s = settle(s, picking([bear, angel]));
     expect(namesIn(s, s.players.p1?.graveyard).sort()).toEqual(["Bear Cub", "Pitiless Carnage", "Serra Angel"]);
     expect(s.players.p1?.hand).toHaveLength(2);
-    // Aucun sacrifice : aucune carte piochée.
+    // No sacrifice: no card drawn.
     let t = scenario({ p1: { battlefield: [...lands("Swamp", 4), "Bear Cub"], hand: ["Pitiless Carnage"] } });
     t = cast(t, "p1", "Pitiless Carnage");
     t = settle(t, (req) => (req.type === "pick" ? [] : undefined));
@@ -2095,7 +2095,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (3)", () => {
     expect(t.players.p1?.hand).toHaveLength(0);
   });
 
-  it("Riku of Many Paths : un sort modal déclenche la capacité (Oiseau 1/1 volant) ; un sort non modal, non", () => {
+  it("Riku of Many Paths: a modal spell triggers the ability (1/1 flying Bird); a nonmodal spell does not", () => {
     let s = scenario({
       p1: {
         battlefield: ["Riku of Many Paths", ...lands("Swamp", 6), ...lands("Forest", 2)],
@@ -2117,13 +2117,13 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (3)", () => {
     expect(birds).toHaveLength(1);
     expect(chars(s, birds[0] as string).keywords).toContain("flying");
     expect(s.players.p2?.life).toBe(10);
-    // Bear Cub n'est pas un sort modal.
+    // Bear Cub is not a modal spell.
     s = cast(s, "p1", "Bear Cub");
     expect(s.triggers).toHaveLength(0);
     expect(s.stack.filter((i) => i.kind === "ability")).toHaveLength(0);
   });
 
-  it("Rush of Dread : les trois modes, chacun arrondi à l'unité supérieure, pour l'adversaire ciblé", () => {
+  it("Rush of Dread: the three modes, each rounded up, for the targeted opponent", () => {
     let s = scenario({
       p1: { battlefield: lands("Swamp", 8), hand: ["Rush of Dread"] },
       p2: { battlefield: ["Bear Cub", "Serra Angel", "Riku of Many Paths"], hand: lands("Forest", 3), life: 15 },
@@ -2137,14 +2137,14 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (3)", () => {
       targets: { a: ["p2"], b: ["p2"], c: ["p2"] },
     });
     s = settle(s);
-    // 3 créatures → 2 sacrifiées ; 3 cartes → 2 défaussées ; 15 PV → 8 perdus.
+    // 3 creatures → 2 sacrificed; 3 cards → 2 discarded; 15 life → 8 lost.
     expect(s.battlefield.filter((id) => s.objects[id]?.controller === "p2")).toHaveLength(1);
     expect(s.players.p2?.hand).toHaveLength(1);
     expect(s.players.p2?.life).toBe(7);
     expect(s.players.p1?.life).toBe(20);
   });
 
-  it("Satoru, the Infiltrator : pioche si la créature arrive sans avoir été lancée, pas si du mana a été dépensé pour la lancer", () => {
+  it("Satoru, the Infiltrator: draws if the creature enters without having been cast, not if mana was spent to cast it", () => {
     let s = scenario({
       p1: {
         battlefield: ["Satoru, the Infiltrator", ...lands("Forest", 8)],
@@ -2161,11 +2161,11 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (3)", () => {
     });
     s = settle(s, picking([angel]));
     expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
-    // L'Ange a été mis sur le champ de bataille sans être lancé : une carte piochée.
+    // The Angel was put onto the battlefield without being cast: one card drawn.
     expect(namesIn(s, s.players.p1?.hand)).toEqual(["Forest"]);
   });
 
-  it("Seraphic Steed : un Ange 3/3 volant seulement s'il attaque en étant monté", () => {
+  it("Seraphic Steed: a 3/3 flying Angel only if it attacks while saddled", () => {
     let s = scenario({ p1: { battlefield: ["Seraphic Steed", "Serra Angel"] } });
     const steed = idOf(s, "p1", "battlefield", "Seraphic Steed");
     expect(chars(s, steed).keywords).toEqual(expect.arrayContaining(["firstStrike", "lifelink"]));
@@ -2186,7 +2186,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (3)", () => {
     expect(a.keywords).toContain("flying");
   });
 
-  it("Slickshot Show-Off : +2/+0 jusqu'à la fin du tour pour chaque sort non-créature, rien pour un sort de créature", () => {
+  it("Slickshot Show-Off: +2/+0 until end of turn for each noncreature spell, nothing for a creature spell", () => {
     let s = scenario({
       p1: { battlefield: ["Slickshot Show-Off", "Island", "Island", "Forest", "Forest"], hand: ["Opt", "Bear Cub"] },
     });
@@ -2202,7 +2202,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (3)", () => {
     expect(chars(s, show).power).toBe(1);
   });
 
-  it("Smuggler's Surprise : meulez quatre cartes et reprenez jusqu'à deux créatures ou terrains ; vos créatures de force 4 ou plus sont protégées", () => {
+  it("Smuggler's Surprise: mill four cards and return up to two creatures or lands; your creatures with power 4 or more are protected", () => {
     let s = scenario({
       p1: {
         battlefield: [...lands("Forest", 4), "Serra Angel", "Bear Cub"],
@@ -2219,7 +2219,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (3)", () => {
       options = namesIn(cur, req.options) as string[];
       return req.options.filter((id) => nameOf(cur, id) !== "Opt" && nameOf(cur, id) !== "Shock");
     });
-    // Seules la créature et le terrain meulés sont proposés ; les cartes non meulées restent dans la bibliothèque.
+    // Only the milled creature and land are offered; the cards not milled stay in the library.
     expect(options.sort()).toEqual(["Bear Cub", "Island"]);
     expect(namesIn(s, s.players.p1?.hand).sort()).toEqual(["Bear Cub", "Island"]);
     expect(namesIn(s, s.players.p1?.graveyard).sort()).toEqual(["Opt", "Shock", "Smuggler's Surprise"]);
@@ -2232,25 +2232,25 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (3)", () => {
     expect(chars(s, angel).keywords).not.toContain("indestructible");
   });
 
-  it("Stingerback Terror : 7/7 volant et piétinement, -1/-1 pour chaque carte dans votre main", () => {
+  it("Stingerback Terror: 7/7 flying and trample, -1/-1 for each card in your hand", () => {
     let s = scenario({ p1: { battlefield: ["Stingerback Terror"], hand: ["Forest", "Island"] } });
     const terror = idOf(s, "p1", "battlefield", "Stingerback Terror");
     expect([chars(s, terror).power, chars(s, terror).toughness]).toEqual([5, 5]);
     expect(chars(s, terror).keywords).toEqual(expect.arrayContaining(["flying", "trample"]));
     s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Forest") });
     expect([chars(s, terror).power, chars(s, terror).toughness]).toEqual([6, 6]);
-    // Les cartes de la main de l'adversaire ne comptent pas.
+    // The cards in the opponent's hand do not count.
     const t = scenario({ p1: { battlefield: ["Stingerback Terror"] }, p2: { hand: lands("Forest", 3) } });
     expect(chars(t, idOf(t, "p1", "battlefield", "Stingerback Terror")).power).toBe(7);
   });
 
-  it("Stoic Sphinx : défense talismanique tant que son contrôleur n'a pas lancé de sort ce tour-ci", () => {
+  it("Stoic Sphinx: hexproof as long as its controller hasn't cast a spell this turn", () => {
     let s = scenario({ p1: { battlefield: ["Stoic Sphinx", "Island"], hand: ["Opt"] } });
     const sphinx = idOf(s, "p1", "battlefield", "Stoic Sphinx");
     expect(chars(s, sphinx).keywords).toEqual(expect.arrayContaining(["hexproof", "flying", "flash"]));
     s = cast(s, "p1", "Opt");
     expect(chars(s, sphinx).keywords).not.toContain("hexproof");
-    // Un sort lancé par l'adversaire ne la lui retire pas.
+    // A spell cast by the opponent does not remove it.
     let t = scenario({
       active: "p2",
       p1: { battlefield: ["Stoic Sphinx"] },
@@ -2260,7 +2260,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (3)", () => {
     expect(chars(t, idOf(t, "p1", "battlefield", "Stoic Sphinx")).keywords).toContain("hexproof");
   });
 
-  it("Taii Wakeen, Perfect Shot : piochez quand des blessures non de combat égalent l'endurance de la créature, pas au-delà", () => {
+  it("Taii Wakeen, Perfect Shot: draw when noncombat damage equals the creature's toughness, not beyond", () => {
     const wall = customCard({ name: "Mur de test", power: 0, toughness: 5 });
     let s = scenario({
       p1: { battlefield: ["Taii Wakeen, Perfect Shot", ...lands("Mountain", 4)], hand: ["Scorching Shot", "Scorching Shot"] },
@@ -2270,14 +2270,14 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (3)", () => {
     s = settle(s);
     expect(idsOf(s, "p2", "graveyard", "Mur de test")).toHaveLength(1);
     expect(namesIn(s, s.players.p1?.hand)).toEqual(["Scorching Shot", "Forest"]);
-    // 5 blessures à une créature d'endurance 2 : pas de pioche.
+    // 5 damage to a creature with toughness 2: no draw.
     s = cast(s, "p1", "Scorching Shot", { targets: { t: [idOf(s, "p2", "battlefield", "Bear Cub")] } });
     s = settle(s);
     expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
     expect(namesIn(s, s.players.p1?.hand)).toEqual(["Forest"]);
   });
 
-  it("Taii Wakeen, Perfect Shot : {X}, {T} : vos sources infligent X blessures non de combat de plus ce tour-ci", () => {
+  it("Taii Wakeen, Perfect Shot: {X}, {T}: your sources deal X additional noncombat damage this turn", () => {
     const giant = customCard({ name: "Colosse de test", power: 1, toughness: 7 });
     let s = scenario({
       p1: { battlefield: ["Taii Wakeen, Perfect Shot", ...lands("Mountain", 4)], hand: ["Scorching Shot"] },
@@ -2289,12 +2289,12 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (3)", () => {
     expect(s.objects[taii]?.tapped).toBe(true);
     s = cast(s, "p1", "Scorching Shot", { targets: { t: [idOf(s, "p2", "battlefield", "Colosse de test")] } });
     s = settle(s);
-    // 5 + 2 = 7 blessures : l'endurance du Colosse, qui meurt, et Taii fait piocher.
+    // 5 + 2 = 7 damage: the Colossus's toughness, which dies, and Taii draws.
     expect(idsOf(s, "p2", "graveyard", "Colosse de test")).toHaveLength(1);
     expect(namesIn(s, s.players.p1?.hand)).toEqual(["Forest"]);
   });
 
-  it("The Key to the Vault : regardez autant de cartes que les blessures de combat, exilez une carte non-terrain et lancez-la gratuitement", () => {
+  it("The Key to the Vault: look at as many cards as combat damage, exile a nonland card and cast it for free", () => {
     let s = scenario({
       p1: {
         battlefield: ["The Key to the Vault", "Bear Cub", ...lands("Island", 3)],
@@ -2322,18 +2322,18 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (3)", () => {
       else break;
     }
     expect(s.players.p2?.life).toBe(18);
-    // Deux blessures : les deux cartes du dessus ; seule la carte non-terrain est proposée.
+    // Two damage: the top two cards; only the nonland card is offered.
     expect(options).toEqual(["Serra Angel"]);
     const angel = castNowOf(s)?.cards[0] as string;
     expect(nameOf(s, angel)).toBe("Serra Angel");
     s = act(s, "p1", { type: "cast", card: angel });
     s = settle(s);
     expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
-    // La Forêt va dessous, sous les cartes non regardées.
+    // The Forest goes to the bottom, under the cards not looked at.
     expect(namesIn(s, s.players.p1?.library)).toEqual(["Opt", "Plains", "Forest"]);
   });
 
-  it("Tinybones Joins Up : les joueurs ciblés défaussent ; une créature légendaire qui arrive fait meuler et perdre 1 PV aux joueurs ciblés", () => {
+  it("Tinybones Joins Up: targeted players discard; a legendary creature entering makes the targeted players mill and lose 1 life", () => {
     let s = scenario({
       p1: { battlefield: lands("Swamp", 3), hand: ["Tinybones Joins Up", "Vadmir, New Blood", "Forest"] },
       p2: { hand: ["Island", "Plains"] },
@@ -2348,7 +2348,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (3)", () => {
     expect(s.players.p2?.life).toBe(19);
     expect(s.players.p1?.life).toBe(20);
     expect(s.players.p1?.library).toHaveLength(10);
-    // Une créature non légendaire ne déclenche rien.
+    // A nonlegendary creature triggers nothing.
     let t = scenario({ p1: { battlefield: ["Tinybones Joins Up", ...lands("Forest", 2)], hand: ["Bear Cub"] } });
     t = cast(t, "p1", "Bear Cub");
     t = settle(t);
@@ -2356,7 +2356,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (3)", () => {
     expect(t.players.p2?.graveyard).toHaveLength(0);
   });
 
-  it("Vadmir, New Blood : un marqueur +1/+1 par crime, une fois par tour ; menace et lien de vie avec quatre marqueurs", () => {
+  it("Vadmir, New Blood: a +1/+1 counter per crime, once each turn; menace and lifelink with four counters", () => {
     let s = scenario({ p1: { battlefield: ["Vadmir, New Blood", ...lands("Mountain", 2)], hand: ["Shock", "Shock"] } });
     const vadmir = idOf(s, "p1", "battlefield", "Vadmir, New Blood");
     s = cast(s, "p1", "Shock", { targets: { t: ["p2"] } });
@@ -2375,7 +2375,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (3)", () => {
     expect(kw(4)).toEqual(expect.arrayContaining(["menace", "lifelink"]));
   });
 
-  it("Wylie Duke, Atiin Hero : quand il devient engagé (monter une Monture), +1 PV et une carte ; attaquer avec la vigilance ne l'engage pas", () => {
+  it("Wylie Duke, Atiin Hero: when it becomes tapped (saddling a Mount), +1 life and a card; attacking with vigilance doesn't tap it", () => {
     let s = scenario({ p1: { battlefield: ["Wylie Duke, Atiin Hero"] } });
     const wylie = idOf(s, "p1", "battlefield", "Wylie Duke, Atiin Hero");
     s = attack(s, [wylie]);
@@ -2406,7 +2406,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (1)", () => {
     const id = idOf(s, "p1", "hand", name);
     const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === id);
     const mode = opt?.type === "cast" ? opt.modes.find((m) => plainText(m.label ?? "") === label) : undefined;
-    if (!mode) throw new Error(`mode « ${label} » introuvable pour ${name}`);
+    if (!mode) throw new Error(`mode "${label}" not found for ${name}`);
     return mode.index;
   };
   const tokens = (s: S, player: string, name: string) =>
@@ -2414,7 +2414,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (1)", () => {
   const strike = (s: S, target: string) =>
     act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Lightning Strike"), targets: { t: [target] } });
   const ROGUE = customCard({ name: "Test Rogue", subtypes: ["Rogue"], power: 2, toughness: 2 });
-  /** Monte la Monture en engageant `tap`, puis attaque avec elle et laisse les déclencheurs se résoudre. */
+  /** Saddles the Mount by tapping `tap`, then attacks with it and lets the triggers resolve. */
   const saddleAndAttack = (s0: S, mount: string, tap: string[]) => {
     let s = s0;
     const saddle = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === mount);
@@ -2424,7 +2424,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (1)", () => {
     return settleNoBlocks(s);
   };
 
-  it("Aloe Alchemist : comploté, la créature ciblée gagne +3/+2 et le piétinement jusqu'à la fin du tour ; elle a le piétinement", () => {
+  it("Aloe Alchemist: plotted, the targeted creature gets +3/+2 and trample until end of turn; it has trample", () => {
     let s = scenario({ p1: { battlefield: ["Bear Cub", ...lands("Forest", 2)], hand: ["Aloe Alchemist"] } });
     const alchemist = idOf(s, "p1", "hand", "Aloe Alchemist");
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -2438,7 +2438,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (1)", () => {
     expect(Object.values(s.defs).find((d) => d.name === "Aloe Alchemist")?.keywords).toContain("trample");
   });
 
-  it("At Knifepoint : vos hors-la-loi ont l'initiative pendant votre tour seulement ; un crime crée un Mercenaire, une fois par tour", () => {
+  it("At Knifepoint: your outlaws have first strike during your turn only; a crime creates a Mercenary, once each turn", () => {
     let s = scenario({
       p1: {
         battlefield: ["At Knifepoint", ROGUE, "Bear Cub", ...lands("Mountain", 4)],
@@ -2463,7 +2463,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (1)", () => {
     expect(chars(s, rogue).keywords).not.toContain("firstStrike");
   });
 
-  it("Badlands Revival : une carte de créature de votre cimetière revient sur le champ de bataille, une carte de permanent en main", () => {
+  it("Badlands Revival: a creature card from your graveyard returns to the battlefield, a permanent card to hand", () => {
     let s = scenario({
       p1: {
         battlefield: [...lands("Swamp", 4), "Forest"],
@@ -2476,7 +2476,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (1)", () => {
     const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === revival);
     const legal = (slot: string) =>
       opt?.type === "cast" ? ((opt.modes[0]?.targets ?? []).find((t) => t.id === slot)?.legal ?? []) : [];
-    // Un rituel n'est pas une carte de permanent ; le cimetière adverse n'est pas concerné.
+    // A sorcery is not a permanent card; the opposing graveyard is not concerned.
     expect(namesIn(s, legal("p")).sort()).toEqual(["Plains", "Serra Angel"]);
     expect(namesIn(s, legal("c"))).toEqual(["Serra Angel"]);
     s = act(s, "p1", {
@@ -2490,7 +2490,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (1)", () => {
     expect(namesIn(s, s.players.p1?.graveyard).sort()).toEqual(["Badlands Revival", "Lightning Strike"]);
   });
 
-  it("Bandit's Haul : un marqueur de butin au premier crime du tour seulement ; {2}, {T}, deux marqueurs retirés : piochez", () => {
+  it("Bandit's Haul: a loot counter on the first crime of the turn only; {2}, {T}, two counters removed: draw", () => {
     let s = scenario({
       p1: { battlefield: ["Bandit's Haul", ...lands("Mountain", 4)], hand: ["Lightning Strike", "Lightning Strike"] },
     });
@@ -2500,7 +2500,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (1)", () => {
     s = strike(s, "p2");
     s = settle(s);
     expect(s.objects[haul]?.counters.loot).toBe(1);
-    // Un seul marqueur : la pioche n'est pas possible.
+    // A single counter: the draw is not possible.
     let t = scenario({ p1: { battlefield: [{ name: "Bandit's Haul", counters: { loot: 1 } }, ...lands("Mountain", 2)] } });
     expect(canActivate(t, "p1", idOf(t, "p1", "battlefield", "Bandit's Haul"))).toBe(false);
     t = scenario({ p1: { battlefield: [{ name: "Bandit's Haul", counters: { loot: 3 } }, ...lands("Mountain", 2)] } });
@@ -2512,13 +2512,13 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (1)", () => {
     expect(t.objects[h]?.tapped).toBe(true);
   });
 
-  it("Baron Bertram Graywater : l'arrivée d'un jeton crée un Vampire Voleur 1/1 au lien de vie, une fois par tour ; {1}{B}, sacrifice : piochez", () => {
+  it("Baron Bertram Graywater: a token entering creates a 1/1 Vampire Rogue with lifelink, once each turn; {1}{B}, sacrifice: draw", () => {
     let s = scenario({
       p1: { battlefield: ["Baron Bertram Graywater", "At Knifepoint", ...lands("Mountain", 2)], hand: ["Lightning Strike"] },
     });
     s = strike(s, "p2");
     s = settle(s);
-    // Le Mercenaire déclenche le Baron ; le Vampire, lui, ne le déclenche pas une seconde fois.
+    // The Mercenary triggers the Baron; the Vampire does not trigger it a second time.
     expect(tokens(s, "p1", "Mercenary")).toHaveLength(1);
     const vampires = tokens(s, "p1", "Vampire Rogue");
     expect(vampires).toHaveLength(1);
@@ -2534,7 +2534,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (1)", () => {
     expect(t.objects[baron]).toBeDefined();
   });
 
-  it("Beastbond Outcaster : en arrivant, piochez seulement si vous contrôlez une créature de force 4 ou plus", () => {
+  it("Beastbond Outcaster: on entering, draw only if you control a creature with power 4 or more", () => {
     const run = (other: string) => {
       let s = scenario({ p1: { battlefield: [other, ...lands("Forest", 3)], hand: ["Beastbond Outcaster"] } });
       s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Beastbond Outcaster") });
@@ -2545,7 +2545,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (1)", () => {
     expect(run("Bear Cub")).toBe(0);
   });
 
-  it("Betrayal at the Vault : votre créature inflige des blessures égales à sa force à chacune de deux autres créatures ciblées", () => {
+  it("Betrayal at the Vault: your creature deals damage equal to its power to each of two other targeted creatures", () => {
     let s = scenario({
       p1: { battlefield: ["Shivan Dragon", ...lands("Forest", 6)], hand: ["Betrayal at the Vault"] },
       p2: { battlefield: ["Serra Angel", "Swab Goblin", "Bear Cub"] },
@@ -2557,7 +2557,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (1)", () => {
     const opt = legalActions(s, "p1").find((a) => a.type === "cast");
     const legalA = opt?.type === "cast" ? ((opt.modes[0]?.targets ?? []).find((t) => t.id === "a")?.legal ?? []) : [];
     expect(legalA).toEqual([dragon]);
-    // La créature source ne peut pas être aussi une des deux autres cibles.
+    // The source creature cannot also be one of the two other targets.
     expect(() =>
       act(s, "p1", {
         type: "cast",
@@ -2577,7 +2577,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (1)", () => {
     expect(s.objects[dragon]?.damage).toBe(0);
   });
 
-  it("Binding Negotiation : vous pouvez faire défausser une carte non-terrain ; sinon, une carte exilée de l'adversaire va dans son cimetière", () => {
+  it("Binding Negotiation: you may make a player discard a nonland card; otherwise, an exiled card of the opponent goes to their graveyard", () => {
     let s = scenario({
       p1: { battlefield: lands("Swamp", 2), hand: ["Binding Negotiation"] },
       p2: { hand: ["Lightning Strike", "Mountain"] },
@@ -2589,11 +2589,11 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (1)", () => {
       pickedFrom.push(namesIn(cur, req.options) as string[]);
       return req.options.filter((id) => nameOf(cur, id) === "Lightning Strike");
     });
-    // Le terrain n'est pas proposé.
+    // The land is not offered.
     expect(pickedFrom[0]).toEqual(["Lightning Strike"]);
     expect(namesIn(s, s.players.p2?.graveyard)).toEqual(["Lightning Strike"]);
     expect(namesIn(s, s.players.p2?.hand)).toEqual(["Mountain"]);
-    // Sans carte non-terrain en main : la carte exilée de l'adversaire va dans son cimetière.
+    // Without a nonland card in hand: the opponent's exiled card goes to their graveyard.
     let t = scenario({
       p1: { battlefield: lands("Swamp", 2), hand: ["Binding Negotiation"] },
       p2: { hand: ["Mountain"], library: ["Serra Angel", "Forest"] },
@@ -2606,7 +2606,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (1)", () => {
     expect(namesIn(t, t.players.p2?.hand)).toEqual(["Mountain"]);
   });
 
-  it("Boom Box : {6}, {T}, sacrifiez-la : détruisez jusqu'à un artefact, une créature et un terrain ciblés", () => {
+  it("Boom Box: {6}, {T}, sacrifice it: destroy up to one artifact, creature and land targeted", () => {
     let s = scenario({
       p1: { battlefield: ["Boom Box", ...lands("Mountain", 6)] },
       p2: { battlefield: ["Bandit's Haul", "Bear Cub", "Forest", "Serra Angel"] },
@@ -2620,7 +2620,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (1)", () => {
     s = settle(s);
     expect(namesIn(s, s.players.p2?.graveyard).sort()).toEqual(["Bandit's Haul", "Bear Cub", "Forest"]);
     expect(idsOf(s, "p2", "battlefield", "Serra Angel")).toHaveLength(1);
-    // Jusqu'à un : une seule cible suffit.
+    // Up to one: a single target is enough.
     let t = scenario({ p1: { battlefield: ["Boom Box", ...lands("Mountain", 6)] }, p2: { battlefield: ["Bear Cub", "Forest"] } });
     t = activate(t, idOf(t, "p1", "battlefield", "Boom Box"), "Destroy", {
       targets: { a: [], c: [idOf(t, "p2", "battlefield", "Bear Cub")], l: [] },
@@ -2629,7 +2629,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (1)", () => {
     expect(namesIn(t, t.players.p2?.graveyard)).toEqual(["Bear Cub"]);
   });
 
-  it("Bounding Felidar : en attaquant montée, un marqueur +1/+1 sur chacune de vos autres créatures et 1 PV par créature", () => {
+  it("Bounding Felidar: attacking while saddled, a +1/+1 counter on each of your other creatures and 1 life per creature", () => {
     const setup = () =>
       scenario({ p1: { battlefield: ["Bounding Felidar", "Bear Cub", "Swab Goblin"] }, p2: { battlefield: ["Bear Cub"] } });
     let s = setup();
@@ -2642,7 +2642,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (1)", () => {
     expect(s.objects[felidar]?.counters["+1/+1"] ?? 0).toBe(0);
     expect(s.objects[idOf(s, "p2", "battlefield", "Bear Cub")]?.counters["+1/+1"] ?? 0).toBe(0);
     expect(s.players.p1?.life).toBe(22);
-    // Sans être montée : rien.
+    // Without being saddled: nothing.
     let t = setup();
     t = attack(t, [idOf(t, "p1", "battlefield", "Bounding Felidar")]);
     t = settleNoBlocks(t);
@@ -2650,7 +2650,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (1)", () => {
     expect(t.players.p1?.life).toBe(20);
   });
 
-  it("Brimstone Roundup : votre deuxième sort du tour crée un Mercenaire 1/1 ; ni le premier ni le troisième", () => {
+  it("Brimstone Roundup: your second spell of the turn creates a 1/1 Mercenary; neither the first nor the third", () => {
     let s = scenario({
       p1: {
         battlefield: ["Brimstone Roundup", ...lands("Mountain", 6)],
@@ -2668,7 +2668,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (1)", () => {
     expect(tokens(s, "p1", "Mercenary")).toHaveLength(1);
   });
 
-  it("Bucolic Ranch : son mana de couleur ne sert qu'aux sorts de Monture ; {3}, {T} : une Monture du dessus en main", () => {
+  it("Bucolic Ranch: its colored mana is only for Mount spells; {3}, {T}: a Mount from the top to hand", () => {
     const s = scenario({ p1: { battlefield: ["Bucolic Ranch", "Plains", "Plains"], hand: ["Bear Cub", "Congregation Gryff"] } });
     expect(castable(s, "p1", idOf(s, "p1", "hand", "Congregation Gryff"))).toBe(true);
     expect(castable(s, "p1", idOf(s, "p1", "hand", "Bear Cub"))).toBe(false);
@@ -2678,7 +2678,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (1)", () => {
     expect(namesIn(t, t.players.p1?.hand)).toEqual(["Bounding Felidar"]);
   });
 
-  it("Bucolic Ranch : une carte qui n'est pas une Monture peut être mise au-dessous de la bibliothèque", () => {
+  it("Bucolic Ranch: a card that is not a Mount may be put on the bottom of the library", () => {
     let s = scenario({ p1: { battlefield: ["Bucolic Ranch", ...lands("Plains", 3)], library: ["Island", "Forest", "Forest"] } });
     s = activate(s, idOf(s, "p1", "battlefield", "Bucolic Ranch"), "A Mount");
     s = settle(s, (req) => (req.type === "pick" ? req.options : req.type === "yesNo" ? [1] : undefined));
@@ -2686,14 +2686,14 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (1)", () => {
     const lib = s.players.p1?.library ?? [];
     expect(nameOf(s, lib[lib.length - 1] as string)).toBe("Island");
     expect(nameOf(s, lib[0] as string)).toBe("Forest");
-    // Sans la mettre dessous : elle reste au-dessus.
+    // Without putting it on the bottom: it stays on top.
     let t = scenario({ p1: { battlefield: ["Bucolic Ranch", ...lands("Plains", 3)], library: ["Island", "Forest", "Forest"] } });
     t = activate(t, idOf(t, "p1", "battlefield", "Bucolic Ranch"), "A Mount");
     t = settle(t, (req) => (req.type === "yesNo" ? [0] : undefined));
     expect(nameOf(t, t.players.p1?.library[0] as string)).toBe("Island");
   });
 
-  it("Cactusfolk Sureshot : au début du combat de votre tour, vos autres créatures de force 4 ou plus gagnent piétinement et célérité", () => {
+  it("Cactusfolk Sureshot: at the beginning of combat on your turn, your other creatures with power 4 or more gain trample and haste", () => {
     let s = scenario({
       p1: { battlefield: ["Cactusfolk Sureshot", { name: "Serra Angel", sick: true }, "Bear Cub"] },
     });
@@ -2708,12 +2708,12 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (1)", () => {
     expect(chars(s, sureshot).keywords).not.toContain("trample");
     s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
     expect(chars(s, angel).keywords).not.toContain("trample");
-    // Pas au combat du tour adverse.
+    // Not at the opponent's turn combat.
     s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "beginCombat");
     expect(s.stack).toHaveLength(0);
   });
 
-  it("Canyon Crab : {1}{U} : +2/-2 ; à votre étape de fin, sans sort lancé de votre main, piochez puis défaussez", () => {
+  it("Canyon Crab: {1}{U}: +2/-2; at your end step, with no spell cast from your hand, draw then discard", () => {
     let s = scenario({ p1: { battlefield: ["Canyon Crab", ...lands("Island", 2)], hand: ["Plains"] } });
     const crab = idOf(s, "p1", "battlefield", "Canyon Crab");
     s = activate(s, crab, "+2/-2");
@@ -2723,7 +2723,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (1)", () => {
     expect(chars(s, crab)).toMatchObject({ power: 0, toughness: 5 });
     expect(s.players.p1?.hand).toHaveLength(1);
     expect(s.players.p1?.graveyard).toHaveLength(1);
-    // Avec un sort lancé de la main : rien.
+    // With a spell cast from hand: nothing.
     let t = scenario({ p1: { battlefield: ["Canyon Crab", ...lands("Mountain", 2)], hand: ["Lightning Strike"] } });
     t = strike(t, "p2");
     t = settle(t);
@@ -2732,7 +2732,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (1)", () => {
     expect(namesIn(t, t.players.p1?.graveyard)).toEqual(["Lightning Strike"]);
   });
 
-  it("Caught in the Crossfire : 2 blessures à chaque hors-la-loi, à chaque non-hors-la-loi, ou aux deux", () => {
+  it("Caught in the Crossfire: 2 damage to each outlaw, to each non-outlaw, or to both", () => {
     const run = (label: string) => {
       let s = scenario({
         p1: { battlefield: [ROGUE, ...lands("Mountain", 4)], hand: ["Caught in the Crossfire"] },
@@ -2751,7 +2751,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (1)", () => {
     expect(run("2 damage to each outlaw + 2 damage to each non-outlaw")).toEqual([0, 0]);
   });
 
-  it("Congregation Gryff : en attaquant montée, +X/+X où X est le nombre de vos Montures ; vol et lien de vie", () => {
+  it("Congregation Gryff: attacking while saddled, +X/+X where X is the number of your Mounts; flying and lifelink", () => {
     const setup = () => scenario({ p1: { battlefield: ["Congregation Gryff", "Bounding Felidar", "Serra Angel"] } });
     let s = setup();
     const gryff = idOf(s, "p1", "battlefield", "Congregation Gryff");
@@ -2765,7 +2765,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (1)", () => {
     expect(chars(t, g)).toMatchObject({ power: 1, toughness: 4 });
   });
 
-  it("Cunning Coyote : célérité ; en arrivant, une autre de vos créatures gagne +1/+1 et la célérité jusqu'à la fin du tour", () => {
+  it("Cunning Coyote: haste; on entering, another creature you control gets +1/+1 and haste until end of turn", () => {
     let s = scenario({
       p1: { battlefield: [{ name: "Bear Cub", sick: true }, ...lands("Mountain", 2)], hand: ["Cunning Coyote"] },
       p2: { battlefield: ["Swab Goblin"] },
@@ -2779,7 +2779,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (1)", () => {
       return [cub];
     });
     const coyote = idOf(s, "p1", "battlefield", "Cunning Coyote");
-    // Ni le Coyote lui-même ni une créature adverse.
+    // Neither the Coyote itself nor an opposing creature.
     expect(options.every((o) => !o.includes(coyote) && !o.includes(idOf(s, "p2", "battlefield", "Swab Goblin")))).toBe(true);
     expect(chars(s, cub)).toMatchObject({ power: 3, toughness: 3 });
     expect(chars(s, cub).keywords).toContain("haste");
@@ -2788,7 +2788,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (1)", () => {
     expect(chars(s, cub)).toMatchObject({ power: 2, toughness: 2 });
   });
 
-  it("Deepmuck Desperado : au premier crime du tour, chaque adversaire meule trois cartes ; pas aux suivants", () => {
+  it("Deepmuck Desperado: on the first crime of the turn, each opponent mills three cards; not on later ones", () => {
     let s = scenario({
       p1: { battlefield: ["Deepmuck Desperado", ...lands("Mountain", 4)], hand: ["Lightning Strike", "Lightning Strike"] },
     });
@@ -2799,14 +2799,14 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (1)", () => {
     s = strike(s, "p2");
     s = settle(s);
     expect(s.players.p2?.graveyard).toHaveLength(3);
-    // Cibler sa propre créature n'est pas un crime.
+    // Targeting your own creature is not a crime.
     let t = scenario({ p1: { battlefield: ["Deepmuck Desperado", ...lands("Mountain", 2)], hand: ["Lightning Strike"] } });
     t = strike(t, idOf(t, "p1", "battlefield", "Deepmuck Desperado"));
     t = settle(t);
     expect(t.players.p2?.graveyard).toHaveLength(0);
   });
 
-  it("Demonic Ruckus : +1/+1, menace et piétinement ; mise au cimetière depuis le champ de bataille, piochez", () => {
+  it("Demonic Ruckus: +1/+1, menace and trample; put into a graveyard from the battlefield, draw", () => {
     let s = scenario({
       p1: { battlefield: ["Bear Cub", ...lands("Mountain", 4)], hand: ["Demonic Ruckus", "Lightning Strike"] },
     });
@@ -2819,7 +2819,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (1)", () => {
     s = settle(s);
     expect(namesIn(s, s.players.p1?.graveyard).sort()).toEqual(["Bear Cub", "Demonic Ruckus", "Lightning Strike"]);
     expect(s.players.p1?.hand).toHaveLength(1);
-    // Même déclencheur sur Reach for the Sky (commune) : l'Aura mise au cimetière depuis le champ de bataille fait piocher.
+    // Same trigger on Reach for the Sky (common): the Aura put into a graveyard from the battlefield draws.
     let r = scenario({
       p1: {
         battlefield: [{ name: "Bear Cub", damage: 1 }, ...lands("Forest", 4), ...lands("Mountain", 2)],
@@ -2835,7 +2835,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (1)", () => {
     expect(r.players.p1?.hand).toHaveLength(1);
   });
 
-  it("Emergent Haunting : à votre étape de fin, sans sort lancé de votre main, devient un Esprit 3/3 volant pour de bon ; {2}{U} : surveillance 1", () => {
+  it("Emergent Haunting: at your end step, with no spell cast from your hand, becomes a 3/3 flying Spirit for good; {2}{U}: scry 1", () => {
     let s = scenario({ p1: { battlefield: ["Emergent Haunting", ...lands("Island", 3)], library: ["Plains", "Forest"] } });
     const haunting = idOf(s, "p1", "battlefield", "Emergent Haunting");
     s = activate(s, haunting, "Surveil");
@@ -2846,7 +2846,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (1)", () => {
     expect(chars(s, haunting).types).toEqual(expect.arrayContaining(["Enchantment", "Creature"]));
     expect(chars(s, haunting).subtypes).toContain("Spirit");
     expect(chars(s, haunting).keywords).toContain("flying");
-    // Avec un sort lancé de la main : reste un simple enchantement.
+    // With a spell cast from hand: stays a plain enchantment.
     let t = scenario({ p1: { battlefield: ["Emergent Haunting", ...lands("Mountain", 2)], hand: ["Lightning Strike"] } });
     const h = idOf(t, "p1", "battlefield", "Emergent Haunting");
     t = strike(t, "p2");
@@ -2860,20 +2860,20 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (2)", () => {
   type S = GameState;
   const yes: Answer = (req) => (req.type === "yesNo" ? [1] : undefined);
   const no: Answer = (req) => (req.type === "yesNo" ? [0] : undefined);
-  /** Index de la capacité activée de `source` proposée par `legalActions` (la première, ou celle dont le libellé commence par `label`). */
+  /** Index of the activated ability of `source` offered by `legalActions` (the first one, or the one whose label starts with `label`). */
   const abilityOf = (s: S, source: string, label?: string) => {
     const opt = legalActions(s, "p1").find(
       (a) => a.type === "activate" && a.source === source && (!label || plainText(a.label ?? "").startsWith(label)),
     );
     return opt?.type === "activate" ? opt.ability : -1;
   };
-  /** Index du mode de sort (spree) dont le libellé vaut `label`. */
+  /** Index of the spell mode (spree) whose label is `label`. */
   const modeOf = (s: S, card: string, label: string) => {
     const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === card);
     return opt?.type === "cast" ? opt.modes.find((m) => plainText(m.label ?? "") === label)?.index : undefined;
   };
 
-  it("Ertha Jo, Frontier Mentor : en arrivant, un Mercenaire 1/1 rouge ; une capacité activée qui cible une créature est copiée", () => {
+  it("Ertha Jo, Frontier Mentor: on entering, a 1/1 red Mercenary; an activated ability that targets a creature is copied", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Mountain", 2), ...lands("Plains", 2)], hand: ["Ertha Jo, Frontier Mentor"] },
     });
@@ -2881,7 +2881,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (2)", () => {
     const merc = idOf(s, "p1", "battlefield", "Mercenary");
     const c = chars(s, merc);
     expect([c.power, c.toughness, c.colors, c.subtypes]).toEqual([1, 1, ["R"], ["Mercenary"]]);
-    // Au tour suivant, le Mercenaire cible Ertha Jo : la capacité et sa copie donnent +2/+0 en tout.
+    // On the next turn, the Mercenary targets Ertha Jo: the ability and its copy give +2/+0 in total.
     s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number > 3);
     const ertha = idOf(s, "p1", "battlefield", "Ertha Jo, Frontier Mentor");
     s = act(s, "p1", { type: "activate", source: merc, ability: abilityOf(s, merc), targets: { t: [ertha] } });
@@ -2889,7 +2889,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (2)", () => {
     expect([chars(s, ertha).power, chars(s, ertha).toughness]).toEqual([4, 4]);
   });
 
-  it("Ferocification : au début du combat de votre tour, +2/+0 ou menace et célérité à une de vos créatures ; rien au tour adverse", () => {
+  it("Ferocification: at the beginning of combat on your turn, +2/+0 or menace and haste to one of your creatures; nothing on the opponent's turn", () => {
     const setup = (active: "p1" | "p2") =>
       scenario({ active, p1: { battlefield: ["Ferocification", { name: "Bear Cub", sick: true }] }, p2: { battlefield: [] } });
     let modes: string[] = [];
@@ -2903,20 +2903,20 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (2)", () => {
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     expect(chars(s, bear).keywords).toEqual(expect.arrayContaining(["menace", "haste"]));
     expect(chars(s, bear).power).toBe(2);
-    // Fin du tour : plus de menace ni de célérité.
+    // End of turn: no more menace or haste.
     s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
     expect(chars(s, bear).keywords).not.toContain("menace");
     // Mode +2/+0.
     let t = advanceUntil(setup("p1"), (x) => x.turn.step === "beginCombat" && x.pending?.kind === "choice");
     t = settle(t, (req) => (req.intent === "triggerMode" ? ["0"] : undefined));
     expect(chars(t, idOf(t, "p1", "battlefield", "Bear Cub")).power).toBe(4);
-    // Au tour de l'adversaire : pas de déclenchement.
+    // On the opponent's turn: no trigger.
     const u = advanceUntil(setup("p2"), (x) => x.turn.step === "main2");
     expect(u.turn.active).toBe("p2");
     expect(chars(u, idOf(u, "p1", "battlefield", "Bear Cub")).power).toBe(2);
   });
 
-  it("Fleeting Reflection : votre créature gagne la défense talismanique, se dégage et devient une copie d'une autre créature jusqu'à la fin du tour", () => {
+  it("Fleeting Reflection: your creature gains hexproof, untaps and becomes a copy of another creature until end of turn", () => {
     let s = scenario({
       p1: { battlefield: [{ name: "Bear Cub", tapped: true }, ...lands("Island", 2)], hand: ["Fleeting Reflection"] },
       p2: { battlefield: ["Serra Angel"] },
@@ -2933,7 +2933,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (2)", () => {
     const after = chars(s, bear);
     expect([after.name, after.power]).toEqual(["Bear Cub", 2]);
     expect(after.keywords).not.toContain("hexproof");
-    // « Jusqu'à une autre créature » : sans seconde cible, seulement la défense talismanique et le dégagement.
+    // \"Up to one other creature\": without a second target, only hexproof and the untap.
     let t = scenario({
       p1: { battlefield: [{ name: "Bear Cub", tapped: true }, ...lands("Island", 2)], hand: ["Fleeting Reflection"] },
     });
@@ -2944,7 +2944,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (2)", () => {
     expect(chars(t, bear2).keywords).toContain("hexproof");
   });
 
-  it("Form a Posse : crée X Mercenaires 1/1 rouges avec « {T} : +1/+0 à une de vos créatures, comme un rituel »", () => {
+  it('Form a Posse: creates X 1/1 red Mercenaries with "{T}: +1/+0 to one of your creatures, as a sorcery"', () => {
     let s = scenario({ p1: { battlefield: [...lands("Mountain", 3), ...lands("Plains", 2)], hand: ["Form a Posse"] } });
     s = settle(cast(s, "p1", "Form a Posse", { x: 3 }));
     const mercs = idsOf(s, "p1", "battlefield", "Mercenary");
@@ -2956,7 +2956,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (2)", () => {
     expect(ability?.kind === "activated" && ability.cost.tap).toBe(true);
   });
 
-  it("Frontier Seeker : parmi les cinq cartes du dessus, une carte de créature Monture ou de Plaine en main, le reste dessous", () => {
+  it("Frontier Seeker: among the top five cards, a Mount creature card or a Plains card to hand, the rest on the bottom", () => {
     let s = scenario({
       p1: {
         battlefield: lands("Plains", 2),
@@ -2977,7 +2977,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (2)", () => {
     expect(lib).toHaveLength(5);
   });
 
-  it("Full Steam Ahead : vos créatures gagnent +2/+2, le piétinement et ne peuvent être bloquées que par une créature, jusqu'à la fin du tour", () => {
+  it("Full Steam Ahead: your creatures get +2/+2, trample and can't be blocked except by one creature, until end of turn", () => {
     let s = scenario({
       p1: { battlefield: ["Bear Cub", ...lands("Forest", 5)], hand: ["Full Steam Ahead"] },
       p2: { battlefield: ["Swab Goblin", "Serra Angel"] },
@@ -2986,7 +2986,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (2)", () => {
     s = settle(cast(s, "p1", "Full Steam Ahead"));
     expect([chars(s, bear).power, chars(s, bear).toughness]).toEqual([4, 4]);
     expect(chars(s, bear).keywords).toContain("trample");
-    // Les créatures adverses ne sont pas concernées.
+    // Opposing creatures are not concerned.
     expect(chars(s, idOf(s, "p2", "battlefield", "Swab Goblin")).power).toBe(2);
     s = attack(s, [bear]);
     s = advanceUntil(s, (x) => x.pending?.kind === "declareBlockers");
@@ -3000,7 +3000,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (2)", () => {
     expect(chars(s, bear).keywords).not.toContain("trample");
   });
 
-  it("Getaway Glamer : + {1} exile une créature non-jeton qui revient à l'étape de fin sous le contrôle de son propriétaire", () => {
+  it("Getaway Glamer: + {1} exiles a nontoken creature that returns at the end step under its owner's control", () => {
     let s = scenario({ p1: { battlefield: lands("Plains", 2), hand: ["Getaway Glamer"] }, p2: { battlefield: ["Serra Angel"] } });
     const card = idOf(s, "p1", "hand", "Getaway Glamer");
     const angel = idOf(s, "p2", "battlefield", "Serra Angel");
@@ -3011,7 +3011,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (2)", () => {
     expect(idsOf(s, "p2", "battlefield", "Serra Angel")).toHaveLength(1);
   });
 
-  it("Getaway Glamer : + {2} ne détruit la créature que si aucune autre créature n'a une force supérieure", () => {
+  it("Getaway Glamer: + {2} destroys the creature only if no other creature has greater power", () => {
     const setup = () =>
       scenario({
         p1: { battlefield: [...lands("Plains", 3), "Bear Cub"], hand: ["Getaway Glamer"] },
@@ -3030,7 +3030,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (2)", () => {
     expect(namesIn(angel, angel.players.p2?.graveyard)).toEqual(["Serra Angel"]);
   });
 
-  it("Gila Courser : attaquer en étant montée exile la carte du dessus, jouable jusqu'à la fin de votre prochain tour ; sans selle, rien", () => {
+  it("Gila Courser: attacking while saddled exiles the top card, playable until the end of your next turn; unsaddled, nothing", () => {
     const setup = () =>
       scenario({
         p1: {
@@ -3038,7 +3038,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (2)", () => {
           library: ["Lightning Strike", ...lands("Forest", 9)],
         },
       });
-    // Sans selle : pas d'exil.
+    // Unsaddled: no exile.
     let n = attack(setup(), [idOf(setup(), "p1", "battlefield", "Gila Courser")]);
     n = settle(n);
     expect(exiled(n, "Lightning Strike")).toHaveLength(0);
@@ -3052,7 +3052,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (2)", () => {
     expect(strike).toBeDefined();
     s = throughCombat(s);
     expect(castable(s, "p1", strike)).toBe(true);
-    // Au prochain tour de p1, encore jouable ; au tour d'après, plus.
+    // On p1's next turn, still playable; the turn after, no longer.
     s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number === 5);
     expect(castable(s, "p1", strike)).toBe(true);
     s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number === 7);
@@ -3060,13 +3060,13 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (2)", () => {
     expect(castable(s, "p1", strike)).toBe(false);
   });
 
-  it("Gold Rush : crée un Trésor, puis jusqu'à une créature gagne +2/+2 par Trésor que vous contrôlez", () => {
+  it("Gold Rush: creates a Treasure, then up to one creature gets +2/+2 for each Treasure you control", () => {
     let s = scenario({ p1: { battlefield: ["Bear Cub", ...lands("Forest", 4)], hand: ["Gold Rush", "Gold Rush"] } });
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     s = settle(cast(s, "p1", "Gold Rush", { targets: { t: [bear] } }));
     expect(idsOf(s, "p1", "battlefield", "Treasure")).toHaveLength(1);
     expect([chars(s, bear).power, chars(s, bear).toughness]).toEqual([4, 4]);
-    // Deux Trésors : +4/+4 de plus.
+    // Two Treasures: +4/+4 more.
     s = settle(cast(s, "p1", "Gold Rush", { targets: { t: [bear] } }));
     expect(idsOf(s, "p1", "battlefield", "Treasure")).toHaveLength(2);
     expect([chars(s, bear).power, chars(s, bear).toughness]).toEqual([8, 8]);
@@ -3074,7 +3074,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (2)", () => {
     expect(chars(s, bear).power).toBe(2);
   });
 
-  it("Hellspur Brute : coûte {1} de moins par hors-la-loi que vous contrôlez ; piétinement", () => {
+  it("Hellspur Brute: costs {1} less for each outlaw you control; trample", () => {
     const run = (others: string[]) => {
       const s = scenario({ p1: { battlefield: [...others, ...lands("Mountain", 3)], hand: ["Hellspur Brute"] } });
       return { s, ok: castable(s, "p1", idOf(s, "p1", "hand", "Hellspur Brute")) };
@@ -3088,7 +3088,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (2)", () => {
     expect(chars(t, brutes[1] as string).keywords).toContain("trample");
   });
 
-  it("Hollow Marauder : coûte {1} de moins par carte de créature dans votre cimetière ; l'adversaire défausse, et vous piochez sauf s'il a défaussé une carte de VM 4 ou plus", () => {
+  it("Hollow Marauder: costs {1} less for each creature card in your graveyard; the opponent discards, and you draw unless they discarded a card with mana value 4 or more", () => {
     const run = (oppHand: string[]) => {
       let s = scenario({
         p1: {
@@ -3111,12 +3111,12 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (2)", () => {
     const small = run(["Bear Cub"]);
     expect(namesIn(small, small.players.p2?.graveyard)).toEqual(["Bear Cub"]);
     expect(small.players.p1?.hand).toHaveLength(1);
-    // Pas assez de cartes de créature : trop cher.
+    // Not enough creature cards: too expensive.
     const t = scenario({ p1: { battlefield: lands("Swamp", 3), hand: ["Hollow Marauder"], graveyard: ["Bear Cub", "Swamp"] } });
     expect(castable(t, "p1", idOf(t, "p1", "hand", "Hollow Marauder"))).toBe(false);
   });
 
-  it("Hollow Marauder : une carte piochée pour chaque adversaire ciblé qui n'a pas défaussé de carte de VM 4 ou plus (multijoueur)", () => {
+  it("Hollow Marauder: one card drawn for each targeted opponent who didn't discard a card with mana value 4 or more (multiplayer)", () => {
     const run = (p2Hand: string[], p3Hand: string[], targets: string[]) => {
       const s = scenario({
         players: 3,
@@ -3132,19 +3132,19 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (2)", () => {
         req.type === "pick" && req.intent === "triggerTarget" ? targets : undefined,
       );
     };
-    // p2 défausse Serra Angel (VM 5), p3 Bear Cub : une carte.
+    // p2 discards Serra Angel (mana value 5), p3 Bear Cub: one card.
     expect(run(["Serra Angel"], ["Bear Cub"], ["p2", "p3"]).players.p1?.hand).toHaveLength(1);
-    // Aucun ne défausse de carte de VM 4 ou plus (p3 n'a pas de carte) : deux cartes.
+    // Neither discards a card with mana value 4 or more (p3 has no card): two cards.
     expect(run(["Bear Cub"], [], ["p2", "p3"]).players.p1?.hand).toHaveLength(2);
-    // Les deux défaussent une carte de VM 4 ou plus : rien.
+    // Both discard a card with mana value 4 or more: nothing.
     expect(run(["Serra Angel"], ["Shivan Dragon"], ["p2", "p3"]).players.p1?.hand).toHaveLength(0);
-    // Seul p3 est ciblé : p2 ne défausse rien et ne compte pas.
+    // Only p3 is targeted: p2 discards nothing and doesn't count.
     const one = run(["Bear Cub"], ["Shivan Dragon"], ["p3"]);
     expect(one.players.p2?.hand).toHaveLength(1);
     expect(one.players.p1?.hand).toHaveLength(0);
   });
 
-  it("Honest Rutstein : en arrivant, reprend une carte de créature de votre cimetière ; vos sorts de créature coûtent {1} de moins", () => {
+  it("Honest Rutstein: on entering, returns a creature card from your graveyard; your creature spells cost {1} less", () => {
     let s = scenario({
       p1: {
         battlefield: ["Swamp", "Forest", "Swamp", "Mountain"],
@@ -3154,12 +3154,12 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (2)", () => {
     });
     s = settle(cast(s, "p1", "Honest Rutstein"));
     expect(namesIn(s, s.players.p1?.graveyard)).toEqual(["Opt"]);
-    // Il reste une Montagne : Swab Goblin ({1}{R}) coûte {R} ; Lightning Strike n'est pas réduit.
+    // One Mountain remains: Swab Goblin ({1}{R}) costs {R}; Lightning Strike is not reduced.
     expect(castable(s, "p1", idOf(s, "p1", "hand", "Swab Goblin"))).toBe(true);
     expect(castable(s, "p1", idOf(s, "p1", "hand", "Lightning Strike"))).toBe(false);
   });
 
-  it("Intimidation Campaign : en arrivant, drain 1 et pioche ; un crime permet de la renvoyer en main (pas un sort sans crime)", () => {
+  it("Intimidation Campaign: on entering, drain 1 and draw; a crime lets you return it to hand (not a spell without a crime)", () => {
     const setup = () =>
       scenario({
         p1: {
@@ -3170,7 +3170,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (2)", () => {
     let s = settle(cast(setup(), "p1", "Intimidation Campaign"));
     expect([s.players.p1?.life, s.players.p2?.life]).toEqual([21, 19]);
     expect(s.players.p1?.hand).toHaveLength(3);
-    // Choquer sa propre créature n'est pas un crime : pas de question.
+    // Shocking your own creature is not a crime: no question.
     let asked = false;
     s = settle(cast(s, "p1", "Shock", { targets: { t: [idOf(s, "p1", "battlefield", "Bear Cub")] } }), (req) => {
       if (req.type === "yesNo") asked = true;
@@ -3184,7 +3184,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (2)", () => {
     expect(idsOf(s, "p1", "hand", "Intimidation Campaign")).toHaveLength(1);
   });
 
-  it("Intrepid Stablemaster : portée ; {T} : {G} ; {T} : deux manas d'une couleur, seulement pour les sorts de Monture ou de Véhicule", () => {
+  it("Intrepid Stablemaster: reach; {T}: {G}; {T}: two mana of one color, only for Mount or Vehicle spells", () => {
     const s = scenario({
       p1: { battlefield: ["Intrepid Stablemaster", "Mountain"], hand: ["Gila Courser", "Irascible Wolverine"] },
     });
@@ -3196,7 +3196,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (2)", () => {
     expect(idsOf(t, "p1", "battlefield", "Gila Courser")).toHaveLength(1);
   });
 
-  it("Jem Lightfoote, Sky Explorer : vol, vigilance ; à votre étape de fin, piochez si vous n'avez lancé aucun sort depuis votre main", () => {
+  it("Jem Lightfoote, Sky Explorer: flying, vigilance; at your end step, draw if you cast no spell from your hand", () => {
     const setup = () =>
       scenario({ p1: { battlefield: ["Jem Lightfoote, Sky Explorer", ...lands("Mountain", 2)], hand: ["Lightning Strike"] } });
     let s = setup();
@@ -3210,7 +3210,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (2)", () => {
     expect(t.players.p1?.hand).toHaveLength(0);
   });
 
-  it("Jolene, Plundering Pugilist : un Trésor quand vous attaquez avec une créature de force 4 ou plus ; {1}{R}, sacrifiez un Trésor : 1 blessure", () => {
+  it("Jolene, Plundering Pugilist: a Treasure when you attack with a creature with power 4 or more; {1}{R}, sacrifice a Treasure: 1 damage", () => {
     const setup = () => scenario({ p1: { battlefield: ["Jolene, Plundering Pugilist", "Bear Cub", ...lands("Mountain", 2)] } });
     let n = setup();
     n = throughCombat(attack(n, [idOf(n, "p1", "battlefield", "Bear Cub")]));
@@ -3232,7 +3232,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (2)", () => {
     expect(idsOf(s, "p1", "battlefield", "Treasure")).toHaveLength(0);
   });
 
-  it("Kraum, Violent Cacophony : votre deuxième sort du tour donne un marqueur +1/+1 et une pioche (ni le premier, ni le troisième)", () => {
+  it("Kraum, Violent Cacophony: your second spell of the turn gives a +1/+1 counter and a draw (neither the first nor the third)", () => {
     let s = scenario({ p1: { battlefield: ["Kraum, Violent Cacophony", ...lands("Island", 3)], hand: ["Opt", "Opt", "Opt"] } });
     const kraum = idOf(s, "p1", "battlefield", "Kraum, Violent Cacophony");
     expect(chars(s, kraum).keywords).toContain("flying");
@@ -3247,7 +3247,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (2)", () => {
     expect(s.players.p1?.library).toHaveLength(6);
   });
 
-  it("Lassoed by the Law : exile un permanent non-terrain adverse jusqu'à ce qu'il parte, et crée un Mercenaire", () => {
+  it("Lassoed by the Law: exiles an opposing nonland permanent until it leaves, and creates a Mercenary", () => {
     let s = scenario({
       p1: { battlefield: ["Bear Cub", ...lands("Plains", 6)], hand: ["Lassoed by the Law", "Disenchant"] },
       p2: { battlefield: ["Serra Angel", "Forest"] },
@@ -3264,7 +3264,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (2)", () => {
     expect(idsOf(s, "p2", "battlefield", "Serra Angel")).toHaveLength(1);
   });
 
-  it("Lavaspur Boots : la créature équipée gagne +1/+0, la célérité et la garde {1} ; équipement {1}", () => {
+  it("Lavaspur Boots: the equipped creature gets +1/+0, haste and ward {1}; equip {1}", () => {
     let s = scenario({
       p1: { battlefield: ["Lavaspur Boots", { name: "Bear Cub", sick: true }, "Plains"] },
       p2: { battlefield: ["Mountain"], hand: ["Shock"] },
@@ -3276,14 +3276,14 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (2)", () => {
     expect(chars(s, bear).power).toBe(3);
     expect(chars(s, bear).toughness).toBe(2);
     expect(chars(s, bear).keywords).toContain("haste");
-    // Garde {1} : le Choc de l'adversaire, qui ne peut pas payer, est contrecarré.
+    // Ward {1}: the opponent's Shock, which can't pay, is countered.
     s = act(s, "p1", { type: "pass" });
     s = settle(cast(s, "p2", "Shock", { targets: { t: [bear] } }));
     expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
     expect(namesIn(s, s.players.p2?.graveyard)).toEqual(["Shock"]);
   });
 
-  it("Lazav, Familiar Stranger : un crime, une fois par tour : marqueur +1/+1, puis exil d'une carte d'un cimetière et, si c'est une créature, copie au choix", () => {
+  it("Lazav, Familiar Stranger: a crime, once each turn: +1/+1 counter, then exile a card from a graveyard and, if it is a creature, a copy of your choice", () => {
     const setup = () =>
       scenario({
         p1: { battlefield: ["Lazav, Familiar Stranger", ...lands("Mountain", 2)], hand: ["Shock", "Shock"] },
@@ -3301,13 +3301,13 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (2)", () => {
     expect(exiled(s, "Serra Angel")).toHaveLength(1);
     expect(chars(s, lazav).name).toBe("Serra Angel");
     expect([chars(s, lazav).power, chars(s, lazav).toughness]).toEqual([5, 5]);
-    // Une seule fois par tour.
+    // Only once each turn.
     s = settle(cast(s, "p1", "Shock", { targets: { t: ["p2"] } }), pickAngel);
     expect(s.objects[lazav]?.counters["+1/+1"]).toBe(1);
-    // Fin du tour : redevient Lazav.
+    // End of turn: becomes Lazav again.
     s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
     expect(chars(s, lazav).name).toBe("Lazav, Familiar Stranger");
-    // « Vous pouvez » : il peut ne pas devenir une copie.
+    // \"You may\": it may choose not to become a copy.
     const declined = settle(cast(setup(), "p1", "Shock", { targets: { t: ["p2"] } }), (req, p, cur) =>
       req.type === "yesNo" ? [0] : pickAngel(req, p, cur),
     );
@@ -3324,7 +3324,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (3)", () => {
   const activate = (s: S, id: string, label: string, extra: object = {}) =>
     act(s, "p1", { type: "activate", source: id, ability: abilityIndex(s, id, label), ...extra });
   const libraryIds = (s: S, name: string) => (s.players.p1?.library ?? []).filter((id) => nameOf(s, id) === name);
-  /** Passe et répond aux choix jusqu'à une pile vide, en notant les intentions des choix posés. */
+  /** Passes and answers the choices until the stack is empty, noting the intents of the choices posed. */
   const settleLogging = (s: S, intents: string[], answer: (req: ChoiceRequest, cur: S) => (string | number)[] | undefined) =>
     settle(s, (req, _p, cur) => {
       intents.push(req.intent);
@@ -3335,7 +3335,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (3)", () => {
     return opt?.type === "cast" ? opt.modes.find((m) => plainText(m.label ?? "") === label)?.index : undefined;
   };
 
-  it("Luxurious Locomotive : un Trésor par créature qui l'a équipée quand elle attaque ; Équipage une seule fois par tour", () => {
+  it("Luxurious Locomotive: a Treasure for each creature that equipped it when it attacks; Crew only once each turn", () => {
     let s = scenario({ p1: { battlefield: ["Luxurious Locomotive", "Bear Cub", "Swab Goblin", "Serra Angel"] } });
     const loco = idOf(s, "p1", "battlefield", "Luxurious Locomotive");
     const crew = abilityIndex(s, loco, "Crew");
@@ -3344,13 +3344,13 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (3)", () => {
     });
     s = passBoth(s);
     expect(chars(s, loco).types).toContain("Creature");
-    // L'Ange reste dégagé, mais l'Équipage ne s'active qu'une fois par tour.
+    // The Angel stays untapped, but Crew activates only once each turn.
     expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === loco && a.ability === crew)).toBe(false);
     s = settle(attack(s, [loco]));
     expect(idsOf(s, "p1", "battlefield", "Treasure")).toHaveLength(2);
   });
 
-  it("Make Your Own Luck : une carte non-terrain parmi les trois du dessus est exilée et complotée, le reste en main", () => {
+  it("Make Your Own Luck: a nonland card among the top three is exiled and plotted, the rest to hand", () => {
     let s = scenario({
       p1: {
         battlefield: [...lands("Forest", 3), ...lands("Island", 2)],
@@ -3367,20 +3367,20 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (3)", () => {
       }
       return undefined;
     });
-    // La Plaine n'est pas proposée (carte non-terrain).
+    // The Plains is not offered (nonland card).
     expect(options.sort()).toEqual(["Bear Cub", "Swab Goblin"]);
     const plotted = s.exile.find((id) => nameOf(s, id) === "Bear Cub") as string;
     expect(s.objects[plotted]?.exiledVia?.kind).toBe("plot");
     expect(idsOf(s, "p1", "hand", "Plains")).toHaveLength(1);
     expect(idsOf(s, "p1", "hand", "Swab Goblin")).toHaveLength(1);
     expect(namesIn(s, s.players.p1?.library)).toEqual(["Swamp"]);
-    // Complotée : lancée gratuitement à un tour ultérieur.
+    // Plotted: cast for free on a later turn.
     s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number > 3);
     const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === plotted);
     expect(opt?.type === "cast" && opt.free).toBe(true);
   });
 
-  it("Map the Frontier : jusqu'à deux terrains de base et/ou Déserts arrivent engagés ; pas un autre terrain", () => {
+  it("Map the Frontier: up to two basic lands and/or Deserts enter tapped; not another land", () => {
     let s = scenario({
       p1: {
         battlefield: lands("Forest", 4),
@@ -3407,7 +3407,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (3)", () => {
     expect(s.players.p1?.library).toHaveLength(3);
   });
 
-  it("Marauding Sphinx : vol, vigilance, garde ; surveillance 2 au premier crime du tour seulement", () => {
+  it("Marauding Sphinx: flying, vigilance, ward; scry 2 on the first crime of the turn only", () => {
     let s = scenario({ p1: { battlefield: ["Marauding Sphinx", ...lands("Mountain", 2)], hand: ["Shock", "Shock"] } });
     const sphinx = idOf(s, "p1", "battlefield", "Marauding Sphinx");
     expect(chars(s, sphinx).keywords).toEqual(expect.arrayContaining(["flying", "vigilance", "ward"]));
@@ -3424,7 +3424,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (3)", () => {
     expect(intents.filter((i) => i === "surveilGraveyard")).toHaveLength(1);
   });
 
-  it("Metamorphic Blast : la créature devient un Lapin blanc de base 0/1 jusqu'à la fin du tour ; le joueur ciblé pioche deux cartes", () => {
+  it("Metamorphic Blast: the creature becomes a base 0/1 white Rabbit until end of turn; the targeted player draws two cards", () => {
     let s = scenario({
       p1: { battlefield: lands("Island", 5), hand: ["Metamorphic Blast"] },
       p2: { battlefield: [{ name: "Serra Angel", counters: { "+1/+1": 1 } }] },
@@ -3435,7 +3435,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (3)", () => {
     expect(both).toBeDefined();
     s = settle(act(s, "p1", { type: "cast", card: blast, mode: both, targets: { c: [angel], p: ["p2"] } }));
     const c = chars(s, angel);
-    // Force et endurance de base 0/1, plus le marqueur ; les capacités restent.
+    // Base power and toughness 0/1, plus the counter; the abilities remain.
     expect([c.power, c.toughness]).toEqual([1, 2]);
     expect(c.colors).toEqual(["W"]);
     expect(c.subtypes).toEqual(["Rabbit"]);
@@ -3446,7 +3446,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (3)", () => {
     expect([chars(s, angel).power, chars(s, angel).subtypes]).toEqual([5, ["Angel"]]);
   });
 
-  it("Miriam, Herd Whisperer : Montures et Véhicules en défense talismanique pendant votre tour ; marqueur quand une Monture attaque", () => {
+  it("Miriam, Herd Whisperer: Mounts and Vehicles have hexproof during your turn; counter when a Mount attacks", () => {
     let s = scenario({ p1: { battlefield: ["Miriam, Herd Whisperer", "Giant Beaver", "Mobile Homestead", "Bear Cub"] } });
     const beaver = idOf(s, "p1", "battlefield", "Giant Beaver");
     const home = idOf(s, "p1", "battlefield", "Mobile Homestead");
@@ -3461,7 +3461,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (3)", () => {
     expect(s.objects[bear]?.counters["+1/+1"] ?? 0).toBe(0);
   });
 
-  it("Mobile Homestead : célérité avec une Monture ; en attaquant, un terrain du dessus peut arriver engagé", () => {
+  it("Mobile Homestead: haste with a Mount; when attacking, a land from the top may enter tapped", () => {
     const none = scenario({ p1: { battlefield: ["Mobile Homestead"] } });
     expect(chars(none, idOf(none, "p1", "battlefield", "Mobile Homestead")).keywords).not.toContain("haste");
     const run = (top: string, take: boolean) => {
@@ -3482,7 +3482,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (3)", () => {
     expect(namesIn(spell, spell.players.p1?.library)).toEqual(["Bear Cub", "Swamp"]);
   });
 
-  it("Neutralize the Guards : les créatures de l'adversaire ciblé ont -1/-1 jusqu'à la fin du tour, puis surveillance 2", () => {
+  it("Neutralize the Guards: the targeted opponent's creatures get -1/-1 until end of turn, then scry 2", () => {
     let s = scenario({
       p1: { battlefield: ["Swab Goblin", ...lands("Swamp", 3)], hand: ["Neutralize the Guards"] },
       p2: { battlefield: ["Bear Cub", "Llanowar Elves"] },
@@ -3499,7 +3499,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (3)", () => {
     expect(chars(s, cub).power).toBe(2);
   });
 
-  it("Nimble Brigand : imblocable après un crime ce tour-ci ; pioche quand il blesse un joueur", () => {
+  it("Nimble Brigand: unblockable after a crime this turn; draws when it damages a player", () => {
     let s = scenario({ p1: { battlefield: ["Nimble Brigand", "Mountain"], hand: ["Shock"] } });
     const brigand = idOf(s, "p1", "battlefield", "Nimble Brigand");
     expect(chars(s, brigand).keywords).not.toContain("unblockable");
@@ -3510,7 +3510,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (3)", () => {
     expect(s.players.p1?.hand).toHaveLength(1);
   });
 
-  it("Outcaster Greenblade : un terrain de base ou un Désert en main ; +1/+1 par Désert contrôlé", () => {
+  it("Outcaster Greenblade: a basic land or a Desert to hand; +1/+1 per Desert controlled", () => {
     let s = scenario({
       p1: {
         battlefield: ["Forlorn Flats", ...lands("Forest", 3)],
@@ -3533,7 +3533,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (3)", () => {
     expect([chars(s, blade).power, chars(s, blade).toughness]).toEqual([3, 4]);
   });
 
-  it("Outlaw Stitcher : Zombie Voleur 2/2 avec deux marqueurs par sort lancé ce tour-ci après le premier", () => {
+  it("Outlaw Stitcher: 2/2 Zombie Rogue with two counters for each spell cast this turn after the first", () => {
     const run = (before: number) => {
       let s = scenario({
         p1: { battlefield: [...lands("Island", 4), ...lands("Mountain", before)], hand: ["Outlaw Stitcher", "Shock", "Shock"] },
@@ -3550,7 +3550,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (3)", () => {
     expect(run(2)).toEqual([6, 6]);
   });
 
-  it("Plan the Heist : surveillance 3 seulement sans carte en main, puis piochez trois cartes", () => {
+  it("Plan the Heist: scry 3 only with no cards in hand, then draw three cards", () => {
     const run = (hand: string[]) => {
       const s = scenario({ p1: { battlefield: lands("Island", 4), hand: ["Plan the Heist", ...hand] } });
       const intents: string[] = [];
@@ -3565,7 +3565,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (3)", () => {
     expect(run(["Bear Cub"])).toEqual({ hand: 4, looked: 0, surveil: false });
   });
 
-  it("Prairie Dog : marqueur à votre étape de fin sans sort lancé de la main ; {4}{W} ajoute un marqueur de plus", () => {
+  it("Prairie Dog: counter at your end step with no spell cast from hand; {4}{W} adds one more counter", () => {
     const run = (spell: boolean, pump: boolean) => {
       let s = scenario({ p1: { battlefield: ["Prairie Dog", ...lands("Plains", 5), "Mountain"], hand: ["Shock"] } });
       const dog = idOf(s, "p1", "battlefield", "Prairie Dog");
@@ -3580,7 +3580,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (3)", () => {
     expect(run(false, true)).toBe(2);
   });
 
-  it("Prosperity Tycoon : Mercenaire 1/1 rouge à l'arrivée ; {2}, sacrifier un jeton : indestructible et engagée", () => {
+  it("Prosperity Tycoon: 1/1 red Mercenary on entering; {2}, sacrifice a token: indestructible and tapped", () => {
     let s = scenario({ p1: { battlefield: [...lands("Plains", 6), "Bear Cub"], hand: ["Prosperity Tycoon"] } });
     s = settle(cast(s, "p1", "Prosperity Tycoon"));
     const merc = idOf(s, "p1", "battlefield", "Mercenary");
@@ -3588,7 +3588,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (3)", () => {
     expect([m.power, m.toughness, m.colors]).toEqual([1, 1, ["R"]]);
     const tycoon = idOf(s, "p1", "battlefield", "Prosperity Tycoon");
     const opt = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === tycoon);
-    // Seul un jeton peut être sacrifié (pas l'Ours, qui est une carte).
+    // Only a token can be sacrificed (not the Bear, which is a card).
     expect(opt?.type === "activate" ? opt.additional?.sacrifice?.options : []).toEqual([merc]);
     s = settle(activate(s, tycoon, "Indestructible", { sacrifice: [merc] }));
     expect(s.objects[merc]).toBeUndefined();
@@ -3596,7 +3596,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (3)", () => {
     expect(s.objects[tycoon]?.tapped).toBe(true);
   });
 
-  it("Rakish Crew : Mercenaire à l'arrivée ; drain 1 quand un hors-la-loi que vous contrôlez meurt, pas une autre créature", () => {
+  it("Rakish Crew: Mercenary on entering; drain 1 when an outlaw you control dies, not another creature", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Swamp", 3), ...lands("Mountain", 3), "Bear Cub"], hand: ["Rakish Crew", "Shock", "Shock"] },
       p2: { battlefield: ["Nimble Brigand"] },
@@ -3605,13 +3605,13 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (3)", () => {
     const merc = idOf(s, "p1", "battlefield", "Mercenary");
     s = settle(cast(s, "p1", "Shock", { targets: { t: [merc] } }));
     expect([s.players.p1?.life, s.players.p2?.life]).toEqual([21, 19]);
-    // Un hors-la-loi adverse ou une créature qui n'en est pas un : rien.
+    // An opposing outlaw or a creature that isn't one: nothing.
     s = settle(cast(s, "p1", "Shock", { targets: { t: [idOf(s, "p1", "battlefield", "Bear Cub")] } }));
     expect(idsOf(s, "p1", "graveyard", "Bear Cub")).toHaveLength(1);
     expect([s.players.p1?.life, s.players.p2?.life]).toEqual([21, 19]);
   });
 
-  it("Rakish Crew : la mort d'un hors-la-loi adverse ne draine pas", () => {
+  it("Rakish Crew: the death of an opposing outlaw doesn't drain", () => {
     let s = scenario({
       p1: { battlefield: ["Rakish Crew", "Mountain"], hand: ["Shock"] },
       p2: { battlefield: [{ name: "Nimble Brigand", damage: 1 }] },
@@ -3621,7 +3621,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (3)", () => {
     expect([s.players.p1?.life, s.players.p2?.life]).toEqual([20, 20]);
   });
 
-  it("Raucous Entertainer : un marqueur sur chaque créature que vous contrôlez arrivée ce tour-ci, pas les autres", () => {
+  it("Raucous Entertainer: a counter on each creature you control that entered this turn, not the others", () => {
     let s = scenario({
       p1: { battlefield: ["Raucous Entertainer", "Bear Cub", ...lands("Mountain", 3)], hand: ["Swab Goblin"] },
       p2: { battlefield: [{ name: "Llanowar Elves", sick: true }] },
@@ -3635,7 +3635,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (3)", () => {
     expect(s.objects[idOf(s, "p2", "battlefield", "Llanowar Elves")]?.counters["+1/+1"] ?? 0).toBe(0);
   });
 
-  it("Redrock Sentinel : défenseur ; {2}, {T}, sacrifier un terrain : piochez une carte et créez un Trésor", () => {
+  it("Redrock Sentinel: defender; {2}, {T}, sacrifice a land: draw a card and create a Treasure", () => {
     let s = scenario({ p1: { battlefield: ["Redrock Sentinel", ...lands("Forest", 3), "Bear Cub"] } });
     const sentinel = idOf(s, "p1", "battlefield", "Redrock Sentinel");
     expect(chars(s, sentinel).keywords).toContain("defender");
@@ -3650,7 +3650,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (3)", () => {
     expect(s.objects[sentinel]?.tapped).toBe(true);
   });
 
-  it("Resilient Roadrunner : protection contre les Coyotes ; {3} : bloquée seulement par des créatures avec la célérité ce tour-ci", () => {
+  it("Resilient Roadrunner: protection from Coyotes; {3}: blocked only by creatures with haste this turn", () => {
     const blockers = (pump: boolean) => {
       let s = scenario({
         p1: { battlefield: ["Resilient Roadrunner", ...lands("Mountain", 3)] },
@@ -3674,12 +3674,12 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (3)", () => {
     expect([coyote, cub, hasty]).toEqual([false, true, true]);
     const pumped = blockers(true);
     expect([pumped.coyote, pumped.cub, pumped.hasty]).toEqual([false, false, true]);
-    // L'effet ne dure que ce tour-ci.
+    // The effect lasts only this turn.
     const next = advanceUntil(pumped.s, (x) => x.turn.active === "p2" && x.turn.step === "upkeep");
     expect(chars(next, pumped.runner).blockRules ?? []).toHaveLength(0);
   });
 
-  it("Rictus Robber : Zombie Voleur 2/2 à l'arrivée seulement si une créature est morte ce tour-ci", () => {
+  it("Rictus Robber: 2/2 Zombie Rogue on entering only if a creature died this turn", () => {
     const run = (kill: boolean) => {
       let s = scenario({
         p1: { battlefield: [...lands("Swamp", 4), "Mountain"], hand: ["Rictus Robber", "Shock"] },
@@ -3693,7 +3693,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (3)", () => {
     expect(run(false)).toBe(0);
   });
 
-  it("Rise of the Varmints : X Varmints 2/1 verts, X étant le nombre de cartes de créature dans votre cimetière", () => {
+  it("Rise of the Varmints: X green 2/1 Varmints, X being the number of creature cards in your graveyard", () => {
     let s = scenario({
       p1: { battlefield: lands("Forest", 4), hand: ["Rise of the Varmints"], graveyard: ["Bear Cub", "Swab Goblin", "Plains"] },
       p2: { graveyard: ["Serra Angel"] },
@@ -3708,25 +3708,25 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (3)", () => {
 
 describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
   type S = GameState;
-  /** Indice de la capacité activée de `id` dont le libellé commence par `label`. */
+  /** Index of the activated ability of `id` whose label starts with `label`. */
   const abilityIndex = (s: S, id: string, label: string) =>
     (s.defs[s.objects[id]?.defId ?? ""]?.abilities ?? []).findIndex(
       (a) => a.kind === "activated" && plainText(a.label ?? "").startsWith(label),
     );
-  /** Indice du mode (spree) de libellé `label` pour la carte `name` de la main de p1. */
+  /** Index of the (spree) mode with label `label` for the card `name` in p1's hand. */
   const modeOf = (s: S, name: string, label: string) => {
     const card = idOf(s, "p1", "hand", name);
     const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === card);
     const mode = opt?.type === "cast" ? opt.modes.find((m) => plainText(m.label ?? "") === label) : undefined;
-    if (!mode) throw new Error(`mode « ${label} » introuvable pour ${name}`);
+    if (!mode) throw new Error(`mode "${label}" not found for ${name}`);
     return mode.index;
   };
-  /** Options proposées par un choix « pick » (vide sinon). */
+  /** Options offered by a \"pick\" choice (empty otherwise). */
   const optionsOf = (req: ChoiceRequest) => (req.type === "pick" ? req.options : []);
-  /** Réponse qui refuse un choix facultatif (« vous pouvez ») : rien de choisi, ou « non ». */
+  /** Answer that declines an optional choice (\"you may\"): nothing chosen, or \"no\". */
   const decline = (req: ChoiceRequest) => (req.type === "pick" && req.min === 0 ? [] : req.type === "yesNo" ? [0] : undefined);
 
-  it("Rustler Rampage : dégage les créatures du joueur ciblé (pas celles de l'autre) et donne la double initiative jusqu'à la fin du tour", () => {
+  it("Rustler Rampage: untaps the targeted player's creatures (not the other's) and gives double strike until end of turn", () => {
     let s = scenario({
       p1: {
         battlefield: [{ name: "Bear Cub", tapped: true }, { name: "Swab Goblin", tapped: true }, ...lands("Plains", 3)],
@@ -3751,7 +3751,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
     expect(chars(s, cub).keywords).not.toContain("doubleStrike");
   });
 
-  it("Ruthless Lawbringer : vous pouvez sacrifier une autre créature ; si vous le faites, détruisez le permanent non-terrain ciblé", () => {
+  it("Ruthless Lawbringer: you may sacrifice another creature; if you do, destroy the targeted nonland permanent", () => {
     const setup = () =>
       scenario({
         p1: { battlefield: ["Bear Cub", "Plains", "Swamp", "Swamp"], hand: ["Ruthless Lawbringer"] },
@@ -3771,21 +3771,21 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
       return undefined;
     });
     const law = idOf(s, "p1", "battlefield", "Ruthless Lawbringer");
-    // Le sacrifice porte sur une autre créature ; la cible n'est jamais un terrain.
+    // The sacrifice is of another creature; the target is never a land.
     expect(sacrificeOptions.length).toBeGreaterThan(0);
     expect(sacrificeOptions.some((o) => o.includes(law))).toBe(false);
     expect(targetOptions.some((o) => o.includes(angel))).toBe(true);
     expect(targetOptions.some((o) => o.includes(forest))).toBe(false);
     expect(idsOf(s, "p1", "graveyard", "Bear Cub")).toHaveLength(1);
     expect(idsOf(s, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
-    // Sans sacrifice, rien n'est détruit.
+    // Without a sacrifice, nothing is destroyed.
     let t = setup();
     t = settle(cast(t, "p1", "Ruthless Lawbringer"), decline);
     expect(idsOf(t, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
     expect(idsOf(t, "p2", "battlefield", "Serra Angel")).toHaveLength(1);
   });
 
-  it("Sandstorm Verge : {3}, {T} : la créature ciblée ne peut pas bloquer ce tour-ci, seulement au moment d'un rituel", () => {
+  it("Sandstorm Verge: {3}, {T}: the targeted creature can't block this turn, only at sorcery timing", () => {
     let s = scenario({ p1: { battlefield: ["Sandstorm Verge", ...lands("Plains", 3)] }, p2: { battlefield: ["Bear Cub"] } });
     const verge = idOf(s, "p1", "battlefield", "Sandstorm Verge");
     const cub = idOf(s, "p2", "battlefield", "Bear Cub");
@@ -3800,7 +3800,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
     expect(chars(s, cub).keywords).toContain("cantBlock");
     s = advanceUntil(s, (x) => x.turn.active === "p2");
     expect(chars(s, cub).keywords).not.toContain("cantBlock");
-    // Pas pendant le combat (vitesse de rituel).
+    // Not during combat (sorcery speed).
     const t = scenario({
       step: "beginCombat",
       p1: { battlefield: ["Sandstorm Verge", ...lands("Plains", 3)] },
@@ -3814,7 +3814,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
     ).toBe(false);
   });
 
-  it("Scalestorm Summoner : en attaquant, un Dinosaure 3/1 rouge si vous contrôlez une créature de force 4 ou plus, sinon rien", () => {
+  it("Scalestorm Summoner: when attacking, a 3/1 red Dinosaur if you control a creature with power 4 or more, otherwise nothing", () => {
     const run = (others: string[]) => {
       let s = scenario({ p1: { battlefield: ["Scalestorm Summoner", ...others] } });
       s = attack(s, [idOf(s, "p1", "battlefield", "Scalestorm Summoner")]);
@@ -3826,11 +3826,11 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
     expect([c.power, c.toughness]).toEqual([3, 1]);
     expect(c.colors).toEqual(["R"]);
     expect(c.subtypes).toContain("Dinosaur");
-    // Le Summoner (3/3) et une 2/2 ne suffisent pas.
+    // The Summoner (3/3) and a 2/2 aren't enough.
     expect(idsOf(run(["Bear Cub"]), "p1", "battlefield", "Dinosaur")).toHaveLength(0);
   });
 
-  it("Servant of the Stinger : blessures de combat à un joueur après un crime : vous pouvez la sacrifier pour chercher une carte ; sans crime, rien", () => {
+  it("Servant of the Stinger: combat damage to a player after a crime: you may sacrifice it to search for a card; without a crime, nothing", () => {
     const setup = () =>
       scenario({
         p1: {
@@ -3851,7 +3851,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
     expect(s.players.p2?.life).toBe(17);
     expect(idsOf(s, "p1", "graveyard", "Servant of the Stinger")).toHaveLength(1);
     expect(idsOf(s, "p1", "hand", "Serra Angel")).toHaveLength(1);
-    // Sans crime ce tour-ci : pas de déclenchement, la Servante reste.
+    // Without a crime this turn: no trigger, the Servant stays.
     let t = setup();
     const asked: string[] = [];
     t = attack(t, [idOf(t, "p1", "battlefield", "Servant of the Stinger")]);
@@ -3864,7 +3864,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
     expect(asked).not.toContain("search");
   });
 
-  it("Shackle Slinger : au deuxième sort du tour, engage la créature adverse ciblée, ou l'étourdit si elle est déjà engagée", () => {
+  it("Shackle Slinger: on the second spell of the turn, taps the targeted opposing creature, or stuns it if it is already tapped", () => {
     const run = (tapped: boolean) => {
       let s = scenario({
         p1: { battlefield: ["Shackle Slinger", ...lands("Mountain", 3)], hand: ["Shock", "Shock", "Shock"] },
@@ -3878,7 +3878,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
         return picking([cub])(req);
       };
       s = settle(cast(s, "p1", "Shock", { targets: { t: ["p2"] } }), answer);
-      // Premier sort : rien.
+      // First spell: nothing.
       expect(s.objects[cub]?.tapped).toBe(tapped);
       expect(s.objects[cub]?.counters.stun ?? 0).toBe(0);
       s = settle(cast(s, "p1", "Shock", { targets: { t: ["p2"] } }), answer);
@@ -3891,12 +3891,12 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
     const tapped = run(true);
     expect(tapped.s.objects[tapped.cub]?.tapped).toBe(true);
     expect(tapped.s.objects[tapped.cub]?.counters.stun).toBe(1);
-    // Troisième sort : pas de nouveau déclenchement.
+    // Third spell: no new trigger.
     const third = settle(cast(tapped.s, "p1", "Shock", { targets: { t: ["p2"] } }), picking([tapped.cub]));
     expect(third.objects[tapped.cub]?.counters.stun).toBe(1);
   });
 
-  it("Shepherd of the Clouds : renvoie en main la carte de permanent de VM 3 ou moins ciblée de votre cimetière, sur le champ de bataille avec une Monture", () => {
+  it("Shepherd of the Clouds: returns the targeted permanent card with mana value 3 or less from your graveyard to hand, to the battlefield with a Mount", () => {
     const run = (mount: boolean) => {
       let s = scenario({
         p1: {
@@ -3925,7 +3925,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
     expect(idsOf(field, "p1", "hand", "Bear Cub")).toHaveLength(0);
   });
 
-  it("Shifting Grift : échange durablement le contrôle des deux créatures ciblées", () => {
+  it("Shifting Grift: durably exchanges control of the two targeted creatures", () => {
     let s = scenario({
       p1: { battlefield: ["Bear Cub", ...lands("Island", 4)], hand: ["Shifting Grift"] },
       p2: { battlefield: ["Serra Angel"] },
@@ -3944,7 +3944,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
     expect(s.objects[angel]?.controller).toBe("p1");
   });
 
-  it("Shifting Grift : le mode « artefacts » échange deux artefacts ; deux Îles ne paient pas le mode « créatures » ({U}{U} + {2})", () => {
+  it('Shifting Grift: the "artifacts" mode exchanges two artifacts; two Islands don\'t pay for the "creatures" mode ({U}{U} + {2})', () => {
     let s = scenario({
       p1: { battlefield: ["Tomb Trawler", ...lands("Island", 3)], hand: ["Shifting Grift"] },
       p2: { battlefield: ["Thunder Lasso"] },
@@ -3964,13 +3964,13 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
     expect(s.objects[lasso]?.controller).toBe("p1");
   });
 
-  it("Slick Sequence : 2 blessures à n'importe quelle cible ; piochez seulement si vous avez lancé un autre sort ce tour-ci", () => {
-    // Seul sort du tour : pas de pioche.
+  it("Slick Sequence: 2 damage to any target; draw only if you cast another spell this turn", () => {
+    // Only spell of the turn: no draw.
     let s = scenario({ p1: { battlefield: ["Island", "Mountain"], hand: ["Slick Sequence"] } });
     s = settle(cast(s, "p1", "Slick Sequence", { targets: { t: ["p2"] } }));
     expect(s.players.p2?.life).toBe(18);
     expect(s.players.p1?.hand).toHaveLength(0);
-    // Après un autre sort : pioche.
+    // After another spell: draw.
     let t = scenario({
       p1: { battlefield: ["Island", ...lands("Mountain", 2)], hand: ["Shock", "Slick Sequence"] },
       p2: { battlefield: ["Bear Cub"] },
@@ -3980,7 +3980,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
     t = settle(cast(t, "p1", "Slick Sequence", { targets: { t: [cub] } }));
     expect(idsOf(t, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
     expect(t.players.p1?.hand).toHaveLength(1);
-    // Un sort lancé par l'adversaire ne compte pas.
+    // A spell cast by the opponent doesn't count.
     let u = scenario({
       p1: { battlefield: ["Island", "Mountain"], hand: ["Slick Sequence"] },
       p2: { battlefield: ["Mountain"], hand: ["Shock"] },
@@ -3992,7 +3992,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
     expect(u.players.p1?.hand).toHaveLength(0);
   });
 
-  it("Slickshot Lockpicker : l'éphémère ou rituel ciblé de votre cimetière gagne le flashback (son coût de mana) jusqu'à la fin du tour", () => {
+  it("Slickshot Lockpicker: the targeted instant or sorcery in your graveyard gains flashback (its mana cost) until end of turn", () => {
     const setup = () =>
       scenario({
         p1: {
@@ -4013,7 +4013,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
     s = settle(act(s, "p1", { type: "cast", card: shock, targets: { t: ["p2"] } }));
     expect(s.players.p2?.life).toBe(18);
     expect(exiled(s, "Shock")).toHaveLength(1);
-    // Non lancé : le flashback disparaît à la fin du tour.
+    // Not cast: the flashback disappears at end of turn.
     let t = setup();
     const shock2 = idOf(t, "p1", "graveyard", "Shock");
     t = settle(cast(t, "p1", "Slickshot Lockpicker"), picking([shock2]));
@@ -4021,7 +4021,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
     expect(castable(t, "p1", shock2)).toBe(false);
   });
 
-  it("Slickshot Lockpicker : Complot {2}{U} depuis la main", () => {
+  it("Slickshot Lockpicker: Plot {2}{U} from hand", () => {
     let s = scenario({ p1: { battlefield: lands("Island", 3), hand: ["Slickshot Lockpicker"] } });
     const card = idOf(s, "p1", "hand", "Slickshot Lockpicker");
     s = act(s, "p1", { type: "activate", source: card, ability: abilityIndex(s, card, "Plot") });
@@ -4030,7 +4030,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
     expect(s.stack).toHaveLength(0);
   });
 
-  it("Spinewoods Armadillo : {1}{G}, défaussez-la : un terrain de base ou un Désert de la bibliothèque en main, et 3 PV", () => {
+  it("Spinewoods Armadillo: {1}{G}, discard it: a basic land or a Desert from the library to hand, and 3 life", () => {
     let s = scenario({
       p1: {
         battlefield: lands("Forest", 2),
@@ -4051,14 +4051,14 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
     expect(offered).not.toContain("Ruthless Lawbringer");
     expect(idsOf(s, "p1", "hand", "Sandstorm Verge")).toHaveLength(1);
     expect(s.players.p1?.life).toBe(23);
-    // 7/7 avec portée et garde.
+    // 7/7 with reach and ward.
     const t = scenario({ p1: { battlefield: ["Spinewoods Armadillo"] } });
     const c = chars(t, idOf(t, "p1", "battlefield", "Spinewoods Armadillo"));
     expect([c.power, c.toughness]).toEqual([7, 7]);
     expect(c.keywords).toEqual(expect.arrayContaining(["reach", "ward"]));
   });
 
-  it("Stubborn Burrowfiend : montée, meule deux cartes puis +X/+X jusqu'à la fin du tour (X : cartes de créature de votre cimetière)", () => {
+  it("Stubborn Burrowfiend: saddled, mills two cards then +X/+X until end of turn (X: creature cards in your graveyard)", () => {
     let s = scenario({
       p1: {
         battlefield: ["Stubborn Burrowfiend", "Bear Cub"],
@@ -4078,7 +4078,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
     s = settle(s);
     expect(s.players.p1?.library).toHaveLength(2);
     expect(idsOf(s, "p1", "graveyard", "Serra Angel")).toHaveLength(1);
-    // Swab Goblin et Serra Angel : X = 2 (ni Shock ni la Forêt).
+    // Swab Goblin and Serra Angel: X = 2 (neither Shock nor the Forest).
     const c = chars(s, fiend);
     expect([c.power, c.toughness]).toEqual([4, 4]);
     s = advanceUntil(s, (x) => x.turn.active === "p2");
@@ -4086,7 +4086,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
     expect([d.power, d.toughness]).toEqual([2, 2]);
   });
 
-  it("Take for a Ride : contrôle de la créature ciblée jusqu'à la fin du tour, dégagée et avec la célérité ; flash après un crime", () => {
+  it("Take for a Ride: gain control of the targeted creature until end of turn, untap it, and it gains haste; flash after a crime", () => {
     let s = scenario({
       p1: { battlefield: lands("Mountain", 3), hand: ["Take for a Ride"] },
       p2: { battlefield: [{ name: "Serra Angel", tapped: true }] },
@@ -4098,7 +4098,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
     expect(chars(s, angel).keywords).toContain("haste");
     s = advanceUntil(s, (x) => x.turn.active === "p2");
     expect(s.objects[angel]?.controller).toBe("p2");
-    // Hors phase principale : seulement après un crime.
+    // Outside the main phase: only after a crime.
     let t = scenario({
       step: "beginCombat",
       p1: { battlefield: lands("Mountain", 4), hand: ["Take for a Ride", "Shock"] },
@@ -4111,7 +4111,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
     expect(castable(t, "p1", ride)).toBe(true);
   });
 
-  it("This Town Ain't Big Enough : coûte {3} de moins s'il cible un permanent que vous contrôlez ; renvoie jusqu'à deux permanents non-terrains", () => {
+  it("This Town Ain't Big Enough: costs {3} less if it targets a permanent you control; returns up to two nonland permanents", () => {
     const setup = () =>
       scenario({
         p1: { battlefield: ["Bear Cub", ...lands("Island", 2)], hand: ["This Town Ain't Big Enough"] },
@@ -4120,17 +4120,17 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
     let s = setup();
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
     const angel = idOf(s, "p2", "battlefield", "Serra Angel");
-    // Seulement le permanent adverse : {4}{U} avec deux Îles, refusé.
+    // Only the opposing permanent: {4}{U} with two Islands, refused.
     expect(() => cast(setup(), "p1", "This Town Ain't Big Enough", { targets: { t: [angel] } })).toThrow();
     s = settle(cast(s, "p1", "This Town Ain't Big Enough", { targets: { t: [cub, angel] } }));
     expect(idsOf(s, "p1", "hand", "Bear Cub")).toHaveLength(1);
     expect(idsOf(s, "p2", "hand", "Serra Angel")).toHaveLength(1);
-    // Un terrain n'est pas une cible.
+    // A land is not a target.
     const forest = idOf(setup(), "p2", "battlefield", "Forest");
     expect(() => cast(setup(), "p1", "This Town Ain't Big Enough", { targets: { t: [cub, forest] } })).toThrow();
   });
 
-  it("Thunder Lasso : s'attache en arrivant à votre créature ciblée (+1/+1) ; quand elle attaque, engage la créature ciblée du défenseur", () => {
+  it("Thunder Lasso: attaches on entering to your targeted creature (+1/+1); when it attacks, taps the defender's targeted creature", () => {
     let s = scenario({
       p1: { battlefield: ["Bear Cub", ...lands("Plains", 3)], hand: ["Thunder Lasso"] },
       p2: { battlefield: ["Swab Goblin"] },
@@ -4158,7 +4158,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
     expect(s.objects[bears]?.tapped).toBe(true);
   });
 
-  it("Tomb Trawler : {2} : la carte ciblée de votre cimetière va au-dessous de votre bibliothèque", () => {
+  it("Tomb Trawler: {2}: the targeted card in your graveyard goes to the bottom of your library", () => {
     let s = scenario({
       p1: { battlefield: ["Tomb Trawler", ...lands("Forest", 2)], graveyard: ["Serra Angel"] },
       p2: { graveyard: ["Bear Cub"] },
@@ -4189,7 +4189,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
     expect(nameOf(s, s.players.p1?.library.at(-1) as string)).toBe("Serra Angel");
   });
 
-  it("Unfortunate Accident : détruisez la créature ciblée et/ou créez un Mercenaire 1/1 rouge (coûts du spree additionnés)", () => {
+  it("Unfortunate Accident: destroy the targeted creature and/or create a 1/1 red Mercenary (spree costs added up)", () => {
     let s = scenario({
       p1: { battlefield: lands("Swamp", 5), hand: ["Unfortunate Accident"] },
       p2: { battlefield: ["Serra Angel"] },
@@ -4217,12 +4217,12 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
     expect(idsOf(t, "p2", "battlefield", "Serra Angel")).toHaveLength(1);
   });
 
-  it("Unfortunate Accident : le Mercenaire a « {T} : +1/+0 à votre créature ciblée », au moment d'un rituel", () => {
+  it('Unfortunate Accident: the Mercenary has "{T}: +1/+0 to your targeted creature", at sorcery timing', () => {
     let s = scenario({ p1: { battlefield: [...lands("Swamp", 2), "Bear Cub"], hand: ["Unfortunate Accident"] } });
     s = settle(cast(s, "p1", "Unfortunate Accident", { mode: modeOf(s, "Unfortunate Accident", "1/1 Mercenary") }));
     const merc = idOf(s, "p1", "battlefield", "Mercenary");
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
-    // Mal d'invocation : pas ce tour-ci.
+    // Summoning sickness: not this turn.
     expect(canActivate(s, "p1", merc)).toBe(false);
     s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.number > 3 && x.turn.step === "main1");
     expect(canActivate(s, "p1", merc)).toBe(true);
@@ -4237,7 +4237,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
     expect(chars(s, cub).power).toBe(3);
   });
 
-  it("Unscrupulous Contractor : vous pouvez sacrifier une créature (elle-même comprise) ; si vous le faites, le joueur ciblé pioche deux cartes et perd 2 PV", () => {
+  it("Unscrupulous Contractor: you may sacrifice a creature (itself included); if you do, the targeted player draws two cards and loses 2 life", () => {
     const setup = () => scenario({ p1: { battlefield: ["Bear Cub", ...lands("Swamp", 3)], hand: ["Unscrupulous Contractor"] } });
     let s = setup();
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -4257,7 +4257,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
     expect(s.players.p2?.hand).toHaveLength(2);
     expect(s.players.p2?.life).toBe(18);
     expect(s.players.p1?.life).toBe(20);
-    // Sans sacrifice : rien.
+    // Without a sacrifice: nothing.
     let t = setup();
     t = settle(cast(t, "p1", "Unscrupulous Contractor"), decline);
     expect(idsOf(t, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
@@ -4265,7 +4265,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
     expect(t.players.p2?.life).toBe(20);
   });
 
-  it("Vial Smasher, Gleeful Grenadier : 1 blessure à l'adversaire ciblé quand un autre hors-la-loi arrive sous votre contrôle, pas pour une autre créature", () => {
+  it("Vial Smasher, Gleeful Grenadier: 1 damage to the targeted opponent when another outlaw enters under your control, not for another creature", () => {
     let s = scenario({
       p1: {
         battlefield: ["Vial Smasher, Gleeful Grenadier", ...lands("Swamp", 2), ...lands("Forest", 2)],
@@ -4279,7 +4279,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
     expect(s.players.p2?.life).toBe(19);
   });
 
-  it("Visage Bandit : peut arriver comme une copie d'une de vos créatures, en étant aussi Métamorphe Gredin ; sinon une 2/2", () => {
+  it("Visage Bandit: may enter as a copy of one of your creatures, also being a Shapeshifter Rascal; otherwise a 2/2", () => {
     const setup = () =>
       scenario({
         p1: { battlefield: ["Serra Angel", ...lands("Island", 4)], hand: ["Visage Bandit"] },
@@ -4300,7 +4300,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
     expect([c.power, c.toughness]).toEqual([4, 4]);
     expect(c.keywords).toEqual(expect.arrayContaining(["flying", "vigilance"]));
     expect(c.subtypes).toEqual(expect.arrayContaining(["Angel", "Shapeshifter", "Rogue"]));
-    // Sans copie : 2/2 Métamorphe Gredin.
+    // Without a copy: 2/2 Shapeshifter Rascal.
     let t = setup();
     t = settle(cast(t, "p1", "Visage Bandit"), decline);
     const d = chars(t, idOf(t, "p1", "battlefield", "Visage Bandit"));
@@ -4308,7 +4308,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
     expect(d.subtypes).toEqual(expect.arrayContaining(["Shapeshifter", "Rogue"]));
   });
 
-  it("Wrangler of the Damned : au début de votre étape de fin, un Esprit 2/2 blanc volant si vous n'avez lancé aucun sort depuis votre main ce tour-ci", () => {
+  it("Wrangler of the Damned: at the beginning of your end step, a 2/2 white flying Spirit if you cast no spell from your hand this turn", () => {
     const toEnd = (s: S) => advanceUntil(s, (x) => x.turn.active === "p2");
     const quiet = toEnd(scenario({ p1: { battlefield: ["Wrangler of the Damned"] } }));
     const spirit = idOf(quiet, "p1", "battlefield", "Spirit");
@@ -4321,7 +4321,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
     s = settle(cast(s, "p1", "Shock", { targets: { t: ["p2"] } }));
     s = toEnd(s);
     expect(idsOf(s, "p1", "battlefield", "Spirit")).toHaveLength(0);
-    // Pas pendant l'étape de fin de l'adversaire.
+    // Not during the opponent's end step.
     const other = advanceUntil(
       scenario({ active: "p2", p1: { battlefield: ["Wrangler of the Damned"] } }),
       (x) => x.turn.active === "p1",
@@ -4330,8 +4330,8 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
   });
 });
 
-describe("PLAN-A A3 : « les créatures qui l'ont montée ce tour-ci » cumulent les activations de Monture du tour", () => {
-  /** Monte la Monture une fois par groupe de créatures engagées. */
+describe('PLAN-A A3: "the creatures that saddled it this turn" accumulate the Mount activations of the turn', () => {
+  /** Saddles the Mount once for each group of tapped creatures. */
   const saddleWith = (s0: GameState, mount: string, ...groups: string[][]) => {
     let s = s0;
     for (const tap of groups) {
@@ -4342,7 +4342,7 @@ describe("PLAN-A A3 : « les créatures qui l'ont montée ce tour-ci » cumulent
     return s;
   };
 
-  it("Giant Beaver : montée deux fois, les deux créatures peuvent recevoir le marqueur", () => {
+  it("Giant Beaver: saddled twice, both creatures can receive the counter", () => {
     let s = scenario({ p1: { battlefield: ["Giant Beaver", "Serra Angel", "Shivan Dragon"] } });
     const beaver = idOf(s, "p1", "battlefield", "Giant Beaver");
     const angel = idOf(s, "p1", "battlefield", "Serra Angel");
@@ -4360,7 +4360,7 @@ describe("PLAN-A A3 : « les créatures qui l'ont montée ce tour-ci » cumulent
     expect(s.objects[angel]?.counters["+1/+1"]).toBe(1);
   });
 
-  it("Rambling Possum : montée deux fois, les deux créatures peuvent retourner en main", () => {
+  it("Rambling Possum: saddled twice, both creatures can return to hand", () => {
     let s = scenario({ p1: { battlefield: ["Rambling Possum", "Bear Cub", "Llanowar Elves"] } });
     const possum = idOf(s, "p1", "battlefield", "Rambling Possum");
     s = saddleWith(s, possum, [idOf(s, "p1", "battlefield", "Bear Cub")], [idOf(s, "p1", "battlefield", "Llanowar Elves")]);
@@ -4369,7 +4369,7 @@ describe("PLAN-A A3 : « les créatures qui l'ont montée ce tour-ci » cumulent
     expect(namesIn(s, s.players.p1?.hand).sort()).toEqual(["Bear Cub", "Llanowar Elves"]);
   });
 
-  it("Fortune, Loyal Steed : à la fin du combat, elle et jusqu'à une créature qui l'a montée sont exilées puis renvoyées", () => {
+  it("Fortune, Loyal Steed: at end of combat, it and up to one creature that saddled it are exiled then returned", () => {
     let s = scenario({ p1: { battlefield: ["Fortune, Loyal Steed", "Bear Cub", "Llanowar Elves"] } });
     const fortune = idOf(s, "p1", "battlefield", "Fortune, Loyal Steed");
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -4378,20 +4378,20 @@ describe("PLAN-A A3 : « les créatures qui l'ont montée ce tour-ci » cumulent
     s = attack(s, [fortune]);
     let asked: { options: string[]; max?: number } | undefined;
     s = throughCombat(s, (req) => {
-      // Fortune revient : regard 2 (réponse suggérée).
+      // Fortune returns: scry 2 (suggested answer).
       if (req.type !== "pick" || !req.options.includes(bear)) return undefined;
       asked = { options: req.options, max: req.max };
       return [bear];
     });
     expect(asked?.options.sort()).toEqual([bear, elves].sort());
     expect(asked?.max).toBe(1);
-    // L'Ours revient (nouvel objet, dégagé) ; les Elfes, non choisis, restent engagés.
+    // The Bear returns (new object, untapped); the Elves, not chosen, stay tapped.
     expect(idsOf(s, "p1", "battlefield", "Bear Cub")).not.toContain(bear);
     expect(idsOf(s, "p1", "battlefield", "Llanowar Elves")).toEqual([elves]);
     expect(s.objects[elves]?.tapped).toBe(true);
   });
 
-  it("The Gitrog, Ravenous Ride : sacrifiez une seule créature qui l'a montée ; X est sa force", () => {
+  it("The Gitrog, Ravenous Ride: sacrifice a single creature that saddled it; X is its power", () => {
     let s = scenario({
       p1: {
         battlefield: ["The Gitrog, Ravenous Ride", "Bear Cub", "Serra Angel"],
@@ -4416,13 +4416,13 @@ describe("PLAN-A A3 : « les créatures qui l'ont montée ce tour-ci » cumulent
     expect(options.sort()).toEqual([bear, angel].sort());
     expect(namesIn(s, s.players.p1?.graveyard)).toEqual(["Serra Angel"]);
     expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toEqual([bear]);
-    // Force de l'Ange : 4 cartes piochées (aucun terrain mis en jeu).
+    // Power of the Angel: 4 cards drawn (no land put onto the battlefield).
     expect(s.players.p1?.hand).toHaveLength(4);
   });
 });
 
-describe("Outlaws of Thunder Junction, PLAN-A A4a : « le joueur défenseur », « ce joueur » à plusieurs", () => {
-  it("Spring Splasher : la créature ciblée est celle du joueur défenseur", () => {
+describe('Outlaws of Thunder Junction, PLAN-A A4a: "the defending player", "that player" with several', () => {
+  it("Spring Splasher: the targeted creature is the defending player's", () => {
     const s = scenario({
       players: 3,
       p1: { battlefield: ["Spring Splasher"] },
@@ -4433,7 +4433,7 @@ describe("Outlaws of Thunder Junction, PLAN-A A4a : « le joueur défenseur », 
     expect(run.offered.map((x) => [...x].sort())).toEqual([["Llanowar Elves", "Shivan Dragon"]]);
   });
 
-  it("Thunder Lasso : la créature engagée est celle du joueur défenseur", () => {
+  it("Thunder Lasso: the tapped creature is the defending player's", () => {
     const s = scenario({
       players: 3,
       p1: { battlefield: ["Thunder Lasso", "Bear Cub"] },
@@ -4448,7 +4448,7 @@ describe("Outlaws of Thunder Junction, PLAN-A A4a : « le joueur défenseur », 
     expect(run.s.objects[idOf(run.s, "p2", "battlefield", "Serra Angel")]?.tapped).toBe(false);
   });
 
-  it("Tinybones, the Pickpocket : la carte vient du cimetière du joueur blessé", () => {
+  it("Tinybones, the Pickpocket: the card comes from the graveyard of the damaged player", () => {
     const s = scenario({
       players: 3,
       p1: { battlefield: ["Tinybones, the Pickpocket"] },
@@ -4460,8 +4460,8 @@ describe("Outlaws of Thunder Junction, PLAN-A A4a : « le joueur défenseur », 
   });
 });
 
-describe("taxe d'attaque et planeswalkers (PLAN-H, lot H5)", () => {
-  it("Archangel of Tithes : attaquer un planeswalker de son contrôleur coûte aussi {1}", () => {
+describe("attack tax and planeswalkers (PLAN-H, lot H5)", () => {
+  it("Archangel of Tithes: attacking a planeswalker of its controller also costs {1}", () => {
     const s = scenario({
       p1: { battlefield: ["Bear Cub"] },
       p2: { battlefield: ["Archangel of Tithes", "Ajani Resolute"] },
@@ -4472,15 +4472,15 @@ describe("taxe d'attaque et planeswalkers (PLAN-H, lot H5)", () => {
   });
 });
 
-describe("copies attaquantes en multijoueur (PLAN-H, lot H5)", () => {
+describe("attacking copies in multiplayer (PLAN-H, lot H5)", () => {
   const activate = (s: GameState, source: string, label: string, extra: object = {}) => {
     const opt = legalActions(s, "p1").find(
       (a) => a.type === "activate" && a.source === source && plainText(a.label ?? "").startsWith(label),
     );
-    if (opt?.type !== "activate") throw new Error(`capacité introuvable : ${label}`);
+    if (opt?.type !== "activate") throw new Error(`ability not found: ${label}`);
     return act(s, "p1", { type: "activate", source, ability: opt.ability, ...extra });
   };
-  it("Calamity, Galloping Inferno : « répétez ce processus » — chaque copie choisit ce qu'elle attaque (508.4)", () => {
+  it('Calamity, Galloping Inferno: "repeat this process" — each copy chooses what it attacks (508.4)', () => {
     let s = scenario({ players: 3, p1: { battlefield: ["Calamity, Galloping Inferno", "Bear Cub", "Swab Goblin"] } });
     const cal = idOf(s, "p1", "battlefield", "Calamity, Galloping Inferno");
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");

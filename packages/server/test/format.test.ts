@@ -1,4 +1,4 @@
-/** Format du salon : Standard, ou sans limite (choisi à la création, imposé à celui qui rejoint). */
+/** Room format: Standard, or unlimited (chosen at creation, imposed on whoever joins). */
 import { CARDS, card, type DeckEntries } from "@mtgx/cards";
 import { printingOptions } from "@mtgx/cards/printings";
 import { keyedPrinting, plainText, printingKey } from "@mtgx/engine";
@@ -14,7 +14,7 @@ afterEach(async () => {
   srv = null;
 });
 
-/** Un deck de 60 cartes avec une carte bannie en Standard. */
+/** A 60-card deck with a card banned in Standard. */
 const BANNED: DeckEntries = [
   [4, "Up the Beanstalk"],
   [56, "Forest"],
@@ -28,8 +28,8 @@ async function two() {
   return { a, b };
 }
 
-describe("format du salon", () => {
-  it("en Standard, un deck avec une carte bannie est refusé à la création comme à l'arrivée", async () => {
+describe("room format", () => {
+  it("in Standard, a deck with a banned card is refused at creation as at arrival", async () => {
     const { a, b } = await two();
     a.send({ type: "create", name: "Alice", deck: BANNED });
     const refused = await a.next("error");
@@ -42,7 +42,7 @@ describe("format du salon", () => {
     expect((await b.next("error")).code).toBe("deck");
   });
 
-  it("sans limite, la carte bannie est permise, et le salon impose ce format à celui qui rejoint", async () => {
+  it("in unlimited, the banned card is allowed, and the room imposes that format on whoever joins", async () => {
     const { a, b } = await two();
     a.send({ type: "create", name: "Alice", deck: BANNED, format: "unlimited" });
     const created = await a.next("room");
@@ -53,8 +53,8 @@ describe("format du salon", () => {
   });
 });
 
-describe("impressions (PLAN-G, G1)", () => {
-  it("le deck envoyé choisit ses illustrations : la vue de son joueur les montre, l'adversaire ne voit pas sa main", async () => {
+describe("printings (PLAN-G, G1)", () => {
+  it("the sent deck chooses its artwork: its player's view shows it, the opponent does not see its hand", async () => {
     const printed = [
       "Ghalta, Primal Hunger",
       "Bloom Tender",
@@ -84,17 +84,17 @@ describe("impressions (PLAN-G, G1)", () => {
     for (const v of mine) expect(images.has(v.image)).toBe(true);
     const seen = JSON.stringify(ub.view);
     for (const img of images) expect(seen).not.toContain(img);
-    // Forme vérifiée : une impression qui n'est pas une chaîne est refusée.
+    // Shape checked: a printing that is not a string is refused.
     const c = await Client.connect(srv?.port ?? 0);
     clients.push(c);
     c.send({ type: "create", name: "Eve", deck: [[60, "Forest", 3]] as unknown as DeckEntries });
     expect((await c.next("error")).code).toBe("deck");
   });
 
-  it("une impression de la table est montrée ; une clé qui n'est pas une impression de la carte est retirée", async () => {
+  it("a printing from the table is shown; a key that is not a printing of the card is removed", async () => {
     const forest = printingOptions(card("Forest")).find((p) => p.key)?.key as string;
     const image = keyedPrinting(forest)?.image;
-    // Bien formée, mais pas une impression de l'Île : un client ne peut pas imposer une image de son choix.
+    // Well-formed, but not a printing of the Island: a client cannot impose an image of its choice.
     const forged = printingKey("LEA", "161", "0123456789abcdef0123456789abcdef");
     const deck: DeckEntries = [
       [30, "Forest", forest],

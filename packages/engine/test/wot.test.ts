@@ -1,4 +1,4 @@
-/** Enchanting Tales (WOT) : tests de règles des cartes (PLAN-G). */
+/** Enchanting Tales (WOT): rules tests for the cards (PLAN-G). */
 import { describe, expect, it } from "vitest";
 import { dealDamage, destroy, drawCards, gainLife } from "../src/actions";
 import { fx, ref, spell, staticAbility, target } from "../src/dsl";
@@ -25,7 +25,7 @@ import {
 
 describe("Enchanting Tales", () => {
   describe("Blind Obedience", () => {
-    it("extorsion : à chaque sort lancé, payer {W/B} fait perdre 1 PV à chaque adversaire et vous en fait gagner autant", () => {
+    it("extort: whenever you cast a spell, paying {W/B} makes each opponent lose 1 life and you gain that much", () => {
       let s = scenario({
         players: 3,
         p1: { battlefield: ["Blind Obedience", ...lands("Forest", 2), "Plains"], hand: ["Bear Cub"] },
@@ -36,7 +36,7 @@ describe("Enchanting Tales", () => {
       expect([s.players.p1?.life, s.players.p2?.life, s.players.p3?.life]).toEqual([22, 19, 19]);
     });
 
-    it("les artefacts et créatures de vos adversaires arrivent engagés ; pas les vôtres", () => {
+    it("your opponents' artifacts and creatures enter tapped; not yours", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: ["Blind Obedience"] },
@@ -50,7 +50,7 @@ describe("Enchanting Tales", () => {
     });
   });
 
-  describe("G5 : Enchanting Tales", () => {
+  describe("G5: Enchanting Tales", () => {
     type S = ReturnType<typeof scenario>;
     const castIt = (s: S, name: string, extra: object = {}) =>
       act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", name), ...extra });
@@ -59,21 +59,21 @@ describe("Enchanting Tales", () => {
       return act(s, "p1", { type: "activate", source, ability: ab?.type === "activate" ? ab.ability : 0, ...extra });
     };
 
-    it("Intangible Virtue : vos jetons de créature gagnent +1/+1 et la vigilance", () => {
+    it("Intangible Virtue: your creature tokens get +1/+1 and vigilance", () => {
       let s = scenario({ p1: { battlefield: ["Intangible Virtue", ...lands("Mountain", 2)], hand: ["Dragon Fodder"] } });
       s = settle(castIt(s, "Dragon Fodder"));
       const gob = idOf(s, "p1", "battlefield", "Goblin");
       expect([chars(s, gob).power, chars(s, gob).keywords.includes("vigilance")]).toEqual([2, true]);
     });
 
-    it("Griffin Aerie : un Griffon à votre étape de fin si vous avez gagné 3 PV ce tour-ci", () => {
+    it("Griffin Aerie: a Griffin at your end step if you gained 3 life this turn", () => {
       let s = scenario({ p1: { battlefield: ["Griffin Aerie"] } });
       gainLife(s, "p1", 3);
       s = advanceUntil(s, (x) => x.turn.step === "cleanup" || x.turn.active === "p2");
       expect(idsOf(s, "p1", "battlefield", "Griffin")).toHaveLength(1);
     });
 
-    it("Land Tax : à l'entretien, si un adversaire a plus de terrains, jusqu'à trois terrains de base en main", () => {
+    it("Land Tax: at upkeep, if an opponent has more lands, up to three basic lands into hand", () => {
       let s = scenario({
         active: "p2",
         step: "end",
@@ -92,14 +92,14 @@ describe("Enchanting Tales", () => {
       expect(idsOf(t, "p1", "hand", "Plains")).toHaveLength(1);
     });
 
-    it("Smothering Tithe : un adversaire pioche ; sans payer {2}, un Trésor", () => {
+    it("Smothering Tithe: an opponent draws; unless they pay {2}, a Treasure", () => {
       let s = scenario({ p1: { battlefield: ["Smothering Tithe"] }, p2: { library: lands("Forest", 3) } });
       drawCards(s, "p2", 1);
       s = settle(s, () => [0]);
       expect(idsOf(s, "p1", "battlefield", "Treasure")).toHaveLength(1);
     });
 
-    it("Copy Enchantment : arrive comme copie d'un enchantement", () => {
+    it("Copy Enchantment: enters as a copy of an enchantment", () => {
       let s = scenario({
         p1: { battlefield: lands("Island", 3), hand: ["Copy Enchantment"] },
         p2: { battlefield: ["Intangible Virtue"] },
@@ -113,7 +113,7 @@ describe("Enchanting Tales", () => {
       expect(chars(s, copy).name).toBe("Intangible Virtue");
     });
 
-    it("Forced Fruition et Oppression : un adversaire lance un sort, il pioche sept cartes ; il défausse une carte", () => {
+    it("Forced Fruition and Oppression: an opponent casts a spell, they draw seven cards; they discard a card", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: ["Forced Fruition", "Oppression"] },
@@ -123,14 +123,14 @@ describe("Enchanting Tales", () => {
       expect(s.players.p2?.hand).toHaveLength(6);
     });
 
-    it("Hatching Plans : mis au cimetière depuis le champ de bataille, piochez trois cartes", () => {
+    it("Hatching Plans: put into a graveyard from the battlefield, draw three cards", () => {
       let s = scenario({ p1: { battlefield: ["Hatching Plans"], library: lands("Island", 5) } });
       destroy(s, idOf(s, "p1", "battlefield", "Hatching Plans"));
       s = settle(s);
       expect(s.players.p1?.hand).toHaveLength(3);
     });
 
-    it("Grasp of Fate : pour chaque adversaire, jusqu'à un permanent non-terrain qu'il contrôle, exilé jusqu'à son départ", () => {
+    it("Grasp of Fate: for each opponent, up to one nonland permanent they control, exiled until it leaves", () => {
       const base = () =>
         scenario({
           players: 3,
@@ -142,7 +142,7 @@ describe("Enchanting Tales", () => {
       const cub2 = idOf(s, "p2", "battlefield", "Bear Cub");
       const angel = idOf(s, "p2", "battlefield", "Serra Angel");
       const cub3 = idOf(s, "p3", "battlefield", "Bear Cub");
-      // Deux permanents du même adversaire : refusé.
+      // Two permanents of the same opponent: refused.
       let t = castIt(base(), "Grasp of Fate");
       for (let i = 0; i < 10 && t.pending?.kind === "priority"; i++) t = act(t, t.pending.player, { type: "pass" });
       expect(t.pending?.kind).toBe("choice");
@@ -150,7 +150,7 @@ describe("Enchanting Tales", () => {
       if (p?.kind !== "choice") return;
       expect(p.request.type === "pick" && p.request.max).toBe(2);
       expect(() => act(t, "p1", { type: "choose", values: [cub2, angel] })).toThrow();
-      // Un par adversaire : les deux sont exilés, puis reviennent quand Grasp of Fate part.
+      // One per opponent: both are exiled, then return when Grasp of Fate leaves.
       s = settle(castIt(s, "Grasp of Fate"), (req) =>
         req.type === "pick" && req.options.includes(cub3) ? [angel, cub3] : undefined,
       );
@@ -163,7 +163,7 @@ describe("Enchanting Tales", () => {
       expect(idsOf(s, "p3", "battlefield", "Bear Cub")).toHaveLength(1);
     });
 
-    it("Fraying Sanity : le joueur enchanté meule autant de cartes qu'il en a été mis dans son cimetière ce tour-ci", () => {
+    it("Fraying Sanity: the enchanted player mills as many cards as were put into their graveyard this turn", () => {
       let s = scenario({
         players: 3,
         p1: { battlefield: lands("Island", 3), hand: ["Fraying Sanity"] },
@@ -172,7 +172,7 @@ describe("Enchanting Tales", () => {
       });
       s = settle(castIt(s, "Fraying Sanity", { targets: { [enchantSpec(s, "Fraying Sanity")]: ["p2"] } }));
       expect(s.objects[idOf(s, "p1", "battlefield", "Fraying Sanity")]?.attachedTo).toBe("p2");
-      // Deux cartes dans le cimetière de p2, une dans celui de p3 (un autre adversaire du contrôleur de l'Aura).
+      // Two cards in p2's graveyard, one in p3's (another opponent of the Aura's controller).
       destroy(s, idOf(s, "p2", "battlefield", "Bear Cub"));
       destroy(s, idOf(s, "p2", "battlefield", "Serra Angel"));
       destroy(s, idOf(s, "p3", "battlefield", "Bear Cub"));
@@ -182,7 +182,7 @@ describe("Enchanting Tales", () => {
       expect(s.players.p3?.graveyard).toHaveLength(1);
     });
 
-    it("Leyline of Anticipation : vos sorts comme s'ils avaient le flash", () => {
+    it("Leyline of Anticipation: your spells as though they had flash", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: ["Leyline of Anticipation", ...lands("Forest", 2)], hand: ["Bear Cub"] },
@@ -191,7 +191,7 @@ describe("Enchanting Tales", () => {
       expect(castable(s, "p1", idOf(s, "p1", "hand", "Bear Cub"))).toBe(true);
     });
 
-    it("Spreading Seas : le terrain enchanté est une Île", () => {
+    it("Spreading Seas: the enchanted land is an Island", () => {
       let s = scenario({
         p1: { battlefield: lands("Island", 2), hand: ["Spreading Seas"] },
         p2: { battlefield: ["Ancient Tomb"] },
@@ -202,7 +202,7 @@ describe("Enchanting Tales", () => {
       expect(manaAbilitiesOf(s, tomb).map((a) => a.produce)).toEqual([["U"]]);
     });
 
-    it("Dark Tutelage : la carte du dessus en main, perte de PV égale à sa valeur de mana", () => {
+    it("Dark Tutelage: the top card to hand, life loss equal to its mana value", () => {
       let s = scenario({
         active: "p2",
         step: "end",
@@ -212,21 +212,21 @@ describe("Enchanting Tales", () => {
       expect(s.players.p1?.life).toBe(14);
     });
 
-    it("Grave Pact : une de vos créatures meurt, chaque adversaire sacrifie une créature", () => {
+    it("Grave Pact: one of your creatures dies, each opponent sacrifices a creature", () => {
       let s = scenario({ p1: { battlefield: ["Grave Pact", "Bear Cub"] }, p2: { battlefield: ["Llanowar Elves"] } });
       destroy(s, idOf(s, "p1", "battlefield", "Bear Cub"));
       s = settle(s);
       expect(idsOf(s, "p2", "graveyard", "Llanowar Elves")).toHaveLength(1);
     });
 
-    it("Sanguine Bond : vous gagnez des PV, l'adversaire ciblé en perd autant", () => {
+    it("Sanguine Bond: you gain life, the targeted opponent loses as much", () => {
       let s = scenario({ p1: { battlefield: ["Sanguine Bond"] } });
       gainLife(s, "p1", 4);
       s = settle(s);
       expect(s.players.p2?.life).toBe(16);
     });
 
-    it("Blood Moon et Prismatic Omen : les terrains non-base sont des Montagnes ; vos terrains ont tous les types de base", () => {
+    it("Blood Moon and Prismatic Omen: nonbasic lands are Mountains; your lands have all basic types", () => {
       const s = scenario({
         p1: { battlefield: ["Blood Moon", "Ancient Tomb"] },
         p2: { battlefield: ["Prismatic Omen", "Forest"] },
@@ -241,13 +241,13 @@ describe("Enchanting Tales", () => {
       ]);
     });
 
-    it("Fiery Emancipation : vos sources infligent le triple des blessures", () => {
+    it("Fiery Emancipation: your sources deal triple damage", () => {
       let s = scenario({ p1: { battlefield: ["Fiery Emancipation", "Mountain"], hand: ["Shock"] } });
       s = settle(castIt(s, "Shock", { targets: { t: ["p2"] } }));
       expect(s.players.p2?.life).toBe(14);
     });
 
-    it("Goblin Bombardment : sacrifiez une créature, 1 blessure", () => {
+    it("Goblin Bombardment: sacrifice a creature, 1 damage", () => {
       let s = scenario({ p1: { battlefield: ["Goblin Bombardment", "Bear Cub"] } });
       s = settle(
         activate(s, idOf(s, "p1", "battlefield", "Goblin Bombardment"), {
@@ -258,13 +258,13 @@ describe("Enchanting Tales", () => {
       expect(s.players.p2?.life).toBe(19);
     });
 
-    it("Mana Flare : un terrain engagé pour du mana en produit un de plus", () => {
+    it("Mana Flare: a land tapped for mana produces one more", () => {
       let s = scenario({ p1: { battlefield: ["Mana Flare", "Forest"] } });
       s = act(s, "p1", { type: "tapForMana", source: idOf(s, "p1", "battlefield", "Forest"), ability: 0 });
       expect(s.players.p1?.manaPool.G).toBe(2);
     });
 
-    it("Repercussion : une créature blessée, autant de blessures à son contrôleur", () => {
+    it("Repercussion: a creature is dealt damage, its controller is dealt as much", () => {
       let s = scenario({
         p1: { battlefield: ["Repercussion", "Mountain"], hand: ["Shock"] },
         p2: { battlefield: ["Shivan Dragon"] },
@@ -273,7 +273,7 @@ describe("Enchanting Tales", () => {
       expect(s.players.p2?.life).toBe(18);
     });
 
-    it("Sneak Attack : une créature de la main avec la célérité, sacrifiée à l'étape de fin", () => {
+    it("Sneak Attack: a creature from hand with haste, sacrificed at the end step", () => {
       let s = scenario({ p1: { battlefield: ["Sneak Attack", "Mountain"], hand: ["Shivan Dragon"] } });
       s = settle(activate(s, idOf(s, "p1", "battlefield", "Sneak Attack")), (req) =>
         req.type === "pick" && req.options.length ? req.options.slice(0, 1) : undefined,
@@ -284,7 +284,7 @@ describe("Enchanting Tales", () => {
       expect(idsOf(s, "p1", "graveyard", "Shivan Dragon")).toHaveLength(1);
     });
 
-    it("Hardened Scales, Parallel Lives et Primal Vigor : marqueurs et jetons", () => {
+    it("Hardened Scales, Parallel Lives and Primal Vigor: counters and tokens", () => {
       let s = scenario({
         p1: { battlefield: ["Hardened Scales", "Parallel Lives", ...lands("Mountain", 2), "Bear Cub"], hand: ["Dragon Fodder"] },
       });
@@ -295,14 +295,14 @@ describe("Enchanting Tales", () => {
       expect(s.objects[cub]?.counters["+1/+1"]).toBe(2);
     });
 
-    it("Unnatural Growth : au début du combat, la force et l'endurance de vos créatures doublent", () => {
+    it("Unnatural Growth: at the beginning of combat, the power and toughness of your creatures double", () => {
       let s = scenario({ p1: { battlefield: ["Unnatural Growth", "Bear Cub"] } });
       s = advanceUntil(s, (x) => x.turn.step === "declareAttackers" || x.pending?.kind === "declareAttackers");
       const cub = idOf(s, "p1", "battlefield", "Bear Cub");
       expect(chars(s, cub).power).toBe(4);
     });
 
-    it("Utopia Sprawl : la Forêt enchantée produit un mana de plus de la couleur choisie", () => {
+    it("Utopia Sprawl: the enchanted Forest produces one more mana of the chosen color", () => {
       let s = scenario({ p1: { battlefield: ["Forest"], hand: ["Utopia Sprawl"] } });
       const forest = idOf(s, "p1", "battlefield", "Forest");
       s = settle(castIt(s, "Utopia Sprawl", { targets: { [enchantSpec(s, "Utopia Sprawl")]: [forest] } }), (req) =>
@@ -313,8 +313,8 @@ describe("Enchanting Tales", () => {
       expect([s.players.p1?.manaPool.G, s.players.p1?.manaPool.R]).toEqual([1, 1]);
     });
   });
-  describe("G4e : règles de joueur", () => {
-    it("Phyrexian Unlife : pas de défaite à 0 PV ; à 0 PV ou moins, les blessures donnent des marqueurs poison", () => {
+  describe("G4e: player rules", () => {
+    it("Phyrexian Unlife: no loss at 0 life; at 0 life or less, damage gives poison counters", () => {
       const s = scenario({ p1: { life: 2, battlefield: ["Phyrexian Unlife"] } });
       const src = { defId: "test", controller: "p2", keywords: [] };
       dealDamage(s, src, "p1", 3, false);
@@ -326,7 +326,7 @@ describe("Enchanting Tales", () => {
       expect(s.players.p1?.counters?.poison).toBe(4);
     });
 
-    it("Ground Seal : arrivée, piochez ; les cartes des cimetières ne peuvent être ciblées par personne", () => {
+    it("Ground Seal: on entering, draw; cards in graveyards can't be targeted by anyone", () => {
       let s = scenario({
         p1: { battlefield: lands("Forest", 2), hand: ["Ground Seal"] },
         p2: { graveyard: ["Bear Cub"] },
@@ -338,9 +338,9 @@ describe("Enchanting Tales", () => {
       expect(legalTargets(s, "p2", spec)).toEqual([]);
     });
   });
-  describe("G4e : combat", () => {
+  describe("G4e: combat", () => {
     const goblin = (name: string) => customCard({ name, types: ["Creature"], subtypes: ["Goblin"], power: 1, toughness: 1 });
-    it("Shared Animosity : +1/+0 par autre attaquant qui partage un type de créature", () => {
+    it("Shared Animosity: +1/+0 per other attacker that shares a creature type", () => {
       let s = scenario({
         p1: { battlefield: ["Shared Animosity", goblin("Gobelin A"), goblin("Gobelin B"), "Bear Cub"] },
       });
@@ -352,9 +352,9 @@ describe("Enchanting Tales", () => {
       expect(chars(s, cub).power).toBe(2);
     });
 
-    it("Karmic Justice : un sort adverse détruit un de vos permanents non-créature ; détruisez un de ses permanents", () => {
+    it("Karmic Justice: an opposing spell destroys one of your noncreature permanents; destroy one of its permanents", () => {
       const shatter = customCard({
-        name: "Bris de test",
+        name: "Test Smash",
         types: ["Instant"],
         typeLine: "Instant",
         spell: spell([{ id: "t", label: "permanent", filter: { objects: {} } }], [fx.destroy(ref.target())]),
@@ -367,7 +367,7 @@ describe("Enchanting Tales", () => {
       const cub = idOf(s, "p2", "battlefield", "Bear Cub");
       s = act(s, "p2", {
         type: "cast",
-        card: idOf(s, "p2", "hand", "Bris de test"),
+        card: idOf(s, "p2", "hand", "Test Smash"),
         targets: { t: [idOf(s, "p1", "battlefield", "Mana Crypt")] },
       });
       s = settle(s, (req) => (req.type === "pick" && req.options.includes(cub) ? [cub] : undefined));
@@ -375,8 +375,8 @@ describe("Enchanting Tales", () => {
       expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
     });
   });
-  describe("G4e : lancer autrement", () => {
-    it("As Foretold : une fois par tour, {0} pour un sort de VM au plus égale aux marqueurs de temps", () => {
+  describe("G4e: casting otherwise", () => {
+    it("As Foretold: once per turn, {0} for a spell with MV at most equal to the time counters", () => {
       let s = scenario({
         p1: {
           battlefield: [{ name: "As Foretold", counters: { time: 2 } }],
@@ -393,7 +393,7 @@ describe("Enchanting Tales", () => {
       expect(opt("Llanowar Elves")).toBeUndefined();
     });
 
-    it("As Foretold : un sort lancé d'une autre zone que la main (Quilled Greatwurm depuis le cimetière)", () => {
+    it("As Foretold: a spell cast from a zone other than hand (Quilled Greatwurm from the graveyard)", () => {
       let s = scenario({
         p1: {
           battlefield: [
@@ -411,10 +411,10 @@ describe("Enchanting Tales", () => {
       expect(s.objects[idOf(s, "p1", "battlefield", "Bear Cub")]?.counters["+1/+1"] ?? 0).toBe(0);
     });
   });
-  describe("G4e : bibliothèque et pioche", () => {
+  describe("G4e: library and drawing", () => {
     const discardFrom = (s: ReturnType<typeof scenario>, p: string, id: string) =>
       announceDiscard(s, p, moveDiscarded(s, p, id, true));
-    it("Necropotence : pas d'étape de pioche ; défaussée, une carte est exilée ; 1 PV : une carte exilée revient à l'étape de fin", () => {
+    it("Necropotence: no draw step; a discarded card is exiled; 1 life: an exiled card returns at the end step", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: ["Necropotence"], library: ["Shock", "Forest", "Island"] },
@@ -437,15 +437,15 @@ describe("Enchanting Tales", () => {
     });
   });
 
-  it("Raid Bombardment : chaque fois qu'une de vos créatures de force 2 ou moins attaque, 1 blessure au joueur qu'elle attaque", () => {
+  it("Raid Bombardment: whenever a creature you control with power 2 or less attacks, 1 damage to the player it attacks", () => {
     let s = scenario({ p1: { battlefield: ["Raid Bombardment", "Bear Cub", "Serra Angel"] } });
     s = attack(s, [idOf(s, "p1", "battlefield", "Bear Cub"), idOf(s, "p1", "battlefield", "Serra Angel")]);
     s = advanceUntil(s, (x) => x.turn.step === "main2");
-    // 1 (Bear Cub seul déclenche) + 2 + 4 de combat.
+    // 1 (only Bear Cub triggers) + 2 + 4 combat.
     expect(s.players.p2?.life).toBe(13);
   });
 
-  it("Raid Bombardment : une créature qui attaque un planeswalker le blesse, lui (pas son contrôleur)", () => {
+  it("Raid Bombardment: a creature attacking a planeswalker damages it (not its controller)", () => {
     let s = scenario({
       p1: { battlefield: ["Raid Bombardment", "Bear Cub"] },
       p2: { battlefield: [{ name: "Ajani, Caller of the Pride", counters: { loyalty: 4 } }] },
@@ -457,20 +457,20 @@ describe("Enchanting Tales", () => {
       attackers: [{ id: idOf(s, "p1", "battlefield", "Bear Cub"), defender: ajani }],
     });
     s = advanceUntil(s, (x) => x.turn.step === "main2");
-    // 1 blessure du déclenchement et 2 de combat, toutes à Ajani (4 → 1) ; p2 ne perd rien.
+    // 1 damage from the trigger and 2 from combat, all to Ajani (4 -> 1); p2 loses nothing.
     expect(s.objects[ajani]?.counters.loyalty).toBe(1);
     expect(s.players.p2?.life).toBe(20);
   });
 });
 
-/** Identifiant de la cible d'enchantement d'une Aura. */
+/** Id of an Aura's enchant target. */
 function enchantSpec(s: ReturnType<typeof scenario>, name: string): string {
   const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === idOf(s, "p1", "hand", name));
   return opt?.type === "cast" ? (opt.modes[0]?.targets[0]?.id as string) : "";
 }
 
-describe("PLAN-A A3 : « les terrains non-base sont des Montagnes » (305.7)", () => {
-  /** Créature-terrain non-base (Forêt Dryade) avec une capacité statique propre : « les autres créatures ont +1/+1 ». */
+describe('PLAN-A A3: "nonbasic lands are Mountains" (305.7)', () => {
+  /** Nonbasic land creature (Forest Dryad) with its own static ability: "other creatures get +1/+1". */
   const DRYAD = customCard({
     name: "Test Dryad Grove",
     typeLine: "Land Creature — Forest Dryad",
@@ -481,7 +481,7 @@ describe("PLAN-A A3 : « les terrains non-base sont des Montagnes » (305.7)", (
     abilities: [staticAbility({ types: ["Creature"], other: true }, { power: 1, toughness: 1 }, { label: "+1/+1" })],
   });
 
-  it("Blood Moon : seuls les types de terrain sont remplacés (créature-terrain, terrain-artefact Indice)", () => {
+  it("Blood Moon: only land types are replaced (land creature, Clue artifact land)", () => {
     const s = scenario({ p1: { battlefield: ["Blood Moon", DRYAD, "Scene of the Crime"] } });
     const dryad = idOf(s, "p1", "battlefield", "Test Dryad Grove");
     expect(chars(s, dryad).types).toEqual(expect.arrayContaining(["Land", "Creature"]));
@@ -490,17 +490,17 @@ describe("PLAN-A A3 : « les terrains non-base sont des Montagnes » (305.7)", (
     expect(chars(s, idOf(s, "p1", "battlefield", "Scene of the Crime")).subtypes.sort()).toEqual(["Clue", "Mountain"]);
   });
 
-  it("Blood Moon : le terrain perd aussi ses capacités statiques", () => {
+  it("Blood Moon: the land also loses its static abilities", () => {
     const s = scenario({ p1: { battlefield: ["Blood Moon", DRYAD, "Bear Cub"] } });
     expect(chars(s, idOf(s, "p1", "battlefield", "Bear Cub")).power).toBe(2);
-    // Sans Blood Moon, la statique s'applique.
+    // Without Blood Moon, the static ability applies.
     const t = scenario({ p1: { battlefield: [DRYAD, "Bear Cub"] } });
     expect(chars(t, idOf(t, "p1", "battlefield", "Bear Cub")).power).toBe(3);
   });
 });
 
-describe("Rééditions de WOT, PLAN-A A4a", () => {
-  it("Karmic Justice : à plusieurs, le permanent détruit est celui de l'adversaire qui a détruit", () => {
+describe("WOT reprints, PLAN-A A4a", () => {
+  it("Karmic Justice: with several players, the destroyed permanent is the destroying opponent's", () => {
     const shatter = customCard({
       name: "Test Shatter",
       types: ["Sorcery"],
@@ -532,7 +532,7 @@ describe("Rééditions de WOT, PLAN-A A4a", () => {
 });
 
 describe("Intruder Alarm (PLAN-H, H8b)", () => {
-  it("les créatures ne se dégagent pas lors de l'étape de dégagement de leur contrôleur (les terrains, si) ; une créature qui arrive les dégage toutes", () => {
+  it("creatures don't untap during their controller's untap step (lands do); a creature that enters untaps them all", () => {
     let s = scenario({
       active: "p2",
       p1: {

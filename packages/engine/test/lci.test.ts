@@ -1,6 +1,6 @@
 /**
- * The Lost Caverns of Ixalan : jetons Carte, Descente (4 et 8, descente profonde, « descendu ce tour-ci »),
- * Découverte, mana des Cavernes, terrains « Restless », transformation (Treasure Map), exil au lieu de mourir.
+ * The Lost Caverns of Ixalan: Map tokens, Descend (4 and 8, fathomless descent, "descended this turn"),
+ * Discover, Cavern mana, "Restless" lands, transform (Treasure Map), exile instead of dying.
  */
 
 import { card } from "@mtgx/cards";
@@ -50,11 +50,11 @@ const activate = (s: S, source: string, index = 0) => {
   const a = opts[index];
   return settle(act(s, "p1", { type: "activate", source, ability: a?.type === "activate" ? a.ability : -1 }));
 };
-/** Cinq cartes de permanent (et deux non-permanents) pour la Descente. */
+/** Five permanent cards (and two nonpermanents) for Descend. */
 const GRAVEYARD_5 = ["Forest", "Llanowar Elves", "Helpful Hunter", "Opt", "Island", "Stab", "Nutrient Block"];
 
 describe("The Lost Caverns of Ixalan", () => {
-  it("Get Lost : la créature est détruite, son contrôleur crée deux Cartes", () => {
+  it("Get Lost: the creature is destroyed, its controller creates two Maps", () => {
     let s = scenario({ p1: { battlefield: lands("Plains", 2), hand: ["Get Lost"] }, p2: { battlefield: ["Shivan Dragon"] } });
     const dragon = idOf(s, "p2", "battlefield", "Shivan Dragon");
     s = cast(s, "Get Lost", { t: [dragon] });
@@ -63,13 +63,13 @@ describe("The Lost Caverns of Ixalan", () => {
     expect(idsOf(s, "p1", "battlefield", "Map")).toHaveLength(0);
   });
 
-  it("Descente 4 : Join the Dead donne −10/−10 avec quatre cartes de permanent au cimetière", () => {
+  it("Descend 4: Join the Dead gives -10/-10 with four permanent cards in the graveyard", () => {
     const run = (graveyard: string[]) => {
       const s = scenario({
         p1: { battlefield: lands("Swamp", 3), hand: ["Join the Dead"], graveyard },
         p2: { battlefield: ["Shivan Dragon"] },
       });
-      // Un dragon 9/9 : il survit à −5/−5, pas à −10/−10.
+      // A 9/9 dragon: it survives -5/-5, not -10/-10.
       const dragon = idOf(s, "p2", "battlefield", "Shivan Dragon");
       (s.objects[dragon] as { counters: Record<string, number> }).counters["+1/+1"] = 4;
       return cast(s, "Join the Dead", { t: [dragon] });
@@ -78,18 +78,18 @@ describe("The Lost Caverns of Ixalan", () => {
     expect(idsOf(run(GRAVEYARD_5), "p2", "graveyard", "Shivan Dragon")).toHaveLength(1);
   });
 
-  it("Descente profonde : Song of Stupefaction donne −X/−0 (cartes de permanent de votre cimetière)", () => {
+  it("Fathomless descent: Song of Stupefaction gives -X/-0 (permanent cards in your graveyard)", () => {
     let s = scenario({
       p1: { battlefield: lands("Island", 2), hand: ["Song of Stupefaction"], graveyard: GRAVEYARD_5, library: lands("Opt", 5) },
       p2: { battlefield: ["Shivan Dragon"] },
     });
     const dragon = idOf(s, "p2", "battlefield", "Shivan Dragon");
     s = cast(s, "Song of Stupefaction", { enchant: [dragon] });
-    // Le meulage facultatif ajoute deux éphémères (non-permanents) : X reste 5.
+    // The optional mill adds two instants (nonpermanents): X stays 5.
     expect(chars(s, dragon).power).toBe(0);
   });
 
-  it("Terror Tide : toutes les créatures −X/−X", () => {
+  it("Terror Tide: all creatures get -X/-X", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Swamp", 4), "Llanowar Elves"], hand: ["Terror Tide"], graveyard: GRAVEYARD_5 },
       p2: { battlefield: ["Shivan Dragon"] },
@@ -99,7 +99,7 @@ describe("The Lost Caverns of Ixalan", () => {
     expect(idsOf(s, "p1", "battlefield", "Llanowar Elves")).toHaveLength(0);
   });
 
-  it("Malicious Eclipse : les créatures adverses qui meurent sont exilées", () => {
+  it("Malicious Eclipse: opposing creatures that die are exiled", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Swamp", 3), "Llanowar Elves"], hand: ["Malicious Eclipse"] },
       p2: { battlefield: ["Llanowar Elves"] },
@@ -110,7 +110,7 @@ describe("The Lost Caverns of Ixalan", () => {
     expect(s.exile.filter((id) => s.objects[id]?.owner === "p2")).toHaveLength(1);
   });
 
-  it("Restless Reef : devient une créature 4/4 avec le contact mortel jusqu'à la fin du tour", () => {
+  it("Restless Reef: becomes a 4/4 creature with deathtouch until end of turn", () => {
     let s = scenario({ p1: { battlefield: [...lands("Island", 2), ...lands("Swamp", 2), "Restless Reef"] } });
     const reef = idOf(s, "p1", "battlefield", "Restless Reef");
     s = activate(s, reef);
@@ -121,7 +121,7 @@ describe("The Lost Caverns of Ixalan", () => {
     expect(c.keywords).toContain("deathtouch");
   });
 
-  it("Treasure Map : au troisième marqueur de repère, elle se transforme et crée trois Trésors", () => {
+  it("Treasure Map: at the third landmark counter, it transforms and creates three Treasures", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Plains", 2), "Treasure Map // Treasure Cove"], library: lands("Plains", 3) },
     });
@@ -134,9 +134,9 @@ describe("The Lost Caverns of Ixalan", () => {
     expect(s.objects[cove as string]?.counters.landmark ?? 0).toBe(0);
   });
 
-  describe("Découverte", () => {
+  describe("Discover", () => {
     const LIBRARY = ["Forest", "Island", "Shivan Dragon", "Llanowar Elves", "Plains", "Swamp"];
-    /** Lance Walk with the Ancestors (découverte 4) et répond à la question « lancer ou en main ». */
+    /** Casts Walk with the Ancestors (discover 4) and answers the "cast or put in hand" question. */
     const discover = (castIt: boolean, extra: string[] = []) => {
       let s = scenario({
         p1: { battlefield: [...lands("Forest", 5), ...extra], hand: ["Walk with the Ancestors"], library: LIBRARY },
@@ -154,7 +154,7 @@ describe("The Lost Caverns of Ixalan", () => {
     };
     const names = (s: S, ids: string[]) => ids.map((id) => s.defs[s.objects[id]?.defId ?? ""]?.name);
 
-    it("exile jusqu'à une carte non-terrain de VM ≤ 4, le reste va dessous", () => {
+    it("exiles up to one nonland card with mana value 4 or less, the rest goes to the bottom", () => {
       const s = discover(false);
       expect(names(s, s.players.p1?.hand ?? [])).toContain("Llanowar Elves");
       const lib = names(s, s.players.p1?.library ?? []);
@@ -162,7 +162,7 @@ describe("The Lost Caverns of Ixalan", () => {
       expect([...lib.slice(2)].sort()).toEqual(["Forest", "Island", "Shivan Dragon"]);
     });
 
-    it("la carte découverte se lance pendant la résolution, sans payer son coût de mana (608.2g)", () => {
+    it("the discovered card is cast during resolution, without paying its mana cost (608.2g)", () => {
       let s = scenario({
         p1: { battlefield: lands("Forest", 5), hand: ["Walk with the Ancestors"], library: LIBRARY },
       });
@@ -173,41 +173,41 @@ describe("The Lost Caverns of Ixalan", () => {
       if (p?.kind !== "priority" || !p.castNow) throw new Error("lancer maintenant attendu");
       const elves = p.castNow.cards[0] as string;
       expect(names(s, [elves])).toEqual(["Llanowar Elves"]);
-      // Seule la carte découverte peut être lancée ; rien d'autre (terrain, capacités).
+      // Only the discovered card may be cast; nothing else (land, abilities).
       expect(
         legalActions(s, "p1")
           .map((a) => a.type)
           .sort(),
       ).toEqual(["cast", "pass"]);
       s = act(s, "p1", { type: "cast", card: elves });
-      // Walk with the Ancestors a fini de se résoudre ; les Elfes sont sur la pile, sans mana dépensé.
+      // Walk with the Ancestors has finished resolving; the Elves are on the stack, with no mana spent.
       expect(s.stack.map((x) => s.defs[x.sourceDefId]?.name)).toEqual(["Llanowar Elves"]);
       expect(s.players.p1?.graveyard.map((id) => names(s, [id])[0])).toContain("Walk with the Ancestors");
       expect(s.battlefield.filter((id) => s.objects[id]?.tapped)).toHaveLength(5);
       s = settle(s);
       expect(idsOf(s, "p1", "battlefield", "Llanowar Elves")).toHaveLength(1);
-      // Aucune permission ne subsiste.
+      // No permission remains.
       expect(s.playPermissions ?? []).toHaveLength(0);
     });
 
-    it("Curator of Sun's Creation : découvrez de nouveau, une fois par tour", () => {
+    it("Curator of Sun's Creation: discover again, once per turn", () => {
       const s = discover(false, ["Curator of Sun's Creation"]);
-      // Première découverte : Llanowar Elves ; la seconde (même valeur) : Shivan Dragon est trop cher, rien d'autre.
+      // First discover: Llanowar Elves; the second (same value): Shivan Dragon is too expensive, nothing else.
       expect(names(s, s.players.p1?.hand ?? [])).toContain("Llanowar Elves");
       expect(s.players.p1?.library.length).toBe(5);
     });
 
-    it("Hit the Mother Lode : des Trésors engagés pour la différence avec 10", () => {
+    it("Hit the Mother Lode: tapped Treasures for the difference from 10", () => {
       let s = scenario({ p1: { battlefield: lands("Mountain", 7), hand: ["Hit the Mother Lode"], library: LIBRARY } });
       s = cast(s, "Hit the Mother Lode");
       const treasures = idsOf(s, "p1", "battlefield", "Treasure");
-      // Shivan Dragon (VM 6) est découvert : 4 Trésors.
+      // Shivan Dragon (mana value 6) is discovered: 4 Treasures.
       expect(treasures).toHaveLength(4);
       expect(treasures.every((id) => s.objects[id]?.tapped)).toBe(true);
     });
   });
 
-  it("Descente : une carte de permanent mise au cimetière déclenche Deep Goblin Skulltaker", () => {
+  it("Descend: a permanent card put into the graveyard triggers Deep Goblin Skulltaker", () => {
     let s = scenario({
       p1: {
         battlefield: [...lands("Swamp", 2), "Deep Goblin Skulltaker"],
@@ -216,7 +216,7 @@ describe("The Lost Caverns of Ixalan", () => {
       },
     });
     s = cast(s, "Deathcap Marionette");
-    // Journal du tour : une carte de permanent mise dans votre cimetière (Descente).
+    // Turn log: a permanent card put into your graveyard (Descend).
     const descent = amount.descendedThisTurn;
     expect(typeof descent === "object" && descent.kind === "turnEvents" && countTurnEvents(s, descent.query, "p1")).toBe(1);
     const goblin = idOf(s, "p1", "battlefield", "Deep Goblin Skulltaker");
@@ -224,7 +224,7 @@ describe("The Lost Caverns of Ixalan", () => {
     expect(s.objects[goblin]?.counters["+1/+1"]).toBe(1);
   });
 
-  it("Bat Colony : une Chauve-souris par mana de Caverne dépensé", () => {
+  it("Bat Colony: one Bat per Cavern mana spent", () => {
     let s = scenario({ p1: { battlefield: ["Plains", "Promising Vein", "Volatile Fault"], hand: ["Bat Colony"] } });
     s = cast(s, "Bat Colony");
     expect(idsOf(s, "p1", "battlefield", "Bat")).toHaveLength(2);
@@ -245,7 +245,7 @@ describe("The Lost Caverns of Ixalan", () => {
     };
     const byName = (s: S, name: string) => s.battlefield.find((id) => chars(s, id).name === name);
 
-    it("Clay-Fired Bricks : exile un artefact du cimetière et revient en Cosmium Kiln", () => {
+    it("Clay-Fired Bricks: exiles an artifact from the graveyard and returns as Cosmium Kiln", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Plains", 7), "Clay-Fired Bricks // Cosmium Kiln"], graveyard: ["Nutrient Block"] },
       });
@@ -260,16 +260,16 @@ describe("The Lost Caverns of Ixalan", () => {
       expect(chars(s, gnomes[0] as string).power).toBe(2);
     });
 
-    it("Cryptex qui paie la fabrication ne prend pas un matériau choisi comme preuve", () => {
+    it("Cryptex paying for the craft does not take a material chosen as evidence", () => {
       const visage = "Visage of Dread // Dread Osseosaur";
       const setup = (graveyard: string[]) =>
         scenario({ p1: { battlefield: [...lands("Swamp", 5), "Cryptex", visage, "Bear Cub"], graveyard } });
-      // Le Dragon est un matériau (cimetière d'abord) et la seule preuve possible : la fabrication n'est pas payable.
+      // The Dragon is a material (graveyard first) and the only possible evidence: the craft is not payable.
       const t = setup(["Shivan Dragon"]);
       const source = idOf(t, "p1", "battlefield", visage);
       expect(craftOption(t, source)).toBeUndefined();
       expect(() => act(t, "p1", { type: "activate", source, ability: 1 })).toThrow(RulesError);
-      // Avec une autre preuve, Cryptex l'exile et les deux matériaux sont liés au verso.
+      // With another piece of evidence, Cryptex exiles it and both materials are linked to the back face.
       let s = setup(["Shivan Dragon", "Day of Judgment"]);
       s = doCraft(s, idOf(s, "p1", "battlefield", visage));
       expect(byName(s, "Dread Osseosaur")).toBeDefined();
@@ -277,7 +277,7 @@ describe("The Lost Caverns of Ixalan", () => {
       expect(exiled).toEqual(expect.arrayContaining(["Shivan Dragon", "Bear Cub", "Day of Judgment"]));
     });
 
-    it("sans matériau, ou hors du rituel, la fabrication n'est pas proposée", () => {
+    it("without material, or outside the sorcery, the craft is not offered", () => {
       const s = scenario({ p1: { battlefield: [...lands("Plains", 7), "Clay-Fired Bricks // Cosmium Kiln"] } });
       expect(craftOption(s, idOf(s, "p1", "battlefield", "Clay-Fired Bricks // Cosmium Kiln"))).toBeUndefined();
       const t = scenario({
@@ -287,7 +287,7 @@ describe("The Lost Caverns of Ixalan", () => {
       expect(craftOption(t, idOf(t, "p1", "battlefield", "Clay-Fired Bricks // Cosmium Kiln"))).toBeUndefined();
     });
 
-    it("Market Gnome exilé pour une fabrication : +1 PV et une carte", () => {
+    it("Market Gnome exiled for a craft: +1 life and a card", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Plains", 3), "Oteclan Landmark // Oteclan Levitator", "Market Gnome"],
@@ -301,7 +301,7 @@ describe("The Lost Caverns of Ixalan", () => {
       expect(s.players.p1?.hand.length).toBe(hand + 1);
     });
 
-    it("Mastercraft Raptor : force égale à la force totale des Dinosaures exilés", () => {
+    it("Mastercraft Raptor: power equal to the total power of the exiled Dinosaurs", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Mountain", 5), "Saheeli's Lattice // Mastercraft Raptor"],
@@ -314,7 +314,7 @@ describe("The Lost Caverns of Ixalan", () => {
       expect(idsOf(s, "p1", "graveyard", "Llanowar Elves")).toHaveLength(1);
     });
 
-    it("Mastercraft Raptor : le joueur choisit ses matériaux (un seul Dinosaure)", () => {
+    it("Mastercraft Raptor: the player chooses its materials (a single Dinosaur)", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Mountain", 5), "Saheeli's Lattice // Mastercraft Raptor"],
@@ -325,7 +325,7 @@ describe("The Lost Caverns of Ixalan", () => {
       const a = craftOption(s, lattice);
       if (a?.type !== "activate") throw new Error("fabrication indisponible");
       const spec = a.additional?.materials;
-      // « Un ou plusieurs Dinosaures » : 1 à 2 matériaux ; par défaut, tout le cimetière correspondant.
+      // "One or more Dinosaurs": 1 to 2 materials; by default, the whole matching graveyard.
       expect([spec?.min, spec?.max, spec?.suggested.length]).toEqual([1, 2, 2]);
       const stomper = idOf(s, "p1", "graveyard", "Cavern Stomper");
       const stomperPower = s.defs[s.objects[stomper]?.defId ?? ""]?.power;
@@ -335,14 +335,14 @@ describe("The Lost Caverns of Ixalan", () => {
       );
       s = settle(act(s, "p1", { type: "activate", source: lattice, ability: a.ability, materials: [stomper] }));
       const raptor = byName(s, "Mastercraft Raptor") as string;
-      // Force du Raptor : celle du seul Dinosaure exilé.
+      // Raptor's power: that of the single exiled Dinosaur.
       expect(chars(s, raptor).power).toBe(stomperPower);
       expect(idsOf(s, "p1", "graveyard", "Earthshaker Dreadmaw")).toHaveLength(1);
       expect(idsOf(s, "p1", "graveyard", "Cavern Stomper")).toHaveLength(0);
     });
   });
 
-  describe("Blessures en excès (120.4a) : Magmatic Galleon", () => {
+  describe("Excess damage (120.4a): Magmatic Galleon", () => {
     const shoot = (victim: string) => {
       let s = scenario({
         p1: { battlefield: ["Magmatic Galleon", ...lands("Mountain", 1)], hand: ["Burst Lightning"] },
@@ -351,18 +351,18 @@ describe("The Lost Caverns of Ixalan", () => {
       s = cast(s, "Burst Lightning", { t: [idOf(s, "p2", "battlefield", victim)] });
       return s;
     };
-    it("2 blessures à une créature 1/1 : 1 en excès, un Trésor", () => {
+    it("2 damage to a 1/1 creature: 1 in excess, a Treasure", () => {
       const s = shoot("Llanowar Elves");
       expect(idsOf(s, "p1", "battlefield", "Treasure")).toHaveLength(1);
     });
-    it("2 blessures à une créature 2/2 : pas d'excès, pas de Trésor", () => {
+    it("2 damage to a 2/2 creature: no excess, no Treasure", () => {
       const s = shoot("Bear Cub");
       expect(idsOf(s, "p1", "battlefield", "Treasure")).toHaveLength(0);
     });
   });
 
-  describe("Légendaires et cartes uniques", () => {
-    it("Ojer Taq : trois fois plus de jetons de créature", () => {
+  describe("Legendaries and unique cards", () => {
+    it("Ojer Taq: three times as many creature tokens", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Mountain", 2), "Ojer Taq, Deepest Foundation // Temple of Civilization"],
@@ -373,7 +373,7 @@ describe("The Lost Caverns of Ixalan", () => {
       expect(idsOf(s, "p1", "battlefield", "Goblin")).toHaveLength(6);
     });
 
-    it("Ojer Axonil : une source rouge inflige au moins sa force à un adversaire", () => {
+    it("Ojer Axonil: a red source deals at least its power to an opponent", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Mountain", 1), "Ojer Axonil, Deepest Might // Temple of Power"],
@@ -382,19 +382,19 @@ describe("The Lost Caverns of Ixalan", () => {
       });
       s = cast(s, "Burst Lightning", { t: ["p2"] });
       expect(s.players.p2?.life).toBe(16);
-      // Journal du tour : 4 blessures non de combat d'une source rouge (condition de Temple of Power).
+      // Turn log: 4 noncombat damage from a red source (condition of Temple of Power).
       expect(
         countTurnEvents(s, { event: "damage", combat: false, source: { controller: "you", colors: ["R"] }, sum: true }, "p1"),
       ).toBe(4);
     });
 
-    it("Bloodletter of Aclazotz : pendant votre tour, l'adversaire perd le double", () => {
+    it("Bloodletter of Aclazotz: during your turn, the opponent loses double", () => {
       let s = scenario({ p1: { battlefield: [...lands("Mountain", 1), "Bloodletter of Aclazotz"], hand: ["Burst Lightning"] } });
       s = cast(s, "Burst Lightning", { t: ["p2"] });
       expect(s.players.p2?.life).toBe(16);
     });
 
-    it("Bitter Triumph : défaussez une carte ou payez 3 points de vie", () => {
+    it("Bitter Triumph: discard a card or pay 3 life", () => {
       const setup = () =>
         scenario({
           p1: { battlefield: lands("Swamp", 2), hand: ["Bitter Triumph", "Opt"] },
@@ -416,18 +416,18 @@ describe("The Lost Caverns of Ixalan", () => {
       expect(idsOf(t, "p1", "graveyard", "Opt")).toHaveLength(1);
     });
 
-    it("Souls of the Lost : un permanent sacrifié à la place d'une défausse ; F/E selon les cartes de permanent", () => {
+    it("Souls of the Lost: a permanent sacrificed in place of a discard; P/T from the permanent cards", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Swamp", 2), "Llanowar Elves"], hand: ["Souls of the Lost"], graveyard: ["Forest", "Opt"] },
       });
       const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
       s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Souls of the Lost"), discard: [elves] }));
       const souls = idOf(s, "p1", "battlefield", "Souls of the Lost");
-      // Forêt et Llanowar Elves (sacrifiés) : deux cartes de permanent.
+      // Forest and Llanowar Elves (sacrificed): two permanent cards.
       expect([chars(s, souls).power, chars(s, souls).toughness]).toEqual([2, 3]);
     });
 
-    it("Ojer Pakpatiq : un éphémère lancé depuis la main gagne le rebond (relancé pendant votre prochain entretien)", () => {
+    it("Ojer Pakpatiq: an instant cast from hand gains rebound (cast again during your next upkeep)", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Island", 1), "Ojer Pakpatiq, Deepest Epoch // Temple of Cyclical Time"],
@@ -439,7 +439,7 @@ describe("The Lost Caverns of Ixalan", () => {
       const opt = s.exile.find((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === "Opt");
       expect(opt).toBeDefined();
       expect(s.delayed.some((d) => d.at === "yourNextUpkeep")).toBe(true);
-      // Pas lançable avant le prochain entretien.
+      // Not castable before the next upkeep.
       expect(legalActions(s, "p1").some((a) => a.type === "cast" && a.card === opt)).toBe(false);
       s = advanceUntil(s, (x) => x.pending?.kind === "priority" && !!x.pending.castNow);
       expect(s.turn.step).toBe("upkeep");
@@ -447,12 +447,12 @@ describe("The Lost Caverns of Ixalan", () => {
       const p = s.pending;
       expect(p?.kind === "priority" && p.castNow?.cards).toEqual([opt]);
       s = act(s, "p1", { type: "cast", card: opt as string });
-      // Relancé depuis l'exil (et non depuis la main) : il va au cimetière en se résolvant.
+      // Cast again from exile (not from hand): it goes to the graveyard on resolving.
       s = passAccepting(s, (x) => x.stack.length === 0 && x.pending?.kind === "priority");
       expect(s.players.p1?.graveyard.some((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === "Opt")).toBe(true);
     });
 
-    it("Kutzil : les adversaires ne peuvent pas lancer de sorts pendant votre tour", () => {
+    it("Kutzil: opponents can't cast spells during your turn", () => {
       const s = scenario({
         p1: { battlefield: ["Kutzil, Malamet Exemplar"] },
         p2: { battlefield: lands("Mountain", 1), hand: ["Burst Lightning"] },
@@ -460,7 +460,7 @@ describe("The Lost Caverns of Ixalan", () => {
       expect(legalActions(s, "p2").some((a) => a.type === "cast")).toBe(false);
     });
 
-    it("Cavern of Souls : un sort de créature du type choisi ne peut pas être contrecarré", () => {
+    it("Cavern of Souls: a creature spell of the chosen type can't be countered", () => {
       let s = scenario({ p1: { battlefield: ["Cavern of Souls"], hand: ["Llanowar Elves"] } });
       const cavern = idOf(s, "p1", "battlefield", "Cavern of Souls");
       (s.objects[cavern] as { chosen?: { creatureType?: string } }).chosen = { creatureType: "Elf" };
@@ -468,7 +468,7 @@ describe("The Lost Caverns of Ixalan", () => {
       expect(s.stack[s.stack.length - 1]?.uncounterable).toBe(true);
     });
 
-    it("Kitesail Larcenist : la créature adverse devient un Trésor tant que la Larcenist reste", () => {
+    it("Kitesail Larcenist: the opposing creature becomes a Treasure as long as the Larcenist stays", () => {
       let s = scenario({
         p1: { battlefield: lands("Island", 3), hand: ["Kitesail Larcenist"] },
         p2: { battlefield: ["Shivan Dragon"] },
@@ -489,7 +489,7 @@ describe("The Lost Caverns of Ixalan", () => {
       expect(chars(s, dragon).types).toContain("Creature");
     });
 
-    it("Deep-Cavern Bat : la carte exilée revient dans la main quand la Chauve-souris part", () => {
+    it("Deep-Cavern Bat: the exiled card returns to hand when the Bat leaves", () => {
       let s = scenario({
         p1: { battlefield: lands("Swamp", 3), hand: ["Deep-Cavern Bat", "Stab"] },
         p2: { hand: ["Shivan Dragon"] },
@@ -501,7 +501,7 @@ describe("The Lost Caverns of Ixalan", () => {
       expect(s.players.p2?.hand).toHaveLength(1);
     });
 
-    it("Unstable Glyphbridge : une créature de force 2 ou moins épargnée par joueur", () => {
+    it("Unstable Glyphbridge: a creature with power 2 or less spared per player", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Plains", 5), "Llanowar Elves"], hand: ["Unstable Glyphbridge // Sandswirl Wanderglyph"] },
         p2: { battlefield: ["Llanowar Elves", "Shivan Dragon"] },
@@ -512,7 +512,7 @@ describe("The Lost Caverns of Ixalan", () => {
       expect(idsOf(s, "p2", "graveyard", "Shivan Dragon")).toHaveLength(1);
     });
 
-    it("Unstable Glyphbridge à trois : vous choisissez pour chaque joueur parmi ses créatures de force 2 ou moins", () => {
+    it("Unstable Glyphbridge with three players: you choose for each player among their creatures with power 2 or less", () => {
       // « for each player, choose a creature with power 2 or less that player controls. Then destroy all creatures except
       // creatures chosen this way. »
       let s = scenario({
@@ -528,7 +528,7 @@ describe("The Lost Caverns of Ixalan", () => {
         asked.push([p ?? "", ...namesIn(cur, req.options.map(String)).sort()]);
         return pickNamed(cur, req, "Savannah Lions");
       });
-      // Une seule question : celle de p2 (p1 n'a qu'une créature possible, p3 aucune).
+      // A single question: p2's (p1 has only one possible creature, p3 none).
       expect(asked).toEqual([["p1", "Bear Cub", "Savannah Lions"]]);
       expect(idsOf(s, "p1", "battlefield", "Llanowar Elves")).toHaveLength(1);
       expect(idsOf(s, "p2", "battlefield", "Savannah Lions")).toHaveLength(1);
@@ -537,14 +537,14 @@ describe("The Lost Caverns of Ixalan", () => {
       expect(idsOf(s, "p3", "graveyard", "Serra Angel")).toHaveLength(1);
     });
 
-    it("The Mycotyrant : F/E égales au nombre de Champignons et Saprolings", () => {
+    it("The Mycotyrant: P/T equal to the number of Fungi and Saprolings", () => {
       const s = scenario({ p1: { battlefield: ["The Mycotyrant", "Deathcap Marionette", "Llanowar Elves"] } });
       const myco = idOf(s, "p1", "battlefield", "The Mycotyrant");
       expect(chars(s, myco).power).toBe(2);
     });
   });
-  describe("Aclazotz, Deepest Betrayal (correctif du lot A de TDM)", () => {
-    it("un adversaire défausse une carte de terrain : une Chauve-souris ; une carte non-terrain : rien", () => {
+  describe("Aclazotz, Deepest Betrayal (fix for TDM lot A)", () => {
+    it("an opponent discards a land card: a Bat; a nonland card: nothing", () => {
       const run = (hand: string[]) => {
         let s = scenario({ p1: { battlefield: ["Aclazotz, Deepest Betrayal // Temple of the Dead"] }, p2: { hand } });
         s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
@@ -558,8 +558,8 @@ describe("The Lost Caverns of Ixalan", () => {
   });
 });
 
-describe("The Lost Caverns of Ixalan : cartes des decks du méta (PLAN-C, lot C13)", () => {
-  /** Répond « oui » aux questions et choisit les objets voulus. */
+describe("The Lost Caverns of Ixalan: cards from the meta decks (PLAN-C, lot C13)", () => {
+  /** Answers "yes" to the questions and chooses the wanted objects. */
   const choosing =
     (want: string[] = []): Answer =>
     (req) => {
@@ -568,19 +568,19 @@ describe("The Lost Caverns of Ixalan : cartes des decks du méta (PLAN-C, lot C1
       const picked = want.filter((w) => req.options.includes(w));
       return picked.length > 0 ? picked : undefined;
     };
-  /** Active la capacité de `source` dont le libellé contient `label`. */
+  /** Activates the ability of `source` whose label contains `label`. */
   const activateLabel = (s: S, player: string, source: string, label: string, extra: object = {}) => {
     const a = legalActions(s, player).find(
       (x) => x.type === "activate" && x.source === source && plainText(x.label ?? "").includes(label),
     );
-    if (a?.type !== "activate") throw new Error(`capacité introuvable : ${label}`);
+    if (a?.type !== "activate") throw new Error(`ability not found: ${label}`);
     return act(s, player, { type: "activate", source, ability: a.ability, ...extra });
   };
   const castCard = (s: S, player: string, name: string, extra: object = {}) =>
     act(s, player, { type: "cast", card: idOf(s, player, "hand", name), ...extra });
   const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
 
-  it("Spyglass Siren : vol ; en arrivant, une Carte, qui fait explorer une créature", () => {
+  it("Spyglass Siren: flying; when it enters, a Map, which makes a creature explore", () => {
     let s = scenario({ p1: { battlefield: lands("Island", 2), hand: ["Spyglass Siren"], library: ["Opt", "Forest"] } });
     s = resolve(castCard(s, "p1", "Spyglass Siren"));
     const siren = idOf(s, "p1", "battlefield", "Spyglass Siren");
@@ -588,11 +588,11 @@ describe("The Lost Caverns of Ixalan : cartes des decks du méta (PLAN-C, lot C1
     const map = idOf(s, "p1", "battlefield", "Map");
     s = resolve(activateLabel(s, "p1", map, "explore", { targets: { t: [siren] } }));
     expect(idsOf(s, "p1", "battlefield", "Map")).toHaveLength(0);
-    // Carte révélée non-terrain : un marqueur +1/+1.
+    // Revealed nonland card: a +1/+1 counter.
     expect(s.objects[siren]?.counters["+1/+1"]).toBe(1);
   });
 
-  it("Greedy Freebooter : en mourant, regard 1 et un Trésor", () => {
+  it("Greedy Freebooter: when it dies, scry 1 and a Treasure", () => {
     let s = scenario({ p1: { battlefield: ["Greedy Freebooter"], library: ["Opt", "Forest"] } });
     let scried = false;
     destroy(s, idOf(s, "p1", "battlefield", "Greedy Freebooter"));
@@ -605,7 +605,7 @@ describe("The Lost Caverns of Ixalan : cartes des decks du méta (PLAN-C, lot C1
   });
 
   describe("Amalia Benavides Aguirre", () => {
-    it("quand vous gagnez des PV, elle explore (un terrain révélé va en main) ; garde — payer 3 PV", () => {
+    it("when you gain life, it explores (a revealed land goes to hand); ward - pay 3 life", () => {
       let s = scenario({
         p1: { battlefield: ["Amalia Benavides Aguirre", "Vampire Neonate", ...lands("Swamp", 2)], library: ["Forest", "Opt"] },
       });
@@ -616,7 +616,7 @@ describe("The Lost Caverns of Ixalan : cartes des decks du méta (PLAN-C, lot C1
       expect(s.objects[amalia]?.counters["+1/+1"] ?? 0).toBe(0);
     });
 
-    it("force exactement 20 après l'exploration : toutes les autres créatures sont détruites", () => {
+    it("power exactly 20 after exploring: all other creatures are destroyed", () => {
       let s = scenario({
         p1: {
           battlefield: [{ name: "Amalia Benavides Aguirre", counters: { "+1/+1": 17 } }, "Vampire Neonate", ...lands("Swamp", 2)],
@@ -632,7 +632,7 @@ describe("The Lost Caverns of Ixalan : cartes des decks du méta (PLAN-C, lot C1
       expect(idsOf(s, "p1", "battlefield", "Amalia Benavides Aguirre")).toHaveLength(1);
     });
 
-    it("force différente de 20 : rien n'est détruit", () => {
+    it("power other than 20: nothing is destroyed", () => {
       let s = scenario({
         p1: {
           battlefield: [{ name: "Amalia Benavides Aguirre", counters: { "+1/+1": 18 } }, "Vampire Neonate", ...lands("Swamp", 2)],
@@ -646,7 +646,7 @@ describe("The Lost Caverns of Ixalan : cartes des decks du méta (PLAN-C, lot C1
     });
   });
 
-  it("Corpses of the Lost : Squelette Pirate 3/2 avec la célérité ; descente : 1 PV pour la reprendre en main", () => {
+  it("Corpses of the Lost: 3/2 Skeleton Pirate with haste; descend: 1 life to return it to hand", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Swamp", 3), "Bear Cub"], hand: ["Corpses of the Lost"] },
     });
@@ -654,14 +654,14 @@ describe("The Lost Caverns of Ixalan : cartes des decks du méta (PLAN-C, lot C1
     const skeleton = idOf(s, "p1", "battlefield", "Skeleton Pirate");
     expect(pt(s, skeleton)).toEqual([3, 2]);
     expect(chars(s, skeleton).keywords).toContain("haste");
-    // Une carte de permanent va au cimetière : vous êtes descendu ce tour-ci.
+    // A permanent card goes to the graveyard: you have descended this turn.
     destroy(s, idOf(s, "p1", "battlefield", "Bear Cub"));
     s = advanceUntil(s, (x) => x.turn.number > 3, 600);
     expect(idsOf(s, "p1", "hand", "Corpses of the Lost")).toHaveLength(1);
     expect(s.players.p1?.life).toBe(19);
   });
 
-  it("Corpses of the Lost : sans descente, elle reste en jeu", () => {
+  it("Corpses of the Lost: without descend, it stays in play", () => {
     let s = scenario({ p1: { battlefield: lands("Swamp", 3), hand: ["Corpses of the Lost"] } });
     s = resolve(castCard(s, "p1", "Corpses of the Lost"));
     s = advanceUntil(s, (x) => x.turn.number > 3, 600);
@@ -669,7 +669,7 @@ describe("The Lost Caverns of Ixalan : cartes des decks du méta (PLAN-C, lot C1
     expect(s.players.p1?.life).toBe(20);
   });
 
-  it("Restless Anchorage : arrive engagé ; devient une Oiseau 2/3 volante ; en attaquant, une Carte", () => {
+  it("Restless Anchorage: enters tapped; becomes a 2/3 flying Bird; when attacking, a Map", () => {
     let s = scenario({ p1: { hand: ["Restless Anchorage"] } });
     s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Restless Anchorage") });
     expect(s.objects[idOf(s, "p1", "battlefield", "Restless Anchorage")]?.tapped).toBe(true);
@@ -684,7 +684,7 @@ describe("The Lost Caverns of Ixalan : cartes des decks du méta (PLAN-C, lot C1
     expect(idsOf(t, "p1", "battlefield", "Map")).toHaveLength(1);
   });
 
-  it("Tishana's Tidebinder : contrecarre une capacité activée ; la créature perd ses capacités tant qu'il reste", () => {
+  it("Tishana's Tidebinder: counters an activated ability; the creature loses its abilities as long as it stays", () => {
     let s = scenario({
       p1: { battlefield: lands("Island", 3), hand: ["Tishana's Tidebinder"] },
       p2: { battlefield: ["Vampire Neonate", ...lands("Swamp", 4)] },
@@ -703,7 +703,7 @@ describe("The Lost Caverns of Ixalan : cartes des decks du méta (PLAN-C, lot C1
     expect(chars(s, neonate).abilities.some((a) => a.kind === "activated")).toBe(true);
   });
 
-  it("Braided Net : trois marqueurs de filet ; engage un permanent non-terrain dont les capacités activées sont bloquées", () => {
+  it("Braided Net: three net counters; taps a nonland permanent whose activated abilities are blocked", () => {
     let s = scenario({
       p1: { battlefield: lands("Island", 3), hand: ["Braided Net // Braided Quipu"] },
       p2: { battlefield: ["Keen-Eyed Curator", ...lands("Forest", 2)], graveyard: ["Opt"] },
@@ -721,12 +721,12 @@ describe("The Lost Caverns of Ixalan : cartes des decks du méta (PLAN-C, lot C1
     s = act(s, "p1", { type: "pass" });
     expect(s.pending?.player).toBe("p2");
     expect(canActivate(s, "p2", curator)).toBe(false);
-    // « tant qu'il reste engagé » : dégagé, il retrouve ses capacités activées (lot K7).
+    // "as long as it stays tapped": untapped, it regains its activated abilities (lot K7).
     untapObject(s, s.objects[curator] as never);
     expect(canActivate(s, "p2", curator)).toBe(true);
   });
 
-  it("Dusk Rose Reliquary : sacrifice en coût additionnel ; exile un artefact ou une créature adverse jusqu'à son départ", () => {
+  it("Dusk Rose Reliquary: sacrifice as an additional cost; exiles an opposing artifact or creature until it leaves", () => {
     let s = scenario({
       p1: { battlefield: ["Plains", "Bear Cub"], hand: ["Dusk Rose Reliquary"] },
       p2: { battlefield: ["Serra Angel"] },
@@ -743,7 +743,7 @@ describe("The Lost Caverns of Ixalan : cartes des decks du méta (PLAN-C, lot C1
     expect(idsOf(s, "p2", "battlefield", "Serra Angel")).toHaveLength(1);
   });
 
-  it("Inti : en attaquant, défaussez pour un marqueur +1/+1 et le piétinement ; la défausse exile la carte du dessus, jouable", () => {
+  it("Inti: when attacking, discard for a +1/+1 counter and trample; the discard exiles the top card, playable", () => {
     let s = scenario({
       p1: { battlefield: ["Inti, Seneschal of the Sun", "Bear Cub"], hand: ["Opt"], library: lands("Mountain", 5) },
     });
@@ -760,16 +760,16 @@ describe("The Lost Caverns of Ixalan : cartes des decks du méta (PLAN-C, lot C1
   });
 
   describe("Glimpse the Core", () => {
-    it("mode 1 : une Forêt de base engagée depuis la bibliothèque", () => {
+    it("mode 1: a tapped basic Forest from the library", () => {
       let s = scenario({ p1: { battlefield: lands("Forest", 2), hand: ["Glimpse the Core"], library: ["Plains", "Forest"] } });
       s = resolve(castCard(s, "p1", "Glimpse the Core", { mode: 0 }));
       const forests = idsOf(s, "p1", "battlefield", "Forest");
       expect(forests).toHaveLength(3);
-      expect(forests.filter((id) => s.objects[id]?.tapped)).toHaveLength(3); // deux payées, une arrivée engagée
+      expect(forests.filter((id) => s.objects[id]?.tapped)).toHaveLength(3); // two paid for, one entered tapped
       expect(s.players.p1?.library.map((id) => nameOf(s, id))).toEqual(["Plains"]);
     });
 
-    it("mode 2 : une carte de Caverne du cimetière revient engagée", () => {
+    it("mode 2: a Cavern card from the graveyard returns tapped", () => {
       let s = scenario({ p1: { battlefield: lands("Forest", 2), hand: ["Glimpse the Core"], graveyard: ["Hidden Nursery"] } });
       const cave = idOf(s, "p1", "graveyard", "Hidden Nursery");
       s = resolve(castCard(s, "p1", "Glimpse the Core", { mode: 1, targets: { t: [cave] } }));
@@ -778,20 +778,20 @@ describe("The Lost Caverns of Ixalan : cartes des decks du méta (PLAN-C, lot C1
     });
   });
 
-  it("Spring-Loaded Sawblades : 5 blessures à une créature engagée adverse", () => {
+  it("Spring-Loaded Sawblades: 5 damage to an opposing tapped creature", () => {
     let s = scenario({
       p1: { battlefield: lands("Plains", 2), hand: ["Spring-Loaded Sawblades // Bladewheel Chariot"] },
       p2: { battlefield: [{ name: "Serra Angel", tapped: true }, "Bear Cub"] },
     });
-    // Seule cible légale : l'Ange engagé (le Bear Cub est dégagé).
+    // Only legal target: the tapped Angel (the Bear Cub is untapped).
     s = resolve(castCard(s, "p1", "Spring-Loaded Sawblades // Bladewheel Chariot"));
     expect(idsOf(s, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
     expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
   });
 });
 
-describe("« Engagez N artefacts et/ou créatures dégagés », la source comprise (302.6, lot K2)", () => {
-  it("Adaptive Gemguard : elle et un artefact, même avec le mal d'invocation ; seule, non", () => {
+describe('"Tap N untapped artifacts and/or creatures", the source included (302.6, lot K2)', () => {
+  it("Adaptive Gemguard: it and an artifact, even with summoning sickness; alone, no", () => {
     let s = scenario({ p1: { battlefield: [{ name: "Adaptive Gemguard", sick: true }, "Nutrient Block"] } });
     const gem = idOf(s, "p1", "battlefield", "Adaptive Gemguard");
     s = activate(s, gem);
@@ -801,7 +801,7 @@ describe("« Engagez N artefacts et/ou créatures dégagés », la source compri
     expect(legalActions(alone, "p1").some((a) => a.type === "activate")).toBe(false);
   });
 
-  it("Sunshot Militia, Warden of the Inner Sky, Goldfury Strider : la source compte parmi les permanents engagés", () => {
+  it("Sunshot Militia, Warden of the Inner Sky, Goldfury Strider: the source counts among the tapped permanents", () => {
     let s = scenario({ p1: { battlefield: ["Sunshot Militia", "Bear Cub"] } });
     s = activate(s, idOf(s, "p1", "battlefield", "Sunshot Militia"));
     expect(s.players.p2?.life).toBe(19);
@@ -813,7 +813,7 @@ describe("« Engagez N artefacts et/ou créatures dégagés », la source compri
     expect(legalActions(g, "p1").some((a) => a.type === "activate")).toBe(true);
   });
 
-  it("Warden of the Inner Sky : vol et vigilance avec trois marqueurs ou plus, de toutes sortes", () => {
+  it("Warden of the Inner Sky: flying and vigilance with three or more counters, of any kind", () => {
     const w = scenario({
       p1: { battlefield: [{ name: "Warden of the Inner Sky", counters: { "+1/+1": 1, shield: 1, stun: 1 } }, "Bear Cub"] },
     });
@@ -824,8 +824,8 @@ describe("« Engagez N artefacts et/ou créatures dégagés », la source compri
   });
 });
 
-describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu communes", () => {
-  /** Répond « oui » aux questions et choisit les objets ou joueurs voulus quand ils sont proposés. */
+describe("Lost Caverns of Ixalan, lot K8: mythic, rare and uncommon cards", () => {
+  /** Answers "yes" to the questions and chooses the wanted objects or players when offered. */
   const choosing =
     (want: string[] = [], yes = true): Answer =>
     (req) => {
@@ -838,20 +838,20 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
     const a = legalActions(s, player).find(
       (x) => x.type === "activate" && x.source === source && plainText(x.label ?? "").includes(label),
     );
-    if (a?.type !== "activate") throw new Error(`capacité introuvable : ${label}`);
+    if (a?.type !== "activate") throw new Error(`ability not found: ${label}`);
     return act(s, player, { type: "activate", source, ability: a.ability, ...extra });
   };
   const castCard = (s: S, player: string, name: string, extra: object = {}) =>
     act(s, player, { type: "cast", card: idOf(s, player, "hand", name), ...extra });
   const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
   const libraryNames = (s: S, p = "p1") => namesIn(s, s.players[p]?.library);
-  /** Met le verso d'une carte transformable sur le champ de bataille (face active : le verso). */
+  /** Puts the back face of a transformable card onto the battlefield (active face: the back). */
   const flip = (s: S, id: string) => {
     const o = s.objects[id] as { defId: string; faceDefId?: string };
     o.faceDefId = s.defs[o.defId]?.faceDefs?.[1]?.id;
     bump(s);
   };
-  /** Avance jusqu'à la phase principale 1 de p1 (tour suivant), pile vide. */
+  /** Advances to p1's first main phase (next turn), empty stack. */
   const toMyMain = (s: S) =>
     advanceUntil(
       s,
@@ -863,11 +863,11 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
         x.pending?.kind === "priority",
     );
   const tokens = (s: S, p: string, name: string) => idsOf(s, p, "battlefield", name).filter((id) => s.objects[id]?.isToken);
-  /** Résout les déclenchements en attente après une action directe (`destroy`…), sans passer si rien n'attend. */
+  /** Resolves the pending triggers after a direct action (`destroy`...), without passing if nothing is waiting. */
   const flush = (s: S) => (s.triggers.length > 0 || s.stack.length > 0 ? resolve(s) : s);
 
   describe("mythiques", () => {
-    it("Bonehoard Dracosaur : à l'entretien, exile deux cartes jouables ce tour-ci ; terrain → Dinosaure 3/1, non-terrain → Trésor", () => {
+    it("Bonehoard Dracosaur: at upkeep, exiles two cards playable this turn; land → 3/1 Dinosaur, nonland → Treasure", () => {
       const run = (library: string[]) => {
         const s = scenario({
           p1: { battlefield: ["Bonehoard Dracosaur", "Island"], library },
@@ -886,13 +886,13 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       const acts = legalActions(s, "p1");
       expect(acts.some((a) => a.type === "playLand" && a.card === exiled(s, "Forest")[0])).toBe(true);
       expect(acts.some((a) => a.type === "cast" && a.card === exiled(s, "Opt")[0])).toBe(true);
-      // Deux terrains : un Dinosaure, pas de Trésor.
+      // Two lands: a Dinosaur, no Treasure.
       const lands2 = run(["Forest", "Swamp", "Island"]);
       expect(tokens(lands2, "p1", "Dinosaur")).toHaveLength(1);
       expect(tokens(lands2, "p1", "Treasure")).toHaveLength(0);
     });
 
-    it("Ghalta, Stampede Tyrant : met sur le champ de bataille les cartes de créature choisies de la main, et elles seules", () => {
+    it("Ghalta, Stampede Tyrant: puts the chosen creature cards from hand onto the battlefield, and only those", () => {
       let s = scenario({
         p1: { battlefield: lands("Forest", 8), hand: ["Ghalta, Stampede Tyrant", "Bear Cub", "Llanowar Elves", "Opt"] },
       });
@@ -909,7 +909,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(chars(s, idOf(s, "p1", "battlefield", "Ghalta, Stampede Tyrant")).keywords).toContain("trample");
     });
 
-    it("Gishath, Sun's Avatar : révèle autant de cartes que les blessures ; les Dinosaures vont sur le champ de bataille, le reste dessous", () => {
+    it("Gishath, Sun's Avatar: reveals as many cards as the damage; the Dinosaurs go onto the battlefield, the rest on the bottom", () => {
       let s = scenario({
         p1: {
           battlefield: [{ name: "Gishath, Sun's Avatar", sick: true }],
@@ -930,7 +930,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect([...lib.slice(1)].sort()).toEqual(["Bear Cub", "Forest", "Forest", "Island", "Opt"]);
     });
 
-    it("Huatli, Poet of Unity : un terrain de base en main ; exilée et renvoyée transformée, le chapitre I crée deux Dinosaures 3/3", () => {
+    it("Huatli, Poet of Unity: a basic land to hand; exiled and returned transformed, chapter I creates two 3/3 Dinosaurs", () => {
       let s = scenario({
         p1: {
           battlefield: lands("Forest", 3),
@@ -954,7 +954,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       ]);
     });
 
-    it("Roar of the Fifth People : chapitre II, vos créatures produisent {R}, {G} ou {W} ; chapitre IV, double initiative et piétinement aux seuls Dinosaures", () => {
+    it("Roar of the Fifth People: chapter II, your creatures produce {R}, {G} or {W}; chapter IV, double strike and trample for Dinosaurs only", () => {
       const run = (lore: number) => {
         const s = scenario({
           p1: {
@@ -981,7 +981,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(chars(four, idOf(four, "p1", "battlefield", "Bear Cub")).keywords).not.toContain("doubleStrike");
     });
 
-    it("Ojer Kaslem : une créature et un terrain révélés vont sur le champ de bataille ; en mourant, il revient engagé en Temple of Cultivation", () => {
+    it("Ojer Kaslem: a revealed creature and land go onto the battlefield; when it dies, it returns tapped as Temple of Cultivation", () => {
       let s = scenario({
         p1: {
           battlefield: ["Ojer Kaslem, Deepest Growth // Temple of Cultivation"],
@@ -1006,7 +1006,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(s.objects[temple]?.tapped).toBe(true);
     });
 
-    it("Temple of Cultivation : se transforme seulement si vous contrôlez dix permanents ou plus", () => {
+    it("Temple of Cultivation: transforms only if you control ten or more permanents", () => {
       const run = (forests: number) => {
         const s = scenario({
           p1: { battlefield: ["Ojer Kaslem, Deepest Growth // Temple of Cultivation", ...lands("Forest", forests)] },
@@ -1019,7 +1019,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(run(8)).toBe(false);
     });
 
-    it("Ojer Kaslem : une seule carte de créature (et un seul terrain), même parmi plusieurs créatures révélées", () => {
+    it("Ojer Kaslem: a single creature card (and a single land), even among several revealed creatures", () => {
       let s = scenario({
         p1: {
           battlefield: ["Ojer Kaslem, Deepest Growth // Temple of Cultivation"],
@@ -1032,7 +1032,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       s = throughCombat(attack(s, [ojer]), (req) => {
         if (req.type !== "pick" || req.intent !== "lookAtTop") return undefined;
         maxes.push(req.max);
-        // Une carte par choix : la créature (Bear Cub, pas Hulking Raptor), puis le terrain.
+        // One card per choice: the creature (Bear Cub, not Hulking Raptor), then the land.
         return req.options.filter((id) => id === lib[0] || id === lib[2]);
       });
       expect(maxes).toEqual([1, 1]);
@@ -1042,7 +1042,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(libraryNames(s)[0]).toBe("Swamp");
     });
 
-    it("Temple of the Dead : s'active seulement si un joueur (vous, ou n'importe quel adversaire) a une carte ou moins en main", () => {
+    it("Temple of the Dead: activates only if a player (you, or any opponent) has one card or fewer in hand", () => {
       const run = (hands: [number, number, number]) => {
         const s = scenario({
           players: 3,
@@ -1063,7 +1063,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(run([3, 3, 0])).toBe(true);
     });
 
-    it("Kitesail Larcenist : pour chaque joueur, jusqu'à un artefact ou une créature qu'il contrôle (quatre joueurs)", () => {
+    it("Kitesail Larcenist: for each player, up to one artifact or creature they control (four players)", () => {
       const setup = () =>
         scenario({
           players: 4,
@@ -1084,7 +1084,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       );
       for (const id of chosen) expect(chars(s, id).subtypes).toEqual(["Treasure"]);
       expect(chars(s, idOf(s, "p2", "battlefield", "Llanowar Elves")).types).toContain("Creature");
-      // Deux permanents du même joueur : refusé.
+      // Two permanents of the same player: refused.
       const t = setup();
       const two = [idOf(t, "p2", "battlefield", "Shivan Dragon"), idOf(t, "p2", "battlefield", "Llanowar Elves")];
       expect(() =>
@@ -1094,7 +1094,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       ).toThrow(RulesError);
     });
 
-    it("Sandswirl Wanderglyph : seulement un adversaire qui lance un sort pendant son propre tour (multijoueur)", () => {
+    it("Sandswirl Wanderglyph: only an opponent who casts a spell during their own turn (multiplayer)", () => {
       const setup = () => {
         const s = scenario({
           players: 3,
@@ -1106,12 +1106,12 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
         flip(s, idOf(s, "p1", "battlefield", "Unstable Glyphbridge // Sandswirl Wanderglyph"));
         return s;
       };
-      // p3 lance un sort pendant le tour de p2 : rien ne se déclenche.
+      // p3 casts a spell during p2's turn: nothing triggers.
       let s = setup();
       s = act(s, "p2", { type: "pass" });
       s = act(s, "p3", { type: "cast", card: idOf(s, "p3", "hand", "Opt") });
       expect(s.stack.length + s.triggers.length).toBe(1);
-      // p2 lance un sort pendant son tour : il ne peut plus attaquer p1 ce tour-ci.
+      // p2 casts a spell during their turn: it can no longer attack p1 this turn.
       s = setup();
       s = act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Opt") });
       expect(s.stack.length + s.triggers.length).toBe(2);
@@ -1119,7 +1119,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(playerStatic(s, "p2", "cantAttack")).toBeTruthy();
     });
 
-    it("Brass's Tunnel-Grinder : défaussez autant de cartes que vous voulez (de zéro à toute votre main)", () => {
+    it("Brass's Tunnel-Grinder: discard as many cards as you want (from zero to your whole hand)", () => {
       let s = scenario({
         p1: {
           battlefield: lands("Mountain", 3),
@@ -1138,7 +1138,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(namesIn(s, s.players.p1?.hand).sort()).toEqual(["Forest", "Island", "Island", "Opt"]);
     });
 
-    it("Quintorius Kand : +1 crée un Esprit 3/2 ; −3 découverte 4, et le sort lancé depuis l'exil inflige 2 blessures et vous fait gagner 2 PV", () => {
+    it("Quintorius Kand: +1 creates a 3/2 Spirit; -3 discover 4, and the spell cast from exile deals 2 damage and you gain 2 life", () => {
       let s = scenario({ p1: { battlefield: ["Quintorius Kand"], library: ["Forest", "Llanowar Elves", "Island"] } });
       const q = idOf(s, "p1", "battlefield", "Quintorius Kand");
       let t = resolve(activateLabel(s, "p1", q, "Spirit"));
@@ -1154,13 +1154,13 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(s.players.p2?.life).toBe(18);
       expect(s.players.p1?.life).toBe(22);
 
-      // Un sort lancé depuis la main ne déclenche rien.
+      // A spell cast from hand triggers nothing.
       t = scenario({ p1: { battlefield: ["Quintorius Kand", "Forest"], hand: ["Llanowar Elves"] } });
       t = resolve(castCard(t, "p1", "Llanowar Elves"));
       expect(t.players.p2?.life).toBe(20);
     });
 
-    it("Quintorius Kand −6 : exile des cartes de votre cimetière, {R} par carte, et elles sont jouables ce tour-ci", () => {
+    it("Quintorius Kand -6: exiles cards from your graveyard, {R} per card, and they are playable this turn", () => {
       let s = scenario({
         p1: { battlefield: [{ name: "Quintorius Kand", counters: { loyalty: 6 } }], graveyard: ["Forest", "Triumphant Chomp"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -1176,7 +1176,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(acts.some((a) => a.type === "cast" && a.card === chomp)).toBe(true);
     });
 
-    it("Resplendent Angel : +2/+2 et lien de vie ; 5 PV gagnés ce tour-ci → un Ange 4/4 volant et vigilant à l'étape de fin, 4 PV → rien", () => {
+    it("Resplendent Angel: +2/+2 and lifelink; 5 life gained this turn → a 4/4 flying, vigilant Angel at the end step, 4 life → nothing", () => {
       let s = scenario({ p1: { battlefield: ["Resplendent Angel", ...lands("Plains", 6)] } });
       const angel = idOf(s, "p1", "battlefield", "Resplendent Angel");
       s = resolve(activateLabel(s, "p1", angel, "lifelink"));
@@ -1194,11 +1194,11 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(tokens(t, "p1", "Angel")).toHaveLength(0);
     });
 
-    it("Saheeli, the Sun's Brilliance : copie-jeton d'une autre créature, artefact en plus, avec la célérité, sacrifiée à l'étape de fin", () => {
+    it("Saheeli, the Sun's Brilliance: token copy of another creature, artifact in addition, with haste, sacrificed at the end step", () => {
       let s = scenario({ p1: { battlefield: ["Saheeli, the Sun's Brilliance", "Bear Cub", "Island", "Mountain"] } });
       const saheeli = idOf(s, "p1", "battlefield", "Saheeli, the Sun's Brilliance");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-      // « autre » : Saheeli ne peut pas se cibler.
+      // "another": Saheeli can't target herself.
       const opt = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === saheeli);
       expect(opt?.type === "activate" && opt.targets?.[0]?.legal).not.toContain(saheeli);
       s = resolve(activateLabel(s, "p1", saheeli, "Token copy", { targets: { t: [bear] } }));
@@ -1209,7 +1209,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toEqual([bear]);
     });
 
-    it("Sovereign Okinec Ahau : en attaquant, chaque créature dont la force dépasse sa force de base reçoit l'écart en marqueurs +1/+1", () => {
+    it("Sovereign Okinec Ahau: when attacking, each creature whose power exceeds its base power gets the difference in +1/+1 counters", () => {
       let s = scenario({
         p1: { battlefield: ["Sovereign Okinec Ahau", { name: "Bear Cub", counters: { "+1/+1": 2 } }, "Llanowar Elves"] },
       });
@@ -1221,7 +1221,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(s.objects[sov]?.counters["+1/+1"] ?? 0).toBe(0);
     });
 
-    it("The Ancient One : ne peut ni attaquer ni bloquer sans huit cartes de permanent au cimetière ; pillage, puis un joueur meule la VM de la carte défaussée", () => {
+    it("The Ancient One: can't attack or block without eight permanent cards in the graveyard; looting, then a player mills the mana value of the discarded card", () => {
       const yard8 = ["Forest", "Forest", "Bear Cub", "Island", "Swamp", "Plains", "Mountain", "Llanowar Elves"];
       const blocked = scenario({ p1: { battlefield: ["The Ancient One"], graveyard: yard8.slice(1) } });
       const one = idOf(blocked, "p1", "battlefield", "The Ancient One");
@@ -1239,11 +1239,11 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
         return pickNamed(cur, req, "Shivan Dragon");
       });
       expect(idsOf(s, "p1", "graveyard", "Shivan Dragon")).toHaveLength(1);
-      // Shivan Dragon : valeur de mana 6.
+      // Shivan Dragon: mana value 6.
       expect(s.players.p2?.graveyard).toHaveLength(6);
     });
 
-    it("The Enigma Jewel : arrive engagé ; son mana ne sert qu'à activer des capacités", () => {
+    it("The Enigma Jewel: enters tapped; its mana can only be spent to activate abilities", () => {
       let s = scenario({ p1: { battlefield: ["Island"], hand: ["The Enigma Jewel // Locus of Enlightenment"] } });
       s = resolve(castCard(s, "p1", "The Enigma Jewel // Locus of Enlightenment"));
       expect(s.objects[idOf(s, "p1", "battlefield", "The Enigma Jewel // Locus of Enlightenment")]?.tapped).toBe(true);
@@ -1259,7 +1259,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(canActivate(t, "p1", idOf(t, "p1", "battlefield", "Hoverstone Pilgrim"))).toBe(true);
     });
 
-    it("The Millennium Calendar : un marqueur de temps par permanent dégagé ; {2}, {T} les double ; à 1 000, sacrifice et chaque adversaire perd 1 000 PV", () => {
+    it("The Millennium Calendar: a time counter per untapped permanent; {2}, {T} doubles them; at 1,000, sacrifice and each opponent loses 1,000 life", () => {
       let s = scenario({
         p1: {
           battlefield: ["The Millennium Calendar", { name: "Forest", tapped: true }, { name: "Forest", tapped: true }, "Island"],
@@ -1283,7 +1283,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(t.players.p2?.life).toBe(-980);
     });
 
-    it("The Skullspore Nexus : coûte X de moins (la plus grande force) ; une créature non-jeton qui meurt donne un Champignon Dinosaure de sa force ; {2}, {T} double la force", () => {
+    it("The Skullspore Nexus: costs X less (the greatest power); a nontoken creature that dies gives a Fungus Dinosaur of its power; {2}, {T} doubles power", () => {
       const big = scenario({ p1: { battlefield: ["Hulking Raptor", ...lands("Forest", 3)], hand: ["The Skullspore Nexus"] } });
       expect(castable(big, "p1", idOf(big, "p1", "hand", "The Skullspore Nexus"))).toBe(true);
       const small = scenario({ p1: { battlefield: ["Bear Cub", ...lands("Forest", 3)], hand: ["The Skullspore Nexus"] } });
@@ -1294,7 +1294,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       s = resolve(s);
       const fungus = tokens(s, "p1", "Fungus Dinosaur")[0] as string;
       expect(pt(s, fungus)).toEqual([5, 5]);
-      // Un jeton qui meurt ne déclenche rien.
+      // A token that dies triggers nothing.
       destroy(s, fungus);
       s = flush(s);
       expect(tokens(s, "p1", "Fungus Dinosaur")).toHaveLength(0);
@@ -1305,13 +1305,13 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(pt(s, bear)).toEqual([4, 2]);
     });
 
-    it("The Skullspore Nexus : plusieurs créatures non-jetons qui meurent ensemble donnent un seul jeton, de leur force totale (dernières informations)", () => {
+    it("The Skullspore Nexus: several nontoken creatures dying together give a single token, of their total power (last known information)", () => {
       let s = scenario({ p1: { battlefield: ["The Skullspore Nexus", "Hulking Raptor", "Bear Cub", "Llanowar Elves"] } });
       const raptor = idOf(s, "p1", "battlefield", "Hulking Raptor");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-      // La force au moment de mourir : Bear Cub a +2/+0.
+      // Power at the time of dying: Bear Cub has +2/+0.
       addPump(s, [bear], 2, 0);
-      // Deux destructions du même lot d'événements.
+      // Two destructions in the same batch of events.
       destroy(s, raptor);
       destroy(s, bear);
       expect(s.triggers).toHaveLength(1);
@@ -1321,7 +1321,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(pt(s, fungus[0] as string)).toEqual([9, 9]);
     });
 
-    it("Vito, Fanatic of Aclazotz : premier sacrifice +2 PV, deuxième −2 PV à chaque adversaire, troisième un Vampire Démon 4/3 volant (Bartolomé del Presidio)", () => {
+    it("Vito, Fanatic of Aclazotz: first sacrifice +2 life, second -2 life to each opponent, third a 4/3 flying Vampire Demon (Bartolomé del Presidio)", () => {
       let s = scenario({
         p1: {
           battlefield: [
@@ -1350,7 +1350,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
   });
 
   describe("rares", () => {
-    it("Abuelo, Ancestral Echo : vol et garde {2} ; exile une autre de vos créatures, qui revient au début de la prochaine étape de fin", () => {
+    it("Abuelo, Ancestral Echo: flying and ward {2}; exiles another of your creatures, which returns at the beginning of the next end step", () => {
       let s = scenario({ p1: { battlefield: ["Abuelo, Ancestral Echo", "Bear Cub", "Plains", "Island", "Island"] } });
       const abuelo = idOf(s, "p1", "battlefield", "Abuelo, Ancestral Echo");
       expect(chars(s, abuelo).keywords).toEqual(expect.arrayContaining(["flying", "ward"]));
@@ -1366,7 +1366,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
     });
 
-    it("Abuelo's Awakening : un artefact revient avec X marqueurs +1/+1 en créature Esprit 1/1 volante ; pas d'Aura", () => {
+    it("Abuelo's Awakening: an artifact returns with X +1/+1 counters as a 1/1 flying Spirit creature; no Aura", () => {
       let s = scenario({
         p1: { battlefield: lands("Plains", 6), hand: ["Abuelo's Awakening"], graveyard: ["Nutrient Block", "Dead Weight"] },
       });
@@ -1384,13 +1384,13 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(pt(s, block)).toEqual([3, 3]);
     });
 
-    it("Abuelo's Awakening (PLAN-H H9) : la carte arrive déjà créature (« quand une créature arrive » la voit)", () => {
+    it('Abuelo\'s Awakening (PLAN-H H9): the card enters already a creature ("whenever a creature enters" sees it)', () => {
       const WATCH = customCard({
-        name: "Guetteur d'essai",
+        name: "Test Watcher",
         types: ["Enchantment"],
         typeLine: "Enchantment",
         abilities: [
-          triggered(when.enters({ types: ["Creature"], controller: "you" }), [fx.gainLife(1)], { label: "Vous gagnez 1 PV" }),
+          triggered(when.enters({ types: ["Creature"], controller: "you" }), [fx.gainLife(1)], { label: "You gain 1 life" }),
         ],
       });
       let s = scenario({
@@ -1403,7 +1403,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(pt(s, idOf(s, "p1", "battlefield", "Nutrient Block"))).toEqual([1, 1]);
     });
 
-    it("Akal Pakal : à chaque étape de fin, si un artefact est arrivé sous votre contrôle ce tour-ci, une carte en main et l'autre au cimetière", () => {
+    it("Akal Pakal: at each end step, if an artifact entered under your control this turn, one card in hand and the other in the graveyard", () => {
       const run = (withArtifact: boolean) => {
         let s = scenario({
           p1: {
@@ -1424,7 +1424,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(no.players.p1?.library).toHaveLength(3);
     });
 
-    it("Anim Pakal : vous attaquez avec une non-Gnome → un marqueur +1/+1, puis autant de Gnomes 1/1 engagés et attaquants que de marqueurs", () => {
+    it("Anim Pakal: you attack with a non-Gnome → a +1/+1 counter, then as many tapped, attacking 1/1 Gnomes as counters", () => {
       let s = scenario({ p1: { battlefield: [{ name: "Anim Pakal, Thousandth Moon", counters: { "+1/+1": 1 } }, "Bear Cub"] } });
       const anim = idOf(s, "p1", "battlefield", "Anim Pakal, Thousandth Moon");
       s = resolve(attack(s, [idOf(s, "p1", "battlefield", "Bear Cub")]));
@@ -1436,7 +1436,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(s.players.p2?.life).toBe(16);
     });
 
-    it("Bedrock Tortoise : vos créatures ont la défense talismanique pendant votre tour seulement ; endurance > force → blessures de combat égales à l'endurance", () => {
+    it("Bedrock Tortoise: your creatures have hexproof during your turn only; toughness > power → combat damage equal to toughness", () => {
       let s = scenario({ p1: { battlefield: ["Bedrock Tortoise", "Hermitic Nautilus"] } });
       const nautilus = idOf(s, "p1", "battlefield", "Hermitic Nautilus");
       expect(chars(s, nautilus).keywords).toContain("hexproof");
@@ -1446,7 +1446,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(chars(theirs, idOf(theirs, "p1", "battlefield", "Hermitic Nautilus")).keywords).not.toContain("hexproof");
     });
 
-    it("Brass's Tunnel-Grinder : défaussez des cartes, piochez-en autant plus une ; descente à l'étape de fin → marqueur de forage, au troisième elle se transforme", () => {
+    it("Brass's Tunnel-Grinder: discard cards, draw that many plus one; descend at the end step → bore counter, at the third it transforms", () => {
       let s = scenario({
         p1: {
           battlefield: lands("Mountain", 3),
@@ -1481,7 +1481,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       ).toBe(2);
     });
 
-    it("Tecutlan, the Searing Rift : un sort de permanent payé avec son mana → découverte X (sa valeur de mana)", () => {
+    it("Tecutlan, the Searing Rift: a permanent spell paid for with its mana → discover X (its mana value)", () => {
       const run = (land: string) => {
         let s = scenario({
           p1: {
@@ -1501,7 +1501,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(m.players.p1?.library).toHaveLength(3);
     });
 
-    it("Breeches, Eager Pillager : chaque Pirate qui attaque fait choisir un mode pas encore choisi ce tour-ci", () => {
+    it("Breeches, Eager Pillager: each attacking Pirate makes you choose a mode not yet chosen this turn", () => {
       let s = scenario({
         p1: { battlefield: ["Breeches, Eager Pillager", "Enterprising Scallywag"], library: ["Opt", "Forest"] },
         p2: { battlefield: ["Serra Angel"] },
@@ -1525,7 +1525,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(exiled(s, "Opt")).toHaveLength(1);
     });
 
-    it("Bringer of the Last Gift : lancé, chaque joueur sacrifie ses autres créatures, puis les cartes de créature déjà au cimetière reviennent", () => {
+    it("Bringer of the Last Gift: cast, each player sacrifices their other creatures, then the creature cards already in the graveyard return", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Swamp", 8), "Bear Cub"],
@@ -1540,14 +1540,14 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(idsOf(s, "p1", "battlefield", "Llanowar Elves")).toHaveLength(1);
       expect(idsOf(s, "p2", "battlefield", "Shivan Dragon")).toHaveLength(1);
       expect(idsOf(s, "p1", "battlefield", "Bringer of the Last Gift")).toHaveLength(1);
-      // Mis sur le champ de bataille sans être lancé : rien.
+      // Put onto the battlefield without being cast: nothing.
       let t = scenario({ p1: { battlefield: ["Bear Cub"], hand: ["Bringer of the Last Gift"] } });
       moveWithSpec(t, "p1", idOf(t, "p1", "hand", "Bringer of the Last Gift"), { to: "battlefield" });
       t = flush(t);
       expect(idsOf(t, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
     });
 
-    it("Cosmium Confluence : trois modes au choix (le même plusieurs fois) — Caverne engagée, Caverne 0/0 avec trois marqueurs et la célérité, enchantement détruit", () => {
+    it("Cosmium Confluence: three modes of your choice (the same one several times) — tapped Cavern, 0/0 Cavern with three counters and haste, enchantment destroyed", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Forest", 5), "Cavernous Maw"],
@@ -1563,7 +1563,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       );
       const maw = idOf(s, "p1", "battlefield", "Cavernous Maw");
       const weight = idOf(s, "p2", "battlefield", "Deeproot Pilgrimage");
-      // La Caverne qui reçoit les marqueurs est choisie à la résolution, après la recherche (ordre des modes).
+      // The Cavern receiving the counters is chosen on resolution, after the search (mode order).
       let offered: (string | undefined)[] = [];
       s = resolve(
         castCard(s, "p1", "Cosmium Confluence", {
@@ -1585,7 +1585,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(c.subtypes).toEqual(expect.arrayContaining(["Cave", "Elemental"]));
       expect(c.keywords).toContain("haste");
       expect(pt(s, maw)).toEqual([3, 3]);
-      // Le même mode trois fois, sur la même Caverne : neuf marqueurs.
+      // The same mode three times, on the same Cavern: nine counters.
       const thrice = modes.find(
         (m) =>
           plainText(m.label ?? "") ===
@@ -1596,7 +1596,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(pt(t, idOf(t, "p1", "battlefield", "Cavernous Maw"))).toEqual([9, 9]);
     });
 
-    it("Deepfathom Echo : au début du combat, il explore, puis peut devenir une copie d'une autre de vos créatures jusqu'à la fin du tour", () => {
+    it("Deepfathom Echo: at the beginning of combat, it explores, then may become a copy of another of your creatures until end of turn", () => {
       let s = scenario({ p1: { battlefield: ["Deepfathom Echo", "Shivan Dragon"], library: ["Opt", "Forest"] } });
       const echo = idOf(s, "p1", "battlefield", "Deepfathom Echo");
       const dragon = idOf(s, "p1", "battlefield", "Shivan Dragon");
@@ -1608,21 +1608,21 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(chars(s, echo).name).toBe("Deepfathom Echo");
     });
 
-    it("Deepfathom Echo : la créature à copier est choisie à la résolution, après l'exploration, sans cibler", () => {
+    it("Deepfathom Echo: the creature to copy is chosen on resolution, after exploring, without targeting", () => {
       let s = scenario({ p1: { battlefield: ["Deepfathom Echo", "Shivan Dragon", "Bear Cub"], library: ["Opt", "Forest"] } });
       const echo = idOf(s, "p1", "battlefield", "Deepfathom Echo");
       const dragon = idOf(s, "p1", "battlefield", "Shivan Dragon");
       const cub = idOf(s, "p1", "battlefield", "Bear Cub");
       s = advanceUntil(s, (x) => x.turn.step === "beginCombat" && x.stack.length > 0);
       expect(s.stack.at(-1)?.targets.t).toBeUndefined();
-      // Le Dragon part avant la résolution : la capacité se résout quand même, et la copie porte sur Bear Cub.
+      // The Dragon leaves before resolution: the ability still resolves, and the copy is of Bear Cub.
       destroy(s, dragon);
       s = resolve(s, choosing([cub]));
       expect(s.objects[echo]?.counters["+1/+1"]).toBe(1);
       expect(chars(s, echo).name).toBe("Bear Cub");
     });
 
-    it("Deeproot Pilgrimage : des Ondins non-jetons que vous contrôlez s'engagent → un seul Ondin 1/1 avec la défense talismanique", () => {
+    it("Deeproot Pilgrimage: nontoken Merfolk you control tap → a single 1/1 Merfolk with hexproof", () => {
       let s = scenario({ p1: { battlefield: ["Deeproot Pilgrimage", "Cenote Scout", "Merfolk Cave-Diver", "Bear Cub"] } });
       s = resolve(attack(s, [idOf(s, "p1", "battlefield", "Cenote Scout"), idOf(s, "p1", "battlefield", "Merfolk Cave-Diver")]));
       const merfolk = tokens(s, "p1", "Merfolk");
@@ -1634,7 +1634,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(tokens(t, "p1", "Merfolk")).toHaveLength(0);
     });
 
-    it("Dire Flail : +2/+0, Équiper {1} ; Dire Blunderbuss : +3/+0, en attaquant, sacrifiez un autre artefact pour infliger sa force à une créature", () => {
+    it("Dire Flail: +2/+0, Equip {1}; Dire Blunderbuss: +3/+0, when attacking, sacrifice another artifact to deal its power to a creature", () => {
       let s = scenario({ p1: { battlefield: ["Dire Flail // Dire Blunderbuss", "Bear Cub", "Mountain"] } });
       const flail = idOf(s, "p1", "battlefield", "Dire Flail // Dire Blunderbuss");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -1656,7 +1656,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(idsOf(t, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
     });
 
-    it("Echoing Deeps : peut arriver engagé en copie d'une carte de terrain d'un cimetière, Caverne en plus", () => {
+    it("Echoing Deeps: may enter tapped as a copy of a land card in a graveyard, a Cavern in addition", () => {
       let s = scenario({ p1: { hand: ["Echoing Deeps"] }, p2: { graveyard: ["Restless Vents"] } });
       const vents = idOf(s, "p2", "graveyard", "Restless Vents");
       s = resolve(act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Echoing Deeps") }), choosing([vents]));
@@ -1666,14 +1666,14 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(s.objects[deeps]?.tapped).toBe(true);
     });
 
-    it("Echoing Deeps (PLAN-H H9) : la carte copiée est choisie en jouant le terrain ; « aucune » : il arrive dégagé, sans copie", () => {
+    it('Echoing Deeps (PLAN-H H9): the copied card is chosen when playing the land; "none": it enters untapped, without a copy', () => {
       const base = () =>
         scenario({ p1: { hand: ["Echoing Deeps"], graveyard: ["Forest"] }, p2: { graveyard: ["Restless Vents", "Opt"] } });
       let s = base();
       const deeps = idOf(s, "p1", "hand", "Echoing Deeps");
       const forest = idOf(s, "p1", "graveyard", "Forest");
       const vents = idOf(s, "p2", "graveyard", "Restless Vents");
-      // La question (une carte de terrain d'un cimetière, ou aucune) vient avec l'option de jouer le terrain.
+      // The question (a land card in a graveyard, or none) comes with the option to play the land.
       const option = legalActions(s, "p1").find((a) => a.type === "playLand" && a.card === deeps);
       const choose = option?.type === "playLand" ? option.choose : undefined;
       expect(choose?.type === "pick" && [choose.options, choose.min, choose.max]).toEqual([[forest, vents], 0, 1]);
@@ -1682,28 +1682,28 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(chars(s, land).name).toBe("Forest");
       expect(chars(s, land).subtypes).toEqual(expect.arrayContaining(["Forest", "Cave"]));
       expect(s.objects[land]?.tapped).toBe(true);
-      // La carte copiée reste dans le cimetière.
+      // The copied card stays in the graveyard.
       expect(idsOf(s, "p1", "graveyard", "Forest")).toHaveLength(1);
       s = act(base(), "p1", { type: "playLand", card: deeps, chosen: "" });
       land = idOf(s, "p1", "battlefield", "Echoing Deeps");
       expect([chars(s, land).name, s.objects[land]?.tapped]).toEqual(["Echoing Deeps", false]);
-      // Une carte qui n'est pas une option : refusée.
+      // A card that is not an option: refused.
       expect(() => act(base(), "p1", { type: "playLand", card: deeps, chosen: idOf(base(), "p2", "graveyard", "Opt") })).toThrow(
         RulesError,
       );
-      // Aucune carte de terrain dans les cimetières : pas de question.
+      // No land card in the graveyards: no question.
       const none = scenario({ p1: { hand: ["Echoing Deeps"] } });
       const plain = legalActions(none, "p1").find((a) => a.type === "playLand");
       expect(plain?.type === "playLand" && plain.choose).toBeUndefined();
     });
 
-    it("Echoing Deeps remis sur le champ de bataille par un effet : la carte copiée est demandée pendant la résolution", () => {
+    it("Echoing Deeps put onto the battlefield by an effect: the copied card is asked for during resolution", () => {
       const RETURN_LAND = customCard({
-        name: "Retour de terrain d'essai",
+        name: "Test Land Return",
         types: ["Sorcery"],
         typeLine: "Sorcery",
         spell: spell(
-          [target.cardInGraveyard("t", { types: ["Land"] }, "you", "carte de terrain")],
+          [target.cardInGraveyard("t", { types: ["Land"] }, "you", "land card")],
           [fx.moveTo(ref.target(), { to: "battlefield" })],
         ),
       });
@@ -1720,7 +1720,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(s.objects[land]?.tapped).toBe(true);
     });
 
-    it("Fabrication Foundry : exilez d'autres artefacts de valeur de mana totale X pour renvoyer un artefact de VM X ou moins de votre cimetière (rituel)", () => {
+    it("Fabrication Foundry: exile other artifacts of total mana value X to return an artifact with mana value X or less from your graveyard (sorcery)", () => {
       let s = scenario({
         p1: {
           battlefield: ["Fabrication Foundry", "Digsite Conservator", ...lands("Plains", 3)],
@@ -1742,7 +1742,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(canActivate(theirs, "p1", idOf(theirs, "p1", "battlefield", "Fabrication Foundry"))).toBe(false);
     });
 
-    it("Growing Rites of Itlimoc : une créature parmi les quatre cartes du dessus en main ; quatre créatures à votre étape de fin → Itlimoc, un {G} par créature", () => {
+    it("Growing Rites of Itlimoc: a creature among the top four cards to hand; four creatures at your end step → Itlimoc, a {G} per creature", () => {
       let s = scenario({
         p1: {
           battlefield: lands("Forest", 3),
@@ -1767,7 +1767,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(
         chars(three, idOf(three, "p1", "battlefield", "Growing Rites of Itlimoc // Itlimoc, Cradle of the Sun")).name,
       ).not.toBe("Itlimoc, Cradle of the Sun");
-      // Itlimoc : {T} : un {G} par créature que vous contrôlez.
+      // Itlimoc: {T}: a {G} per creature you control.
       let m = scenario({
         p1: { battlefield: ["Growing Rites of Itlimoc // Itlimoc, Cradle of the Sun", "Bear Cub", "Bear Cub", "Bear Cub"] },
       });
@@ -1780,14 +1780,14 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(m.players.p1?.manaPool.G).toBe(3);
     });
 
-    it("Hulking Raptor : garde {2} ; au début de votre première phase principale, ajoutez {G}{G}", () => {
+    it("Hulking Raptor: ward {2}; at the beginning of your first main phase, add {G}{G}", () => {
       let s = scenario({ p1: { battlefield: ["Hulking Raptor"] }, active: "p2", step: "end", turn: 2 });
       expect(chars(s, idOf(s, "p1", "battlefield", "Hulking Raptor")).keywords).toContain("ward");
       s = toMyMain(s);
       expect(s.players.p1?.manaPool.G).toBe(2);
     });
 
-    it("Intrepid Paleontologist : {2} exile une carte d'un cimetière ; un Dinosaure que vous possédez ainsi exilé se lance et arrive avec un marqueur de finalité", () => {
+    it("Intrepid Paleontologist: {2} exiles a card from a graveyard; a Dinosaur you own exiled this way is cast and enters with a finality counter", () => {
       let s = scenario({
         p1: { battlefield: ["Intrepid Paleontologist", ...lands("Forest", 10)], graveyard: ["Hulking Raptor", "Bear Cub"] },
         p2: { graveyard: ["Colossadactyl"] },
@@ -1801,7 +1801,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
         s = resolve(activateLabel(s, "p1", paleo, "Exile", { targets: { t: [idOf(s, p, "graveyard", name)] } }));
       const raptor = exiled(s, "Hulking Raptor")[0] as string;
       expect(castable(s, "p1", raptor)).toBe(true);
-      // Pas un Dinosaure ; ou une carte d'un adversaire (« que vous possédez ») : non.
+      // Not a Dinosaur; or an opponent's card (\"you own\"): no.
       expect(castable(s, "p1", exiled(s, "Bear Cub")[0] as string)).toBe(false);
       expect(castable(s, "p1", exiled(s, "Colossadactyl")[0] as string)).toBe(false);
       s = resolve(act(s, "p1", { type: "cast", card: raptor }));
@@ -1809,7 +1809,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(s.objects[onField]?.counters.finality).toBe(1);
     });
 
-    it("Jadelight Spelunker : explore X fois", () => {
+    it("Jadelight Spelunker: explores X times", () => {
       let s = scenario({
         p1: { battlefield: lands("Forest", 3), hand: ["Jadelight Spelunker"], library: ["Forest", "Opt", "Island"] },
       });
@@ -1819,7 +1819,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(s.objects[jade]?.counters["+1/+1"]).toBe(1);
     });
 
-    it("Kellan, Daring Traveler : en attaquant, une carte de créature de VM 3 ou moins révélée va en main ; Journey On : une Carte, plus une si un adversaire contrôle un artefact", () => {
+    it("Kellan, Daring Traveler: when attacking, a revealed creature card with mana value 3 or less goes to hand; Journey On: a Map, plus one if an opponent controls an artifact", () => {
       let s = scenario({ p1: { battlefield: ["Kellan, Daring Traveler // Journey On"], library: ["Bear Cub", "Forest"] } });
       s = resolve(attack(s, [idOf(s, "p1", "battlefield", "Kellan, Daring Traveler // Journey On")]));
       expect(namesIn(s, s.players.p1?.hand)).toEqual(["Bear Cub"]);
@@ -1840,7 +1840,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(tokens(journey(true), "p1", "Map")).toHaveLength(2);
     });
 
-    it("Kellan, Daring Traveler : une carte révélée qui n'est pas une créature de VM 3 ou moins peut aller au cimetière, sinon elle reste", () => {
+    it("Kellan, Daring Traveler: a revealed card that is not a creature with mana value 3 or less may go to the graveyard, otherwise it stays", () => {
       const run = (yes: boolean) => {
         const s = scenario({
           p1: { battlefield: ["Kellan, Daring Traveler // Journey On"], library: ["Shivan Dragon", "Forest"] },
@@ -1852,7 +1852,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(namesIn(binned, binned.players.p1?.library)).toEqual(["Forest"]);
       const kept = run(false);
       expect(namesIn(kept, kept.players.p1?.library)).toEqual(["Shivan Dragon", "Forest"]);
-      // Une créature de VM 3 ou moins va forcément en main (pas de refus possible, donc pas de question).
+      // A creature with mana value 3 or less necessarily goes to hand (no refusal possible, so no question).
       let mins: number[] = [];
       let s = scenario({ p1: { battlefield: ["Kellan, Daring Traveler // Journey On"], library: ["Bear Cub", "Forest"] } });
       s = resolve(attack(s, [idOf(s, "p1", "battlefield", "Kellan, Daring Traveler // Journey On")]), (req) => {
@@ -1864,7 +1864,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(namesIn(s, s.players.p1?.hand)).toEqual(["Bear Cub"]);
     });
 
-    it("Journey On : une Carte, plus une par adversaire qui contrôle un artefact", () => {
+    it("Journey On: a Map, plus one per opponent who controls an artifact", () => {
       let t = scenario({
         players: 3,
         p1: { battlefield: ["Forest"], hand: ["Kellan, Daring Traveler // Journey On"] },
@@ -1875,7 +1875,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(tokens(t, "p1", "Map")).toHaveLength(3);
     });
 
-    it("In the Presence of Ages : une carte de créature et/ou une carte de terrain en main, pas deux créatures ; le reste au cimetière", () => {
+    it("In the Presence of Ages: a creature card and/or a land card to hand, not two creatures; the rest to the graveyard", () => {
       const setup = () =>
         scenario({
           p1: {
@@ -1896,7 +1896,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(namesIn(s, s.players.p1?.graveyard).sort()).toEqual(["In the Presence of Ages", "Llanowar Elves", "Opt"]);
     });
 
-    it("Kutzil's Flanker : un marqueur par créature partie ce tour-ci ; ou +2 PV et regard 2 ; ou exil du cimetière d'un joueur", () => {
+    it("Kutzil's Flanker: a counter per creature that left this turn; or +2 life and scry 2; or exile from a player's graveyard", () => {
       const run = (modeIndex: string, extra: (s: S) => S = (s) => s) => {
         let s = scenario({
           p1: { battlefield: [...lands("Plains", 3), "Bear Cub", "Llanowar Elves"], hand: ["Kutzil's Flanker"] },
@@ -1924,7 +1924,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(exiled(yard, "Opt")).toHaveLength(1);
     });
 
-    it("Malcolm, Alluring Scoundrel : blessures de combat → marqueur de chœur, pillage ; au quatrième marqueur, la carte défaussée se lance gratuitement", () => {
+    it("Malcolm, Alluring Scoundrel: combat damage → chorus counter, loot; at the fourth counter, the discarded card is cast for free", () => {
       const run = (chorus: number) => {
         let s = scenario({
           p1: {
@@ -1948,7 +1948,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(one.s.players.p1?.hand).toHaveLength(1);
     });
 
-    it("Matzalantli, the Great Door : pillage ; se transforme seulement avec quatre types de permanent au cimetière ; The Core : X mana d'une couleur", () => {
+    it("Matzalantli, the Great Door: loot; transforms only with four permanent types in the graveyard; The Core: X mana of one color", () => {
       const can = (graveyard: string[]) => {
         const s = scenario({
           p1: { battlefield: [{ name: "Matzalantli, the Great Door // The Core" }, ...lands("Island", 4)], graveyard },
@@ -1968,7 +1968,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(s.players.p1?.manaPool.B).toBe(2);
     });
 
-    it("Molten Collapse : un mode ; les deux si vous êtes descendu ce tour-ci", () => {
+    it("Molten Collapse: one mode; both if you descended this turn", () => {
       const setup = () =>
         scenario({
           p1: { battlefield: ["Swamp", "Mountain", "Bear Cub"], hand: ["Molten Collapse"] },
@@ -1995,7 +1995,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(idsOf(s, "p2", "graveyard", "Dire Flail // Dire Blunderbuss")).toHaveLength(1);
     });
 
-    it("Palani's Hatcher : deux Œufs de Dinosaure 0/1 (célérité : autres Dinosaures) ; au début du combat, un Œuf sacrifié donne un Dinosaure 3/3", () => {
+    it("Palani's Hatcher: two 0/1 Dinosaur Eggs (haste: other Dinosaurs); at the beginning of combat, a sacrificed Egg gives a 3/3 Dinosaur", () => {
       let s = scenario({ p1: { battlefield: [...lands("Mountain", 3), ...lands("Forest", 2)], hand: ["Palani's Hatcher"] } });
       s = resolve(castCard(s, "p1", "Palani's Hatcher"));
       const eggs = tokens(s, "p1", "Dinosaur Egg");
@@ -2010,13 +2010,13 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       const dino = tokens(s, "p1", "Dinosaur")[0] as string;
       expect(pt(s, dino)).toEqual([3, 3]);
       expect(chars(s, dino).keywords).toContain("haste");
-      // Sans Œuf, rien.
+      // Without an Egg, nothing.
       let t = scenario({ p1: { battlefield: ["Palani's Hatcher"] } });
       t = advanceUntil(t, (x) => x.pending?.kind === "declareAttackers");
       expect(tokens(t, "p1", "Dinosaur")).toHaveLength(0);
     });
 
-    it("Poetic Ingenuity : autant de Trésors que de Dinosaures attaquants ; un sort d'artefact → un Dinosaure 3/1, une fois par tour", () => {
+    it("Poetic Ingenuity: as many Treasures as attacking Dinosaurs; an artifact spell → a 3/1 Dinosaur, once per turn", () => {
       let s = scenario({ p1: { battlefield: ["Poetic Ingenuity", "Hulking Raptor", "Colossadactyl", "Bear Cub"] } });
       s = resolve(
         attack(s, [
@@ -2036,7 +2036,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(pt(t, dinos[0] as string)).toEqual([3, 1]);
     });
 
-    it("Preacher of the Schism : attaquer le joueur qui a le plus de PV → Vampire 1/1 avec le lien de vie ; attaquer en ayant le plus de PV → piochez et perdez 1 PV", () => {
+    it("Preacher of the Schism: attacking the player with the most life → 1/1 Vampire with lifelink; attacking while having the most life → draw and lose 1 life", () => {
       const run = (mine: number, theirs: number) => {
         let s = scenario({
           p1: { battlefield: ["Preacher of the Schism"], life: mine, library: lands("Swamp", 3) },
@@ -2052,7 +2052,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(chars(s, idOf(s, "p1", "battlefield", "Preacher of the Schism")).keywords).toContain("deathtouch");
     });
 
-    it("Pugnacious Hammerskull : attaque sans autre Dinosaure → marqueur d'étourdissement ; avec un autre Dinosaure, non", () => {
+    it("Pugnacious Hammerskull: attacks without another Dinosaur → stun counter; with another Dinosaur, no", () => {
       const run = (other: string) => {
         let s = scenario({ p1: { battlefield: ["Pugnacious Hammerskull", other] } });
         const h = idOf(s, "p1", "battlefield", "Pugnacious Hammerskull");
@@ -2063,7 +2063,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(run("Colossadactyl")).toBe(0);
     });
 
-    it("Queen's Bay Paladin : en arrivant, un Vampire de votre cimetière revient avec un marqueur de finalité ; vous perdez sa valeur de mana", () => {
+    it("Queen's Bay Paladin: when it enters, a Vampire from your graveyard returns with a finality counter; you lose its mana value", () => {
       let s = scenario({
         p1: { battlefield: lands("Swamp", 5), hand: ["Queen's Bay Paladin"], graveyard: ["Bartolomé del Presidio", "Bear Cub"] },
       });
@@ -2076,7 +2076,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(idsOf(s, "p1", "graveyard", "Bear Cub")).toHaveLength(1);
     });
 
-    it("Restless Prairie : Lama 3/3 vert et blanc ; en attaquant, vos autres créatures +1/+1", () => {
+    it("Restless Prairie: green and white 3/3 Llama; when attacking, your other creatures get +1/+1", () => {
       let s = scenario({ p1: { battlefield: ["Restless Prairie", "Bear Cub", "Forest", "Forest", "Plains", "Plains"] } });
       const prairie = idOf(s, "p1", "battlefield", "Restless Prairie");
       s = resolve(activateLabel(s, "p1", prairie, "creature"));
@@ -2088,7 +2088,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(pt(s, prairie)).toEqual([3, 3]);
     });
 
-    it("Restless Ridgeline : Dinosaure 3/4 ; en attaquant, une autre créature attaquante ciblée +2/+0 et dégagée", () => {
+    it("Restless Ridgeline: 3/4 Dinosaur; when attacking, another targeted attacking creature gets +2/+0 and untaps", () => {
       let s = scenario({ p1: { battlefield: ["Restless Ridgeline", "Bear Cub", "Forest", "Forest", "Mountain", "Mountain"] } });
       const ridge = idOf(s, "p1", "battlefield", "Restless Ridgeline");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -2100,7 +2100,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(s.objects[bear]?.tapped).toBe(false);
     });
 
-    it("Restless Vents : Insecte 2/3 avec la menace ; en attaquant, défaussez une carte pour en piocher une", () => {
+    it("Restless Vents: 2/3 Insect with menace; when attacking, discard a card to draw one", () => {
       let s = scenario({
         p1: { battlefield: ["Restless Vents", "Swamp", "Mountain", "Mountain"], hand: ["Opt"], library: ["Forest"] },
       });
@@ -2113,7 +2113,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(namesIn(s, s.players.p1?.graveyard)).toEqual(["Opt"]);
     });
 
-    it("Roaming Throne : garde {2}, du type de créature choisi ; les déclencheurs de vos autres créatures de ce type se déclenchent une fois de plus", () => {
+    it("Roaming Throne: ward {2}, of the chosen creature type; triggers of your other creatures of that type trigger one more time", () => {
       let s = scenario({ p1: { battlefield: ["Roaming Throne", "Sentinel of the Nameless City", "Sanguine Evangelist"] } });
       const throne = idOf(s, "p1", "battlefield", "Roaming Throne");
       (s.objects[throne] as { chosen?: { creatureType?: string } }).chosen = { creatureType: "Merfolk" };
@@ -2126,12 +2126,12 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
           idOf(s, "p1", "battlefield", "Sanguine Evangelist"),
         ]),
       );
-      // Sentinelle (Ondin) : deux Cartes ; Evangelist (Vampire) : une seule fois +1/+0 (cri de guerre).
+      // Sentinel (Merfolk): two Maps; Evangelist (Vampire): only once +1/+0 (battle cry).
       expect(tokens(s, "p1", "Map")).toHaveLength(2);
       expect(pt(s, idOf(s, "p1", "battlefield", "Sentinel of the Nameless City"))).toEqual([4, 4]);
     });
 
-    it("Sanguine Evangelist : cri de guerre ; une Chauve-souris 1/1 volante en arrivant et en mourant", () => {
+    it("Sanguine Evangelist: battle cry; a 1/1 flying Bat when entering and when dying", () => {
       let s = scenario({ p1: { battlefield: [...lands("Plains", 3), "Bear Cub"], hand: ["Sanguine Evangelist"] } });
       s = resolve(castCard(s, "p1", "Sanguine Evangelist"));
       const bats = tokens(s, "p1", "Bat");
@@ -2147,7 +2147,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(tokens(t, "p1", "Bat")).toHaveLength(1);
     });
 
-    it("Sentinel of the Nameless City : vigilance ; une Carte en arrivant et en attaquant", () => {
+    it("Sentinel of the Nameless City: vigilance; a Map when entering and when attacking", () => {
       let s = scenario({ p1: { battlefield: lands("Forest", 3), hand: ["Sentinel of the Nameless City"] } });
       s = resolve(castCard(s, "p1", "Sentinel of the Nameless City"));
       expect(tokens(s, "p1", "Map")).toHaveLength(1);
@@ -2158,7 +2158,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(t.objects[sentinel]?.tapped).toBe(false);
     });
 
-    it("Squirming Emergence : une carte de permanent non-terrain de VM ≤ cartes de permanent du cimetière revient sur le champ de bataille", () => {
+    it("Squirming Emergence: a nonland permanent card with mana value ≤ the permanent cards in the graveyard returns to the battlefield", () => {
       let s = scenario({
         p1: {
           battlefield: ["Swamp", "Swamp", "Forest"],
@@ -2173,7 +2173,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
     });
 
-    it("Stalactite Stalker : descente → marqueur +1/+1 à votre étape de fin ; {2}{B}, sacrifice : −X/−X, X étant sa force", () => {
+    it("Stalactite Stalker: descend → +1/+1 counter at your end step; {2}{B}, sacrifice: -X/-X, X being its power", () => {
       const run = (descended: boolean) => {
         let s = scenario({ p1: { battlefield: ["Stalactite Stalker", "Bear Cub"] } });
         if (descended) destroy(s, idOf(s, "p1", "battlefield", "Bear Cub"));
@@ -2195,7 +2195,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(pt(s, angel)).toEqual([1, 1]);
     });
 
-    it("Starving Revenant : surveillance 2, puis une carte et 3 PV perdus par carte laissée dessus ; descente 8 : chaque pioche draine 1", () => {
+    it("Starving Revenant: surveil 2, then a card and 3 life lost per card left on top; descend 8: each draw drains 1", () => {
       let s = scenario({
         p1: { battlefield: lands("Swamp", 4), hand: ["Starving Revenant"], library: ["Opt", "Forest", "Island"] },
       });
@@ -2217,7 +2217,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(drain(lands("Forest", 7))).toEqual([20, 20]);
     });
 
-    it("Subterranean Schooner : la créature qui l'a piloté explore quand il attaque", () => {
+    it("Subterranean Schooner: the creature that crewed it explores when it attacks", () => {
       let s = scenario({ p1: { battlefield: ["Subterranean Schooner", "Bear Cub"], library: ["Opt", "Forest"] } });
       const boat = idOf(s, "p1", "battlefield", "Subterranean Schooner");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -2226,7 +2226,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(s.objects[bear]?.counters["+1/+1"]).toBe(1);
     });
 
-    it("Subterranean Schooner : la créature qui l'a piloté est ciblée ; partie avant la résolution, rien n'explore", () => {
+    it("Subterranean Schooner: the creature that crewed it is targeted; gone before resolution, nothing explores", () => {
       let s = scenario({
         p1: { battlefield: ["Subterranean Schooner", "Bear Cub", "Llanowar Elves"], library: ["Opt", "Forest"] },
       });
@@ -2241,7 +2241,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(s.objects[idOf(s, "p1", "battlefield", "Llanowar Elves")]?.counters["+1/+1"]).toBeUndefined();
     });
 
-    it("Sunken Citadel : arrive engagée, couleur choisie ; un mana de cette couleur, ou deux pour les seules capacités de terrains", () => {
+    it("Sunken Citadel: enters tapped, color chosen; one mana of that color, or two for land abilities only", () => {
       let s = scenario({ p1: { hand: ["Sunken Citadel"] } });
       s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Sunken Citadel"), chosen: "G" });
       const citadel = idOf(s, "p1", "battlefield", "Sunken Citadel");
@@ -2250,7 +2250,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       const a = legalActions(s, "p1").find((x) => x.type === "tapForMana" && x.source === citadel);
       s = act(s, "p1", { type: "tapForMana", source: citadel, ability: a?.type === "tapForMana" ? a.ability : -1 });
       expect(s.players.p1?.manaPool.G).toBe(1);
-      // Rouge : les deux mana paient l'animation de Restless Ridgeline ({2}{R}{G}), pas Calamitous Cave-In ({3}{R}).
+      // Red: both mana pay for Restless Ridgeline's animation ({2}{R}{G}), not Calamitous Cave-In ({3}{R}).
       const t = scenario({
         p1: {
           battlefield: ["Sunken Citadel", "Forest", "Plains", { name: "Restless Ridgeline", tapped: true }],
@@ -2263,7 +2263,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(castable(t, "p1", idOf(t, "p1", "hand", "Calamitous Cave-In"))).toBe(false);
     });
 
-    it("Tarrian's Journal : {T}, sacrifiez un autre artefact ou une créature : piochez (rituel) ; {2}, {T}, défaussez votre main : transformation", () => {
+    it("Tarrian's Journal: {T}, sacrifice another artifact or a creature: draw (sorcery); {2}, {T}, discard your hand: transform", () => {
       let s = scenario({ p1: { battlefield: ["Tarrian's Journal // The Tomb of Aclazotz", "Bear Cub"], library: ["Opt"] } });
       const journal = idOf(s, "p1", "battlefield", "Tarrian's Journal // The Tomb of Aclazotz");
       s = resolve(activateLabel(s, "p1", journal, "Draw", { sacrifice: [idOf(s, "p1", "battlefield", "Bear Cub")] }));
@@ -2279,7 +2279,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(chars(t, j).name).toBe("The Tomb of Aclazotz");
     });
 
-    it("The Tomb of Aclazotz : {T} : un sort de créature de votre cimetière ce tour-ci, qui arrive avec un marqueur de finalité, Vampire en plus", () => {
+    it("The Tomb of Aclazotz: {T}: a creature spell from your graveyard this turn, which enters with a finality counter, a Vampire in addition", () => {
       let s = scenario({
         p1: {
           battlefield: ["Tarrian's Journal // The Tomb of Aclazotz", "Forest", "Forest"],
@@ -2298,7 +2298,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(chars(s, cub).subtypes).toContain("Vampire");
     });
 
-    it("Tarrian's Soulcleaver : vigilance ; un autre artefact ou une créature mis au cimetière depuis le champ de bataille → marqueur +1/+1 sur la créature équipée", () => {
+    it("Tarrian's Soulcleaver: vigilance; another artifact or creature put into the graveyard from the battlefield → +1/+1 counter on the equipped creature", () => {
       let s = scenario({
         p1: { battlefield: ["Tarrian's Soulcleaver", "Bear Cub", "Plains", "Plains"] },
         p2: { battlefield: ["Serra Angel", "Nutrient Block"] },
@@ -2313,7 +2313,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(s.objects[bear]?.counters["+1/+1"]).toBe(1);
     });
 
-    it("The Belligerent : équipage 3 ; en attaquant, un Trésor, et vous jouez la carte du dessus de votre bibliothèque ce tour-ci", () => {
+    it("The Belligerent: crew 3; when attacking, a Treasure, and you play the top card of your library this turn", () => {
       let s = scenario({ p1: { battlefield: ["The Belligerent", "Serra Angel"], library: ["Forest", "Island"] } });
       const ship = idOf(s, "p1", "battlefield", "The Belligerent");
       s = resolve(activateLabel(s, "p1", ship, "Crew", { tap: [idOf(s, "p1", "battlefield", "Serra Angel")] }));
@@ -2323,7 +2323,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(legalActions(s, "p1").some((a) => a.type === "playLand" && a.card === top)).toBe(true);
     });
 
-    it("The Everflowing Well : meulez deux cartes, piochez-en deux ; descente 8 à l'entretien → The Myriad Pools", () => {
+    it("The Everflowing Well: mill two cards, draw two; descend 8 at upkeep → The Myriad Pools", () => {
       let s = scenario({
         p1: {
           battlefield: lands("Island", 3),
@@ -2348,7 +2348,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(run(7)).not.toBe("The Myriad Pools");
     });
 
-    it("The Myriad Pools : un sort de permanent payé avec son mana → un autre de vos permanents devient une copie du sort jusqu'à la fin du tour", () => {
+    it("The Myriad Pools: a permanent spell paid for with its mana → another of your permanents becomes a copy of the spell until end of turn", () => {
       const run = (poolsTapped: boolean) => {
         let s = scenario({
           p1: {
@@ -2367,7 +2367,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
         return { s, block };
       };
       const used = run(false);
-      // Paiement automatique : Pools et une Île.
+      // Automatic payment: Pools and an Island.
       expect(chars(used.s, used.block).name).toBe("Hermitic Nautilus");
       const after = advanceUntil(used.s, (x) => x.turn.number > 3);
       expect(chars(after, used.block).name).toBe("Nutrient Block");
@@ -2375,7 +2375,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(chars(other.s, other.block).name).toBe("Nutrient Block");
     });
 
-    it("Thousand Moons Smithy : Gnome Soldat (F/E : vos artefacts et créatures) ; à votre première phase principale, engagez cinq artefacts et/ou créatures pour la transformer", () => {
+    it("Thousand Moons Smithy: Gnome Soldier (P/T: your artifacts and creatures); at your first main phase, tap five artifacts and/or creatures to transform it", () => {
       let s = scenario({ p1: { battlefield: lands("Plains", 4), hand: ["Thousand Moons Smithy // Barracks of the Thousand"] } });
       s = resolve(castCard(s, "p1", "Thousand Moons Smithy // Barracks of the Thousand"));
       const gnome = tokens(s, "p1", "Gnome Soldier")[0] as string;
@@ -2389,10 +2389,10 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       t = toMyMain(t);
       const smithy = idOf(t, "p1", "battlefield", "Thousand Moons Smithy // Barracks of the Thousand");
       expect(chars(t, smithy).name).toBe("Barracks of the Thousand");
-      // Exactement cinq permanents engagés parmi les six possibles (la Forge elle-même en est un).
+      // Exactly five tapped permanents among the six possible (the Smithy itself is one).
       const six = [smithy, ...idsOf(t, "p1", "battlefield", "Bear Cub")];
       expect(six.filter((id) => t.objects[id]?.tapped)).toHaveLength(5);
-      // Engager quatre permanents seulement est refusé : il en faut cinq, ou aucun.
+      // Tapping only four permanents is refused: it takes five, or none.
       let u = scenario({
         p1: { battlefield: ["Thousand Moons Smithy // Barracks of the Thousand", ...Array(5).fill("Bear Cub")] },
         active: "p2",
@@ -2406,14 +2406,14 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(() => act(u, "p1", { type: "choose", values: cubs.slice(0, 4) })).toThrow(RulesError);
     });
 
-    it("Barracks of the Thousand : un sort d'artefact ou de créature payé avec son mana → un Gnome Soldat", () => {
+    it("Barracks of the Thousand: an artifact or creature spell paid for with its mana → a Gnome Soldier", () => {
       let s = scenario({ p1: { battlefield: ["Thousand Moons Smithy // Barracks of the Thousand"], hand: ["Ruin-Lurker Bat"] } });
       flip(s, idOf(s, "p1", "battlefield", "Thousand Moons Smithy // Barracks of the Thousand"));
       s = resolve(castCard(s, "p1", "Ruin-Lurker Bat"));
       expect(tokens(s, "p1", "Gnome Soldier")).toHaveLength(1);
     });
 
-    it("Threefold Thunderhulk : arrive avec trois marqueurs +1/+1 ; en arrivant et en attaquant, autant de Gnomes que sa force ; {2}, sacrifiez un autre artefact : marqueur", () => {
+    it("Threefold Thunderhulk: enters with three +1/+1 counters; when entering and attacking, as many Gnomes as its power; {2}, sacrifice another artifact: counter", () => {
       let s = scenario({ p1: { battlefield: lands("Plains", 7), hand: ["Threefold Thunderhulk"] } });
       s = resolve(castCard(s, "p1", "Threefold Thunderhulk"));
       const hulk = idOf(s, "p1", "battlefield", "Threefold Thunderhulk");
@@ -2429,7 +2429,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(tokens(t, "p1", "Gnome")).toHaveLength(4);
     });
 
-    it("Throne of the Grim Captain : {T} : meulez deux cartes ; The Grim Captain : menace, piétinement, lien de vie, défense talismanique ; en attaquant, chaque adversaire sacrifie un permanent non-terrain", () => {
+    it("Throne of the Grim Captain: {T}: mill two cards; The Grim Captain: menace, trample, lifelink, hexproof; when attacking, each opponent sacrifices a nonland permanent", () => {
       let s = scenario({
         p1: { battlefield: ["Throne of the Grim Captain // The Grim Captain"], library: ["Forest", "Opt", "Island"] },
       });
@@ -2452,7 +2452,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(idsOf(t, "p2", "battlefield", "Forest")).toHaveLength(1);
     });
 
-    it("Trumpeting Carnosaur : découverte 5 en arrivant ; {2}{R}, défaussez-la : 3 blessures à une créature ou un planeswalker", () => {
+    it("Trumpeting Carnosaur: discover 5 when entering; {2}{R}, discard it: 3 damage to a creature or planeswalker", () => {
       let s = scenario({
         p1: {
           battlefield: lands("Mountain", 6),
@@ -2472,7 +2472,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(t.objects[angel]?.damage).toBe(3);
     });
 
-    it("Wail of the Forgotten : un mode ; un ou plusieurs avec huit cartes de permanent au cimetière (renvoi, défausse, une carte parmi trois)", () => {
+    it("Wail of the Forgotten: one mode; one or more with eight permanent cards in the graveyard (return, discard, a card among three)", () => {
       const setup = (graveyard: string[]) =>
         scenario({
           p1: {
@@ -2505,7 +2505,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
   });
 
   describe("peu communes", () => {
-    it("Abyssal Gorestalker : chaque joueur sacrifie deux créatures", () => {
+    it("Abyssal Gorestalker: each player sacrifices two creatures", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Swamp", 6), "Bear Cub", "Llanowar Elves", "Colossadactyl"], hand: ["Abyssal Gorestalker"] },
         p2: { battlefield: ["Serra Angel", "Shivan Dragon"] },
@@ -2517,7 +2517,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(s.players.p2?.graveyard).toHaveLength(2);
     });
 
-    it("Akawalli, the Seething Tower : descente 4, +2/+2 et piétinement ; descente 8, encore +2/+2 et un seul bloqueur", () => {
+    it("Akawalli, the Seething Tower: descend 4, +2/+2 and trample; descend 8, another +2/+2 and a single blocker", () => {
       const at = (n: number) => {
         const s = scenario({ p1: { battlefield: ["Akawalli, the Seething Tower"], graveyard: lands("Forest", n) } });
         const id = idOf(s, "p1", "battlefield", "Akawalli, the Seething Tower");
@@ -2528,7 +2528,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(at(4).pt).toEqual([5, 5]);
       expect(at(4).kw).toContain("trample");
       expect(at(8).pt).toEqual([7, 7]);
-      // Descente 8 : pas plus d'un bloqueur.
+      // Descend 8: no more than one blocker.
       let s = scenario({
         p1: { battlefield: ["Akawalli, the Seething Tower"], graveyard: lands("Forest", 8) },
         p2: { battlefield: ["Bear Cub", "Bear Cub"] },
@@ -2544,7 +2544,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       ).not.toThrow();
     });
 
-    it("Belligerent Yearling : piétinement ; un autre Dinosaure arrive → sa force de base peut devenir celle de ce Dinosaure jusqu'à la fin du tour", () => {
+    it("Belligerent Yearling: trample; another Dinosaur enters → its base power may become that Dinosaur's until end of turn", () => {
       let s = scenario({ p1: { battlefield: ["Belligerent Yearling", ...lands("Forest", 4)], hand: ["Hulking Raptor"] } });
       const y = idOf(s, "p1", "battlefield", "Belligerent Yearling");
       expect(chars(s, y).keywords).toContain("trample");
@@ -2554,31 +2554,31 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(pt(s, y)).toEqual([3, 2]);
     });
 
-    it("Bloodthorn Flail : +2/+1 ; Équiper en payant {3} ou en défaussant une carte", () => {
+    it("Bloodthorn Flail: +2/+1; Equip by paying {3} or by discarding a card", () => {
       let s = scenario({ p1: { battlefield: ["Bloodthorn Flail", "Bear Cub"], hand: ["Opt"] } });
       const flail = idOf(s, "p1", "battlefield", "Bloodthorn Flail");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-      // Sans mana : seul l'Équiper par défausse est possible.
+      // Without mana: only the discard Equip is possible.
       expect(legalActions(s, "p1").filter((a) => a.type === "activate" && a.source === flail)).toHaveLength(1);
       s = resolve(activateLabel(s, "p1", flail, "discard", { targets: { t: [bear] }, discard: [idOf(s, "p1", "hand", "Opt")] }));
       expect(pt(s, bear)).toEqual([4, 3]);
       expect(idsOf(s, "p1", "graveyard", "Opt")).toHaveLength(1);
     });
 
-    it("Pirate Hat : « Équiper un Pirate {1} » est une capacité d'équipement (payable avec le mana de Freya Crescent)", () => {
-      // Freya : « Ne dépensez ce mana que pour lancer un sort d'Équipement ou activer une capacité d'équipement. »
+    it('Pirate Hat: "Equip a Pirate {1}" is an equip ability (payable with Freya Crescent\'s mana)', () => {
+      // Freya: "Spend this mana only to cast an Equipment spell or activate an equip ability."
       let s = scenario({ p1: { battlefield: ["Pirate Hat", "Swab Goblin", "Bear Cub", "Freya Crescent"] } });
       const hat = idOf(s, "p1", "battlefield", "Pirate Hat");
       const goblin = idOf(s, "p1", "battlefield", "Swab Goblin");
       const options = legalActions(s, "p1").filter((a) => a.type === "activate" && a.source === hat);
-      // Équiper {2} demande un mana de plus ; seul le Pirate peut être équipé pour {1}.
+      // Equip {2} takes one more mana; only the Pirate can be equipped for {1}.
       expect(options.map((a) => (a.type === "activate" ? a.label : ""))).toEqual(["Equip Pirate {1}"]);
       s = resolve(activateLabel(s, "p1", hat, "Pirate", { targets: { t: [goblin] } }));
       expect(s.objects[hat]?.attachedTo).toBe(goblin);
       expect(s.objects[idOf(s, "p1", "battlefield", "Freya Crescent")]?.tapped).toBe(true);
     });
 
-    it("Calamitous Cave-In : X blessures à chaque créature et planeswalker, X = vos Cavernes plus les cartes de Caverne de votre cimetière", () => {
+    it("Calamitous Cave-In: X damage to each creature and planeswalker, X = your Caverns plus the Cavern cards in your graveyard", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Mountain", 4), "Cavernous Maw"],
@@ -2592,7 +2592,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(s.objects[idOf(s, "p2", "battlefield", "Serra Angel")]?.damage).toBe(2);
     });
 
-    it("Canonized in Blood : descente → un marqueur +1/+1 sur une de vos créatures à votre étape de fin ; {5}{B}{B}, sacrifice : Vampire Démon 4/3 volant", () => {
+    it("Canonized in Blood: descend → a +1/+1 counter on one of your creatures at your end step; {5}{B}{B}, sacrifice: 4/3 flying Vampire Demon", () => {
       const run = (descended: boolean) => {
         let s = scenario({ p1: { battlefield: ["Canonized in Blood", "Bear Cub", "Llanowar Elves"] } });
         if (descended) destroy(s, idOf(s, "p1", "battlefield", "Llanowar Elves"));
@@ -2607,7 +2607,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(pt(s, tokens(s, "p1", "Vampire Demon")[0] as string)).toEqual([4, 3]);
     });
 
-    it("Caparocti Sunborn : en attaquant, engagez deux artefacts et/ou créatures dégagés pour découvrir 3", () => {
+    it("Caparocti Sunborn: when attacking, tap two untapped artifacts and/or creatures to discover 3", () => {
       const run = (yes: boolean) => {
         let s = scenario({
           p1: {
@@ -2634,7 +2634,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(no.objects[idOf(no, "p1", "battlefield", "Bear Cub")]?.tapped).toBe(false);
     });
 
-    it("Captain Storm, Cosmium Raider : un artefact arrive sous votre contrôle → un marqueur +1/+1 sur un Pirate ciblé que vous contrôlez", () => {
+    it("Captain Storm, Cosmium Raider: an artifact enters under your control → a +1/+1 counter on a targeted Pirate you control", () => {
       let s = scenario({
         p1: { battlefield: ["Captain Storm, Cosmium Raider", "Bear Cub", "Plains"], hand: ["Nutrient Block"] },
       });
@@ -2644,7 +2644,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(s.objects[idOf(s, "p1", "battlefield", "Bear Cub")]?.counters["+1/+1"] ?? 0).toBe(0);
     });
 
-    it("Careening Mine Cart : équipage 1 ; un Trésor en attaquant", () => {
+    it("Careening Mine Cart: crew 1; a Treasure when attacking", () => {
       let s = scenario({ p1: { battlefield: ["Careening Mine Cart", "Llanowar Elves"] } });
       const cart = idOf(s, "p1", "battlefield", "Careening Mine Cart");
       s = resolve(activateLabel(s, "p1", cart, "Crew", { tap: [idOf(s, "p1", "battlefield", "Llanowar Elves")] }));
@@ -2652,7 +2652,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(tokens(s, "p1", "Treasure")).toHaveLength(1);
     });
 
-    it("Cavernous Maw : {2} : créature 3/3 seulement avec trois autres Cavernes (en jeu ou au cimetière)", () => {
+    it("Cavernous Maw: {2}: 3/3 creature only with three other Caverns (in play or in the graveyard)", () => {
       const can = (battlefield: string[], graveyard: string[]) => {
         const s = scenario({ p1: { battlefield: ["Cavernous Maw", "Forest", "Forest", ...battlefield], graveyard } });
         return canActivate(s, "p1", idOf(s, "p1", "battlefield", "Cavernous Maw"));
@@ -2671,7 +2671,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(chars(s, maw).subtypes).toEqual(expect.arrayContaining(["Cave", "Elemental"]));
     });
 
-    it("Cenote Scout et Kinjalli's Dawnrunner : ils explorent en arrivant (Dawnrunner : double initiative)", () => {
+    it("Cenote Scout and Kinjalli's Dawnrunner: they explore when entering (Dawnrunner: double strike)", () => {
       let s = scenario({ p1: { battlefield: ["Forest"], hand: ["Cenote Scout"], library: ["Opt"] } });
       s = resolve(castCard(s, "p1", "Cenote Scout"));
       expect(s.objects[idOf(s, "p1", "battlefield", "Cenote Scout")]?.counters["+1/+1"]).toBe(1);
@@ -2682,7 +2682,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(namesIn(t, t.players.p1?.hand)).toEqual(["Forest"]);
     });
 
-    it("Chupacabra Echo : une créature adverse ciblée −X/−X, X = cartes de permanent de votre cimetière", () => {
+    it("Chupacabra Echo: a targeted opposing creature gets -X/-X, X = permanent cards in your graveyard", () => {
       let s = scenario({
         p1: { battlefield: lands("Swamp", 4), hand: ["Chupacabra Echo"], graveyard: ["Forest", "Bear Cub", "Opt", "Island"] },
         p2: { battlefield: ["Serra Angel"] },
@@ -2692,7 +2692,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(pt(s, angel)).toEqual([1, 1]);
     });
 
-    it("Coati Scavenger : descente 4 → une carte de permanent de votre cimetière revient en main ; sinon rien", () => {
+    it("Coati Scavenger: descend 4 → a permanent card from your graveyard returns to hand; otherwise nothing", () => {
       const run = (graveyard: string[]) => {
         const s = scenario({ p1: { battlefield: lands("Forest", 3), hand: ["Coati Scavenger"], graveyard } });
         return resolve(castCard(s, "p1", "Coati Scavenger"));
@@ -2704,14 +2704,14 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(no.players.p1?.hand).toHaveLength(0);
     });
 
-    it("Colossadactyl : portée et piétinement", () => {
+    it("Colossadactyl: reach and trample", () => {
       const s = scenario({ p1: { battlefield: ["Colossadactyl"] } });
       expect(chars(s, idOf(s, "p1", "battlefield", "Colossadactyl")).keywords).toEqual(
         expect.arrayContaining(["reach", "trample"]),
       );
     });
 
-    it("Confounding Riddle : une carte parmi les quatre du dessus, le reste au cimetière ; ou contresort à moins de payer {4}", () => {
+    it("Confounding Riddle: a card among the top four, the rest to the graveyard; or counter a spell unless its controller pays {4}", () => {
       let s = scenario({
         p1: {
           battlefield: lands("Island", 3),
@@ -2740,7 +2740,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(idsOf(counter(6), "p2", "battlefield", "Bear Cub")).toHaveLength(1);
     });
 
-    it("Contested Game Ball : {2}, {T} : piochez et un marqueur de point ; au cinquième, sacrifice et un Trésor", () => {
+    it("Contested Game Ball: {2}, {T}: draw and a point counter; at the fifth, sacrifice and a Treasure", () => {
       let s = scenario({
         p1: {
           battlefield: [{ name: "Contested Game Ball", counters: { point: 4 } }, "Plains", "Plains"],
@@ -2753,7 +2753,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(tokens(s, "p1", "Treasure")).toHaveLength(1);
     });
 
-    it("Contested Game Ball : vous subissez des blessures de combat → le joueur attaquant en prend le contrôle et la dégage", () => {
+    it("Contested Game Ball: you are dealt combat damage → the attacking player gains control of it and untaps it", () => {
       let s = scenario({
         p1: { battlefield: ["Bear Cub"] },
         p2: { battlefield: [{ name: "Contested Game Ball", tapped: true }] },
@@ -2764,13 +2764,13 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(s.objects[ball]?.tapped).toBe(false);
     });
 
-    it("Contested Game Ball : seulement quand son contrôleur subit des blessures de combat (pas un autre joueur)", () => {
+    it("Contested Game Ball: only when its controller is dealt combat damage (not another player)", () => {
       let s = scenario({
         players: 3,
         p1: { battlefield: ["Bear Cub"] },
         p3: { battlefield: [{ name: "Contested Game Ball", tapped: true }] },
       });
-      // Bear Cub attaque p2 : p3, qui contrôle la balle, n'est pas blessé.
+      // Bear Cub attacks p2: p3, who controls the ball, is not hurt.
       s = throughCombat(attack(s, [idOf(s, "p1", "battlefield", "Bear Cub")]));
       expect(s.players.p2?.life).toBe(18);
       const ball = s.battlefield.find((id) => nameOf(s, id) === "Contested Game Ball") as string;
@@ -2778,7 +2778,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(s.objects[ball]?.tapped).toBe(true);
     });
 
-    it("Council of Echoes : vol ; descente 4 → renvoie jusqu'à un autre permanent non-terrain dans la main de son propriétaire", () => {
+    it("Council of Echoes: flying; descend 4 → returns up to one other nonland permanent to its owner's hand", () => {
       const run = (graveyard: string[]) => {
         const s = scenario({
           p1: { battlefield: lands("Island", 6), hand: ["Council of Echoes"], graveyard },
@@ -2793,7 +2793,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(idsOf(no, "p2", "battlefield", "Serra Angel")).toHaveLength(1);
     });
 
-    it("Dauntless Dismantler : les artefacts adverses arrivent engagés ; {X}{X}{W}, sacrifice : détruit chaque artefact de valeur de mana X", () => {
+    it("Dauntless Dismantler: opposing artifacts enter tapped; {X}{X}{W}, sacrifice: destroys each artifact with mana value X", () => {
       let s = scenario({
         p1: { battlefield: ["Dauntless Dismantler"] },
         p2: { battlefield: ["Plains"], hand: ["Nutrient Block"] },
@@ -2805,7 +2805,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
         p1: { battlefield: ["Dauntless Dismantler", ...lands("Plains", 5), "Digsite Conservator"] },
         p2: { battlefield: ["Treasure Map // Treasure Cove", "Hoverstone Pilgrim"] },
       });
-      // X = 2 : Treasure Map et Digsite Conservator (VM 2, le vôtre aussi) ; Hoverstone Pilgrim (VM 5) reste.
+      // X = 2: Treasure Map and Digsite Conservator (mana value 2, yours too); Hoverstone Pilgrim (mana value 5) stays.
       t = resolve(activateLabel(t, "p1", idOf(t, "p1", "battlefield", "Dauntless Dismantler"), "Destroy", { x: 2 }));
       expect(idsOf(t, "p2", "graveyard", "Treasure Map // Treasure Cove")).toHaveLength(1);
       expect(idsOf(t, "p2", "battlefield", "Hoverstone Pilgrim")).toHaveLength(1);
@@ -2813,7 +2813,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(idsOf(t, "p1", "graveyard", "Dauntless Dismantler")).toHaveLength(1);
     });
 
-    it("Defossilize : une créature revient du cimetière, puis explore deux fois", () => {
+    it("Defossilize: a creature returns from the graveyard, then explores twice", () => {
       let s = scenario({
         p1: {
           battlefield: lands("Swamp", 5),
@@ -2824,11 +2824,11 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       });
       s = resolve(castCard(s, "p1", "Defossilize", { targets: { t: [idOf(s, "p1", "graveyard", "Bear Cub")] } }));
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-      // Opt révélé : un marqueur (laissé dessus ou non) ; puis un terrain ou de nouveau Opt.
+      // Opt revealed: a counter (left on top or not); then a land or Opt again.
       expect((s.objects[bear]?.counters["+1/+1"] ?? 0) + (s.players.p1?.hand.length ?? 0)).toBe(2);
     });
 
-    it("Diamond Pick-Axe : indestructible ; +1/+1 et un Trésor quand la créature équipée attaque", () => {
+    it("Diamond Pick-Axe: indestructible; +1/+1 and a Treasure when the equipped creature attacks", () => {
       let s = scenario({ p1: { battlefield: ["Diamond Pick-Axe", "Bear Cub", "Mountain", "Mountain"] } });
       const axe = idOf(s, "p1", "battlefield", "Diamond Pick-Axe");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -2839,7 +2839,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(tokens(s, "p1", "Treasure")).toHaveLength(1);
     });
 
-    it("Digsite Conservator : sacrifice, rituel : exile jusqu'à quatre cartes d'un même cimetière ; en mourant, {4} pour découvrir 4", () => {
+    it("Digsite Conservator: sacrifice, sorcery: exiles up to four cards from a single graveyard; when it dies, {4} to discover 4", () => {
       let s = scenario({
         p1: { battlefield: ["Digsite Conservator", ...lands("Forest", 4)], library: ["Island", "Bear Cub"] },
         p2: { graveyard: ["Opt", "Forest"] },
@@ -2853,7 +2853,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
         ability: opt?.type === "activate" ? opt.ability : -1,
         targets: { t: [...(s.players.p2?.graveyard ?? [])] },
       });
-      // Le sacrifice est un coût : la découverte (en mourant) se résout avant l'exil.
+      // The sacrifice is a cost: the discover (on dying) resolves before the exile.
       s = untilCastNow(s);
       expect(namesIn(s, castNowOf(s)?.cards)).toEqual(["Bear Cub"]);
       s = resolve(act(s, "p1", { type: "cast", card: castNowOf(s)?.cards[0] as string }));
@@ -2861,7 +2861,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(s.players.p2?.graveyard).toHaveLength(0);
     });
 
-    it("Dowsing Device : un artefact arrive → une de vos créatures +1/+0 et célérité, puis transformation avec quatre artefacts ; Geode Grotto : +X/+0 et célérité", () => {
+    it("Dowsing Device: an artifact enters → one of your creatures gets +1/+0 and haste, then transform with four artifacts; Geode Grotto: +X/+0 and haste", () => {
       let s = scenario({
         p1: {
           battlefield: ["Dowsing Device // Geode Grotto", "Bear Cub", "Nutrient Block", "Plains", "Plains"],
@@ -2888,7 +2888,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(chars(t, cub).keywords).toContain("haste");
     });
 
-    it("Dreadmaw's Ire : une créature attaquante ciblée +2/+2 et piétinement ; une créature qui n'attaque pas n'est pas une cible légale", () => {
+    it("Dreadmaw's Ire: a targeted attacking creature gets +2/+2 and trample; a creature that isn't attacking isn't a legal target", () => {
       let s = scenario({ p1: { battlefield: ["Bear Cub", "Llanowar Elves", "Mountain"], hand: ["Dreadmaw's Ire"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = attack(s, [bear]);
@@ -2900,7 +2900,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(chars(s, bear).keywords).toContain("trample");
     });
 
-    it("Enterprising Scallywag : descente → un Trésor à votre étape de fin", () => {
+    it("Enterprising Scallywag: descend → a Treasure at your end step", () => {
       const run = (descended: boolean) => {
         let s = scenario({ p1: { battlefield: ["Enterprising Scallywag", "Bear Cub"] } });
         if (descended) destroy(s, idOf(s, "p1", "battlefield", "Bear Cub"));
@@ -2911,7 +2911,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(run(false)).toBe(0);
     });
 
-    it("Explorer's Cache : arrive avec deux marqueurs ; une de vos créatures avec un marqueur +1/+1 meurt → un marqueur ; {T} : déplace un marqueur (rituel)", () => {
+    it("Explorer's Cache: enters with two counters; one of your creatures with a +1/+1 counter dies → a counter; {T}: moves a counter (sorcery)", () => {
       let s = scenario({ p1: { battlefield: ["Forest", "Forest"], hand: ["Explorer's Cache"] } });
       s = resolve(castCard(s, "p1", "Explorer's Cache"));
       const cache = idOf(s, "p1", "battlefield", "Explorer's Cache");
@@ -2939,7 +2939,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(m.objects[idOf(m, "p1", "battlefield", "Explorer's Cache")]?.counters["+1/+1"]).toBe(1);
     });
 
-    it("Forgotten Monument : vos autres Cavernes ont « {T}, payez 1 PV : un mana de n'importe quelle couleur »", () => {
+    it('Forgotten Monument: your other Caverns have "{T}, pay 1 life: add one mana of any color"', () => {
       let s = scenario({ p1: { battlefield: ["Forgotten Monument", "Hidden Volcano"] } });
       const volcano = idOf(s, "p1", "battlefield", "Hidden Volcano");
       const monument = idOf(s, "p1", "battlefield", "Forgotten Monument");
@@ -2957,7 +2957,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(s.players.p1?.life).toBe(19);
     });
 
-    it("Gargantuan Leech : lien de vie ; coûte {1} de moins par Caverne contrôlée et par carte de Caverne du cimetière", () => {
+    it("Gargantuan Leech: lifelink; costs {1} less per Cavern controlled and per Cavern card in the graveyard", () => {
       const can = (graveyard: string[]) => {
         const s = scenario({
           p1: { battlefield: ["Hidden Necropolis", "Hidden Volcano"], hand: ["Gargantuan Leech"], graveyard },
@@ -2970,7 +2970,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(chars(s, idOf(s, "p1", "battlefield", "Gargantuan Leech")).keywords).toContain("lifelink");
     });
 
-    it("Geological Appraiser : découverte 3 seulement s'il a été lancé", () => {
+    it("Geological Appraiser: discover 3 only if it was cast", () => {
       let s = scenario({
         p1: { battlefield: lands("Mountain", 4), hand: ["Geological Appraiser"], library: ["Forest", "Bear Cub"] },
       });
@@ -2982,10 +2982,10 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(t.players.p1?.library).toHaveLength(2);
     });
 
-    it("Glowcap Lantern : la créature équipée explore quand elle attaque ; son contrôleur regarde la carte du dessus", () => {
+    it("Glowcap Lantern: the equipped creature explores when it attacks; its controller looks at the top card", () => {
       let s = scenario({ p1: { battlefield: ["Glowcap Lantern", "Bear Cub", "Forest", "Forest"], library: ["Opt", "Island"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-      // Non attachée, la Lanterne ne donne rien (PLAN-D, D8) ; attachée, la créature équipée a « vous pouvez regarder ».
+      // Unattached, the Lantern gives nothing (PLAN-D, D8); attached, the equipped creature has "you may look".
       expect(playerStatic(s, "p1", "lookAt")).toBe(false);
       s = resolve(activateLabel(s, "p1", idOf(s, "p1", "battlefield", "Glowcap Lantern"), "Equip", { targets: { t: [bear] } }));
       expect(playerStatic(s, "p1", "lookAt")).toBe(true);
@@ -2993,7 +2993,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(s.objects[bear]?.counters["+1/+1"]).toBe(1);
     });
 
-    it("Grasping Shadows : une créature qui attaque seule gagne contact mortel et lien de vie, marqueur d'effroi ; au troisième, Shadows' Lair", () => {
+    it("Grasping Shadows: a creature that attacks alone gains deathtouch and lifelink, dread counter; at the third, Shadows' Lair", () => {
       let s = scenario({
         p1: {
           battlefield: [{ name: "Grasping Shadows // Shadows' Lair", counters: { dread: 2 } }, "Bear Cub", "Llanowar Elves"],
@@ -3009,7 +3009,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(two.objects[idOf(two, "p1", "battlefield", "Grasping Shadows // Shadows' Lair")]?.counters.dread ?? 0).toBe(0);
     });
 
-    it("Shadows' Lair : {B}, {T}, retirez un marqueur d'effroi : piochez une carte et perdez 1 PV", () => {
+    it("Shadows' Lair: {B}, {T}, remove a dread counter: draw a card and lose 1 life", () => {
       let s = scenario({
         p1: { battlefield: [{ name: "Grasping Shadows // Shadows' Lair", counters: { dread: 1 } }, "Swamp"], library: ["Opt"] },
       });
@@ -3021,7 +3021,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(canActivate(s, "p1", lair)).toBe(false);
     });
 
-    it("Guardian of the Great Door : coût additionnel, engagez quatre artefacts, créatures et/ou terrains dégagés ; vol", () => {
+    it("Guardian of the Great Door: additional cost, tap four untapped artifacts, creatures and/or lands; flying", () => {
       const can = (forests: number) => {
         const s = scenario({
           p1: { battlefield: [...lands("Forest", forests), ...lands("Plains", 2)], hand: ["Guardian of the Great Door"] },
@@ -3038,8 +3038,8 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       );
       expect(s.battlefield.filter((id) => s.objects[id]?.tapped)).toHaveLength(6);
       expect(chars(s, idOf(s, "p1", "battlefield", "Guardian of the Great Door")).keywords).toContain("flying");
-      // Sans choix explicite (PLAN-D, D7) : les permanents engagés par défaut gardent de quoi payer {W}{W}, quel que soit
-      // l'ordre des terrains.
+      // Without an explicit choice (PLAN-D, D7): the tapped permanents by default leave enough to pay {W}{W}, whatever
+      // the order of the lands.
       let t = scenario({
         p1: { battlefield: [...lands("Plains", 2), ...lands("Forest", 4)], hand: ["Guardian of the Great Door"] },
       });
@@ -3049,7 +3049,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(idsOf(t, "p1", "battlefield", "Guardian of the Great Door")).toHaveLength(1);
     });
 
-    it("Helping Hand : une carte de créature de VM 3 ou moins revient engagée", () => {
+    it("Helping Hand: a creature card with mana value 3 or less returns tapped", () => {
       let s = scenario({ p1: { battlefield: ["Plains"], hand: ["Helping Hand"], graveyard: ["Bear Cub", "Shivan Dragon"] } });
       const o = legalActions(s, "p1").find((a) => a.type === "cast" && nameOf(s, a.card) === "Helping Hand");
       expect(namesIn(s, o?.type === "cast" ? o.modes?.[0]?.targets[0]?.legal : [])).toEqual(["Bear Cub"]);
@@ -3057,7 +3057,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(s.objects[idOf(s, "p1", "battlefield", "Bear Cub")]?.tapped).toBe(true);
     });
 
-    it("Hermitic Nautilus : vigilance ; {1}{U} : +3/−3", () => {
+    it("Hermitic Nautilus: vigilance; {1}{U}: +3/-3", () => {
       let s = scenario({ p1: { battlefield: ["Hermitic Nautilus", "Island", "Island"] } });
       const n = idOf(s, "p1", "battlefield", "Hermitic Nautilus");
       expect(chars(s, n).keywords).toContain("vigilance");
@@ -3065,7 +3065,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(pt(s, n)).toEqual([4, 1]);
     });
 
-    it("Hoverstone Pilgrim : vol, garde {2} ; {2} : une carte d'un cimetière sous la bibliothèque de son propriétaire", () => {
+    it("Hoverstone Pilgrim: flying, ward {2}; {2}: a card from a graveyard under its owner's library", () => {
       let s = scenario({
         p1: { battlefield: ["Hoverstone Pilgrim", "Plains", "Plains"] },
         p2: { graveyard: ["Shivan Dragon"], library: ["Forest"] },
@@ -3076,7 +3076,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(libraryNames(s, "p2")).toEqual(["Forest", "Shivan Dragon"]);
     });
 
-    it("Hurl into History : contrecarre un sort d'artefact ou de créature, puis découverte X (sa valeur de mana)", () => {
+    it("Hurl into History: counters an artifact or creature spell, then discover X (its mana value)", () => {
       let s = scenario({
         p1: { battlefield: lands("Island", 5), hand: ["Hurl into History"], library: ["Forest", "Serra Angel", "Bear Cub"] },
         p2: { battlefield: lands("Mountain", 6), hand: ["Shivan Dragon"] },
@@ -3087,13 +3087,13 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       const dragon = s.stack[0]?.id as string;
       s = untilCastNow(castCard(s, "p1", "Hurl into History", { targets: { t: [dragon] } }));
       expect(namesIn(s, castNowOf(s)?.cards)).toEqual(["Serra Angel"]);
-      // Le sort est déjà contrecarré quand la découverte a lieu.
+      // The spell is already countered when the discover happens.
       expect(idsOf(s, "p2", "graveyard", "Shivan Dragon")).toHaveLength(1);
       s = resolve(act(s, "p1", { type: "cast", card: castNowOf(s)?.cards[0] as string }));
       expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
     });
 
-    it("Itzquinth, Firstborn of Gishath : célérité ; en arrivant, {2} : un de vos Dinosaures inflige sa force à une autre créature", () => {
+    it("Itzquinth, Firstborn of Gishath: haste; when entering, {2}: one of your Dinosaurs deals damage equal to its power to another creature", () => {
       let s = scenario({
         p1: {
           battlefield: ["Hulking Raptor", "Mountain", "Forest", "Forest", "Forest"],
@@ -3120,13 +3120,13 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(chars(s, idOf(s, "p1", "battlefield", "Itzquinth, Firstborn of Gishath")).keywords).toContain("haste");
     });
 
-    it("Ixalli's Lorekeeper : son mana ne sert qu'aux sorts de Dinosaure (et capacités de Dinosaures)", () => {
+    it("Ixalli's Lorekeeper: its mana only goes to Dinosaur spells (and Dinosaur abilities)", () => {
       const s = scenario({ p1: { battlefield: ["Ixalli's Lorekeeper", "Forest"], hand: ["Belligerent Yearling", "Bear Cub"] } });
       expect(castable(s, "p1", idOf(s, "p1", "hand", "Belligerent Yearling"))).toBe(true);
       expect(castable(s, "p1", idOf(s, "p1", "hand", "Bear Cub"))).toBe(false);
     });
 
-    it("Jade Seedstones : trois marqueurs +1/+1 répartis entre une à trois de vos créatures ; Jadeheart Attendant : PV égaux à la VM de la carte exilée", () => {
+    it("Jade Seedstones: three +1/+1 counters distributed among one to three of your creatures; Jadeheart Attendant: life equal to the mana value of the exiled card", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Forest", 4), "Bear Cub", "Llanowar Elves"],
@@ -3153,7 +3153,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(t.players.p1?.life).toBe(26);
     });
 
-    it("Lodestone Needle : flash ; engage un artefact ou une créature et y met deux marqueurs d'étourdissement ; Guidestone Compass : {1}, {T} : une de vos créatures explore", () => {
+    it("Lodestone Needle: flash; taps an artifact or creature and puts two stun counters on it; Guidestone Compass: {1}, {T}: one of your creatures explores", () => {
       let s = scenario({
         p1: { battlefield: ["Island", "Island"], hand: ["Lodestone Needle // Guidestone Compass"] },
         p2: { battlefield: ["Serra Angel"] },
@@ -3175,7 +3175,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(t.objects[bear]?.counters["+1/+1"]).toBe(1);
     });
 
-    it("Malamet Battle Glyph : marqueur +1/+1 sur votre créature arrivée ce tour-ci, puis combat", () => {
+    it("Malamet Battle Glyph: +1/+1 counter on your creature that entered this turn, then fight", () => {
       const run = (sick: boolean) => {
         let s = scenario({
           p1: { battlefield: ["Forest", { name: "Bear Cub", sick }], hand: ["Malamet Battle Glyph"] },
@@ -3187,11 +3187,11 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
         return s.objects[angel]?.damage;
       };
       expect(run(true)).toBe(3);
-      // Créature arrivée plus tôt : pas de marqueur, l'Ours inflige 2.
+      // Creature that entered earlier: no counter, the Bear deals 2.
       expect(run(false)).toBe(2);
     });
 
-    it("Malamet War Scribe : en arrivant, vos créatures +2/+1 jusqu'à la fin du tour", () => {
+    it("Malamet War Scribe: when entering, your creatures get +2/+1 until end of turn", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Plains", 5), "Bear Cub"], hand: ["Malamet War Scribe"] },
         p2: { battlefield: ["Llanowar Elves"] },
@@ -3202,7 +3202,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(pt(s, idOf(s, "p2", "battlefield", "Llanowar Elves"))).toEqual([1, 1]);
     });
 
-    it("Master's Guide-Mural : un Golem 4/4 blanc et bleu en arrivant ; Master's Manufactory : {T} : un Golem si un artefact est arrivé ce tour-ci", () => {
+    it("Master's Guide-Mural: a white and blue 4/4 Golem when entering; Master's Manufactory: {T}: a Golem if an artifact entered this turn", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Plains", 3), ...lands("Island", 2)],
@@ -3223,7 +3223,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(canActivate(u, "p1", factory)).toBe(true);
     });
 
-    it("Merfolk Cave-Diver : une de vos créatures explore → +1/+0 et imblocable ce tour-ci", () => {
+    it("Merfolk Cave-Diver: one of your creatures explores → +1/+0 and can't be blocked this turn", () => {
       let s = scenario({ p1: { battlefield: ["Merfolk Cave-Diver", "Forest"], hand: ["Cenote Scout"], library: ["Opt"] } });
       s = resolve(castCard(s, "p1", "Cenote Scout"));
       const diver = idOf(s, "p1", "battlefield", "Merfolk Cave-Diver");
@@ -3231,7 +3231,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(chars(s, diver).keywords).toContain("unblockable");
     });
 
-    it("Might of the Ancestors : au début du combat de votre tour, une de vos créatures +2/+0 et vigilance", () => {
+    it("Might of the Ancestors: at the beginning of combat on your turn, one of your creatures gets +2/+0 and vigilance", () => {
       let s = scenario({ p1: { battlefield: ["Might of the Ancestors", "Bear Cub"] } });
       s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -3239,7 +3239,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(chars(s, bear).keywords).toContain("vigilance");
     });
 
-    it("Nicanzil, Current Conductor : exploration d'un terrain → un terrain de la main engagé ; d'un non-terrain → un marqueur sur Nicanzil", () => {
+    it("Nicanzil, Current Conductor: exploring a land → a land from hand tapped; a nonland → a counter on Nicanzil", () => {
       const run = (top: string) => {
         let s = scenario({
           p1: { battlefield: ["Nicanzil, Current Conductor", "Forest"], hand: ["Cenote Scout", "Island"], library: [top] },
@@ -3255,7 +3255,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(idsOf(spell, "p1", "battlefield", "Island")).toHaveLength(0);
     });
 
-    it("Rampaging Ceratops : ne peut être bloqué que par trois créatures ou plus", () => {
+    it("Rampaging Ceratops: can be blocked only by three or more creatures", () => {
       const block = (n: number) => {
         let s = scenario({
           p1: { battlefield: ["Rampaging Ceratops"] },
@@ -3271,7 +3271,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(block(3)).not.toThrow();
     });
 
-    it("Ruin-Lurker Bat : vol, lien de vie ; descente → regard 1 à votre étape de fin", () => {
+    it("Ruin-Lurker Bat: flying, lifelink; descend → scry 1 at your end step", () => {
       const run = (descended: boolean) => {
         let s = scenario({ p1: { battlefield: ["Ruin-Lurker Bat", "Bear Cub"], library: ["Opt", "Forest"] } });
         if (descended) destroy(s, idOf(s, "p1", "battlefield", "Bear Cub"));
@@ -3290,7 +3290,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       );
     });
 
-    it("Scampering Surveyor : un terrain de base ou une carte de Caverne de la bibliothèque, engagé", () => {
+    it("Scampering Surveyor: a basic land or a Cavern card from the library, tapped", () => {
       let s = scenario({
         p1: { battlefield: lands("Plains", 4), hand: ["Scampering Surveyor"], library: ["Opt", "Hidden Volcano"] },
       });
@@ -3298,7 +3298,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(s.objects[idOf(s, "p1", "battlefield", "Hidden Volcano")]?.tapped).toBe(true);
     });
 
-    it("Scytheclaw Raptor : un joueur qui lance un sort hors de son tour subit 4 blessures", () => {
+    it("Scytheclaw Raptor: a player who casts a spell outside their turn takes 4 damage", () => {
       let s = scenario({
         p1: { battlefield: ["Scytheclaw Raptor", "Island"], hand: ["Opt"] },
         p2: { battlefield: ["Island"], hand: ["Opt"] },
@@ -3310,7 +3310,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(s.players.p2?.life).toBe(16);
     });
 
-    it("Sinuous Benthisaur : regarde X cartes (Cavernes contrôlées et au cimetière), deux en main, le reste dessous", () => {
+    it("Sinuous Benthisaur: looks at X cards (Caverns controlled and in the graveyard), two to hand, the rest on the bottom", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Island", 6), "Hidden Cataract"],
@@ -3325,7 +3325,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(libraryNames(s)).toHaveLength(2);
     });
 
-    it("Soulcoil Viper : {B}, {T}, sacrifice (rituel) : une carte de créature de votre cimetière revient avec un marqueur de finalité", () => {
+    it("Soulcoil Viper: {B}, {T}, sacrifice (sorcery): a creature card from your graveyard returns with a finality counter", () => {
       let s = scenario({ p1: { battlefield: ["Soulcoil Viper", "Swamp"], graveyard: ["Shivan Dragon"] } });
       s = resolve(
         activateLabel(s, "p1", idOf(s, "p1", "battlefield", "Soulcoil Viper"), "finality", {
@@ -3336,7 +3336,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(idsOf(s, "p1", "graveyard", "Soulcoil Viper")).toHaveLength(1);
     });
 
-    it("Spelunking : piochez, puis un terrain de la main sur le champ de bataille (Caverne : +4 PV) ; vos terrains arrivent dégagés", () => {
+    it("Spelunking: draw, then a land from hand onto the battlefield (Cavern: +4 life); your lands enter untapped", () => {
       let s = scenario({ p1: { battlefield: lands("Forest", 3), hand: ["Spelunking", "Hidden Volcano"], library: ["Opt"] } });
       s = resolve(castCard(s, "p1", "Spelunking"), choosing([idOf(s, "p1", "hand", "Hidden Volcano")]));
       expect(namesIn(s, s.players.p1?.hand)).toEqual(["Opt"]);
@@ -3347,7 +3347,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(t.players.p1?.life).toBe(20);
     });
 
-    it("Staunch Crewmate : une carte d'artefact ou de Pirate parmi les quatre du dessus en main, le reste dessous", () => {
+    it("Staunch Crewmate: an artifact or Pirate card among the top four to hand, the rest on the bottom", () => {
       let s = scenario({
         p1: {
           battlefield: ["Island", "Island"],
@@ -3360,7 +3360,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(libraryNames(s)[0]).toBe("Swamp");
     });
 
-    it("Stinging Cave Crawler : contact mortel ; descente 4, en attaquant, piochez et perdez 1 PV", () => {
+    it("Stinging Cave Crawler: deathtouch; descend 4, when attacking, draw and lose 1 life", () => {
       const run = (n: number) => {
         let s = scenario({ p1: { battlefield: ["Stinging Cave Crawler"], graveyard: lands("Forest", n), library: ["Opt"] } });
         s = resolve(attack(s, [idOf(s, "p1", "battlefield", "Stinging Cave Crawler")]));
@@ -3370,7 +3370,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(run(3)).toEqual([0, 20]);
     });
 
-    it("Sunbird Standard : fabrication avec une ou plusieurs cartes ; Sunbird Effigy : F/E et mana selon les couleurs des cartes exilées", () => {
+    it("Sunbird Standard: craft with one or more cards; Sunbird Effigy: P/T and mana depending on the colors of the exiled cards", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Plains", 5), "Sunbird Standard // Sunbird Effigy"],
@@ -3390,7 +3390,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect([s.players.p1?.manaPool.G, s.players.p1?.manaPool.U]).toEqual([1, 1]);
     });
 
-    it("Swashbuckler's Whip : la créature équipée a la portée et « {2}, {T} : engagez un artefact ou une créature »", () => {
+    it('Swashbuckler\'s Whip: the equipped creature has reach and "{2}, {T}: tap an artifact or creature"', () => {
       let s = scenario({
         p1: { battlefield: ["Swashbuckler's Whip", "Bear Cub", ...lands("Plains", 3)] },
         p2: { battlefield: ["Serra Angel"] },
@@ -3406,7 +3406,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(s.objects[bear]?.tapped).toBe(true);
     });
 
-    it("Synapse Necromage : en mourant, deux Champignons 1/1 qui ne peuvent pas bloquer", () => {
+    it("Synapse Necromage: when it dies, two 1/1 Fungi that can't block", () => {
       let s = scenario({ p1: { battlefield: ["Synapse Necromage"] } });
       destroy(s, idOf(s, "p1", "battlefield", "Synapse Necromage"));
       s = flush(s);
@@ -3415,7 +3415,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(chars(s, fungi[0] as string).keywords).toContain("cantBlock");
     });
 
-    it("Tendril of the Mycotyrant : sept marqueurs sur un terrain non-créature, qui devient un Champignon 0/0 avec la célérité", () => {
+    it("Tendril of the Mycotyrant: seven counters on a noncreature land, which becomes a 0/0 Fungus with haste", () => {
       let s = scenario({ p1: { battlefield: ["Tendril of the Mycotyrant", ...lands("Forest", 8)] } });
       const forest = idOf(s, "p1", "battlefield", "Forest");
       s = resolve(
@@ -3428,7 +3428,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(chars(s, forest).keywords).toContain("haste");
     });
 
-    it("Triumphant Chomp : blessures égales à 2 ou à la plus grande force parmi vos Dinosaures", () => {
+    it("Triumphant Chomp: damage equal to 2 or to the greatest power among your Dinosaurs", () => {
       const run = (mine: string[]) => {
         let s = scenario({
           p1: { battlefield: ["Mountain", ...mine], hand: ["Triumphant Chomp"] },
@@ -3443,7 +3443,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(run(["Hulking Raptor"])).toBe("morte");
     });
 
-    it("Twists and Turns : en arrivant, une de vos créatures explore, précédé d'un regard 1 ; un terrain arrive avec sept terrains → Mycoid Maze", () => {
+    it("Twists and Turns: when entering, one of your creatures explores, preceded by scry 1; a land enters with seven lands → Mycoid Maze", () => {
       let s = scenario({
         p1: { battlefield: ["Forest", "Bear Cub"], hand: ["Twists and Turns // Mycoid Maze"], library: ["Opt", "Island"] },
       });
@@ -3460,7 +3460,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(chars(t, idOf(t, "p1", "battlefield", "Twists and Turns // Mycoid Maze")).name).toBe("Mycoid Maze");
     });
 
-    it("Mycoid Maze : {3}{G}, {T} : une carte de créature parmi les quatre du dessus en main", () => {
+    it("Mycoid Maze: {3}{G}, {T}: a creature card among the top four to hand", () => {
       let s = scenario({
         p1: {
           battlefield: ["Twists and Turns // Mycoid Maze", ...lands("Forest", 4)],
@@ -3474,7 +3474,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(libraryNames(s)[0]).toBe("Swamp");
     });
 
-    it("Uchbenbak, the Great Mistake : vigilance, menace ; descente 8, revient du cimetière avec un marqueur de finalité (rituel)", () => {
+    it("Uchbenbak, the Great Mistake: vigilance, menace; descend 8, returns from the graveyard with a finality counter (sorcery)", () => {
       const can = (n: number) => {
         const s = scenario({
           p1: {
@@ -3498,7 +3498,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(chars(s, u).keywords).toEqual(expect.arrayContaining(["vigilance", "menace"]));
     });
 
-    it("Vanguard of the Rose : {1}, sacrifiez une autre créature ou un artefact : indestructible jusqu'à la fin du tour, et engagez-la", () => {
+    it("Vanguard of the Rose: {1}, sacrifice another creature or an artifact: indestructible until end of turn, and tap it", () => {
       let s = scenario({ p1: { battlefield: ["Vanguard of the Rose", "Bear Cub", "Plains"] } });
       const v = idOf(s, "p1", "battlefield", "Vanguard of the Rose");
       s = resolve(activateLabel(s, "p1", v, "Indestructible", { sacrifice: [idOf(s, "p1", "battlefield", "Bear Cub")] }));
@@ -3507,7 +3507,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(idsOf(s, "p1", "graveyard", "Bear Cub")).toHaveLength(1);
     });
 
-    it("Visage of Dread : l'adversaire ciblé révèle sa main, vous choisissez une carte d'artefact ou de créature qu'il défausse ; Dread Osseosaur : menace, meule 2 en arrivant ou en attaquant", () => {
+    it("Visage of Dread: the targeted opponent reveals their hand, you choose an artifact or creature card they discard; Dread Osseosaur: menace, mill 2 when entering or attacking", () => {
       let s = scenario({
         p1: { battlefield: ["Swamp", "Swamp"], hand: ["Visage of Dread // Dread Osseosaur"] },
         p2: { hand: ["Shivan Dragon", "Bear Cub", "Opt"] },
@@ -3533,7 +3533,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(t.players.p1?.graveyard).toHaveLength(2);
     });
 
-    it("Waterlogged Hulk : {T} : meulez une carte ; Watertight Gondola : vigilance, imblocable avec descente 8", () => {
+    it("Waterlogged Hulk: {T}: mill a card; Watertight Gondola: vigilance, can't be blocked with descend 8", () => {
       let s = scenario({ p1: { battlefield: ["Waterlogged Hulk // Watertight Gondola"], library: ["Opt", "Forest"] } });
       s = resolve(activateLabel(s, "p1", idOf(s, "p1", "battlefield", "Waterlogged Hulk // Watertight Gondola"), "Mill"));
       expect(namesIn(s, s.players.p1?.graveyard)).toEqual(["Opt"]);
@@ -3547,7 +3547,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(at(7)).not.toContain("unblockable");
     });
 
-    it("Zoetic Glyph : l'artefact enchanté est un Golem 5/4 ; mis au cimetière depuis le champ de bataille → découverte 3", () => {
+    it("Zoetic Glyph: the enchanted artifact is a 5/4 Golem; put into the graveyard from the battlefield → discover 3", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Island", 3), "Nutrient Block"], hand: ["Zoetic Glyph"], library: ["Forest", "Bear Cub"] },
       });
@@ -3560,7 +3560,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(namesIn(s, castNowOf(s)?.cards)).toEqual(["Bear Cub"]);
     });
 
-    it("Zoyowa Lava-Tongue : contact mortel ; descente → chaque adversaire défausse ou sacrifie, sinon 3 blessures", () => {
+    it("Zoyowa Lava-Tongue: deathtouch; descend → each opponent discards or sacrifices, otherwise 3 damage", () => {
       const run = (hand: string[], descended = true) => {
         let s = scenario({ p1: { battlefield: ["Zoyowa Lava-Tongue", "Bear Cub"] }, p2: { hand } });
         if (descended) destroy(s, idOf(s, "p1", "battlefield", "Bear Cub"));
@@ -3568,25 +3568,25 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
         return s;
       };
       expect(run([]).players.p2?.life).toBe(17);
-      // L'adversaire défausse (réponse suggérée) : pas de blessures.
+      // The opponent discards (suggested answer): no damage.
       const paid = run(["Opt"]);
       expect([paid.players.p2?.life, namesIn(paid, paid.players.p2?.graveyard)]).toEqual([20, ["Opt"]]);
       expect(run([], false).players.p2?.life).toBe(20);
     });
 
-    it("Zoyowa's Justice : le propriétaire mélange l'artefact ou la créature de VM 1 ou plus dans sa bibliothèque, puis découvre X", () => {
+    it("Zoyowa's Justice: the owner shuffles the artifact or creature with mana value 1 or more into their library, then discovers X", () => {
       let s = scenario({
         p1: { battlefield: ["Mountain", "Mountain"], hand: ["Zoyowa's Justice"] },
         p2: { battlefield: ["Serra Angel"], library: ["Forest", "Bear Cub", "Island"] },
       });
       s = resolve(castCard(s, "p1", "Zoyowa's Justice", { targets: { t: [idOf(s, "p2", "battlefield", "Serra Angel")] } }));
       expect(idsOf(s, "p2", "battlefield", "Serra Angel")).toHaveLength(0);
-      // La découverte (VM 5) trouve Bear Cub ou l'Ange mélangé ; refusée, la carte va en main.
+      // The discover (mana value 5) finds Bear Cub or the shuffled Angel; declined, the card goes to hand.
       expect(s.players.p2?.hand).toHaveLength(1);
       expect(s.players.p2?.library).toHaveLength(3);
     });
 
-    it("Zoyowa's Justice : un jeton ciblé fait quand même découvrir X (dernières informations connues)", () => {
+    it("Zoyowa's Justice: a targeted token still makes them discover X (last known information)", () => {
       let s = scenario({
         p1: { battlefield: ["Mountain", "Mountain"], hand: ["Zoyowa's Justice"] },
         p2: { battlefield: ["Serra Angel"], library: ["Forest", "Bear Cub", "Island"] },
@@ -3596,12 +3596,12 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       bump(s);
       s = resolve(castCard(s, "p1", "Zoyowa's Justice", { targets: { t: [token] } }));
       expect(s.objects[token]).toBeUndefined();
-      // Le jeton cesse d'exister ; son propriétaire découvre 5 : Bear Cub, refusée, va en main.
+      // The token ceases to exist; its owner discovers 5: Bear Cub, declined, goes to hand.
       expect(s.players.p2?.hand).toHaveLength(1);
       expect(s.players.p2?.library).toHaveLength(2);
     });
 
-    it("Zoyowa's Justice : une créature volée retourne chez son propriétaire, et c'est lui qui découvre", () => {
+    it("Zoyowa's Justice: a stolen creature returns to its owner, who discovers", () => {
       let s = scenario({
         p1: { battlefield: ["Mountain", "Mountain"], hand: ["Zoyowa's Justice"], library: ["Plains", "Plains"] },
         p2: { battlefield: ["Serra Angel"], library: ["Forest", "Bear Cub", "Island"] },
@@ -3618,7 +3618,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
 });
 
 describe("Sunfire Torch (lot K8)", () => {
-  it("la créature équipée attaque : en sacrifiant la Torche, elle inflige 2 blessures à n'importe quelle cible", () => {
+  it("the equipped creature attacks: by sacrificing the Torch, it deals 2 damage to any target", () => {
     let s = scenario({ p1: { battlefield: ["Bear Cub", "Sunfire Torch"] } });
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     const torch = idOf(s, "p1", "battlefield", "Sunfire Torch");
@@ -3642,15 +3642,15 @@ describe("Sunfire Torch (lot K8)", () => {
       else break;
     }
     expect(idsOf(s, "p1", "graveyard", "Sunfire Torch")).toHaveLength(1);
-    // 2 blessures de la capacité réflexive, puis 2 de combat (la Torche partie, l'Ours n'a plus +1/+0).
+    // 2 damage from the reflexive ability, then 2 from combat (the Torch gone, the Bear no longer has +1/+0).
     expect(s.players.p2?.life).toBe(16);
   });
 });
 
-describe("Blessures à chaque créature et chaque planeswalker (lot K8)", () => {
-  it("Calamitous Cave-In : X blessures (Cavernes) à chaque créature et à chaque planeswalker", () => {
+describe("Damage to each creature and each planeswalker (lot K8)", () => {
+  it("Calamitous Cave-In: X damage (Caverns) to each creature and to each planeswalker", () => {
     const walker = customCard({
-      name: "Arpenteur d'essai",
+      name: "Test Walker",
       typeLine: "Legendary Planeswalker — Test",
       types: ["Planeswalker"],
       supertypes: ["Legendary"],
@@ -3662,16 +3662,16 @@ describe("Blessures à chaque créature et chaque planeswalker (lot K8)", () => 
     });
     const wId = idOf(s, "p2", "battlefield", walker.name);
     s = cast(s, "Calamitous Cave-In");
-    // Deux Cavernes : 2 blessures ; le planeswalker perd 2 marqueurs de loyauté.
+    // Two Caverns: 2 damage; the planeswalker loses 2 loyalty counters.
     expect(s.objects[wId]?.counters.loyalty).toBe(3);
     expect(s.objects[idOf(s, "p2", "battlefield", "Serra Angel")]?.damage).toBe(2);
   });
 });
 
 describe("Iceberg Titan (lot D1)", () => {
-  it("en attaquant : vous pouvez engager ou dégager l'artefact ou la créature ciblée (choisi à la résolution)", () => {
+  it("when attacking: you may tap or untap the targeted artifact or creature (chosen on resolution)", () => {
     const run = (yes: boolean) => {
-      // Le verso de Inverted Iceberg, posé tel quel sur le champ de bataille.
+      // The back face of Inverted Iceberg, put onto the battlefield as is.
       const titan = card("Inverted Iceberg // Iceberg Titan").faceDefs?.[1];
       if (!titan) throw new Error("verso introuvable");
       let s = scenario({ p1: { battlefield: [titan] }, p2: { battlefield: ["Serra Angel"] } });
@@ -3699,16 +3699,16 @@ describe("Iceberg Titan (lot D1)", () => {
   });
 });
 
-describe("PLAN-A A3 : « avec X marqueurs +1/+1 supplémentaires » posés à l'arrivée (614.1c)", () => {
-  /** Témoin : « chaque fois qu'un permanent arrive avec un marqueur +1/+1, vous gagnez 1 PV ». */
+describe('PLAN-A A3: "with X additional +1/+1 counters" put on entering (614.1c)', () => {
+  /** Witness: "whenever a permanent enters with a +1/+1 counter, you gain 1 life". */
   const WATCHER = customCard({
-    name: "Témoin des marqueurs",
+    name: "Counter Witness",
     typeLine: "Enchantment",
     types: ["Enchantment"],
-    abilities: [triggered(when.enters({ withCounter: "+1/+1" }), [fx.gainLife(1)], { label: "Arrive avec un marqueur : 1 PV" })],
+    abilities: [triggered(when.enters({ withCounter: "+1/+1" }), [fx.gainLife(1)], { label: "Enters with a counter: 1 life" })],
   });
 
-  it("Abuelo's Awakening : le permanent arrive avec ses X marqueurs (déclenche « arrive avec un marqueur »)", () => {
+  it('Abuelo\'s Awakening: the permanent enters with its X counters (triggers "enters with a counter")', () => {
     let s = scenario({
       p1: { battlefield: [...lands("Plains", 6), WATCHER], hand: ["Abuelo's Awakening"], graveyard: ["Nutrient Block"] },
     });
@@ -3727,7 +3727,7 @@ describe("PLAN-A A3 : « avec X marqueurs +1/+1 supplémentaires » posés à l'
 });
 
 describe("The Lost Caverns of Ixalan, PLAN-A A4a", () => {
-  it("Dreadmaw's Ire : à plusieurs, l'artefact détruit est celui du joueur blessé", () => {
+  it("Dreadmaw's Ire: in multiplayer, the destroyed artifact is the one of the damaged player", () => {
     let s = scenario({
       players: 3,
       p1: { battlefield: ["Bear Cub", "Mountain"], hand: ["Dreadmaw's Ire"] },
@@ -3745,7 +3745,7 @@ describe("The Lost Caverns of Ixalan, PLAN-A A4a", () => {
     expect(run.s.players.p3?.graveyard).toHaveLength(1);
   });
 
-  it("Deconstruction Hammer : la créature équipée a « {3}, {T}, sacrifiez Deconstruction Hammer : détruisez … »", () => {
+  it('Deconstruction Hammer: the equipped creature has "{3}, {T}, sacrifice Deconstruction Hammer: destroy ..."', () => {
     let s = scenario({
       p1: { battlefield: ["Deconstruction Hammer", "Bear Cub", ...lands("Plains", 3)] },
       p2: { battlefield: ["Fishing Pole"] },
@@ -3762,7 +3762,7 @@ describe("The Lost Caverns of Ixalan, PLAN-A A4a", () => {
     expect(idsOf(s, "p1", "graveyard", "Deconstruction Hammer")).toHaveLength(1);
     expect(idsOf(s, "p2", "graveyard", "Fishing Pole")).toHaveLength(1);
     expect(s.objects[bear]?.tapped).toBe(true);
-    // Une créature arrivée ce tour-ci ne peut pas utiliser {T}.
+    // A creature that entered this turn can't use {T}.
     const sick = scenario({
       p1: { battlefield: ["Deconstruction Hammer", { name: "Bear Cub", sick: true }, ...lands("Plains", 3)] },
     });

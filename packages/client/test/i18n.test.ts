@@ -1,4 +1,4 @@
-/** Textes de l'interface : noms de cartes des invites du moteur, journal (cartes révélées, poison, défaite). */
+/** Interface texts: card names in engine prompts, log (revealed cards, poison, defeat). */
 import { type CardFace, cardRef, type GameView } from "@mtgx/engine";
 import { describe, expect, it } from "vitest";
 import { describeEvents, localizeText } from "../src/i18n";
@@ -10,15 +10,15 @@ const view = {
   players: { p1: { id: "p1", name: "Alice" }, p2: { id: "p2", name: "Bob" } },
 } as unknown as GameView;
 
-describe("textes de l'interface", () => {
-  it("les repères de carte du moteur deviennent le nom dans la langue choisie", () => {
-    const prompt = `Répartissez les 3 blessures de ${cardRef("bear")}`;
-    expect(localizeText(prompt, faces, "fr")).toBe("Répartissez les 3 blessures de Ourson");
-    expect(localizeText(prompt, faces, "en")).toBe("Répartissez les 3 blessures de Bear Cub");
-    expect(localizeText(`Règle des légendes : ${cardRef("inconnue")}`, faces, "fr")).toBe("Règle des légendes : cette carte");
+describe("interface texts", () => {
+  it("engine card markers become the name in the chosen language", () => {
+    const prompt = `Répartissez les 3 blessures de ${cardRef("bear")}`; // i18n-ignore: checks the French log
+    expect(localizeText(prompt, faces, "fr")).toBe("Répartissez les 3 blessures de Ourson"); // i18n-ignore: checks the French log
+    expect(localizeText(prompt, faces, "en")).toBe("Répartissez les 3 blessures de Bear Cub"); // i18n-ignore: checks the French log
+    expect(localizeText(`Règle des légendes : ${cardRef("inconnue")}`, faces, "fr")).toBe("Règle des légendes : cette carte"); // i18n-ignore: checks the French log
   });
 
-  it("journal : cartes révélées, marqueurs poison, défaite par poison", () => {
+  it("log: revealed cards, poison counters, defeat by poison", () => {
     const lines = describeEvents(
       [
         { type: "reveal", player: "p2", defIds: ["bolt", "bear"] },
@@ -30,13 +30,13 @@ describe("textes de l'interface", () => {
       "fr",
     ).map((l) => l.text);
     expect(lines).toEqual([
-      "Bob révèle Foudre, Ourson.",
-      "Vous recevez 2 marqueurs poison (9).",
-      "Bob perd (10 marqueurs poison).",
+      "Bob révèle Foudre, Ourson.", // i18n-ignore: checks the French log
+      "Vous recevez 2 marqueurs poison (9).", // i18n-ignore: checks the French log
+      "Bob perd (10 marqueurs poison).", // i18n-ignore: checks the French log
     ]);
   });
 
-  it("journal : perte de PV hors blessures, sans répéter celle des blessures ; noms de cartes cités par ligne", () => {
+  it("log: life loss outside damage, without repeating the damage one; card names cited per line", () => {
     const lines = describeEvents(
       [
         { type: "damage", sourceDefId: "bolt", target: "p2", amount: 3, combat: false },
@@ -47,7 +47,7 @@ describe("textes de l'interface", () => {
       faces,
       "fr",
     );
-    expect(lines.map((l) => l.text)).toEqual(["Foudre inflige 3 à Bob.", "Vous perdez 2 PV (18)."]);
+    expect(lines.map((l) => l.text)).toEqual(["Foudre inflige 3 à Bob.", "Vous perdez 2 PV (18)."]); // i18n-ignore: checks the French log
     expect(lines[0]?.cards?.map((c) => c.defId)).toEqual(["bolt"]);
     expect(lines[1]?.cards).toBeUndefined();
   });

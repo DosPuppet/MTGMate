@@ -8,7 +8,7 @@ import baseline from "../data/french-baseline.json";
 import { frenchFiles, frenchLines } from "./frenchSource";
 
 const allowed: Record<string, string> = baseline.allowed;
-const listed = new Set(baseline.files);
+const listed = new Set<string>(baseline.files as string[]);
 
 describe("English source (PLAN-I)", () => {
   const found = frenchFiles();

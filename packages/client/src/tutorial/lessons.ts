@@ -31,7 +31,7 @@ const mineAtTurn = (n: number) => (c: Ctx) => c.view.turn.number === n && c.view
 export const LESSONS: Lesson[] = [
   // -------------------------------------------------------------------------
   {
-    id: "ecran",
+    id: "screen",
     title: msg("The goal of the game and the screen"),
     summary: msg("Life, battlefield, hand, library, graveyard and phases."),
     scenario: {
@@ -334,7 +334,7 @@ export const LESSONS: Lesson[] = [
 
   // -------------------------------------------------------------------------
   {
-    id: "attaque",
+    id: "attack",
     title: msg("Attacking"),
     summary: msg("Combat: choosing your attackers, damage, your opponent's blocks."),
     scenario: {
@@ -417,7 +417,7 @@ export const LESSONS: Lesson[] = [
 
   // -------------------------------------------------------------------------
   {
-    id: "blocage",
+    id: "block",
     title: msg("Blocking"),
     summary: msg("Defending yourself: choosing your blockers, losing life."),
     scenario: {
@@ -486,7 +486,7 @@ export const LESSONS: Lesson[] = [
 
   // -------------------------------------------------------------------------
   {
-    id: "sorts",
+    id: "spells",
     title: msg("Spells and targets"),
     summary: msg("Instants and sorceries, choosing a target, winning a game."),
     scenario: {
@@ -564,7 +564,7 @@ export const LESSONS: Lesson[] = [
 
   // -------------------------------------------------------------------------
   {
-    id: "pile",
+    id: "stack",
     title: msg("Instants and the stack"),
     summary: msg("Responding to a spell, the order of resolution, combat tricks."),
     scenario: {
@@ -663,7 +663,7 @@ export const LESSONS: Lesson[] = [
 
   // -------------------------------------------------------------------------
   {
-    id: "capacites",
+    id: "abilities",
     title: msg("Keywords and abilities"),
     summary: msg("Flying, vigilance, lifelink, triggered and activated abilities."),
     scenario: {
@@ -772,7 +772,7 @@ export const LESSONS: Lesson[] = [
 
   // -------------------------------------------------------------------------
   {
-    id: "partie",
+    id: "game",
     title: msg("A complete game"),
     summary: msg("Opening hand, stops, then a real game against the AI."),
     scenario: {
@@ -855,7 +855,7 @@ export const LESSONS: Lesson[] = [
         next: true,
         target: "endTurn",
         text: msg(
-          "**Pass turn** (Enter key) passes everything until the end of your turn. In the settings, **full control** gives you back control at every step.",
+          "**Pass the turn** (Enter key) passes everything until the end of your turn. In the settings, **full control** gives you back control at every step.",
         ),
       },
       {
@@ -865,7 +865,7 @@ export const LESSONS: Lesson[] = [
         tips: [
           {
             when: (c) => pendingMine("declareBlockers")(c),
-            text: msg('You are being attacked: click one of your creatures then the attacker to block, or choose "No blocks".'),
+            text: msg('You are being attacked: click one of your creatures then the attacker to block, or choose "No block".'),
           },
           {
             when: (c) => pendingMine("priority")(c) && c.view.stack.some((it) => it.controller !== c.view.viewer),

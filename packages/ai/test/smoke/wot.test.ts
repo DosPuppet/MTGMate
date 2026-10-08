@@ -1,4 +1,4 @@
-/** Test de fumée : Enchanting Tales (rééditions, « Sans limite »). */
+/** Smoke test: Enchanting Tales (reprints, "Unlimited"). */
 import { smokeTest } from "./harness";
 
 smokeTest(["WOT"]);

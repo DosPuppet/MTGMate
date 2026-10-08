@@ -1,7 +1,7 @@
 /**
- * Commander (pseudo-ensemble EDH) : tests de règles du deck Rakdos, Lord of Riots. Pertes de PV des adversaires et
- * réductions de coût, blessures à chaque joueur, dévotion, Eldrazi (lancer, annihilateur, cimetière), boucles « pour chaque
- * joueur », nombres secrets, victime X, exhumation.
+ * Commander (EDH pseudo-set): rules tests of the Rakdos, Lord of Riots deck. Opponents' life loss and
+ * cost reductions, damage to each player, devotion, Eldrazi (casting, annihilator, graveyard), "for each
+ * player" loops, secret numbers, sacrifice X, unearth.
  */
 import { card } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
@@ -35,8 +35,8 @@ const toTurnOf = (s: GameState, p: PlayerId, step = "main1") =>
   advanceUntil(s, (x) => x.turn.active === p && x.turn.step === step && x.pending?.kind === "priority", 600);
 
 describe("Rakdos, Lord of Riots (EDH)", () => {
-  describe("commandant", () => {
-    it("ne se lance que si un adversaire a perdu des PV ce tour-ci ; vos créatures coûtent {1} de moins par PV perdu", () => {
+  describe("commander", () => {
+    it("can be cast only if an opponent lost life this turn; your creatures cost {1} less per life lost", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Swamp", 2), ...lands("Mountain", 3)],
@@ -45,24 +45,24 @@ describe("Rakdos, Lord of Riots (EDH)", () => {
       });
       expect(castable(s, "p1", idOf(s, "p1", "hand", "Rakdos, Lord of Riots"))).toBe(false);
       s = settle(castIt(s, "p1", "Shock", { targets: { t: ["p2"] } }));
-      // p2 a perdu 2 PV : Rakdos ({B}{B}{R}{R}) se lance ; Gigantosaurus ({G}{G}{G}{G}{G}) coûte 2 de moins en générique,
-      // mais ses symboles verts restent dus.
+      // p2 lost 2 life: Rakdos ({B}{B}{R}{R}) can be cast; Gigantosaurus ({G}{G}{G}{G}{G}) costs 2 less generic,
+      // but its green symbols are still owed.
       expect(castable(s, "p1", idOf(s, "p1", "hand", "Rakdos, Lord of Riots"))).toBe(true);
     });
 
-    it("la réduction porte sur le générique d'un sort de créature, selon les PV perdus par les adversaires", () => {
+    it("the reduction applies to the generic part of a creature spell, according to the life lost by opponents", () => {
       const s = scenario({
         p1: { battlefield: [...lands("Mountain", 5), "Rakdos, Lord of Riots"], hand: ["Shock", "Shivan Dragon"] },
       });
       expect(castable(s, "p1", idOf(s, "p1", "hand", "Shivan Dragon"))).toBe(false);
       const after = settle(castIt(s, "p1", "Shock", { targets: { t: ["p2"] } }));
-      // 4 Montagnes restantes : {4}{R}{R} − 2 = {2}{R}{R}, payable.
+      // 4 Mountains left: {4}{R}{R} − 2 = {2}{R}{R}, payable.
       expect(castable(after, "p1", idOf(after, "p1", "hand", "Shivan Dragon"))).toBe(true);
     });
   });
 
-  describe("pour chaque joueur", () => {
-    it("Lim-Dûl's Hex : chaque joueur paie {B} ou {3}, sinon subit 1 blessure", () => {
+  describe("for each player", () => {
+    it("Lim-Dûl's Hex: each player pays {B} or {3}, otherwise takes 1 damage", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: ["Lim-Dûl's Hex", "Swamp"] },
@@ -74,7 +74,7 @@ describe("Rakdos, Lord of Riots (EDH)", () => {
       expect(life(s, "p2")).toBe(19);
     });
 
-    it("Protection Racket : l'adversaire paie la valeur de mana en PV et la carte est exilée, sinon elle va en main", () => {
+    it("Protection Racket: the opponent pays the mana value in life and the card is exiled, otherwise it goes to hand", () => {
       const run = (pay: boolean) => {
         let s = scenario({
           active: "p2",
@@ -90,7 +90,7 @@ describe("Rakdos, Lord of Riots (EDH)", () => {
       expect(refused.players.p1?.hand.map((id) => nameOf(refused, id))).toContain("Shivan Dragon");
     });
 
-    it("Gray Merchant : chaque adversaire perd X PV (dévotion au noir), vous gagnez la somme", () => {
+    it("Gray Merchant: each opponent loses X life (devotion to black), you gain the total", () => {
       let s = scenario({ players: 3, p1: { battlefield: lands("Swamp", 5), hand: ["Gray Merchant of Asphodel"] } });
       s = settle(castIt(s, "p1", "Gray Merchant of Asphodel"));
       expect([life(s, "p2"), life(s, "p3")]).toEqual([18, 18]);
@@ -98,8 +98,8 @@ describe("Rakdos, Lord of Riots (EDH)", () => {
     });
   });
 
-  describe("nombres secrets : Wheel of Misfortune", () => {
-    it("le plus grand nombre fait des blessures à qui l'a choisi ; ceux qui n'ont pas choisi le plus petit renouvellent leur main", () => {
+  describe("secret numbers: Wheel of Misfortune", () => {
+    it("the highest number deals damage to whoever chose it; those who did not choose the lowest refresh their hand", () => {
       let s = scenario({
         p1: { battlefield: lands("Mountain", 3), hand: ["Wheel of Misfortune", "Opt"] },
         p2: { hand: ["Opt", "Opt"] },
@@ -107,17 +107,17 @@ describe("Rakdos, Lord of Riots (EDH)", () => {
       s = settle(castIt(s, "p1", "Wheel of Misfortune"), (req, p) => (req.type === "number" ? [p === "p1" ? 3 : 0] : undefined));
       expect(life(s, "p1")).toBe(17);
       expect(life(s, "p2")).toBe(20);
-      // p1 n'a pas choisi le plus petit : il défausse et pioche sept cartes ; p2 garde sa main.
+      // p1 did not choose the lowest: they discard and draw seven cards; p2 keeps their hand.
       expect(hand(s, "p1")).toBe(7);
       expect(hand(s, "p2")).toBe(2);
     });
   });
 
   describe("Ob Nixilis, the Adversary", () => {
-    it("victime X : X est la force de la créature au moment du sacrifice, modifications comprises", () => {
+    it("sacrifice X: X is the creature's power at the time of the sacrifice, modifications included", () => {
       let s = scenario({ p1: { battlefield: ["Swamp", "Mountain", "Swamp", "Bear Cub"], hand: ["Ob Nixilis, the Adversary"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-      // Bear Cub 2/2 avec trois marqueurs +1/+1 : force 5.
+      // Bear Cub 2/2 with three +1/+1 counters: power 5.
       const o = s.objects[bear];
       if (o) o.counters["+1/+1"] = 3;
       bump(s);
@@ -128,7 +128,7 @@ describe("Rakdos, Lord of Riots (EDH)", () => {
       expect(s.objects[copy]?.counters.loyalty).toBe(5);
     });
 
-    it("victime X : la copie n'est pas légendaire et a une loyauté de départ X", () => {
+    it("sacrifice X: the copy is not legendary and has a starting loyalty of X", () => {
       let s = scenario({
         p1: { battlefield: ["Swamp", "Mountain", "Swamp", "Gigantosaurus"], hand: ["Ob Nixilis, the Adversary"] },
       });
@@ -144,7 +144,7 @@ describe("Rakdos, Lord of Riots (EDH)", () => {
   });
 
   describe("Eldrazi", () => {
-    it("Kozilek, Butcher of Truth : piochez quatre cartes en le lançant ; annihilateur 4", () => {
+    it("Kozilek, Butcher of Truth: draw four cards when casting it; annihilator 4", () => {
       let s = scenario({
         p1: { battlefield: lands("Wastes", 10), hand: ["Kozilek, Butcher of Truth"], library: ["Opt", "Opt", "Opt", "Opt"] },
       });
@@ -156,7 +156,7 @@ describe("Rakdos, Lord of Riots (EDH)", () => {
       expect(a.battlefield.filter((id) => a.objects[id]?.controller === "p2")).toHaveLength(1);
     });
 
-    it("Kozilek, Butcher of Truth mis au cimetière depuis la main : son propriétaire mélange son cimetière dans sa bibliothèque", () => {
+    it("Kozilek, Butcher of Truth put into the graveyard from hand: its owner shuffles their graveyard into their library", () => {
       let s = scenario({
         p1: {
           battlefield: lands("Mountain", 3),
@@ -165,21 +165,21 @@ describe("Rakdos, Lord of Riots (EDH)", () => {
           library: Array(10).fill("Shock"),
         },
       });
-      // p1 choisit 3, p2 choisit 0 : p1 défausse sa main (Kozilek) et pioche sept cartes.
+      // p1 chooses 3, p2 chooses 0: p1 discards their hand (Kozilek) and draws seven cards.
       s = settle(castIt(s, "p1", "Wheel of Misfortune"), (req, p) => (req.type === "number" ? [p === "p1" ? 3 : 0] : undefined));
       expect(s.players.p1?.graveyard.map((id) => nameOf(s, id))).not.toContain("Kozilek, Butcher of Truth");
       expect(s.players.p1?.library.map((id) => nameOf(s, id))).toContain("Kozilek, Butcher of Truth");
       expect(s.players.p1?.library.map((id) => nameOf(s, id))).toContain("Opt");
     });
 
-    it("It That Betrays : un adversaire sacrifie un permanent non-jeton, il arrive sous votre contrôle", () => {
+    it("It That Betrays: an opponent sacrifices a nontoken permanent, it comes under your control", () => {
       let s = scenario({ p1: { battlefield: ["It That Betrays"] }, p2: { battlefield: ["Bear Cub", "Forest", "Forest"] } });
       s = throughCombat(attack(s, [idOf(s, "p1", "battlefield", "It That Betrays")]));
-      // Annihilateur 2 : p2 sacrifie deux permanents, qui arrivent sous le contrôle de p1.
+      // Annihilator 2: p2 sacrifices two permanents, which come under p1's control.
       expect(s.battlefield.filter((id) => s.objects[id]?.owner === "p2" && s.objects[id]?.controller === "p1")).toHaveLength(2);
     });
 
-    it("Ulamog, the Ceaseless Hunger : exile deux permanents en le lançant ; en attaquant, vingt cartes du défenseur", () => {
+    it("Ulamog, the Ceaseless Hunger: exiles two permanents when cast; when attacking, twenty cards of the defender", () => {
       let s = scenario({
         p1: { battlefield: lands("Wastes", 10), hand: ["Ulamog, the Ceaseless Hunger"] },
         p2: { battlefield: ["Bear Cub", "Savannah Lions"], library: Array(25).fill("Forest") },
@@ -195,7 +195,7 @@ describe("Rakdos, Lord of Riots (EDH)", () => {
       expect(a.players.p2?.library).toHaveLength(5);
     });
 
-    it("Ulamog, the Defiler : l'adversaire exile la moitié de sa bibliothèque (arrondie au-dessus) ; marqueurs = plus grande valeur de mana en exil", () => {
+    it("Ulamog, the Defiler: the opponent exiles half their library (rounded up); counters = highest mana value in exile", () => {
       let s = scenario({
         p1: { battlefield: lands("Wastes", 10), hand: ["Ulamog, the Defiler"] },
         p2: { library: ["Gigantosaurus", ...Array(4).fill("Forest")] },
@@ -204,11 +204,11 @@ describe("Rakdos, Lord of Riots (EDH)", () => {
       expect(s.players.p2?.library).toHaveLength(2);
       const ulamog = idOf(s, "p1", "battlefield", "Ulamog, the Defiler");
       expect(s.objects[ulamog]?.counters["+1/+1"]).toBe(5);
-      // Annihilateur X : ses cinq marqueurs.
+      // Annihilator X: its five counters.
       expect(chars(s, ulamog).power).toBe(12);
     });
 
-    it("Emrakul, the Promised End : vous contrôlez le prochain tour de l'adversaire, puis il prend un tour supplémentaire", () => {
+    it("Emrakul, the Promised End: you control the opponent's next turn, then they take an extra turn", () => {
       let s = scenario({ p1: { battlefield: lands("Wastes", 13), hand: ["Emrakul, the Promised End"] } });
       s = settle(castIt(s, "p1", "Emrakul, the Promised End"));
       expect(s.turnControl).toMatchObject({ player: "p2", by: "p1", thenExtraTurn: true });
@@ -221,7 +221,7 @@ describe("Rakdos, Lord of Riots (EDH)", () => {
       expect(s.turnControl).toBeUndefined();
     });
 
-    it("Emrakul, the World Anew : gagnez le contrôle des créatures du joueur ciblé ; folie — payez six {C}", () => {
+    it("Emrakul, the World Anew: gain control of the targeted player's creatures; madness: pay six {C}", () => {
       expect(card("Emrakul, the World Anew").madness).toMatchObject({ colored: { C: 6 } });
       let s = scenario({
         p1: { battlefield: lands("Wastes", 12), hand: ["Emrakul, the World Anew"] },
@@ -231,7 +231,7 @@ describe("Rakdos, Lord of Riots (EDH)", () => {
       expect(s.battlefield.filter((id) => s.objects[id]?.owner === "p2" && s.objects[id]?.controller === "p1")).toHaveLength(2);
     });
 
-    it("Kozilek, the Broken Reality : le joueur ciblé manifeste deux cartes de sa main ; vous piochez autant", () => {
+    it("Kozilek, the Broken Reality: the targeted player manifests two cards from their hand; you draw as many", () => {
       let s = scenario({
         p1: { battlefield: lands("Wastes", 9), hand: ["Kozilek, the Broken Reality"], library: ["Opt", "Opt"] },
         p2: { hand: ["Bear Cub", "Opt", "Shock"] },
@@ -246,8 +246,8 @@ describe("Rakdos, Lord of Riots (EDH)", () => {
     });
   });
 
-  describe("exhumation : Cityscape Leveler", () => {
-    it("lancé : détruit un permanent non-terrain, son contrôleur crée un Powerstone engagé ; exhumé, revient avec la célérité puis est exilé", () => {
+  describe("unearth: Cityscape Leveler", () => {
+    it("cast: destroys a nonland permanent, its controller creates a tapped Powerstone; unearthed, returns with haste then is exiled", () => {
       let s = scenario({
         p1: { battlefield: lands("Wastes", 8), hand: ["Cityscape Leveler"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -271,8 +271,8 @@ describe("Rakdos, Lord of Riots (EDH)", () => {
     });
   });
 
-  describe("créatures", () => {
-    it("Exocrine : vorace X = 5, cinq marqueurs, pioche, et 5 blessures à chaque joueur et à chaque autre créature", () => {
+  describe("creatures", () => {
+    it("Exocrine: devour X = 5, five counters, draw, and 5 damage to each player and each other creature", () => {
       let s = scenario({
         p1: { battlefield: lands("Mountain", 8), hand: ["Exocrine"], library: ["Opt"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -286,17 +286,17 @@ describe("Rakdos, Lord of Riots (EDH)", () => {
       expect(onField(s, "p2", "Bear Cub")).toBe(0);
     });
 
-    it("Fanatic of Mogis : blessures à chaque adversaire égales à la dévotion au rouge", () => {
+    it("Fanatic of Mogis: damage to each opponent equal to devotion to red", () => {
       let s = scenario({
         players: 3,
         p1: { battlefield: ["Shivan Dragon", ...lands("Mountain", 4)], hand: ["Fanatic of Mogis"] },
       });
       s = settle(castIt(s, "p1", "Fanatic of Mogis"));
-      // Shivan Dragon {R}{R} + Fanatic {R} : 3.
+      // Shivan Dragon {R}{R} + Fanatic {R}: 3.
       expect([life(s, "p2"), life(s, "p3")]).toEqual([17, 17]);
     });
 
-    it("Keen Duelist : chacun perd la valeur de mana de la carte de l'autre, puis prend la sienne", () => {
+    it("Keen Duelist: each player loses the mana value of the other's card, then takes their own", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: ["Keen Duelist"], library: ["Shivan Dragon"] },
@@ -308,7 +308,7 @@ describe("Rakdos, Lord of Riots (EDH)", () => {
       expect(life(s, "p2")).toBe(14);
     });
 
-    it("Sandstone Oracle : choisissez un adversaire ; s'il a plus de cartes en main que vous, piochez la différence", () => {
+    it("Sandstone Oracle: choose an opponent; if they have more cards in hand than you, draw the difference", () => {
       const run = (who: PlayerId) => {
         const offered: string[][] = [];
         let s = scenario({
@@ -325,14 +325,14 @@ describe("Rakdos, Lord of Riots (EDH)", () => {
         return { s, offered };
       };
       const p2 = run("p2");
-      // Choix non ciblé parmi les adversaires.
+      // Untargeted choice among the opponents.
       expect(p2.offered).toEqual([["p2", "p3"]]);
       expect(hand(p2.s, "p1")).toBe(5);
-      // L'adversaire qui a une carte : vous (aucune carte) en piochez une.
+      // The opponent who has a card: you (no cards) draw one.
       expect(hand(run("p3").s, "p1")).toBe(1);
     });
 
-    it("Ancient Cellarspawn : sort de Démon {1} de moins ; sort lancé pour moins que sa valeur de mana, l'adversaire perd la différence", () => {
+    it("Ancient Cellarspawn: Demon spells cost {1} less; a spell cast for less than its mana value, the opponent loses the difference", () => {
       let s = scenario({
         p1: { battlefield: ["Ancient Cellarspawn", ...lands("Swamp", 7)], hand: ["Razaketh, the Foulblooded"] },
       });
@@ -343,7 +343,7 @@ describe("Rakdos, Lord of Riots (EDH)", () => {
       expect(life(s, "p2")).toBe(19);
     });
 
-    it("Grim Servant : cherchez une carte de valeur de mana au plus égale à votre dévotion au noir ; vous perdez 3 PV", () => {
+    it("Grim Servant: search for a card with mana value at most equal to your devotion to black; you lose 3 life", () => {
       let s = scenario({ p1: { battlefield: lands("Swamp", 4), hand: ["Grim Servant"], library: ["Gigantosaurus", "Opt"] } });
       s = settle(castIt(s, "p1", "Grim Servant"), (req, _p, cur) =>
         req.type === "pick" ? req.options.filter((id) => nameOf(cur, String(id)) === "Opt") : undefined,
@@ -353,8 +353,8 @@ describe("Rakdos, Lord of Riots (EDH)", () => {
     });
   });
 
-  describe("sorts", () => {
-    it("Valakut Awakening : mettez des cartes au-dessous, piochez-en autant plus une", () => {
+  describe("spells", () => {
+    it("Valakut Awakening: put cards on the bottom, draw that many plus one", () => {
       let s = scenario({
         p1: {
           battlefield: lands("Mountain", 3),
@@ -368,7 +368,7 @@ describe("Rakdos, Lord of Riots (EDH)", () => {
       expect(s.players.p1?.hand.map((id) => nameOf(s, id)).sort()).toEqual(["Shock", "Shock", "Shock"]);
     });
 
-    it("Shatterskull Smashing : X 6 ou plus, deux fois X blessures réparties", () => {
+    it("Shatterskull Smashing: X 6 or more, twice X damage divided", () => {
       let s = scenario({
         p1: { battlefield: lands("Mountain", 8), hand: ["Shatterskull Smashing // Shatterskull, the Hammer Pass"] },
         p2: { battlefield: ["Gigantosaurus"] },
@@ -378,7 +378,7 @@ describe("Rakdos, Lord of Riots (EDH)", () => {
       expect(onField(s, "p2", "Gigantosaurus")).toBe(0);
     });
 
-    it("Agadeem's Awakening : des cartes de créature de valeurs de mana différentes", () => {
+    it("Agadeem's Awakening: creature cards with different mana values", () => {
       const s = scenario({
         p1: {
           battlefield: lands("Swamp", 6),
@@ -390,13 +390,13 @@ describe("Rakdos, Lord of Riots (EDH)", () => {
       const [elves] = idsOf(s, "p1", "graveyard", "Llanowar Elves");
       const [lions] = idsOf(s, "p1", "graveyard", "Savannah Lions");
       const card0 = idOf(s, "p1", "hand", "Agadeem's Awakening // Agadeem, the Undercrypt");
-      // Llanowar Elves et Savannah Lions ont la même valeur de mana (1) : refusé.
+      // Llanowar Elves and Savannah Lions have the same mana value (1): refused.
       expect(() => act(s, "p1", { type: "cast", card: card0, x: 2, targets: { t: [elves, lions] } } as never)).toThrow();
       const ok = settle(act(s, "p1", { type: "cast", card: card0, x: 2, targets: { t: [bear, elves] } } as never));
       expect(onField(ok, "p1", "Bear Cub") + onField(ok, "p1", "Llanowar Elves")).toBe(2);
     });
 
-    it("Rakdos Charm : chaque créature inflige 1 blessure à son contrôleur", () => {
+    it("Rakdos Charm: each creature deals 1 damage to its controller", () => {
       let s = scenario({
         p1: { battlefield: ["Swamp", "Mountain", "Bear Cub"], hand: ["Rakdos Charm"] },
         p2: { battlefield: ["Bear Cub", "Savannah Lions"] },
@@ -405,7 +405,7 @@ describe("Rakdos, Lord of Riots (EDH)", () => {
       expect([life(s, "p1"), life(s, "p2")]).toEqual([19, 18]);
     });
 
-    it("Descent into Avernus : deux marqueurs, puis X Trésors et X blessures pour chaque joueur", () => {
+    it("Descent into Avernus: two counters, then X Treasures and X damage to each player", () => {
       let s = scenario({ active: "p2", p1: { battlefield: ["Descent into Avernus"] } });
       s = toTurnOf(s, "p1", "upkeep");
       s = settle(s);
@@ -415,7 +415,7 @@ describe("Rakdos, Lord of Riots (EDH)", () => {
   });
 
   describe("mana", () => {
-    it("Blightstep Pathway // Searstep Pathway : on choisit la face jouée (recto {B} ou verso {R})", () => {
+    it("Blightstep Pathway // Searstep Pathway: the played face is chosen (front {B} or back {R})", () => {
       const s = scenario({ p1: { hand: ["Blightstep Pathway // Searstep Pathway"] } });
       const card0 = idOf(s, "p1", "hand", "Blightstep Pathway // Searstep Pathway");
       const offers = legalActions(s, "p1").filter((a) => a.type === "playLand" && a.card === card0);
@@ -426,14 +426,14 @@ describe("Rakdos, Lord of Riots (EDH)", () => {
         manaAbilitiesOf(st, st.battlefield.find((id) => st.objects[id]?.controller === "p1") ?? "").flatMap((m) => m.produce);
       expect(mana(front)).toEqual(["B"]);
       expect(mana(back)).toEqual(["R"]);
-      // Une carte dont le recto seul est un terrain n'a pas de verso à jouer.
+      // A card whose front face alone is a land has no back face to play.
       const forest = scenario({ p1: { hand: ["Forest"] } });
       expect(() =>
         act(forest, "p1", { type: "playLand", card: idOf(forest, "p1", "hand", "Forest"), back: true } as never),
       ).toThrow();
     });
 
-    it("Rakdos Signet : {1}, {T} : {B}{R} ; Graven Cairns : {B/R}, {T} : deux mana noir ou rouge", () => {
+    it("Rakdos Signet: {1}, {T}: {B}{R}; Graven Cairns: {B/R}, {T}: two mana, black or red", () => {
       let s = scenario({ p1: { battlefield: ["Rakdos Signet", "Mountain"] } });
       s = act(s, "p1", { type: "tapForMana", source: idOf(s, "p1", "battlefield", "Mountain"), ability: 0 } as never);
       const signet = idOf(s, "p1", "battlefield", "Rakdos Signet");
@@ -442,7 +442,7 @@ describe("Rakdos, Lord of Riots (EDH)", () => {
       expect([s.players.p1?.manaPool.B, s.players.p1?.manaPool.R]).toEqual([1, 1]);
     });
 
-    it("Cryptolith Fragment : se transforme à l'entretien si chaque joueur a 10 PV ou moins", () => {
+    it("Cryptolith Fragment: transforms at upkeep if each player has 10 life or less", () => {
       let s = scenario({
         active: "p2",
         p1: { life: 9, battlefield: ["Cryptolith Fragment // Aurora of Emrakul"] },

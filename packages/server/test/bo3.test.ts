@@ -1,4 +1,4 @@
-/** Match au meilleur des trois manches (BO3) : score, réserve entre les manches, le perdant commence. */
+/** Best-of-three match (BO3): score, sideboard between games, the loser starts. */
 import { afterEach, describe, expect, it } from "vitest";
 import type { RunningServer } from "../src/index";
 import { Client, GREEN, RED, server } from "./helpers";
@@ -25,9 +25,9 @@ async function bo3() {
 }
 
 describe("BO3", () => {
-  it("les manches s'enchaînent avec la réserve, le perdant commence, jusqu'à deux victoires", async () => {
+  it("games follow one another with the sideboard, the loser starts, until two wins", async () => {
     const { a, b } = await bo3();
-    // Alice concède chaque manche : parties courtes, Bob gagne 2–0 et Alice commence la manche 2.
+    // Alice concedes every game: short games, Bob wins 2-0 and Alice starts game 2.
     a.bot = false;
     for (let game = 1; game <= 2; game++) {
       if (game === 1) await a.next("room", (x) => x.room.status === "playing", 10_000);
@@ -41,7 +41,7 @@ describe("BO3", () => {
         break;
       }
       expect(end.room.status).toBe("sideboard");
-      // Entre les manches : chacun garde son deck (échange vide) et se déclare prêt.
+      // Between games: each keeps their deck (empty swap) and declares ready.
       for (const c of [a, b]) {
         const r = [...c.received].reverse().find((x) => x.type === "room");
         const deck = r?.type === "room" ? r.room.deck : { main: [], sideboard: [] };
@@ -49,21 +49,21 @@ describe("BO3", () => {
       }
       const next = await a.next("room", (x) => x.room.status === "playing", 10_000);
       expect(next.room.match.game).toBe(2);
-      // Le perdant de la manche 1 (Alice, p1) commence la manche 2.
-      // Dès les mulligans, le joueur actif est celui qui commencera.
+      // The loser of game 1 (Alice, p1) starts game 2.
+      // From the mulligans on, the active player is the one who will start.
       const first = await a.next("update", (u) => !u.view.over, 10_000);
       expect(first.view.turn.active).toBe("p1");
     }
   }, 60_000);
 
-  it("un échange de réserve qui change les cartes est refusé", async () => {
+  it("a sideboard swap that changes the cards is refused", async () => {
     const { a, b } = await bo3();
     a.bot = false;
-    // La partie doit avoir commencé (arrivée de Bob traitée) avant l'abandon d'Alice.
+    // The game must have started (Bob's arrival handled) before Alice quits.
     await a.next("room", (x) => x.room.status === "playing", 10_000);
     a.send({ type: "decision", decision: { type: "concede" } });
     await a.next("room", (m) => m.room.status === "sideboard", 10_000);
-    // Deck vert contre deck rouge : ce ne sont pas les cartes d'Alice.
+    // Green deck against red deck: these are not Alice's cards.
     a.bot = b.bot = false;
     a.send({ type: "sideboard", main: RED, sideboard: [] });
     expect((await a.next("error", (m) => m.code === "deck")).message).toMatch(/same cards/);

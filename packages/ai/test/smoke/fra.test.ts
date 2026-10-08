@@ -1,4 +1,4 @@
-/** Test de fumée : Reality Fracture. */
+/** Smoke test: Reality Fracture. */
 import { smokeTest } from "./harness";
 
 smokeTest(["FRA"]);

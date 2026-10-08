@@ -1,4 +1,4 @@
-/** Audit Oracle ↔ script (`src/audit.ts`) : pas de nouvel écart, et la liste des écarts connus reste à jour. */
+/** Oracle ↔ script audit (`src/audit.ts`): no new gap, and the list of known gaps stays up to date. */
 
 import { dsl } from "@mtgx/engine";
 import { describe, expect, it } from "vitest";
@@ -8,39 +8,39 @@ import { auditCard, auditTargets, effectNumbers, issueKey, paragraphs, targetWor
 import { implementedCards } from "../src/index";
 
 describe("audit Oracle ↔ script", () => {
-  it("découpe le texte Oracle en paragraphes classés", () => {
+  it("splits the Oracle text into classified paragraphs", () => {
     const kinds = (text: string, spell = false) => paragraphs(text, spell).map((p) => p.kind);
     expect(kinds("Flying, vigilance\nWhenever this creature attacks, draw a card.\n{2}, {T}: Add {G}.")).toEqual([
       "keywords",
       "triggered",
       "activated",
     ]);
-    // Texte de rappel et mot d'aptitude retirés ; capacité citée : statique.
+    // Reminder text and ability word removed; quoted ability: static.
     expect(kinds("Landfall — Whenever a land you control enters, you gain 1 life.")).toEqual(["triggered"]);
     expect(kinds('Enchanted land has "{T}: Add {C}."')).toEqual(["static"]);
-    // Un rituel ne décrit pas de capacité déclenchée.
+    // A sorcery doesn't describe a triggered ability.
     expect(kinds("When you next cast an instant spell this turn, copy it.", true)).toEqual(["spell"]);
     expect(kinds("+1: Draw a card.\n−3: Destroy target creature.")).toEqual(["activated", "activated"]);
-    // Mots d'aptitude à chiffre ou à ponctuation (Descend 4, « No One Dies! ») : la capacité reste déclenchée.
+    // Ability words with a number or punctuation (Descend 4, "No One Dies!"): the ability stays triggered.
     expect(
       kinds("Descend 4 — When this creature enters, if there are four or more permanent cards in your graveyard, draw a card."),
     ).toEqual(["triggered"]);
     expect(kinds("No One Dies! — When Spider-Man enters, you may tap him.")).toEqual(["triggered"]);
-    // Les modes appartiennent au paragraphe qui les annonce.
+    // The modes belong to the paragraph that introduces them.
     expect(kinds("When this creature enters, choose one —\n• Draw a card.\n• Scry 2.")).toEqual(["triggered", "mode", "mode"]);
     expect(kinds("Firebending 2\nBasic landcycling {2}")).toEqual(["keywords", "keywords"]);
   });
 
-  it("compte les statiques portées par le script (capacités, champs, effets distincts d'une capacité)", () => {
+  it("counts the statics carried by the script (abilities, fields, distinct effects of an ability)", () => {
     const base = implementedCards().find((c) => c.name === "Frenzied Baloth");
     expect(base && auditCard(base).filter((i) => i.kind === "static")).toEqual([]);
     if (!base) return;
-    // Sans son champ « ne peut pas être contrecarré », une statique du texte n'est plus portée.
+    // Without its "can't be countered" field, a static of the text is no longer carried.
     const { cantBeCountered: _c, ...stripped } = base;
     expect(auditCard(stripped as typeof base).map((i) => i.kind)).toContain("static");
   });
 
-  it("repère un sort dont les cibles ne suivent pas le texte (« each opponent » ciblé, cible oubliée)", () => {
+  it('spots a spell whose targets don\'t follow the text (targeted "each opponent", forgotten target)', () => {
     const sort = (text: string, targets: number) =>
       customCard({
         name: "Sort d'essai",
@@ -59,20 +59,20 @@ describe("audit Oracle ↔ script", () => {
     expect(auditTargets(sort("Destroy target creature. Draw a card.", 1))).toEqual([]);
   });
 
-  it("repère les nombres d'effet", () => {
+  it("spots effect numbers", () => {
     expect(effectNumbers("It deals 3 damage to any target. Draw two cards.")).toEqual([3, 2]);
     expect(effectNumbers("Put two +1/+1 counters on target creature.")).toEqual([2]);
     expect(effectNumbers("Target creature gets +3/+0 until end of turn.")).toEqual([3]);
   });
 
-  it("aucune carte gérée n'a d'écart hors de la liste des écarts connus (data/audit-baseline.json)", () => {
+  it("no handled card has a gap outside the list of known gaps (data/audit-baseline.json)", () => {
     const known = baseline as Record<string, string>;
     const found = implementedCards()
       .filter((c) => !c.isToken)
       .flatMap(auditCard)
       .map(issueKey);
     expect(found.filter((k) => !(k in known))).toEqual([]);
-    // Un écart corrigé doit sortir de la liste.
+    // A fixed gap must leave the list.
     expect(Object.keys(known).filter((k) => !found.includes(k))).toEqual([]);
   });
 });

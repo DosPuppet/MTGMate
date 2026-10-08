@@ -1,4 +1,4 @@
-/** Clients de test : vrais WebSockets vers un serveur lancé sur un port libre, bot qui ne voit que sa vue. */
+/** Test clients: real WebSockets to a server started on a free port, a bot that only sees its own view. */
 import { type DeckEntries, deckById } from "@mtgx/cards";
 import { type ActionOption, type Decision, type GameView, RULES_VERSION } from "@mtgx/engine";
 import { WebSocket } from "ws";
@@ -6,7 +6,7 @@ import type { ClientMessage, RoomConfig, ServerMessage } from "../src/index";
 import { type RunningServer, startServer } from "../src/index";
 import { PROTOCOL_VERSION } from "../src/protocol";
 
-/** Versions d'un client à jour (poignée de main). */
+/** Versions of an up-to-date client (handshake). */
 export const VERSION = { protocol: PROTOCOL_VERSION, rules: RULES_VERSION };
 
 export const GREEN: DeckEntries = deckById("welcome-green").main;
@@ -16,8 +16,8 @@ export function server(
   config: Partial<RoomConfig> = {},
   opts: { maxPerIp?: number; pingMs?: number; rate?: { perSecond: number; burst: number } } = {},
 ): Promise<RunningServer> {
-  // Plafond du tas désactivé par défaut : le processus de test, après des dizaines de parties, peut dépasser celui de
-  // production (384 Mo de tas, 640 Mo de RSS) sans que cela concerne le test ; le test du plafond le fixe lui-même.
+  // Heap cap disabled by default: after dozens of games the test process may exceed the production one
+  // (384 MB heap, 640 MB RSS) without that being relevant to the test; the cap test sets it itself.
   return startServer({ port: 0, host: "127.0.0.1", config: { maxHeapMb: 0, maxRssMb: 0, ...config }, ...opts });
 }
 
@@ -25,7 +25,7 @@ export class Client {
   readonly received: ServerMessage[] = [];
   private cursor = 0;
   private waiters: (() => void)[] = [];
-  /** Répond automatiquement à ses décisions (bot). */
+  /** Automatically answers its decisions (bot). */
   bot = false;
   private failed = new Set<string>();
   lastView: GameView | null = null;
@@ -38,7 +38,7 @@ export class Client {
       if (msg.type === "error" && msg.code === "rules" && this.lastPending) this.failed.add(this.lastPending);
       for (const w of this.waiters.splice(0)) w();
       if (this.bot && msg.type === "update") setImmediate(() => this.play(msg.view));
-      // Décision refusée : aucune nouvelle vue n'arrivera, on rejoue prudemment (passer, ne pas attaquer).
+      // Decision refused: no new view will arrive, so replay cautiously (pass, don't attack).
       const view = this.lastView;
       if (this.bot && msg.type === "error" && msg.code === "rules" && view) setImmediate(() => this.play(view));
     });
@@ -52,7 +52,7 @@ export class Client {
     });
   }
 
-  /** Envoie un message ; création, arrivée et reprise portent la version d'un client à jour, sauf `raw`. */
+  /** Sends a message; create, join and resume carry the version of an up-to-date client, unless `raw`. */
   send(msg: ClientMessage, raw = false): void {
     const versioned = !raw && (msg.type === "create" || msg.type === "join" || msg.type === "rejoin");
     this.ws.send(JSON.stringify(versioned && !msg.version ? { ...msg, version: VERSION } : msg));
@@ -66,7 +66,7 @@ export class Client {
     });
   }
 
-  /** Prochain message (non encore consommé) qui vérifie `pred`. */
+  /** Next message (not yet consumed) that satisfies `pred`. */
   async next<T extends ServerMessage["type"]>(
     type: T,
     pred: (m: Extract<ServerMessage, { type: T }>) => boolean = () => true,
@@ -79,7 +79,7 @@ export class Client {
         if (m.type === type && pred(m as Extract<ServerMessage, { type: T }>)) return m as Extract<ServerMessage, { type: T }>;
       }
       const left = end - Date.now();
-      if (left <= 0) throw new Error(`Message « ${type} » attendu, non reçu`);
+      if (left <= 0) throw new Error(`Message "${type}" expected, not received`);
       await new Promise<void>((ok) => {
         const t = setTimeout(ok, left);
         this.waiters.push(() => {
@@ -92,7 +92,7 @@ export class Client {
 
   private lastPending: string | null = null;
 
-  /** Bot : terrains, sorts sans coût additionnel, attaque avec tout, réponses suggérées. */
+  /** Bot: lands, spells without additional cost, attacks with everything, suggested answers. */
   play(view: GameView): void {
     const p = view.pending;
     if (!p || p.player !== view.viewer || view.over || view !== this.lastView) return;
@@ -155,7 +155,7 @@ function castTargets(a: Extract<ActionOption, { type: "cast" }>): Record<string,
   return out;
 }
 
-/** Deux joueurs dans un salon, partie lancée. */
+/** Two players in a room, game started. */
 export async function duel(port: number, opts: { bots?: boolean } = {}) {
   const a = await Client.connect(port);
   const b = await Client.connect(port);

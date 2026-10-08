@@ -1,7 +1,7 @@
 /**
- * Sièges IA tenus par le serveur (PLAN-E, E14) : l'IA réfléchit dans le pool de workers, joue ses décisions (enregistrées
- * comme les autres), n'a pas de minuteur ; le salon ferme quand il n'y a plus d'humain ; une reprise après redémarrage
- * rejoue ses décisions sans la relancer, puis elle continue.
+ * AI seats held by the server (PLAN-E, E14): the AI thinks in the worker pool, plays its decisions (recorded
+ * like the others), has no timer; the room closes when no human is left; a resume after a restart
+ * replays its decisions without rerunning it, then it carries on.
  */
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -26,8 +26,8 @@ async function human(port: number): Promise<Client> {
   return c;
 }
 
-describe("sièges IA", () => {
-  it("duel contre l'IA du serveur : la partie commence aussitôt et l'IA joue (décisions enregistrées)", async () => {
+describe("AI seats", () => {
+  it("duel against the server AI: the game starts at once and the AI plays (decisions recorded)", async () => {
     srv = await server({});
     const a = await human(srv.port);
     a.bot = true;
@@ -35,12 +35,12 @@ describe("sièges IA", () => {
     const room = await a.next("room", (m) => m.room.status === "playing", 10_000);
     expect(room.room.players.map((p) => p.ai ?? null)).toEqual([null, "beginner"]);
     expect(plainText(room.room.players[1]?.name ?? "")).toBe("AI 1 (beginner)");
-    // L'IA a gardé sa main et joue des terrains : son champ de bataille se remplit.
+    // The AI kept its hand and plays lands: its battlefield fills up.
     const later = await a.next("update", (u) => u.view.battlefield.some((o) => o.controller === "p2"), 30_000);
     expect(plainText(later.view.players.p2?.name ?? "")).toBe("AI 1 (beginner)");
   }, 45_000);
 
-  it("à trois avec deux IA : quand l'humain abandonne, le salon ferme", async () => {
+  it("three players with two AIs: when the human concedes, the room closes", async () => {
     srv = await server({});
     const a = await human(srv.port);
     a.send({ type: "create", name: "Alice", deck: GREEN, players: 3, ai: { count: 2, level: "medium" } });
@@ -51,7 +51,7 @@ describe("sièges IA", () => {
     expect(srv.rooms.size).toBe(0);
   }, 30_000);
 
-  it("refus : pas d'humain, niveau élevé à plusieurs ramené au moyen", async () => {
+  it("refusal: no human, a high level with several AIs lowered to medium", async () => {
     srv = await server({});
     const a = await human(srv.port);
     a.send({ type: "create", name: "Alice", deck: GREEN, players: 2, ai: { count: 2, level: "medium" } });
@@ -61,7 +61,7 @@ describe("sièges IA", () => {
     expect(r.room.players.find((p) => p.ai)?.ai).toBe("medium");
   }, 30_000);
 
-  it("reprise après redémarrage : les décisions de l'IA sont rejouées, puis elle continue", async () => {
+  it("resume after a restart: the AI's decisions are replayed, then it carries on", async () => {
     const dataDir = mkdtempSync(join(tmpdir(), "mtgx-rooms-"));
     dirs.push(dataDir);
     const first = await server({ dataDir, graceMs: 20_000 });

@@ -52,8 +52,8 @@ const token = (name: string, over: Partial<ObjectView> = {}) =>
   creature({ name, defId: `token:${name}`, isToken: true, ...over });
 const n = (k: number, f: () => ObjectView) => Array.from({ length: k }, f);
 
-describe("rangées du champ de bataille", () => {
-  it("créatures devant, planeswalkers au bout ; terrains puis artefacts et enchantements derrière", () => {
+describe("battlefield rows", () => {
+  it("creatures in front, planeswalkers at the end; lands then artifacts and enchantments behind", () => {
     const bear = creature({ name: "Bear" });
     const animatedLand = obj({ name: "Sanctuary", types: ["Land", "Creature"] });
     const vehicle = obj({ name: "Caravan", types: ["Artifact"] });
@@ -76,8 +76,8 @@ describe("rangées du champ de bataille", () => {
   });
 });
 
-describe("regroupement des jetons", () => {
-  it(`regroupe à partir de ${TOKEN_GROUP_MIN} jetons identiques, pas en dessous`, () => {
+describe("grouping tokens", () => {
+  it(`groups from ${TOKEN_GROUP_MIN} identical tokens, not below`, () => {
     expect(tokenSlots(n(TOKEN_GROUP_MIN - 1, () => token("Rabbit"))).map((s) => s.kind)).toEqual(["single", "single", "single"]);
     const slots = tokenSlots(n(TOKEN_GROUP_MIN + 2, () => token("Rabbit")));
     expect(slots).toHaveLength(1);
@@ -85,11 +85,11 @@ describe("regroupement des jetons", () => {
     expect(slots[0]?.objs).toHaveLength(TOKEN_GROUP_MIN + 2);
   });
 
-  it("ne regroupe pas les cartes qui ne sont pas des jetons", () => {
+  it("does not group cards that are not tokens", () => {
     expect(tokenSlots(n(6, () => creature({ name: "Bear", defId: "bear" })))).toHaveLength(6);
   });
 
-  it("sépare les jetons dont l'état diffère (engagé, marqueurs, blessures, mal d'invocation, état d'interface)", () => {
+  it("separates tokens whose state differs (tapped, counters, damage, summoning sickness, interface state)", () => {
     const base = n(4, () => token("Rabbit"));
     const odd = [
       token("Rabbit", { tapped: true }),
@@ -99,23 +99,23 @@ describe("regroupement des jetons", () => {
     ];
     const slots = tokenSlots([...base, ...odd]);
     expect(slots.map((s) => [s.kind, s.objs.length])).toEqual([["tokens", 4], ...odd.map(() => ["single", 1])]);
-    // Un attaquant choisi dans l'interface sort de la pile.
+    // An attacker chosen in the interface leaves the stack.
     const chosen = base[0]?.id;
     const split = tokenSlots(base, undefined, (o) => (o.id === chosen ? "attacking" : ""));
     expect(split.map((s) => s.kind)).toEqual(["single", "single", "single", "single"]);
   });
 
-  it("un jeton qui porte une Aura ou un Équipement reste seul", () => {
+  it("a token carrying an Aura or an Equipment stays alone", () => {
     const tokens = n(5, () => token("Soldier"));
     const slots = tokenSlots(tokens, new Set([tokens[2]?.id as string]));
     expect(slots.map((s) => s.objs.length)).toEqual([4, 1]);
   });
 });
 
-describe("lignes et taille des cartes", () => {
+describe("lines and card size", () => {
   const singles = (k: number): Slot[] => n(k, () => creature()).map((o) => ({ kind: "single", objs: [o] }));
 
-  it("splitLines coupe en deux lignes équilibrées, dans l'ordre", () => {
+  it("splitLines cuts into two balanced lines, in order", () => {
     const slots = singles(7);
     const [a, b] = splitLines(slots, 2);
     expect([a?.length, b?.length].sort()).toEqual([3, 4]);
@@ -125,13 +125,13 @@ describe("lignes et taille des cartes", () => {
     expect(three.map((l) => l.length)).toEqual([3, 3, 3]);
   });
 
-  it("une seule ligne tant que les cartes tiennent en grand", () => {
+  it("a single line as long as the cards fit large", () => {
     const fit = fitBattlefield(1600, 360, singles(5), singles(5), []);
     expect(fit).toMatchObject({ frontLines: 1, backLines: 1 });
     expect(fit.cardW).toBeGreaterThan(100);
   });
 
-  it("passe sur 2 lignes quand cela donne des cartes plus grandes, puis rétrécit", () => {
+  it("goes to 2 lines when that gives larger cards, then shrinks", () => {
     const one = fitBattlefield(1600, 360, singles(40), singles(2), []);
     expect(one.frontLines).toBe(2);
     const oneLineW = (1600 - 28 - 10 * 39) / 40;
@@ -142,44 +142,44 @@ describe("lignes et taille des cartes", () => {
     expect(more.cardW).toBeGreaterThanOrEqual(MIN_W);
   });
 
-  it("dans une zone étroite (multijoueur), va au-delà de 2 lignes plutôt que de déborder", () => {
+  it("in a narrow area (multiplayer), goes beyond 2 lines rather than overflow", () => {
     const fit = fitBattlefield(420, 330, singles(30), singles(4), []);
     expect(fit.frontLines).toBeGreaterThan(2);
     const perLine = Math.ceil(30 / fit.frontLines);
     expect(perLine * fit.cardW + 10 * (perLine - 1)).toBeLessThanOrEqual(420 - 28);
   });
 
-  it("une pile de jetons occupe à peine plus d'une carte", () => {
+  it("a stack of tokens takes barely more than one card", () => {
     const [stack] = tokenSlots(n(12, () => token("Goblin")));
     expect(slotUnits(stack as Slot)).toBeLessThan(1.2);
   });
 });
 
-describe("zone des planeswalkers (comme sur MTGA)", () => {
+describe("planeswalker area (as in MTGA)", () => {
   const walker = (over: Partial<ObjectView> = {}) => obj({ name: "Ajani", types: ["Planeswalker"], ...over });
   const singles = (k: number): Slot[] => n(k, () => creature()).map((o) => ({ kind: "single", objs: [o] }));
 
-  it("planeswalkers et batailles ne sont jamais parmi les créatures, même sur plusieurs lignes", () => {
+  it("planeswalkers and battles are never among the creatures, even over several lines", () => {
     const perms = [...n(15, () => creature()), walker(), ...n(15, () => creature()), obj({ name: "Siege", types: ["Battle"] })];
     const { front, walkers } = battlefieldSlots(battlefieldRows(perms));
     expect(walkers.map((s) => s.objs[0]?.name)).toEqual(["Ajani", "Siege"]);
     for (const line of splitLines(front, 3)) expect(line.every((s) => s.objs[0]?.types.includes("Creature"))).toBe(true);
   });
 
-  it("un planeswalker devenu créature rejoint les créatures", () => {
+  it("a planeswalker that became a creature joins the creatures", () => {
     const { front, walkers } = battlefieldSlots(battlefieldRows([walker({ types: ["Planeswalker", "Creature"] })]));
     expect(front).toHaveLength(1);
     expect(walkers).toHaveLength(0);
   });
 
-  it("la colonne des planeswalkers réduit la place des rangées, et n'existe pas sans eux", () => {
+  it("the planeswalker column reduces the room for rows, and does not exist without them", () => {
     const without = fitBattlefield(150, 2000, singles(1), singles(1), []);
     const withWalker = fitBattlefield(150, 2000, singles(1), singles(1), [{ kind: "single", objs: [walker()] }]);
     expect(withWalker.cardW).toBeLessThan(without.cardW);
     expect(without.walkerStep).toBeGreaterThan(0);
   });
 
-  it("plusieurs planeswalkers s'empilent, puis se recouvrent sans cacher leur nom", () => {
+  it("several planeswalkers stack, then overlap without hiding their name", () => {
     const h = 100 * 1.395;
     expect(walkerStep(2, 100, 400)).toBeGreaterThanOrEqual(h);
     const step = walkerStep(5, 100, 400);
@@ -188,7 +188,7 @@ describe("zone des planeswalkers (comme sur MTGA)", () => {
     expect(walkerStep(40, 100, 400)).toBeCloseTo(h * WALKER_MIN_PEEK);
   });
 
-  it("rangée arrière : terrains, puis artefacts, puis enchantements", () => {
+  it("back row: lands, then artifacts, then enchantments", () => {
     const perms = [
       obj({ name: "Omniscience", types: ["Enchantment"] }),
       obj({ name: "Forest", types: ["Land"] }),
@@ -200,11 +200,11 @@ describe("zone des planeswalkers (comme sur MTGA)", () => {
   });
 });
 
-describe("main (elle se resserre au lieu de déborder)", () => {
-  it("garde le pas naturel quand la place suffit", () => {
+describe("hand (it tightens instead of overflowing)", () => {
+  it("keeps the natural spacing when there is room", () => {
     expect(fitHand(2000, 100, 7)).toBe(100 * HAND_STEP);
   });
-  it("tient dans la largeur disponible", () => {
+  it("fits in the available width", () => {
     for (const [w, n] of [
       [600, 10],
       [900, 17],
@@ -214,7 +214,7 @@ describe("main (elle se resserre au lieu de déborder)", () => {
       expect(100 + (n - 1) * step).toBeLessThanOrEqual(w);
     }
   });
-  it("ne descend pas sous le pas minimal", () => {
+  it("does not go below the minimal spacing", () => {
     expect(fitHand(200, 100, 30)).toBe(100 * HAND_MIN_STEP);
   });
 });

@@ -1,6 +1,6 @@
 /**
- * Exil face cachée (406.3 ; docs/plans/PLAN-C.md, lot C6) : une carte exilée face cachée n'est montrée qu'aux joueurs qui
- * peuvent la regarder, dans la vue comme dans les événements.
+ * Face-down exile (406.3; PLAN-C in docs/history.md, lot C6): a card exiled face down is only shown to players who
+ * may look at it, in the view as in the events.
  */
 
 import { describe, expect, it } from "vitest";
@@ -13,8 +13,8 @@ import { cast, exiled, idOf, lands, scenario, settle } from "./helpers";
 
 const exileView = (s: GameState, viewer: string, id: string) => projectView(s, viewer).exile.find((o) => o.id === id);
 
-describe("exil face cachée", () => {
-  it("présage : seul le propriétaire voit la carte présagée (vue et événement)", () => {
+describe("face-down exile", () => {
+  it("foretell: only the owner sees the foretold card (view and event)", () => {
     let s = scenario({ p1: { battlefield: lands("Mountain", 3), hand: ["Sozin's Comet"] } });
     const comet = idOf(s, "p1", "hand", "Sozin's Comet");
     const foretell = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === comet && a.label === "Foretell");
@@ -33,7 +33,7 @@ describe("exil face cachée", () => {
     expect(theirs).toEqual({ type: "foretold", player: "p1", defId: HIDDEN_CARD_ID });
   });
 
-  it("Doomsday Excruciator : les bibliothèques exilées face cachée ne sont vues par personne", () => {
+  it("Doomsday Excruciator: libraries exiled face down are seen by nobody", () => {
     let s = scenario({
       p1: { battlefield: lands("Swamp", 10), hand: ["Doomsday Excruciator"], library: lands("Swamp", 10) },
       p2: { library: [...Array(8).fill("Opt"), ...lands("Island", 6)] },

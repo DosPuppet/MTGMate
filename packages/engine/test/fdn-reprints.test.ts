@@ -1,6 +1,6 @@
 /**
- * Foundations, réimpressions : mécaniques ajoutées pour les cartes n° 282 et plus
- * (poison, « doit être bloquée », combat supplémentaire, Équipage, changement de cible, mana à effet…).
+ * Foundations, reprints: mechanics added for cards no. 282 and up
+ * (poison, "must be blocked", additional combat, Crew, retargeting, mana with an effect...).
  */
 import { describe, expect, it } from "vitest";
 import { destroy } from "../src/actions";
@@ -22,7 +22,7 @@ const activation = (s: S, p: string, source: string, label?: string) =>
       a.type === "activate" && a.source === source && (!label || !!a.label?.startsWith(label)),
   );
 const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
-/** Avance (passes, suggestions, aucune attaque ni blocage) jusqu'à ce que `until` soit vrai. */
+/** Advances (passes, suggestions, no attack or block) until `until` is true. */
 function advance(s: S, until: (x: S) => boolean): S {
   let cur = s;
   for (let i = 0; i < 400 && !until(cur) && !cur.over; i++) {
@@ -36,7 +36,7 @@ function advance(s: S, until: (x: S) => boolean): S {
   }
   return cur;
 }
-/** Déclare ces attaquants (sur p2) depuis le début du combat. */
+/** Declares these attackers (against p2) from the beginning of combat. */
 function attackWith(s: S, names: string[]): S {
   let cur = advance(s, (x) => x.pending?.kind === "declareAttackers");
   const ids = names.map((n) => idOf(cur, "p1", "battlefield", n));
@@ -44,8 +44,8 @@ function attackWith(s: S, names: string[]): S {
   return cur;
 }
 
-describe("Réimpressions : combat", () => {
-  it("Fynn : deux marqueurs poison ; dix marqueurs, le joueur perd", () => {
+describe("Reprints: combat", () => {
+  it("Fynn: two poison counters; ten counters, the player loses", () => {
     let s = scenario({ step: "beginCombat", p1: { battlefield: ["Fynn, the Fangbearer"] } });
     s.players.p2!.counters = { poison: 8 };
     s = attackWith(s, ["Fynn, the Fangbearer"]);
@@ -54,7 +54,7 @@ describe("Réimpressions : combat", () => {
     expect(s.winner).toBe("p1");
   });
 
-  it("Joraga Invocation : les attaquants doivent être bloqués si possible", () => {
+  it("Joraga Invocation: the attackers must be blocked if able", () => {
     let s = scenario({
       p1: { battlefield: ["Llanowar Elves", ...lands("Forest", 6)], hand: ["Joraga Invocation"] },
       p2: { battlefield: ["Prideful Parent"] },
@@ -72,7 +72,7 @@ describe("Réimpressions : combat", () => {
     expect(s.combat?.attackers[0]?.blocked).toBe(true);
   });
 
-  it("Aurelia : une phase de combat supplémentaire", () => {
+  it("Aurelia: an additional combat phase", () => {
     let s = scenario({ step: "beginCombat", p1: { battlefield: ["Aurelia, the Warleader"] } });
     s = attackWith(s, ["Aurelia, the Warleader"]);
     s = advance(s, (x) => x.turn.step === "main2" || (x.pending?.kind === "declareAttackers" && x.players.p2!.life < 20));
@@ -80,7 +80,7 @@ describe("Réimpressions : combat", () => {
     expect(s.players.p2?.life).toBe(17);
   });
 
-  it("Équipage : Cultivator's Caravan devient une créature en engageant de quoi faire 3 de force", () => {
+  it("Crew: Cultivator's Caravan becomes a creature by tapping enough to make 3 power", () => {
     let s = scenario({ p1: { battlefield: ["Cultivator's Caravan", "Shivan Dragon"] } });
     const caravan = idOf(s, "p1", "battlefield", "Cultivator's Caravan");
     const crew = activation(s, "p1", caravan, "Crew");
@@ -91,19 +91,19 @@ describe("Réimpressions : combat", () => {
     expect(s.objects[idOf(s, "p1", "battlefield", "Shivan Dragon")]?.tapped).toBe(true);
   });
 
-  it("Équipage : le joueur choisit les créatures engagées (force totale suffisante)", () => {
+  it("Crew: the player chooses the tapped creatures (total power sufficient)", () => {
     let s = scenario({
       p1: { battlefield: ["Cultivator's Caravan", "Shivan Dragon", "Llanowar Elves", "Llanowar Elves", "Llanowar Elves"] },
     });
     const caravan = idOf(s, "p1", "battlefield", "Cultivator's Caravan");
     const crew = activation(s, "p1", caravan, "Crew");
     const spec = crew?.type === "activate" ? crew.additional?.tap : undefined;
-    // L'option expose la force requise, les forces et le choix par défaut (les plus faibles d'abord : trois Elfes).
+    // The option exposes the required power, the powers and the default choice (the weakest first: three Elves).
     expect(spec?.minPower).toBe(3);
     expect(spec?.options).toHaveLength(4);
     expect(spec?.suggested).toHaveLength(3);
     const elves = idsOf(s, "p1", "battlefield", "Llanowar Elves");
-    // Deux Elfes (force 2) : insuffisant.
+    // Two Elves (power 2): insufficient.
     expect(() => act(s, "p1", { type: "activate", source: caravan, ability: crew!.ability, tap: elves.slice(0, 2) })).toThrow(
       /Not enough total power/,
     );
@@ -116,8 +116,8 @@ describe("Réimpressions : combat", () => {
   });
 });
 
-describe("Réimpressions : pile et mana", () => {
-  it("Bolt Bend : change la cible d'un sort à cible unique", () => {
+describe("Reprints: stack and mana", () => {
+  it("Bolt Bend: changes the target of a single-target spell", () => {
     let s = scenario({
       active: "p2",
       p1: { battlefield: [...lands("Mountain", 1), "Shivan Dragon", "Llanowar Elves"], hand: ["Bolt Bend"] },
@@ -125,7 +125,7 @@ describe("Réimpressions : pile et mana", () => {
     });
     s = cast(s, "p2", "Burst Lightning", { targets: { t: [idOf(s, "p1", "battlefield", "Llanowar Elves")] } });
     s = act(s, "p2", { type: "pass" });
-    s = cast(s, "p1", "Bolt Bend", { targets: { t: [s.stack[0]!.id] } }); // coûte {R} grâce au Dragon (férocité)
+    s = cast(s, "p1", "Bolt Bend", { targets: { t: [s.stack[0]!.id] } }); // costs {R} thanks to the Dragon (ferocious)
     s = passBoth(s);
     s = choose(s, ["p2"]);
     s = passAccepting(s, (x) => x.stack.length === 0);
@@ -133,14 +133,14 @@ describe("Réimpressions : pile et mana", () => {
     expect(idsOf(s, "p1", "battlefield", "Llanowar Elves")).toHaveLength(1);
   });
 
-  it("Carnelian Orb : un Dragon payé avec son mana a la célérité", () => {
+  it("Carnelian Orb: a Dragon paid for with its mana has haste", () => {
     let s = scenario({ p1: { battlefield: ["Carnelian Orb of Dragonkind", ...lands("Mountain", 5)], hand: ["Shivan Dragon"] } });
     s = cast(s, "p1", "Shivan Dragon");
     s = passBoth(s);
     expect(chars(s, idOf(s, "p1", "battlefield", "Shivan Dragon")).keywords).toContain("haste");
   });
 
-  it("Pyromancer's Goggles : un éphémère rouge payé avec son mana est copié", () => {
+  it("Pyromancer's Goggles: a red instant paid for with its mana is copied", () => {
     let s = scenario({ p1: { battlefield: ["Pyromancer's Goggles"], hand: ["Burst Lightning"] } });
     s = cast(s, "p1", "Burst Lightning", { targets: { t: ["p2"] } });
     expect(s.stack).toHaveLength(2);
@@ -148,7 +148,7 @@ describe("Réimpressions : pile et mana", () => {
     expect(s.players.p2?.life).toBe(16);
   });
 
-  it("Teach by Example : le prochain éphémère ou rituel est copié", () => {
+  it("Teach by Example: the next instant or sorcery is copied", () => {
     let s = scenario({ p1: { battlefield: lands("Mountain", 3), hand: ["Teach by Example", "Burst Lightning"] } });
     s = cast(s, "p1", "Teach by Example");
     s = passBoth(s);
@@ -157,7 +157,7 @@ describe("Réimpressions : pile et mana", () => {
     expect(s.players.p2?.life).toBe(16);
   });
 
-  it("Savage Ventmaw : le mana reste jusqu'à la fin du tour", () => {
+  it("Savage Ventmaw: the mana stays until end of turn", () => {
     let s = scenario({ step: "beginCombat", p1: { battlefield: ["Savage Ventmaw"] } });
     s = attackWith(s, ["Savage Ventmaw"]);
     s = advance(s, (x) => x.turn.step === "main2" && x.pending?.kind === "priority");
@@ -165,30 +165,30 @@ describe("Réimpressions : pile et mana", () => {
     expect(s.players.p1?.manaPool.G).toBe(3);
   });
 
-  it("Harbinger of the Tides : flash moyennant {2} de plus", () => {
+  it("Harbinger of the Tides: flash for an additional {2}", () => {
     const s = scenario({
       active: "p2",
       p1: { battlefield: lands("Island", 3), hand: ["Harbinger of the Tides"] },
       p2: { battlefield: ["Llanowar Elves"] },
     });
     const p = advance(s, (x) => x.pending?.player === "p1" && x.pending.kind === "priority");
-    expect(castOption(p, "p1", idOf(p, "p1", "hand", "Harbinger of the Tides"))).toBeUndefined(); // 3 terrains : il faut 4
+    expect(castOption(p, "p1", idOf(p, "p1", "hand", "Harbinger of the Tides"))).toBeUndefined(); // 3 lands: it takes 4
     const t = scenario({ active: "p2", p1: { battlefield: lands("Island", 4), hand: ["Harbinger of the Tides"] } });
     const q = advance(t, (x) => x.pending?.player === "p1" && x.pending.kind === "priority");
     expect(castOption(q, "p1", idOf(q, "p1", "hand", "Harbinger of the Tides"))).toBeDefined();
   });
 
-  it("Vizier of the Menagerie : lancer la créature du dessus de la bibliothèque", () => {
+  it("Vizier of the Menagerie: cast the creature on top of the library", () => {
     const s = scenario({
       p1: { battlefield: ["Vizier of the Menagerie", ...lands("Swamp", 6)], library: ["Shivan Dragon", "Forest"] },
     });
     const top = s.players.p1?.library[0] as string;
-    expect(castOption(s, "p1", top)).toBeDefined(); // mana de n'importe quel type
+    expect(castOption(s, "p1", top)).toBeDefined(); // mana of any type
   });
 });
 
-describe("Réimpressions : vie, contrôle, remplacements", () => {
-  it("Angel of Vitality ajoute 1 à chaque gain ; Giant Cindermaw empêche les gains", () => {
+describe("Reprints: life, control, replacements", () => {
+  it("Angel of Vitality adds 1 to each gain; Giant Cindermaw prevents gains", () => {
     let s = scenario({ p1: { battlefield: ["Angel of Vitality", "Plains"], hand: ["Moment of Triumph"] } });
     s = cast(s, "p1", "Moment of Triumph", { targets: { t: [idOf(s, "p1", "battlefield", "Angel of Vitality")] } });
     s = passBoth(s);
@@ -199,7 +199,7 @@ describe("Réimpressions : vie, contrôle, remplacements", () => {
     expect(t.players.p1?.life).toBe(20);
   });
 
-  it("Confiscate : on contrôle le permanent enchanté, qui revient quand l'Aura part", () => {
+  it("Confiscate: you control the enchanted permanent, which returns when the Aura leaves", () => {
     let s = scenario({ p1: { battlefield: lands("Island", 6), hand: ["Confiscate"] }, p2: { battlefield: ["Shivan Dragon"] } });
     const dragon = idOf(s, "p2", "battlefield", "Shivan Dragon");
     s = cast(s, "p1", "Confiscate", { targets: { enchant: [dragon] } });
@@ -210,14 +210,14 @@ describe("Réimpressions : vie, contrôle, remplacements", () => {
     expect(s.objects[dragon]?.controller).toBe("p2");
   });
 
-  it("Dryad Militant : les éphémères et rituels vont en exil au lieu du cimetière", () => {
+  it("Dryad Militant: instants and sorceries go to exile instead of the graveyard", () => {
     let s = scenario({ p1: { battlefield: ["Dryad Militant", "Mountain"], hand: ["Burst Lightning"] } });
     s = cast(s, "p1", "Burst Lightning", { targets: { t: ["p2"] } });
     s = passBoth(s);
     expect(s.exile.map((id) => nameOf(s, id))).toContain("Burst Lightning");
   });
 
-  it("Knight of Grace : défense talismanique contre le noir", () => {
+  it("Knight of Grace: hexproof from black", () => {
     const s = scenario({
       active: "p2",
       p1: { battlefield: ["Knight of Grace"] },
@@ -226,14 +226,14 @@ describe("Réimpressions : vie, contrôle, remplacements", () => {
     expect(castOption(s, "p2", idOf(s, "p2", "hand", "Stab"))).toBeUndefined();
   });
 
-  it("Gratuitous Violence double les blessures de vos créatures", () => {
+  it("Gratuitous Violence doubles the damage of your creatures", () => {
     let s = scenario({ step: "beginCombat", p1: { battlefield: ["Gratuitous Violence", "Llanowar Elves"] } });
     s = attackWith(s, ["Llanowar Elves"]);
     s = advance(s, (x) => x.turn.step === "main2");
     expect(s.players.p2?.life).toBe(18);
   });
 
-  it("Fog Bank : les blessures de combat qu'il inflige et reçoit sont prévenues", () => {
+  it("Fog Bank: the combat damage it deals and receives is prevented", () => {
     let s = scenario({ step: "beginCombat", p1: { battlefield: ["Shivan Dragon"] }, p2: { battlefield: ["Fog Bank"] } });
     s = attackWith(s, ["Shivan Dragon"]);
     s = advance(s, (x) => x.pending?.kind === "declareBlockers");
@@ -248,19 +248,19 @@ describe("Réimpressions : vie, contrôle, remplacements", () => {
   });
 });
 
-describe("Réimpressions : cartes à mémoire", () => {
-  it("Demonic Pact : chaque mode une seule fois", () => {
+describe("Reprints: cards with memory", () => {
+  it("Demonic Pact: each mode only once", () => {
     let s = scenario({ active: "p2", step: "end", p1: { battlefield: ["Demonic Pact"], library: lands("Swamp", 10) } });
     s = advance(s, (x) => x.pending?.kind === "choice" && x.pending.request.intent === "triggerMode");
     const req = s.pending?.kind === "choice" ? s.pending.request : null;
     expect(req?.type === "pick" && req.options).toEqual(["0", "1", "2", "3"]);
-    s = choose(s, ["2"]); // piochez deux cartes
+    s = choose(s, ["2"]); // draw two cards
     s = advance(s, (x) => x.turn.number === 6 && x.pending?.kind === "choice" && x.pending.request.intent === "triggerMode");
     const req2 = s.pending?.kind === "choice" ? s.pending.request : null;
     expect(req2?.type === "pick" && req2.options).not.toContain("2");
   });
 
-  it("Myojin of Night's Reach : marqueur de divinité seulement s'il est lancé depuis la main", () => {
+  it("Myojin of Night's Reach: divinity counter only if cast from hand", () => {
     let s = scenario({ p1: { battlefield: lands("Swamp", 8), hand: ["Myojin of Night's Reach"] } });
     s = cast(s, "p1", "Myojin of Night's Reach");
     s = passBoth(s);
@@ -269,14 +269,14 @@ describe("Réimpressions : cartes à mémoire", () => {
     expect(chars(s, myojin).keywords).toContain("indestructible");
   });
 
-  it("Tribute to Hunger : on gagne l'endurance de la créature sacrifiée", () => {
+  it("Tribute to Hunger: you gain the toughness of the sacrificed creature", () => {
     let s = scenario({ p1: { battlefield: lands("Swamp", 3), hand: ["Tribute to Hunger"] }, p2: { battlefield: ["Fog Bank"] } });
     s = cast(s, "p1", "Tribute to Hunger", { targets: { t: ["p2"] } });
     s = passBoth(s);
     expect(s.players.p1?.life).toBe(22);
   });
 
-  it("Ayli : PV égaux à l'endurance de la créature sacrifiée pour le coût", () => {
+  it("Ayli: life equal to the toughness of the creature sacrificed for the cost", () => {
     let s = scenario({ p1: { battlefield: ["Ayli, Eternal Pilgrim", "Fog Bank", "Plains"] } });
     const ayli = idOf(s, "p1", "battlefield", "Ayli, Eternal Pilgrim");
     s = act(s, "p1", { type: "activate", source: ayli, ability: 0, sacrifice: [idOf(s, "p1", "battlefield", "Fog Bank")] });
@@ -284,7 +284,7 @@ describe("Réimpressions : cartes à mémoire", () => {
     expect(s.players.p1?.life).toBe(22);
   });
 
-  it("Hoarding Dragon : l'artefact exilé revient en main quand il meurt", () => {
+  it("Hoarding Dragon: the exiled artifact returns to hand when it dies", () => {
     let s = scenario({
       p1: { battlefield: lands("Mountain", 5), hand: ["Hoarding Dragon"], library: ["Forest", "Gilded Lotus", "Forest"] },
     });
@@ -296,7 +296,7 @@ describe("Réimpressions : cartes à mémoire", () => {
     expect(idsOf(s, "p1", "hand", "Gilded Lotus")).toHaveLength(1);
   });
 
-  it("Maze's End : dix Portes de noms différents, la partie est gagnée", () => {
+  it("Maze's End: ten Gates with different names, the game is won", () => {
     const gates = ["Azorius", "Boros", "Dimir", "Golgari", "Gruul", "Izzet", "Orzhov", "Rakdos", "Selesnya"].map(
       (g) => `${g} Guildgate`,
     );
@@ -310,7 +310,7 @@ describe("Réimpressions : cartes à mémoire", () => {
     expect(s.winner).toBe("p1");
   });
 
-  it("Sorcerous Spyglass : les capacités du nom choisi ne peuvent plus être activées", () => {
+  it("Sorcerous Spyglass: abilities of the chosen name can no longer be activated", () => {
     let s = scenario({
       p1: { battlefield: lands("Island", 2), hand: ["Sorcerous Spyglass"] },
       p2: { battlefield: ["Arcanis the Omnipotent"] },
@@ -323,7 +323,7 @@ describe("Réimpressions : cartes à mémoire", () => {
     expect(activation(s, "p2", arcanis)).toBeUndefined();
   });
 
-  it("Crusader of Odric et Enigma Drake : F/E variables", () => {
+  it("Crusader of Odric and Enigma Drake: variable P/T", () => {
     const s = scenario({
       p1: { battlefield: ["Crusader of Odric", "Llanowar Elves", "Enigma Drake"], graveyard: ["Opt", "Stab", "Forest"] },
     });
@@ -332,7 +332,7 @@ describe("Réimpressions : cartes à mémoire", () => {
     expect([drake.power, drake.toughness]).toEqual([2, 4]);
   });
 
-  it("Wildborn Preserver : payer X pour X marqueurs", () => {
+  it("Wildborn Preserver: pay X for X counters", () => {
     let s = scenario({ p1: { battlefield: ["Wildborn Preserver", ...lands("Forest", 4)], hand: ["Llanowar Elves"] } });
     s = cast(s, "p1", "Llanowar Elves");
     s = passAccepting(s, (x) => x.pending?.kind === "choice" && x.pending.request.intent === "payX");
@@ -341,7 +341,7 @@ describe("Réimpressions : cartes à mémoire", () => {
     expect(s.objects[pres]?.counters["+1/+1"]).toBe(2);
   });
 
-  it("Steel Hellkite : détruit les permanents de valeur X du joueur blessé au combat", () => {
+  it("Steel Hellkite: destroys permanents with mana value X of the player dealt combat damage", () => {
     let s = scenario({
       step: "beginCombat",
       p1: { battlefield: ["Steel Hellkite", ...lands("Plains", 2)] },

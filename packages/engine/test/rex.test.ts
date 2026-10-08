@@ -1,4 +1,4 @@
-/** Jurassic World Collection (REX) : tests de règles des cartes (PLAN-G). */
+/** Jurassic World Collection (REX): rules tests of the cards (PLAN-G). */
 import { describe, expect, it } from "vitest";
 import { destroy, drawCards } from "../src/actions";
 import { legalActions } from "../src/legal";
@@ -11,7 +11,7 @@ const castIt = (s: S, name: string, extra: object = {}) =>
   act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", name), ...extra });
 
 describe("Jurassic World Collection", () => {
-  it("Don't Move : détruit les créatures engagées ; jusqu'à votre prochain tour, une créature engagée est détruite", () => {
+  it("Don't Move: destroys tapped creatures; until your next turn, a tapped creature is destroyed", () => {
     let s = scenario({
       p1: { battlefield: lands("Plains", 5), hand: ["Don't Move"] },
       p2: { battlefield: [{ name: "Bear Cub", tapped: true }, "Llanowar Elves", "Forest"] },
@@ -24,7 +24,7 @@ describe("Jurassic World Collection", () => {
     expect(idsOf(s, "p2", "graveyard", "Llanowar Elves")).toHaveLength(1);
   });
 
-  it("Spitting Dilophosaurus : les créatures adverses avec un marqueur −1/−1 ne bloquent pas", () => {
+  it("Spitting Dilophosaurus: opposing creatures with a -1/-1 counter can't block", () => {
     let s = scenario({
       p1: { battlefield: ["Spitting Dilophosaurus", "Bear Cub"] },
       p2: { battlefield: [{ name: "Shivan Dragon", counters: { "-1/-1": 1 } }] },
@@ -35,7 +35,7 @@ describe("Jurassic World Collection", () => {
     expect(canBlock(s, idOf(s, "p2", "battlefield", "Shivan Dragon"), cub)).toBe(false);
   });
 
-  it("Life Finds a Way : une créature non-jeton de force 4 ou plus arrive, peuplez", () => {
+  it("Life Finds a Way: a nontoken creature with power 4 or greater enters, populate", () => {
     let s = scenario({
       p1: { battlefield: ["Life Finds a Way", ...lands("Mountain", 8)], hand: ["Shivan Dragon", "Dragon Fodder"] },
     });
@@ -44,7 +44,7 @@ describe("Jurassic World Collection", () => {
     expect(idsOf(s, "p1", "battlefield", "Goblin")).toHaveLength(3);
   });
 
-  it("Savage Order : sacrifiez une créature de force 4 ; un Dinosaure de la bibliothèque, indestructible", () => {
+  it("Savage Order: sacrifice a creature with power 4; a Dinosaur from the library, indestructible", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Forest", 4), "Shivan Dragon"], hand: ["Savage Order"], library: ["Polyraptor", "Forest"] },
     });
@@ -55,24 +55,24 @@ describe("Jurassic World Collection", () => {
     expect(idsOf(s, "p1", "battlefield", "Polyraptor")).toHaveLength(1);
   });
 
-  it("Compy Swarm : à votre étape de fin, si une créature est morte, un jeton copie engagé", () => {
+  it("Compy Swarm: at your end step, if a creature died, a tapped token copy", () => {
     let s = scenario({ p1: { battlefield: ["Compy Swarm", "Bear Cub"] } });
     destroy(s, idOf(s, "p1", "battlefield", "Bear Cub"));
     s = advanceUntil(s, (x) => x.turn.step === "cleanup" || x.turn.active === "p2");
     expect(idsOf(s, "p1", "battlefield", "Compy Swarm")).toHaveLength(2);
   });
 
-  it("Ravenous Tyrannosaurus : en attaquant, blessures égales à sa force ; l'excès au contrôleur", () => {
+  it("Ravenous Tyrannosaurus: when attacking, damage equal to its power; the excess to the controller", () => {
     let s = scenario({ p1: { battlefield: ["Ravenous Tyrannosaurus"] }, p2: { battlefield: ["Bear Cub"] } });
     const rex = idOf(s, "p1", "battlefield", "Ravenous Tyrannosaurus");
     const cub = idOf(s, "p2", "battlefield", "Bear Cub");
     s = throughCombat(attack(s, [rex]), (req) => (req.type === "pick" && req.options.includes(cub) ? [cub] : undefined));
     expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
-    // 4 blessures en excès (6 − 2), puis 6 de combat.
+    // 4 excess damage (6 - 2), then 6 combat damage.
     expect(s.players.p2?.life).toBe(10);
   });
 
-  it("Permission Denied : contrecarre un sort non-créature ; les adversaires n'en lancent plus ce tour-ci", () => {
+  it("Permission Denied: counters a noncreature spell; opponents cast no more this turn", () => {
     let s = scenario({
       active: "p2",
       p1: { battlefield: ["Plains", "Island"], hand: ["Permission Denied"] },
@@ -85,8 +85,8 @@ describe("Jurassic World Collection", () => {
     expect(s.pending?.kind === "priority" && s.pending.player === "p2").toBe(true);
   });
 
-  describe("G4e : sous-lot difficile", () => {
-    it("Grim Giganotosaurus : monstruosité 10, moins chère par créature adverse de force 4 ; détruit les autres artefacts et créatures", () => {
+  describe("G4e: difficult sub-lot", () => {
+    it("Grim Giganotosaurus: monstrosity 10, cheaper per opposing creature with power 4; destroys the other artifacts and creatures", () => {
       let s = scenario({
         p1: { battlefield: ["Grim Giganotosaurus", ...lands("Swamp", 6), ...lands("Forest", 5), "Bear Cub"] },
         p2: { battlefield: ["Shivan Dragon", "Mana Crypt"] },
@@ -101,7 +101,7 @@ describe("Jurassic World Collection", () => {
       expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === giga)).toBe(false);
     });
 
-    it("Indoraptor : soif de sang, autant de marqueurs que de blessures infligées aux adversaires ce tour-ci", () => {
+    it("Indoraptor: bloodthirst, as many counters as damage dealt to opponents this turn", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Mountain", 3), "Swamp"], hand: ["Shock", "Indoraptor, the Perfect Hybrid"] },
       });
@@ -110,7 +110,7 @@ describe("Jurassic World Collection", () => {
       expect(s.objects[idOf(s, "p1", "battlefield", "Indoraptor, the Perfect Hybrid")]?.counters["+1/+1"]).toBe(2);
     });
 
-    it("Henry Wu : vos Humains exploitent ; exploiter une créature non-Humain fait piocher (et un Trésor si force 3)", () => {
+    it("Henry Wu: your Humans exploit; exploiting a non-Human creature draws (and a Treasure if power 3)", () => {
       let s = scenario({
         p1: {
           battlefield: ["Henry Wu, InGen Geneticist", "Shivan Dragon", ...lands("Plains", 2)],
@@ -127,8 +127,8 @@ describe("Jurassic World Collection", () => {
       expect(s.players.p1?.hand.length).toBeGreaterThanOrEqual(1);
     });
   });
-  describe("G4e : combat", () => {
-    it("Swooping Pteranodon : prend une créature adverse jusqu'à la fin du tour ; à l'étape de fin, un terrain lui inflige 3", () => {
+  describe("G4e: combat", () => {
+    it("Swooping Pteranodon: takes an opposing creature until end of turn; at the end step, a land deals 3 to it", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Mountain", 3), ...lands("Plains", 2)], hand: ["Swooping Pteranodon"] },
         p2: { battlefield: [{ name: "Bear Cub", tapped: true }] },
@@ -144,7 +144,7 @@ describe("Jurassic World Collection", () => {
       expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
     });
 
-    it("Owen Grady et Blue : partenaires ; marqueur au choix sur un Dinosaure ; vos Dinosaures arrivent avec les marqueurs de Blue", () => {
+    it("Owen Grady and Blue: partners; counter of your choice on a Dinosaur; your Dinosaurs enter with Blue's counters", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Mountain", 2), "Forest", "Polyraptor"],
@@ -158,7 +158,7 @@ describe("Jurassic World Collection", () => {
       expect(idsOf(s, "p1", "hand", "Blue, Loyal Raptor")).toHaveLength(1);
       const raptor = idOf(s, "p1", "battlefield", "Polyraptor");
       const owen = idOf(s, "p1", "battlefield", "Owen Grady, Raptor Trainer");
-      // Owen vient d'arriver : comme s'il était là depuis le début du tour ({T} sans mal d'invocation).
+      // Owen just arrived: as if he had been there since the start of the turn ({T} without summoning sickness).
       (s.objects[owen] as { controlledSince: number }).controlledSince = 0;
       s = settle(act(s, "p1", { type: "activate", source: owen, ability: 1, targets: { t: [raptor] } }), (req) =>
         req.type === "pick" && req.options.includes("2") ? ["2"] : undefined,
@@ -175,8 +175,8 @@ describe("Jurassic World Collection", () => {
       expect(t.objects[d]?.counters).toMatchObject({ flying: 1, "+1/+1": 1 });
     });
   });
-  describe("G4e : lancer autrement", () => {
-    it("Cresting Mosasaurus : émerger (sacrifice, coût réduit de sa VM) ; lancée, renvoie les non-Dinosaures", () => {
+  describe("G4e: casting otherwise", () => {
+    it("Cresting Mosasaurus: emerge (sacrifice, cost reduced by its mana value); cast, returns the non-Dinosaurs", () => {
       let s = scenario({
         p1: { battlefield: ["Shivan Dragon", "Island"], hand: ["Cresting Mosasaurus"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -187,7 +187,7 @@ describe("Jurassic World Collection", () => {
       expect(idsOf(s, "p2", "hand", "Bear Cub")).toHaveLength(1);
     });
 
-    it("Hunting Velociraptor : maraude {2}{R} pour vos Dinosaures après des blessures de combat d'un Dinosaure", () => {
+    it("Hunting Velociraptor: rampage {2}{R} for your Dinosaurs after combat damage from a Dinosaur", () => {
       let s = scenario({
         p1: { battlefield: ["Hunting Velociraptor", ...lands("Mountain", 3)], hand: ["Polyraptor"] },
       });
@@ -201,8 +201,8 @@ describe("Jurassic World Collection", () => {
       expect(idsOf(s, "p1", "battlefield", "Polyraptor")).toHaveLength(1);
     });
   });
-  describe("G4e : exil et copies", () => {
-    it("Dino DNA : exile une carte de créature d'un cimetière ; {6} : une copie Dinosaure vert 6/6 avec le piétinement", () => {
+  describe("G4e: exile and copies", () => {
+    it("Dino DNA: exiles a creature card from a graveyard; {6}: a green 6/6 Dinosaur copy with trample", () => {
       let s = scenario({ p1: { battlefield: ["Dino DNA", ...lands("Forest", 7)] }, p2: { graveyard: ["Bear Cub"] } });
       const dna = idOf(s, "p1", "battlefield", "Dino DNA");
       s = settle(
@@ -216,8 +216,8 @@ describe("Jurassic World Collection", () => {
       expect(chars(s, token).keywords).toContain("trample");
     });
   });
-  describe("G4e : dernières cartes", () => {
-    it("Ian Malcolm : la deuxième pioche exile la carte du dessus ; les autres joueurs peuvent la lancer pendant leur tour", () => {
+  describe("G4e: last cards", () => {
+    it("Ian Malcolm: the second draw exiles the top card; the other players may cast it during their turn", () => {
       let s = scenario({
         p1: { battlefield: ["Ian Malcolm, Chaotician", "Mountain"], library: lands("Island", 3) },
         p2: { library: ["Forest", "Forest", "Shock"] },
@@ -230,7 +230,7 @@ describe("Jurassic World Collection", () => {
       expect(s.players.p2?.life).toBe(18);
     });
 
-    it("Indominus Rex : défausse de créatures, un marqueur par capacité trouvée, et une carte piochée pour chacun", () => {
+    it("Indominus Rex: discard of creatures, a counter per ability found, and a card drawn for each", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Forest", 3), ...lands("Island", 2)],
@@ -248,8 +248,8 @@ describe("Jurassic World Collection", () => {
       expect(s.players.p1?.hand.map((id) => nameOf(s, id)).sort()).toEqual(["Forest", "Llanowar Elves"]);
     });
 
-    it("Indominus Rex (PLAN-H H9) : les marqueurs sont là dès son arrivée ; une carte piochée pour chaque marqueur", () => {
-      const TRAMPLER = customCard({ name: "Piétineur volant d'essai", keywords: ["flying", "trample"], power: 3, toughness: 3 });
+    it("Indominus Rex (PLAN-H H9): the counters are there as it enters; a card drawn for each counter", () => {
+      const TRAMPLER = customCard({ name: "Test Flying Trampler", keywords: ["flying", "trample"], power: 3, toughness: 3 });
       let s = scenario({
         p1: {
           battlefield: [...lands("Forest", 3), ...lands("Island", 2)],
@@ -269,14 +269,14 @@ describe("Jurassic World Collection", () => {
           });
       }
       const rex = idOf(s, "p1", "battlefield", "Indominus Rex, Alpha");
-      // Vol (deux cartes l'ont : un seul marqueur) et piétinement, en arrivant.
+      // Flying (two cards have it: a single counter) and trample, on entering.
       expect(s.objects[rex]?.counters).toMatchObject({ flying: 1, trample: 1 });
       s = settle(s);
       expect(s.players.p1?.hand).toHaveLength(2);
     });
   });
-  describe("G4e : dernières cartes (2)", () => {
-    it("Welcome to . . . // Jurassic Park : Mur 0/4, Dinosaure 3/3, puis les Murs sont détruits et la Saga revient en terrain", () => {
+  describe("G4e: last cards (2)", () => {
+    it("Welcome to . . . // Jurassic Park: 0/4 Wall, 3/3 Dinosaur, then the Walls are destroyed and the Saga returns as a land", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Forest", 3)], hand: ["Welcome to . . . // Jurassic Park"], library: lands("Forest", 5) },
         p2: { battlefield: ["Mana Crypt"] },
@@ -297,7 +297,7 @@ describe("Jurassic World Collection", () => {
       expect(park).toBeDefined();
     });
 
-    it("Welcome to . . . (chapitre I) : jusqu'à un artefact non-créature par adversaire, jamais deux du même", () => {
+    it("Welcome to . . . (chapter I): up to one noncreature artifact per opponent, never two of the same", () => {
       const base = () =>
         scenario({
           players: 3,
@@ -321,8 +321,8 @@ describe("Jurassic World Collection", () => {
   });
 });
 
-describe("Jurassic World Collection : adversaire choisi au hasard (PLAN-H H4)", () => {
-  it("Indoraptor : rage, un seul adversaire tiré au hasard subit les blessures (aucune question)", () => {
+describe("Jurassic World Collection: randomly chosen opponent (PLAN-H H4)", () => {
+  it("Indoraptor: rage, a single randomly drawn opponent takes the damage (no question)", () => {
     let s = scenario({
       players: 3,
       p1: {

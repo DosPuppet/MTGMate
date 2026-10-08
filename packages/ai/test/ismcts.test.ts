@@ -1,5 +1,5 @@
 /**
- * ISMCTS (niveau élevé) : reproductible, aveugle à l'information cachée, et capable de trouver un coup évident.
+ * ISMCTS (high level): reproducible, blind to hidden information, and able to find an obvious play.
  */
 import { card } from "@mtgx/cards";
 import { cloneState, createObject, type GameState, registerDef } from "@mtgx/engine";
@@ -9,7 +9,7 @@ import { aiAgent, mulberry32 } from "../src";
 import { determinize, ismctsPriority } from "../src/ismcts";
 import { MEDIUM_PROFILE } from "../src/profile";
 
-/** Une position de début de partie avec plusieurs options : créature, sort de dégâts, ou attendre. */
+/** An early-game position with several options: creature, damage spell, or wait. */
 function position(): GameState {
   return scenario({
     p1: {
@@ -28,7 +28,7 @@ function position(): GameState {
 const PROFILE = { ...MEDIUM_PROFILE, attack: "search" as const, block: "search" as const, exposure: true };
 
 describe("ISMCTS", () => {
-  it("est reproductible à graine et budget égaux", () => {
+  it("is reproducible with equal seed and budget", () => {
     const s = position();
     const a = ismctsPriority(s, "p1", PROFILE, { rand: mulberry32(7), iterations: 60 });
     const b = ismctsPriority(s, "p1", PROFILE, { rand: mulberry32(7), iterations: 60 });
@@ -36,14 +36,14 @@ describe("ISMCTS", () => {
     expect(JSON.stringify(a)).toBe(JSON.stringify(b));
   });
 
-  it("ne lit pas l'information cachée : main adverse et ordre des bibliothèques", () => {
+  it("doesn't read hidden information: opposing hand and library order", () => {
     const s = position();
-    // Même position vue par p1, mais une autre répartition des cartes cachées de p2 entre main et bibliothèque,
-    // et d'autres ordres de bibliothèque : la décision doit être identique.
+    // Same position seen by p1, but another distribution of p2's hidden cards between hand and library,
+    // and other library orders: the decision must be identical.
     const t = cloneState(s);
     const p2 = t.players.p2;
     const p1 = t.players.p1;
-    if (!p2 || !p1) throw new Error("joueurs");
+    if (!p2 || !p1) throw new Error("players");
     const pool = [...p2.hand, ...p2.library].reverse();
     p2.hand = pool.slice(0, p2.hand.length);
     p2.library = pool.slice(p2.hand.length);
@@ -58,7 +58,7 @@ describe("ISMCTS", () => {
     expect(JSON.stringify(b)).toBe(JSON.stringify(a));
   });
 
-  it("trouve le sort létal", () => {
+  it("finds the lethal spell", () => {
     const s = scenario({
       p1: { battlefield: ["Mountain", "Forest"], hand: ["Burst Lightning", "Bear Cub"] },
       p2: { life: 2, battlefield: ["Swab Goblin"] },
@@ -68,23 +68,23 @@ describe("ISMCTS", () => {
     expect(d.type === "cast" && Object.values(d.targets ?? {}).flat()).toEqual(["p2"]);
   });
 
-  it("sans temps suffisant (machine lente), rend la main à l'heuristique", () => {
+  it("without enough time (slow machine), hands control back to the heuristic", () => {
     expect(ismctsPriority(position(), "p1", PROFILE, { rand: mulberry32(1), ms: 0, minIterations: 24 })).toBeNull();
   });
 
-  it("déterminisation : cartes cachées tirées des seules cartes vues, cartes connues intactes", () => {
+  it("determinization: hidden cards drawn only from the cards seen, known cards untouched", () => {
     const s = position();
     const d = determinize(s, "p1", mulberry32(9));
     const names = (st: GameState, ids: string[]) => ids.map((id) => st.defs[st.objects[id]?.defId ?? ""]?.name);
     const hidden = (st: GameState) => [...(st.players.p2?.hand ?? []), ...(st.players.p2?.library ?? [])];
-    // Seulement ce qu'on a vu de p2 (Swab Goblin) et des terrains de base de ses couleurs (Montagne).
+    // Only what has been seen of p2 (Swab Goblin) and basic lands of its colors (Mountain).
     for (const n of names(d, hidden(d))) expect(["Swab Goblin", "Mountain"]).toContain(n);
     expect(d.players.p2?.hand.length).toBe(s.players.p2?.hand.length);
     expect(d.players.p2?.library.length).toBe(s.players.p2?.library.length);
-    // Ce que p1 sait reste intact : sa main, le champ de bataille.
+    // What p1 knows stays untouched: their hand, the battlefield.
     expect(d.players.p1?.hand).toEqual(s.players.p1?.hand);
     expect(d.battlefield).toEqual(s.battlefield);
-    // Aucune dépendance aux vraies cartes cachées : les changer ne change rien au tirage.
+    // No dependence on the real hidden cards: changing them changes nothing in the draw.
     const other = position();
     const hand = other.players.p2?.hand ?? [];
     const lib = other.players.p2?.library ?? [];
@@ -96,13 +96,13 @@ describe("ISMCTS", () => {
   });
 });
 
-describe("ISMCTS : faces cachées (PLAN-C, lot C6)", () => {
-  it("la déterminisation tire aussi les permanents face cachée et les cartes exilées face cachée de l'adversaire", () => {
+describe("ISMCTS: face-down cards (PLAN-C, lot C6)", () => {
+  it("determinization also draws the opponent's face-down permanents and face-down exiled cards", () => {
     const s = cloneState(scenario({ p1: { battlefield: ["Forest"] }, p2: { battlefield: ["Bear Cub"], graveyard: ["Opt"] } }));
     const bear = s.battlefield.find((id) => s.objects[id]?.controller === "p2") as string;
     const hiddenDef = card("Doomsday Excruciator");
     registerDef(s, hiddenDef);
-    // Un permanent face cachée de p2, et une carte exilée face cachée qu'il est seul à pouvoir regarder.
+    // A face-down permanent of p2, and a face-down exiled card that only they can look at.
     const o = s.objects[bear];
     if (o) o.faceDown = { card: hiddenDef.id, ward: false, upCosts: [] };
     const exObj = createObject(s, hiddenDef.id, "p2", "exile");

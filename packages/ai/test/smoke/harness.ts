@@ -1,9 +1,9 @@
 /**
- * Test de fumée des cartes gérées : chaque carte est jouée dans une position préparée (mana de toutes les
- * couleurs, cibles de chaque sorte, cimetières garnis), puis chacune de ses capacités activées est utilisée ;
- * la partie continue un peu. Aucune exception inattendue ni violation d'invariant n'est tolérée.
+ * Smoke test of the supported cards: each card is played in a prepared position (mana of every
+ * color, targets of every kind, stocked graveyards), then each of its activated abilities is used;
+ * the game goes on a little. No unexpected exception or invariant violation is tolerated.
  *
- * Un fichier par extension (`smoke/<set>.test.ts`) appelle `smokeTest` : vitest les répartit sur tous les cœurs.
+ * One file per set (`smoke/<set>.test.ts`) calls `smokeTest`: vitest spreads them over all cores.
  */
 import { CARDS, SETS } from "@mtgx/cards";
 import {
@@ -41,62 +41,62 @@ const LIBRARY = [
   "Plains",
 ];
 
-/** Permanents supplémentaires du joueur 1 pour les cartes qui en exigent (« Enchant artifact you control »). */
+/** Extra permanents for player 1 for the cards that need them ("Enchant artifact you control"). */
 const EXTRA_P1: Record<string, string[]> = {
-  // « En coût additionnel, sacrifiez une créature légendaire » (Commander).
+  // "As an additional cost, sacrifice a legendary creature" (Commander).
   "Ultimate Nullification": ["Invisible Woman"],
-  // Lorwyn Eclipsed : « contemplez un [type] et exilez-le » (un changelin convient).
+  // Lorwyn Eclipsed: "behold a [type] and exile it" (a Changeling will do).
   "Champion of the Weird": ["Changeling Wayfinder"],
   "Champion of the Path": ["Changeling Wayfinder"],
   "Champion of the Clachan": ["Changeling Wayfinder"],
   "Champions of the Shoal": ["Changeling Wayfinder"],
   "Hardlight Containment": ["Nutrient Block"],
-  // {C} : une source de mana incolore.
+  // {C}: a source of colorless mana.
   "Warping Wail": ["Ancient Tomb"],
-  // Deck The Vision : {C}, {C}{C} ou {C}{C}{C} (Ancient Tomb, Sol Ring).
+  // The Vision deck: {C}, {C}{C} or {C}{C}{C} (Ancient Tomb, Sol Ring).
   "Eldritch Immunity": ["Ancient Tomb"],
   "Null Elemental Blast": ["Ancient Tomb"],
   "Glaring Fleshraker": ["Ancient Tomb"],
   "Eldrazi Confluence": ["Ancient Tomb"],
   "Kozilek's Command": ["Ancient Tomb"],
   "Echoes of Eternity": ["Ancient Tomb", "Sol Ring"],
-  // {B}{B}{B}{B}{B} : trois Marais ne suffisent pas.
+  // {B}{B}{B}{B}{B}: three Swamps are not enough.
   "Zodiark, Umbral God": ["Swamp", "Swamp"],
   "Pox Plague": ["Swamp", "Swamp"],
-  // {B}{B}{B}{B}{B}{B} et {X}{X}{B}{B}{B}{B}.
+  // {B}{B}{B}{B}{B}{B} and {X}{X}{B}{B}{B}{B}.
   "Doomsday Excruciator": ["Swamp", "Swamp", "Swamp"],
   "Meathook Massacre II": ["Swamp", "Swamp"],
-  // {U}{U}{U}{U} : trois Îles ne suffisent pas.
+  // {U}{U}{U}{U}: three Islands are not enough.
   "Secret of Bloodbending": ["Island"],
-  // {W}{W}{W}{W}{W} : trois Plaines ne suffisent pas.
+  // {W}{W}{W}{W}{W}: three Plains are not enough.
   "Anti-Venom, Horrifying Healer": ["Plains", "Plains"],
-  // « un Équipement ciblé ».
+  // "a targeted Equipment".
   "Stolen Uniform": ["Monk's Fist"],
-  // « copies d'un jeton ciblé » : Fountainport crée un Poisson.
+  // "copies of a targeted token": Fountainport makes a Fish.
   "For the Common Good": ["Fountainport"],
 };
-/** Cartes supplémentaires dans le cimetière du joueur 1 (« carte d'artefact ciblée de votre cimetière »). */
+/** Extra cards in player 1's graveyard ("targeted artifact card in your graveyard"). */
 const EXTRA_P1_GRAVEYARD: Record<string, string[]> = {
   "Tune Up": ["Nutrient Block"],
   "Abuelo's Awakening": ["Nutrient Block"],
-  // « carte de Méchant ou de Héros ciblée de votre cimetière ».
+  // "targeted Villain or Hero card in your graveyard".
   "Decoy Ploy": ["Swordsman, Sharp Scoundrel"],
 };
 
-/** Cartes supplémentaires dans la main du joueur 2 (contresorts qui visent un sort de VM 4 ou plus). */
+/** Extra cards in player 2's hand (counterspells that target a spell with MV 4 or more). */
 const EXTRA_P2_HAND: Record<string, string[]> = {
   "Disdainful Stroke": ["Serra Angel"],
   "Hindering Light": ["Shock"],
 };
-/** Permanents supplémentaires du joueur 2 (de quoi lancer ces sorts). */
+/** Extra permanents for player 2 (enough to cast those spells). */
 const EXTRA_P2: Record<string, string[]> = { "Hindering Light": ["Mountain"] };
 /**
- * Contresorts exigeants (« VM 4 ou plus ») : la partie commence au tour du joueur 2, qui lance ce sort ; le joueur 1 a
- * la priorité pour y répondre.
+ * Demanding counterspells ("MV 4 or more"): the game starts on player 2's turn, who casts this spell; player 1 has
+ * priority to respond to it.
  */
 const P2_CASTS_FIRST: Record<string, string> = {
   "Disdainful Stroke": "Serra Angel",
-  // « un sort qui cible un permanent que vous contrôlez » : Shock vise une créature du joueur 1.
+  // "a spell that targets a permanent you control": Shock targets a creature of player 1.
   "Hindering Light": "Shock",
 };
 
@@ -152,7 +152,7 @@ function setup(c: CardDef): GameState {
   });
   if (!first) return s;
   const spell = s.players.p2?.hand.find((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === first) as string;
-  // Ses cibles, de préférence chez le joueur 1.
+  // Its targets, preferably on player 1's side.
   const opt = legalActions(s, "p2").find((a) => a.type === "cast" && a.card === spell);
   const targets =
     opt?.type === "cast"
@@ -167,7 +167,7 @@ function setup(c: CardDef): GameState {
   return submit(cast, "p2", { type: "pass" }).state;
 }
 
-/** Joueur 1 : essaie chaque sort et chaque capacité (une fois par carte et par zone), le reste au hasard. */
+/** Player 1: tries every spell and every ability (once per card and per zone), the rest at random. */
 function explorer(seed: number): Agent {
   const rand = randomAgent(seed, 0.2);
   const tried = new Set<string>();
@@ -181,8 +181,8 @@ function explorer(seed: number): Agent {
       if (tried.has(key)) continue;
       tried.add(key);
       const ds = enumerateDecisions(a, 4);
-      // Une décision du milieu, sinon la première que le moteur accepte (contraintes de cibles qu'il ne voit pas :
-      // « deux cartes qui partagent un type de créature », Unbury).
+      // A decision from the middle, otherwise the first one the engine accepts (target constraints it does not see:
+      // "two cards that share a creature type", Unbury).
       const mid = Math.floor(ds.length / 2);
       const d = [...ds.slice(mid), ...ds.slice(0, mid)].find((x) => {
         try {
@@ -224,44 +224,44 @@ function play(c: CardDef, seed: number): { state: GameState; illegal: number; pl
       if (played && playedAt < 0) playedAt = i;
     }
     const errors = checkInvariants(state, sizes);
-    if (errors.length) throw new Error(`${c.name} (décision ${i}) :\n${errors.join("\n")}`);
+    if (errors.length) throw new Error(`${c.name} (decision ${i}):\n${errors.join("\n")}`);
   }
   return { state, illegal, played };
 }
 
-/** Décisions jouées après que la carte a été jouée, avant d'arrêter la partie (ses effets ont eu le temps d'agir). */
+/** Decisions played after the card was played, before stopping the game (its effects had time to act). */
 const AFTER_PLAYED = 80;
 
-// Toutes les cartes gérées, sauf les terrains de base.
+// All the supported cards, except basic lands.
 const cards = Object.values(CARDS).filter((c) => !c.isToken && c.implemented && !c.meldResult && !c.supertypes.includes("Basic"));
 
 /**
- * Déclare le test de fumée des cartes d'une ou plusieurs extensions. `shard` : [i, n] ne garde qu'une carte sur n
- * (pour découper une grosse extension en plusieurs fichiers, donc plusieurs workers).
+ * Declares the smoke test of the cards of one or more sets. `shard`: [i, n] keeps only one card in n
+ * (to split a big set into several files, hence several workers).
  */
 export function smokeTest(codes: string[], shard: [number, number] = [0, 1]): void {
   const names = new Map(SETS.map((s) => [s.code, s.name]));
   for (const code of codes) {
     const list = cards.filter((c) => c.set === code).filter((_, k) => k % shard[1] === shard[0]);
     if (list.length === 0) continue;
-    describe(`test de fumée des cartes : ${names.get(code) ?? code}`, () => {
+    describe(`card smoke test: ${names.get(code) ?? code}`, () => {
       it.each(list.map((c) => [c.name, c] as const))("%s", (_, c) => {
         let playedOnce = false;
-        // Graines suivantes seulement tant que la carte n'a pas pu être jouée.
+        // Following seeds only while the card could not be played.
         for (const seed of [1, 2, 3]) {
           const { state, played } = play(c, seed);
           expect(state.pending || state.over).toBeTruthy();
           playedOnce ||= played;
           if (playedOnce) break;
         }
-        // La carte a bien été jouée (lancée ou posée) au moins une fois.
-        expect(playedOnce, `${c.name} n'a pas pu être jouée`).toBe(true);
+        // The card was played (cast or put onto the battlefield) at least once.
+        expect(playedOnce, `${c.name} could not be played`).toBe(true);
       });
     });
   }
 }
 
-/** Extensions qui ont leur propre fichier de test de fumée ; les autres sont dans `others.test.ts`. */
+/** Sets that have their own smoke test file; the others are in `others.test.ts`. */
 export const OWN_FILES = [
   "FDN",
   "FRA",

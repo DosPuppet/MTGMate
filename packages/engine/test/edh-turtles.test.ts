@@ -1,7 +1,7 @@
 /**
- * Commander (pseudo-ensemble EDH) : tests de règles du préconstruit « Turtle Power! » (Teenage Mutant Ninja Turtles).
- * Escouade, fusion, marqueurs (doublés, multipliés, comptés), copies qui attaquent les autres adversaires, jetons qui
- * attaquent chaque adversaire, déclenchements de pioche doublés, prévention changée en marqueurs.
+ * Commander (EDH pseudo-set): rules tests for the "Turtle Power!" preconstructed deck (Teenage Mutant Ninja Turtles).
+ * Squad, fuse, counters (doubled, multiplied, counted), copies that attack the other opponents, tokens that
+ * attack each opponent, doubled draw triggers, prevention changed into counters.
  */
 import { describe, expect, it } from "vitest";
 import { chars } from "../src/layers";
@@ -33,24 +33,24 @@ const plusOne = (s: GameState, id: string) => s.objects[id]?.counters["+1/+1"] ?
 const activate = (s: GameState, p: PlayerId, name: string, extra: object = {}) => {
   const source = idOf(s, p, "battlefield", name);
   const o = legalActions(s, p).find((a) => a.type === "activate" && a.source === source);
-  if (o?.type !== "activate") throw new Error(`pas de capacité pour ${name}`);
+  if (o?.type !== "activate") throw new Error(`no ability for ${name}`);
   return act(s, p, { type: "activate", source, ability: o.ability, ...extra } as never);
 };
 
 describe("Turtle Power! (EDH)", () => {
-  describe("mots-clés", () => {
-    it("escouade (702.157) : payée deux fois, Roadkill Rodney arrive avec deux copies", () => {
+  describe("keywords", () => {
+    it("squad (702.157): paid twice, Roadkill Rodney enters with two copies", () => {
       let s = scenario({ p1: { battlefield: lands("Plains", 8), hand: ["Roadkill Rodney"] } });
       s = settle(castIt(s, "p1", "Roadkill Rodney", { x: 2 }));
       expect(onField(s, "p1", "Roadkill Rodney")).toBe(3);
       expect(tokens(s, "p1", "Roadkill Rodney")).toHaveLength(2);
-      // Sans escouade : aucune copie (et les copies n'en créent pas).
+      // Without squad: no copy (and the copies create none).
       let t = scenario({ p1: { battlefield: lands("Plains", 2), hand: ["Roadkill Rodney"] } });
       t = settle(castIt(t, "p1", "Roadkill Rodney"));
       expect(onField(t, "p1", "Roadkill Rodney")).toBe(1);
     });
 
-    it("fusion (702.102) : Double Jump et Flying Kick lancés ensemble depuis la main, gauche puis droite", () => {
+    it("fuse (702.102): Double Jump and Flying Kick cast together from hand, left then right", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Island", 2), ...lands("Mountain", 2), "Bear Cub"], hand: ["Double Jump // Flying Kick"] },
         p2: { battlefield: ["Serra Angel"] },
@@ -67,15 +67,15 @@ describe("Turtle Power! (EDH)", () => {
       expect(s.players.p1?.graveyard.map((id) => nameOf(s, id))).toContain("Double Jump // Flying Kick");
     });
 
-    it("évolution (Ray Fillet) : un marqueur quand arrive une créature plus grande", () => {
+    it("evolve (Ray Fillet): a counter when a bigger creature enters", () => {
       let s = scenario({ p1: { battlefield: [...lands("Forest", 2), "Ray Fillet, Wave Warrior"], hand: ["Bear Cub"] } });
       s = settle(castIt(s, "p1", "Bear Cub"));
       expect(plusOne(s, idOf(s, "p1", "battlefield", "Ray Fillet, Wave Warrior"))).toBe(1);
     });
   });
 
-  describe("commandant et créatures", () => {
-    it("Heroes in a Half Shell : les Tortues et Ninjas qui blessent un joueur reçoivent un marqueur, et vous piochez", () => {
+  describe("commander and creatures", () => {
+    it("Heroes in a Half Shell: Turtles and Ninjas that damage a player get a counter, and you draw", () => {
       let s = scenario({
         p1: { battlefield: ["Heroes in a Half Shell", "Splinter, the Mentor"], library: lands("Island", 5) },
       });
@@ -87,7 +87,7 @@ describe("Turtle Power! (EDH)", () => {
       expect(hand(s, "p1")).toBe(h + 1);
     });
 
-    it("Shredder à trois joueurs : une copie non légendaire attaque l'autre adversaire, chacun perd la moitié de ses PV", () => {
+    it("Shredder with three players: a nonlegendary copy attacks the other opponent, each loses half their life", () => {
       let s = scenario({ players: 3, p1: { battlefield: ["Shredder, Shadow Master"] } });
       s = attackPlayer(s, [idOf(s, "p1", "battlefield", "Shredder, Shadow Master")], "p2");
       s = settle(s);
@@ -95,12 +95,12 @@ describe("Turtle Power! (EDH)", () => {
       expect(s.combat?.attackers.find((a) => a.id === copy)?.defender).toBe("p3");
       expect(chars(s, copy).supertypes).not.toContain("Legendary");
       s = throughCombat(s);
-      // 20 − 5 = 15, puis la moitié arrondie au supérieur (8) : 7.
+      // 20 − 5 = 15, then half rounded up (8): 7.
       expect([s.players.p2?.life, s.players.p3?.life]).toEqual([7, 7]);
       expect(tokens(s, "p1", "Shredder, Shadow Master")).toHaveLength(0);
     });
 
-    it("Krang : les capacités déclenchées par une pioche se déclenchent deux fois (Baxter : deux marqueurs)", () => {
+    it("Krang: abilities triggered by a draw trigger twice (Baxter: two counters)", () => {
       let s = scenario({
         p1: {
           battlefield: ["Island", "Krang, the All-Powerful", "Baxter, Fly in the Ointment"],
@@ -112,20 +112,20 @@ describe("Turtle Power! (EDH)", () => {
       expect(plusOne(s, idOf(s, "p1", "battlefield", "Baxter, Fly in the Ointment"))).toBe(2);
     });
 
-    it("Vigor : les blessures à une autre de vos créatures sont prévenues, autant de marqueurs +1/+1 à la place", () => {
+    it("Vigor: damage to another creature you control is prevented, that many +1/+1 counters instead", () => {
       let s = scenario({ p1: { battlefield: ["Mountain", "Vigor", "Bear Cub"], hand: ["Shock"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = settle(castIt(s, "p1", "Shock", { targets: { t: [bear] } }));
       expect([s.objects[bear]?.damage, plusOne(s, bear)]).toEqual([0, 2]);
     });
 
-    it("Raphael : vos créatures avec des marqueurs infligent le double de blessures", () => {
+    it("Raphael: your creatures with counters deal double damage", () => {
       let s = scenario({ p1: { battlefield: ["Raphael, the Muscle", { name: "Bear Cub", counters: { "+1/+1": 1 } }] } });
       s = throughCombat(attack(s, [idOf(s, "p1", "battlefield", "Bear Cub")]));
       expect(s.players.p2?.life).toBe(14);
     });
 
-    it("Corpsejack Menace et Casey Jones : deux fois plus de marqueurs, et autant de blessures à un adversaire", () => {
+    it("Corpsejack Menace and Casey Jones: twice as many counters, and as much damage to an opponent", () => {
       let s = scenario({
         p1: {
           battlefield: ["Casey Jones, Back Alley Brute", "Corpsejack Menace", "Bear Cub", ...lands("Plains", 2)],
@@ -138,7 +138,7 @@ describe("Turtle Power! (EDH)", () => {
       expect(s.players.p2?.life).toBe(18);
     });
 
-    it("Irma : devient une copie d'une autre de vos créatures, garde son nom et sa capacité, puis un marqueur", () => {
+    it("Irma: becomes a copy of another creature you control, keeps its name and ability, then a counter", () => {
       let s = scenario({ p1: { battlefield: ["Irma, Part-Time Mutant", "Serra Angel"] } });
       const irma = idOf(s, "p1", "battlefield", "Irma, Part-Time Mutant");
       const angel = idOf(s, "p1", "battlefield", "Serra Angel");
@@ -148,39 +148,39 @@ describe("Turtle Power! (EDH)", () => {
       expect([chars(s, irma).power, chars(s, irma).keywords.includes("flying")]).toEqual([5, true]);
     });
 
-    it("Dimension X Pizzasaur : deux marqueurs, puis détruit une créature de valeur de mana au plus vos marqueurs", () => {
+    it("Dimension X Pizzasaur: two counters, then destroys a creature with mana value at most your counters", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Swamp", 4), "Bear Cub"], hand: ["Dimension X Pizzasaur"] },
         p2: { battlefield: ["Savannah Lions", "Serra Angel"] },
       });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       const lions = idOf(s, "p2", "battlefield", "Savannah Lions");
-      // La créature qui reçoit les marqueurs, puis celle à détruire.
+      // The creature that gets the counters, then the one to destroy.
       const want = [bear, lions];
       s = settle(castIt(s, "p1", "Dimension X Pizzasaur"), (req) =>
         req.type === "pick" && req.intent === "triggerTarget" ? [want.shift() ?? ""] : undefined,
       );
       expect(plusOne(s, bear)).toBe(2);
       expect(onField(s, "p2", "Savannah Lions")).toBe(0);
-      // Serra Angel (valeur de mana 5) n'était pas une cible permise avec deux marqueurs.
+      // Serra Angel (mana value 5) was not a legal target with two counters.
       expect(onField(s, "p2", "Serra Angel")).toBe(1);
     });
   });
 
   describe("artefacts, enchantements, sorts", () => {
-    it("Coin of Mastery : un marqueur +1/+1 par mana d'artefact dépensé pour lancer la créature", () => {
+    it("Coin of Mastery: a +1/+1 counter per artifact mana spent to cast the creature", () => {
       let s = scenario({
         p1: { battlefield: ["Coin of Mastery", "Sol Ring", ...lands("Forest", 2)], hand: ["Big Mother Mouser"] },
       });
       s = settle(castIt(s, "p1", "Big Mother Mouser"));
       expect(plusOne(s, idOf(s, "p1", "battlefield", "Big Mother Mouser"))).toBe(4);
-      // Sol Ring pour un seul {1} : le {C} en trop reste dans la réserve, un seul marqueur.
+      // Sol Ring for a single {1}: the extra {C} stays in the mana pool, a single counter.
       let t = scenario({ p1: { battlefield: ["Coin of Mastery", "Sol Ring", "Forest"], hand: ["Bear Cub"] } });
       t = settle(castIt(t, "p1", "Bear Cub"));
       expect(plusOne(t, idOf(t, "p1", "battlefield", "Bear Cub"))).toBe(1);
     });
 
-    it("Endless Foot Assault à trois joueurs : un Ninja engagé et attaquant pour chaque adversaire", () => {
+    it("Endless Foot Assault with three players: a tapped and attacking Ninja for each opponent", () => {
       let s = scenario({ players: 3, p1: { battlefield: ["Endless Foot Assault", "Bear Cub"] } });
       s = attackPlayer(s, [idOf(s, "p1", "battlefield", "Bear Cub")], "p2");
       s = settle(s);
@@ -189,7 +189,7 @@ describe("Turtle Power! (EDH)", () => {
       expect(ninjas.every((id) => s.objects[id]?.tapped)).toBe(true);
     });
 
-    it("Game Over : {2} de moins si un joueur a au plus la moitié de ses PV de départ", () => {
+    it("Game Over: costs {2} less if a player has half their starting life or less", () => {
       const at = (life: number) => scenario({ p1: { battlefield: lands("Swamp", 3), hand: ["Game Over"] }, p2: { life } });
       const s = at(10);
       expect(castable(s, "p1", idOf(s, "p1", "hand", "Game Over"))).toBe(true);
@@ -197,7 +197,7 @@ describe("Turtle Power! (EDH)", () => {
       expect(castable(t, "p1", idOf(t, "p1", "hand", "Game Over"))).toBe(false);
     });
 
-    it("Here Comes a New Hero! : le joueur ciblé pioche X, une copie d'une créature de valeur de mana X ou moins", () => {
+    it("Here Comes a New Hero!: the targeted player draws X, a copy of a creature with mana value X or less", () => {
       let s = scenario({
         p1: { battlefield: lands("Island", 5), hand: ["Here Comes a New Hero!"], library: lands("Island", 5) },
         p2: { battlefield: ["Bear Cub"] },
@@ -209,7 +209,7 @@ describe("Turtle Power! (EDH)", () => {
       expect(tokens(s, "p1", "Bear Cub")).toHaveLength(1);
     });
 
-    it("Wave Goodbye : les créatures sans marqueur +1/+1 retournent en main", () => {
+    it("Wave Goodbye: creatures without a +1/+1 counter return to hand", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Island", 4), { name: "Bear Cub", counters: { "+1/+1": 1 } }], hand: ["Wave Goodbye"] },
         p2: { battlefield: ["Serra Angel"] },
@@ -219,7 +219,7 @@ describe("Turtle Power! (EDH)", () => {
       expect(s.players.p2?.hand.map((id) => nameOf(s, id))).toContain("Serra Angel");
     });
 
-    it("Thriving Grove : la couleur choisie n'est pas le vert", () => {
+    it("Thriving Grove: the chosen color is not green", () => {
       const s = scenario({ p1: { hand: ["Thriving Grove"] } });
       const grove = idOf(s, "p1", "hand", "Thriving Grove");
       const play = legalActions(s, "p1").find((a) => a.type === "playLand" && a.card === grove);
@@ -227,7 +227,7 @@ describe("Turtle Power! (EDH)", () => {
       expect(req?.type === "pick" ? [...req.options].sort() : []).toEqual(["B", "R", "U", "W"]);
     });
 
-    it("Exploding Barrel : un marqueur de pression par mana ; la capacité coûte {1} de moins par marqueur", () => {
+    it("Exploding Barrel: a pressure counter per mana; the ability costs {1} less per counter", () => {
       let s = scenario({
         p1: { battlefield: [{ name: "Exploding Barrel", counters: { pressure: 7 } }, "Mountain"] },
         p2: { battlefield: ["Serra Angel"] },
@@ -240,7 +240,7 @@ describe("Turtle Power! (EDH)", () => {
 });
 
 describe("Turtle Power! (EDH) : provocation (PLAN-H, lot H3)", () => {
-  it("Fast Forward : les créatures adverses sont provoquées jusqu'à votre prochain tour", () => {
+  it("Fast Forward: opposing creatures are goaded until your next turn", () => {
     let s = scenario({
       players: 3,
       p1: { battlefield: lands("Mountain", 5), hand: ["Fast Forward"] },
@@ -259,8 +259,8 @@ describe("Turtle Power! (EDH) : provocation (PLAN-H, lot H3)", () => {
   });
 });
 
-describe("joueur attaqué en multijoueur (PLAN-H, lot H5)", () => {
-  it("Shredder, Shadow Master : « attaque un joueur » — rien quand il attaque un planeswalker", () => {
+describe("attacked player in multiplayer (PLAN-H, lot H5)", () => {
+  it('Shredder, Shadow Master: "attacks a player" — nothing when it attacks a planeswalker', () => {
     const run = (atWalker: boolean) => {
       let s = scenario({ players: 3, p1: { battlefield: ["Shredder, Shadow Master"] }, p2: { battlefield: ["Ajani Resolute"] } });
       const defender = atWalker ? idOf(s, "p2", "battlefield", "Ajani Resolute") : "p2";

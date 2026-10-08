@@ -1,4 +1,4 @@
-/** Outlaws of Thunder Junction — cartes noires. */
+/** Outlaws of Thunder Junction — black cards. */
 import type { CardScript } from "@mtgx/engine";
 import {
   activated,

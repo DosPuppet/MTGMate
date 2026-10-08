@@ -18,7 +18,13 @@ const STOPWORDS = new Set(
     "leurs il elle ne et à où été être peut plus sans mais ou chaque carte cartes créature créatures joueur adversaire"
   ).split(" "),
 );
-const ACCENTED = /[éèêàùçœÉÈÊÀ]/;
+const ACCENTED = /[éèêàùçœâîôûëïüÉÈÊÀÂÎÔÛ]/;
+/** Words that are French even alone (no English word or card name is spelled so). */
+const STRONG = new Set(
+  "vous votre vos avec dans chaque adversaire adversaires joueur joueurs cartes créature créatures quand alors puis sinon déjà aucun aucune lorsque jusqu".split(
+    " ",
+  ),
+);
 const FRENCH_DATA = /\b(fr|nameFr|frText)\s*:\s*[{"'`]/;
 /** A `fr:` / `frText:` key whose value the formatter put on the next line. */
 const FRENCH_DATA_KEY = /\b(fr|nameFr|frText)\s*:\s*$/;
@@ -57,6 +63,7 @@ export function isFrenchLine(line: string): boolean {
     if (/^\p{L}{3,}ez$/u.test(w)) ez = true;
   }
   if (stop.size >= 2) return true;
+  if (words.some((w) => STRONG.has(w.replace(/^[ldjnstcqu]['’]/, "")))) return true;
   if (stop.size === 1 && (accented || ez)) return true;
   return accented;
 }

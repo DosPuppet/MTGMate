@@ -1,4 +1,4 @@
-/** Test de fumée : Aetherdrift. */
+/** Smoke test: Aetherdrift. */
 import { smokeTest } from "./harness";
 
 smokeTest(["DFT"]);

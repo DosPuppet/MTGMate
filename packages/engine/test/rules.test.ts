@@ -9,8 +9,8 @@ import { act, cast, customCard, idOf, idsOf, passAccepting, passBoth, passUntil,
 
 const [green, red] = [deckById("welcome-green"), deckById("welcome-red")];
 
-describe("début de partie", () => {
-  it("distribue 7 cartes et demande le mulligan au premier joueur", () => {
+describe("start of game", () => {
+  it("deals 7 cards and asks the first player for the mulligan", () => {
     const { state } = createGame({
       seed: 1,
       startingPlayer: "p1",
@@ -24,7 +24,7 @@ describe("début de partie", () => {
     expect(state.pending).toEqual({ kind: "mulligan", player: "p1", mulligans: 0, bottom: 0 });
   });
 
-  it("mulligan de Londres : on repioche 7 et on remet une carte en dessous", () => {
+  it("London mulligan: draw 7 again and put one card on the bottom", () => {
     let { state: s } = createGame({
       seed: 1,
       startingPlayer: "p1",
@@ -35,7 +35,7 @@ describe("début de partie", () => {
     });
     const first = [...(s.players.p1?.hand ?? [])];
     s = act(s, "p1", { type: "mulligan" });
-    // 103.5 : p2 décide à son tour avant que p1 ne prenne son mulligan.
+    // 103.5: p2 decides in turn before p1 takes their mulligan.
     expect(s.players.p1?.hand).toEqual(first);
     expect(s.pending).toEqual({ kind: "mulligan", player: "p2", mulligans: 0, bottom: 0 });
     s = act(s, "p2", { type: "keep" });
@@ -45,10 +45,10 @@ describe("début de partie", () => {
     expect(s.pending).toEqual({ kind: "bottomCards", player: "p1", count: 1 });
     s = act(s, "p1", { type: "bottom", cards: [s.players.p1?.hand[0] as string] });
     expect(s.players.p1?.hand).toHaveLength(6);
-    expect(s.players.p1?.library).toHaveLength(34); // deck de bienvenue : 40 cartes
+    expect(s.players.p1?.library).toHaveLength(34); // welcome deck: 40 cards
   });
 
-  it("103.5 : les joueurs qui prennent un mulligan au même tour de table le prennent ensemble", () => {
+  it("103.5: players who take a mulligan in the same round take it together", () => {
     let { state: s } = createGame({
       seed: 1,
       startingPlayer: "p1",
@@ -64,7 +64,7 @@ describe("début de partie", () => {
     expect(s.pending).toEqual({ kind: "mulligan", player: "p1", mulligans: 1, bottom: 1 });
   });
 
-  it("le premier joueur ne pioche pas à son premier tour", () => {
+  it("the first player does not draw on their first turn", () => {
     let { state: s } = createGame({
       seed: 3,
       startingPlayer: "p1",
@@ -92,7 +92,7 @@ describe("terrains, sorts et paiement automatique", () => {
     expect(() => act(s, "p1", { type: "playLand", card: f2 })).toThrow();
   });
 
-  it("lance une créature en payant automatiquement, en gardant les créatures-mana dégagées", () => {
+  it("casts a creature paying automatically, keeping the mana creatures untapped", () => {
     let s = scenario({ p1: { battlefield: ["Forest", "Forest", "Llanowar Elves"], hand: ["Bear Cub"] } });
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Bear Cub") });
     expect(s.stack).toHaveLength(1);
@@ -104,13 +104,13 @@ describe("terrains, sorts et paiement automatique", () => {
     expect(s.objects[bear]?.controller).toBe("p1");
   });
 
-  it("refuse un sort sans assez de mana (l'état ne change pas)", () => {
+  it("refuses a spell without enough mana (the state does not change)", () => {
     const s = scenario({ p1: { battlefield: ["Forest"], hand: ["Bear Cub"] } });
     expect(() => act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Bear Cub") })).toThrow(/Not enough mana/);
     expect(legalActions(s, "p1").some((a) => a.type === "cast")).toBe(false);
   });
 
-  it("le solveur utilise la réserve de mana d'abord", () => {
+  it("the solver uses the mana pool first", () => {
     let s = scenario({ p1: { battlefield: ["Forest", "Forest"], hand: ["Giant Growth"] } });
     s = act(s, "p1", { type: "tapForMana", source: idsOf(s, "p1", "battlefield", "Forest")[0] as string, ability: 0 });
     expect(s.players.p1?.manaPool.G).toBe(1);
@@ -118,19 +118,19 @@ describe("terrains, sorts et paiement automatique", () => {
     expect(plan?.taps).toHaveLength(0);
   });
 
-  it("une créature arrivée ce tour ne peut pas attaquer ni s'engager", () => {
+  it("a creature that arrived this turn cannot attack or tap", () => {
     let s = scenario({ p1: { battlefield: ["Forest", "Forest"], hand: ["Bear Cub"] } });
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Bear Cub") });
     s = passBoth(s);
     s = passUntil(s, (x) => x.turn.step !== "main1");
-    // Pas d'attaquant possible : l'étape de déclaration ne demande rien.
+    // No possible attacker: the declaration step asks nothing.
     expect(s.pending?.kind).toBe("priority");
     expect(s.combat?.attackers ?? []).toHaveLength(0);
   });
 });
 
 describe("pile et cibles", () => {
-  it("LIFO : la réponse se résout en premier (Giant Growth sauve la créature)", () => {
+  it("LIFO: the response resolves first (Giant Growth saves the creature)", () => {
     let s = scenario({
       p1: { battlefield: ["Mountain"], hand: ["Burst Lightning"] },
       p2: { battlefield: ["Forest", "Bear Cub"], hand: ["Giant Growth"] },
@@ -147,7 +147,7 @@ describe("pile et cibles", () => {
     expect(s.battlefield).toContain(bear);
   });
 
-  it("règle 400.7 : un sort dont la cible est morte ne se résout pas", () => {
+  it("rule 400.7: a spell whose target died does not resolve", () => {
     let s = scenario({
       p1: { battlefield: ["Forest", "Bear Cub"], hand: ["Giant Growth"] },
       p2: { battlefield: ["Mountain"], hand: ["Burst Lightning"] },
@@ -166,8 +166,8 @@ describe("pile et cibles", () => {
     expect(idsOf(after.state, "p1", "graveyard", "Giant Growth")).toHaveLength(1);
   });
 
-  it("défense talismanique : pas de cible adverse", () => {
-    const hexproof = customCard({ name: "Ours protégé", power: 2, toughness: 2, keywords: ["hexproof"] });
+  it("hexproof: no opposing target", () => {
+    const hexproof = customCard({ name: "Protected Bear", power: 2, toughness: 2, keywords: ["hexproof"] });
     const s = scenario({ p1: { battlefield: ["Mountain"], hand: ["Burst Lightning"] }, p2: { battlefield: [hexproof] } });
     const cast = legalActions(s, "p1").find((a) => a.type === "cast");
     expect(cast?.type === "cast" && cast.modes[0]?.targets[0]?.legal).toEqual(["p1", "p2"]);
@@ -193,7 +193,7 @@ describe("pile et cibles", () => {
     expect(s.objects[sentry]?.damage).toBe(3);
   });
 
-  it("X et combat : Primal Might X=2 puis combat", () => {
+  it("X and combat: Primal Might X=2 then combat", () => {
     let s = scenario({
       p1: { battlefield: ["Forest", "Forest", "Forest", "Bear Cub"], hand: ["Primal Might"] },
       p2: { battlefield: ["Fire Elemental"] },
@@ -204,12 +204,12 @@ describe("pile et cibles", () => {
     expect(opt?.type === "cast" && opt.xMax).toBe(2);
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Primal Might"), x: 2, targets: { a: [bear], b: [fire] } });
     s = passBoth(s);
-    // L'ours (4/4) inflige 4 à l'Élémental (5/4) qui meurt ; l'Élémental inflige 5 à l'ours qui meurt aussi.
+    // The bear (4/4) deals 4 to the Elemental (5/4), which dies; the Elemental deals 5 to the bear, which dies too.
     expect(s.objects[fire]).toBeUndefined();
     expect(s.objects[bear]).toBeUndefined();
   });
 
-  it("Bite Down utilise la créature comme source (contact mortel)", () => {
+  it("Bite Down uses the creature as the source (deathtouch)", () => {
     let s = scenario({
       p1: { battlefield: ["Forest", "Forest", "Thornweald Archer"], hand: ["Bite Down"] },
       p2: { battlefield: ["Quakestrider Ceratops"] },
@@ -221,7 +221,7 @@ describe("pile et cibles", () => {
     expect(s.objects[cera]).toBeUndefined();
   });
 
-  it("jetons : Dragon Fodder crée deux gobelins, qui disparaissent en mourant", () => {
+  it("tokens: Dragon Fodder creates two Goblins, which disappear when they die", () => {
     let s = scenario({ p1: { battlefield: ["Mountain", "Mountain", "Mountain"], hand: ["Dragon Fodder", "Burst Lightning"] } });
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Dragon Fodder") });
     s = passBoth(s);
@@ -233,7 +233,7 @@ describe("pile et cibles", () => {
     expect(s.players.p1?.graveyard.some((id) => s.objects[id]?.isToken)).toBe(false);
   });
 
-  it("capacité activée avec sacrifice : Fanatical Firebrand", () => {
+  it("activated ability with sacrifice: Fanatical Firebrand", () => {
     let s = scenario({ p1: { battlefield: ["Fanatical Firebrand"] } });
     const fb = idOf(s, "p1", "battlefield", "Fanatical Firebrand");
     s = act(s, "p1", { type: "activate", source: fb, ability: 0, targets: { t: ["p2"] } });
@@ -248,7 +248,7 @@ describe("combat", () => {
     return passUntil(s, (x) => x.pending?.kind === "declareAttackers");
   }
 
-  it("attaque non bloquée, vigilance", () => {
+  it("unblocked attack, vigilance", () => {
     let s = toCombat(scenario({ p1: { battlefield: ["Tajuru Pathwarden"] } }));
     const t = idOf(s, "p1", "battlefield", "Tajuru Pathwarden");
     s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: t, defender: "p2" }] });
@@ -257,7 +257,7 @@ describe("combat", () => {
     expect(s.players.p2?.life).toBe(15);
   });
 
-  it("piétinement : le surplus passe au joueur", () => {
+  it("trample: the excess goes to the player", () => {
     let s = toCombat(scenario({ p1: { battlefield: ["Tajuru Pathwarden"] }, p2: { battlefield: ["Bear Cub"] } }));
     const t = idOf(s, "p1", "battlefield", "Tajuru Pathwarden");
     const bear = idOf(s, "p2", "battlefield", "Bear Cub");
@@ -265,10 +265,10 @@ describe("combat", () => {
     s = passUntil(s, (x) => x.pending?.kind === "declareBlockers");
     s = act(s, "p2", { type: "declareBlockers", blocks: [{ blocker: bear, attacker: t }] });
     s = passUntil(s, (x) => x.pending?.kind === "choice");
-    // Piétinement : l'attaquant répartit ses blessures (suggestion : 2 au bloqueur, 3 au joueur).
+    // Trample: the attacker assigns their damage (suggestion: 2 to the blocker, 3 to the player).
     const p = s.pending;
     expect(p?.kind === "choice" && p.request.type === "divide" && p.request.suggested).toEqual([2, 3]);
-    // Illégal : blesser le joueur sans blessures mortelles au bloqueur.
+    // Illegal: damaging the player without lethal damage to the blocker.
     expect(() => act(s, "p1", { type: "choose", values: [1, 4] })).toThrow(/Trample/);
     s = act(s, "p1", { type: "choose", values: [2, 3] });
     s = passUntil(s, (x) => x.turn.step === "main2");
@@ -276,7 +276,7 @@ describe("combat", () => {
     expect(s.objects[bear]).toBeUndefined();
   });
 
-  it("contact mortel + piétinement : 1 blessure suffit au bloqueur", () => {
+  it("deathtouch + trample: 1 damage is enough for the blocker", () => {
     const wurm = customCard({ name: "Guivre", power: 4, toughness: 4, keywords: ["deathtouch", "trample"] });
     let s = toCombat(scenario({ p1: { battlefield: [wurm] }, p2: { battlefield: ["Fire Elemental"] } }));
     const w = idsOf(s, "p1", "battlefield", "Guivre")[0] as string;
@@ -289,7 +289,7 @@ describe("combat", () => {
     expect(s.objects[fire]).toBeUndefined();
   });
 
-  it("double initiative : Raging Redcap tue un 2/2 en deux étapes et meurt au second coup", () => {
+  it("double strike: Raging Redcap kills a 2/2 in two steps and dies on the second hit", () => {
     let s = toCombat(scenario({ p1: { battlefield: ["Raging Redcap"] }, p2: { battlefield: ["Bear Cub"] } }));
     const r = idOf(s, "p1", "battlefield", "Raging Redcap");
     const bear = idOf(s, "p2", "battlefield", "Bear Cub");
@@ -303,7 +303,7 @@ describe("combat", () => {
     expect(s.objects[r]).toBeUndefined();
   });
 
-  it("initiative : Kindled Fury permet de tuer sans être blessé", () => {
+  it("first strike: Kindled Fury allows killing without being damaged", () => {
     let s = toCombat(
       scenario({ p1: { battlefield: ["Mountain", "Swab Goblin"], hand: ["Kindled Fury"] }, p2: { battlefield: ["Bear Cub"] } }),
     );
@@ -320,7 +320,7 @@ describe("combat", () => {
     expect(s.objects[g]?.damage ?? 0).toBe(0);
   });
 
-  it("vol et portée : seule une créature avec vol ou portée bloque un volant", () => {
+  it("flying and reach: only a creature with flying or reach blocks a flyer", () => {
     const flier = customCard({ name: "Oiseau", power: 1, toughness: 1, keywords: ["flying"] });
     let s = toCombat(scenario({ p1: { battlefield: [flier] }, p2: { battlefield: ["Bear Cub", "Magnigoth Sentry"] } }));
     const f = idsOf(s, "p1", "battlefield", "Oiseau")[0] as string;
@@ -333,7 +333,7 @@ describe("combat", () => {
     expect(s.combat?.attackers[0]?.blocked).toBe(true);
   });
 
-  it("menace : un seul bloqueur est illégal", () => {
+  it("menace: a single blocker is illegal", () => {
     const brute = customCard({ name: "Brute", power: 3, toughness: 3, keywords: ["menace"] });
     let s = toCombat(scenario({ p1: { battlefield: [brute] }, p2: { battlefield: ["Bear Cub", "Swab Goblin"] } }));
     const b = idsOf(s, "p1", "battlefield", "Brute")[0] as string;
@@ -349,7 +349,7 @@ describe("combat", () => {
         { blocker: gob, attacker: b },
       ],
     });
-    // Deux bloqueurs : l'attaquant choisit la répartition (ici 3 à l'ours, 0 au gobelin).
+    // Two blockers: the attacker chooses the split (here 3 to the bear, 0 to the Goblin).
     s = passUntil(s, (x) => x.pending?.kind === "choice");
     s = act(s, "p1", { type: "choose", values: [3, 0] });
     s = passUntil(s, (x) => x.turn.step === "main2");
@@ -359,7 +359,7 @@ describe("combat", () => {
   });
 });
 
-describe("actions basées sur l'état et fin de partie", () => {
+describe("state-based actions and end of game", () => {
   it("0 point de vie : la partie se termine", () => {
     let s = scenario({ p1: { battlefield: ["Mountain"], hand: ["Boltwave"] }, p2: { life: 3 } });
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Boltwave") });
@@ -369,13 +369,13 @@ describe("actions basées sur l'état et fin de partie", () => {
     expect(s.pending).toBeNull();
   });
 
-  it("piocher dans une bibliothèque vide fait perdre", () => {
+  it("drawing from an empty library loses", () => {
     let s = scenario({ active: "p2", step: "end", p1: { library: [] } });
     s = passUntil(s, (x) => x.over);
     expect(s.winner).toBe("p2");
   });
 
-  it("nettoyage : défausse jusqu'à 7 cartes", () => {
+  it("cleanup: discard down to 7 cards", () => {
     let s = scenario({ step: "end", p1: { hand: Array(9).fill("Forest") } });
     s = passBoth(s);
     expect(s.pending).toEqual({ kind: "discard", player: "p1", count: 2 });
@@ -385,7 +385,7 @@ describe("actions basées sur l'état et fin de partie", () => {
     expect(s.turn.active).toBe("p2");
   });
 
-  it("les blessures et effets de fin de tour disparaissent au nettoyage", () => {
+  it("damage and end-of-turn effects disappear at cleanup", () => {
     let s = scenario({ step: "main2", p1: { battlefield: ["Forest", { name: "Bear Cub", damage: 1 }], hand: ["Giant Growth"] } });
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Giant Growth"), targets: { t: [bear] } });
@@ -397,8 +397,8 @@ describe("actions basées sur l'état et fin de partie", () => {
   });
 });
 
-describe("immuabilité", () => {
-  it("submit ne modifie jamais l'état reçu", () => {
+describe("immutability", () => {
+  it("submit never modifies the received state", () => {
     const s = scenario({ p1: { battlefield: ["Forest", "Forest"], hand: ["Bear Cub"] } });
     const before = JSON.stringify(s);
     const next = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Bear Cub") });
@@ -409,30 +409,30 @@ describe("immuabilité", () => {
 });
 
 describe("autopilot", () => {
-  it("passe quand il n'y a rien à faire", () => {
+  it("passes when there is nothing to do", () => {
     const s = scenario({ p1: { battlefield: ["Forest"] } });
     expect(autopilotDecision(s, "p1", DEFAULT_AUTOPILOT)).toEqual({ type: "pass" });
   });
 
-  it("son tour : s'arrête toujours en seconde phase principale, même sans rien à faire (« Fin du tour » à appuyer)", () => {
+  it('own turn: always stops in the second main phase, even with nothing to do ("End turn" to press)', () => {
     const main2 = scenario({ step: "main2", p1: { battlefield: ["Forest"] } });
     expect(autopilotDecision(main2, "p1", DEFAULT_AUTOPILOT)).toBeNull();
-    // « Fin du tour » demandé : on passe.
+    // "End turn" requested: we pass.
     expect(autopilotDecision(main2, "p1", { ...DEFAULT_AUTOPILOT, passUntilTurn: main2.turn.number })).toEqual({
       type: "pass",
     });
-    // Le tour d'un adversaire, rien à faire : on passe.
+    // An opponent's turn, nothing to do: we pass.
     const theirs = scenario({ active: "p2", step: "main2", p1: { battlefield: ["Forest"] } });
     theirs.pending = { kind: "priority", player: "p1" };
     expect(autopilotDecision(theirs, "p1", DEFAULT_AUTOPILOT)).toEqual({ type: "pass" });
   });
 
-  it("s'arrête en phase principale quand on peut jouer", () => {
+  it("stops in the main phase when something can be played", () => {
     const s = scenario({ p1: { hand: ["Forest"] } });
     expect(autopilotDecision(s, "p1", DEFAULT_AUTOPILOT)).toBeNull();
   });
 
-  it("laisse résoudre son propre sort, mais s'arrête sur un sort adverse si on peut répondre", () => {
+  it("lets its own spell resolve, but stops on an opposing spell if it can respond", () => {
     let s = scenario({
       p1: { battlefield: ["Mountain", "Mountain", "Mountain"], hand: ["Burst Lightning", "Burst Lightning", "Burst Lightning"] },
       p2: { battlefield: ["Forest"], hand: ["Giant Growth"] },
@@ -440,23 +440,23 @@ describe("autopilot", () => {
     s = act(s, "p1", { type: "cast", card: idsOf(s, "p1", "hand", "Burst Lightning")[0] as string, targets: { t: ["p2"] } });
     expect(autopilotDecision(s, "p1", DEFAULT_AUTOPILOT)).toEqual({ type: "pass" });
     s = act(s, "p1", { type: "pass" });
-    // p2 n'a aucune réponse (Giant Growth sans créature), mais le sort adverse lui est montré :
-    // l'autopilot lui rend la main (l'interface passe seule après quelques secondes).
+    // p2 has no response (Giant Growth without a creature), but the opposing spell is shown to them:
+    // the autopilot hands control back (the interface passes by itself after a few seconds).
     expect(autopilotDecision(s, "p2", DEFAULT_AUTOPILOT)).toBeNull();
-    // Sans cette révélation, il passe automatiquement.
+    // Without that reveal, it passes automatically.
     expect(autopilotDecision(s, "p2", { ...DEFAULT_AUTOPILOT, revealOpponentStack: false })).toEqual({ type: "pass" });
-    // « Fin du tour » en passe douce : un sort adverse rend la main ; en passe dure, on passe aussi.
+    // "End turn" as a soft pass: an opposing spell hands control back; as a hard pass, we pass too.
     expect(autopilotDecision(s, "p2", { ...DEFAULT_AUTOPILOT, passUntilTurn: s.turn.number })).toBeNull();
     expect(autopilotDecision(s, "p2", { ...DEFAULT_AUTOPILOT, passUntilTurn: s.turn.number, passMode: "hard" })).toEqual({
       type: "pass",
     });
-    // Garder la priorité : son propre sort ne passe plus tout seul.
+    // Keeping priority: its own spell no longer passes by itself.
     s = act(s, "p2", { type: "pass" });
     s = act(s, "p1", { type: "cast", card: idsOf(s, "p1", "hand", "Burst Lightning")[0] as string, targets: { t: ["p2"] } });
     expect(autopilotDecision(s, "p1", { ...DEFAULT_AUTOPILOT, holdPriority: true })).toBeNull();
   });
 
-  it("ordre des déclencheurs : choisi par l'automatisme, sauf en contrôle total ou en gardant la priorité", () => {
+  it("trigger order: chosen by the automation, except in full control or when keeping priority", () => {
     const order = (battlefield: string[]) => {
       let s = scenario({ p1: { battlefield: ["Forest", "Forest", ...battlefield], hand: ["Bear Cub"] } });
       s = cast(s, "p1", "Bear Cub");
@@ -464,19 +464,19 @@ describe("autopilot", () => {
       expect(s.pending?.kind === "choice" && s.pending.request.intent).toBe("triggerOrder");
       return s;
     };
-    // Des capacités différentes : l'ordre compte.
+    // Different abilities: the order matters.
     let s = order(["Impact Tremors", "Dazzling Angel"]);
     const suggested = s.pending?.kind === "choice" ? s.pending.request.suggested : [];
     expect(autopilotDecision(s, "p1", DEFAULT_AUTOPILOT)).toEqual({ type: "choose", values: suggested });
     expect(autopilotDecision(s, "p1", { ...DEFAULT_AUTOPILOT, fullControl: true })).toBeNull();
     expect(autopilotDecision(s, "p1", { ...DEFAULT_AUTOPILOT, holdPriority: true })).toBeNull();
-    // La même capacité deux fois : l'ordre est indifférent, choisi même en gardant la priorité.
+    // The same ability twice: the order is irrelevant, chosen even when keeping priority.
     s = order(["Impact Tremors", "Impact Tremors"]);
     expect(autopilotDecision(s, "p1", { ...DEFAULT_AUTOPILOT, holdPriority: true })?.type).toBe("choose");
     expect(autopilotDecision(s, "p1", { ...DEFAULT_AUTOPILOT, fullControl: true })).toBeNull();
   });
 
-  it("« fin du tour » : ne déclare aucun attaquant et passe tout", () => {
+  it('"end turn": declares no attacker and passes everything', () => {
     let s = scenario({ p1: { battlefield: ["Bear Cub"], hand: ["Forest"] } });
     const settings = { ...DEFAULT_AUTOPILOT, passUntilTurn: s.turn.number };
     for (let i = 0; i < 50 && s.turn.active === "p1"; i++) {
@@ -490,8 +490,8 @@ describe("autopilot", () => {
   });
 });
 
-describe("annuler un engagement de mana (façon Arena)", () => {
-  it("un terrain engagé pour son mana se dégage tant que ce mana n'a pas servi ; plus après une autre décision", () => {
+describe("undoing a mana tap (Arena style)", () => {
+  it("a land tapped for its mana untaps as long as that mana has not been used; no longer after another decision", () => {
     let s = scenario({ p1: { battlefield: ["Mountain", "Mountain"], hand: ["Burst Lightning"] } });
     const [a, b] = idsOf(s, "p1", "battlefield", "Mountain") as [string, string];
     s = act(s, "p1", { type: "tapForMana", source: a, ability: 0 });

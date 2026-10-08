@@ -1,6 +1,6 @@
 /**
- * Pool d'IA du serveur (PLAN-E, E14) : une décision calculée dans un worker, définitions des cartes envoyées une fois
- * par salon puis complétées, délai dépassé rejeté (l'hôte jouera la décision par défaut).
+ * Server AI pool (PLAN-E, E14): a decision computed in a worker, card definitions sent once
+ * per room then completed, timeout exceeded rejected (the host will play the default decision).
  */
 import { buildDeck, deckById } from "@mtgx/cards";
 import { createGame, legalActions } from "@mtgx/engine";
@@ -23,8 +23,8 @@ const game = () =>
     ],
   }).state;
 
-describe("pool d'IA", () => {
-  it("décide dans un worker : garder sa main, puis une action légale", async () => {
+describe("AI pool", () => {
+  it("decides in a worker: keep the hand, then a legal action", async () => {
     pool = new AiPool(1, 20_000);
     const s = game();
     const keep = await pool.decide({ room: "R", seat: "p1", level: "medium", players: 2, seed: 1, state: s });
@@ -32,7 +32,7 @@ describe("pool d'IA", () => {
     expect(pool.stats().workers).toBe(1);
   }, 30_000);
 
-  it("une réflexion trop longue est rejetée et le worker remplacé", async () => {
+  it("an overlong deliberation is rejected and the worker replaced", async () => {
     pool = new AiPool(1, 1);
     await expect(pool.decide({ room: "R", seat: "p1", level: "medium", players: 2, seed: 1, state: game() })).rejects.toThrow();
     expect(legalActions).toBeDefined();

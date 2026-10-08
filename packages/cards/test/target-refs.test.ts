@@ -1,15 +1,15 @@
 /**
- * Cibles et références (structure des scripts) : dans chaque capacité, chaque `ref.target(id)` (et `cond.targetMatches`)
- * doit désigner une cible déclarée sous ce nom, une liaison d'une capacité retardée (`bind`) ou un nom lié par le moteur ;
- * chaque cible déclarée doit servir. Sinon la cible est demandée au joueur, puis l'effet ne trouve rien et ne fait rien
- * (Mirelurk Queen : `target.player("p")` lu par `ref.target()`, c'est-à-dire « t »).
+ * Targets and references (script structure): in each ability, every `ref.target(id)` (and `cond.targetMatches`)
+ * must name a target declared under that name, a binding of a delayed ability (`bind`) or a name bound by the engine;
+ * every declared target must be used. Otherwise the target is asked from the player, then the effect finds nothing and does nothing
+ * (Mirelurk Queen: `target.player("p")` read by `ref.target()`, that is "t").
  */
 import { describe, expect, it } from "vitest";
 import { implementedCards } from "../src/index";
 
-/** Cibles déclarées mais non lues, voulues : approximation documentée dans docs/approximations.md. */
+/** Declared but unread targets, on purpose: documented approximation in docs/approximations.md. */
 const UNUSED_OK: Record<string, string> = {
-  "Great Train Heist": "« ce joueur » : les Trésors viennent des blessures infligées à n'importe quel adversaire",
+  "Great Train Heist": '"that player": the Treasures come from damage dealt to any opponent',
 };
 
 type J = unknown;
@@ -22,16 +22,16 @@ function collect(node: J, declared: Set<string>, refs: Set<string>): void {
   }
   if (!isObj(node)) return;
   if (Array.isArray(node.targets)) for (const t of node.targets) if (isObj(t) && typeof t.id === "string") declared.add(t.id);
-  // Capacité retardée : ses noms sont liés à la création (`fx.delayed(…, { k: ref.stored("k") })`).
+  // Delayed ability: its names are bound at creation (`fx.delayed(…, { k: ref.stored("k") })`).
   if (isObj(node.bind)) for (const k of Object.keys(node.bind)) declared.add(k);
-  // « Votre prochain sort » : le moteur lie ce sort à « s » (stack.ts, `nextSpell.trigger`).
+  // "Your next spell": the engine binds this spell to "s" (stack.ts, `nextSpell.trigger`).
   if (isObj(node.nextSpell) && Array.isArray(node.nextSpell.trigger)) declared.add("s");
   if (node.kind === "target" && typeof node.id === "string") refs.add(node.id);
   if (node.kind === "targetMatches" && typeof node.spec === "string") refs.add(node.spec);
   for (const v of Object.values(node)) collect(v, declared, refs);
 }
 
-/** Unités indépendantes d'une carte : chaque capacité, le sort, et de même pour chaque face. */
+/** Independent units of a card: each ability, the spell, and likewise for each face. */
 function units(def: Record<string, J>): [string, J][] {
   const out: [string, J][] = [];
   const add = (label: string, x: J) => {
@@ -49,7 +49,7 @@ function units(def: Record<string, J>): [string, J][] {
   return out;
 }
 
-describe("cibles et références des scripts", () => {
+describe("script targets and references", () => {
   const missing: string[] = [];
   const unused: string[] = [];
   for (const def of implementedCards()) {
@@ -57,21 +57,21 @@ describe("cibles et références des scripts", () => {
       const declared = new Set<string>();
       const refs = new Set<string>();
       collect(unit, declared, refs);
-      for (const r of refs) if (!declared.has(r)) missing.push(`${def.name} (${label}) : ref.target("${r}") sans cible`);
+      for (const r of refs) if (!declared.has(r)) missing.push(`${def.name} (${label}): ref.target("${r}") without a target`);
       if (UNUSED_OK[def.name] === undefined)
-        for (const d of declared) if (!refs.has(d)) unused.push(`${def.name} (${label}) : cible « ${d} » jamais lue`);
+        for (const d of declared) if (!refs.has(d)) unused.push(`${def.name} (${label}): target "${d}" never read`);
     }
   }
 
-  it("chaque référence à une cible désigne une cible déclarée", () => {
+  it("every reference to a target names a declared target", () => {
     expect(missing).toEqual([]);
   });
 
-  it("chaque cible déclarée est lue par un effet ou une condition", () => {
+  it("every declared target is read by an effect or a condition", () => {
     expect(unused).toEqual([]);
   });
 
-  it("les exceptions sont encore nécessaires", () => {
+  it("the exceptions are still needed", () => {
     const stale = Object.keys(UNUSED_OK).filter((name) => {
       const def = implementedCards().find((c) => c.name === name);
       if (!def) return true;

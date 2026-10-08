@@ -1,4 +1,4 @@
-/** Test de fumée : Breaking News (rééditions, « Sans limite »). */
+/** Smoke test: Breaking News (reprints, "Unlimited"). */
 import { smokeTest } from "./harness";
 
 smokeTest(["OTP"]);

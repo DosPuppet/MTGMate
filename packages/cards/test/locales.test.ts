@@ -137,7 +137,9 @@ function translated(owner: string): boolean {
   // `MTGX_CHECK_SETS=blb,fra`: check these owners now (while their translation is in progress).
   if (process.env.MTGX_CHECK_SETS?.split(",").includes(owner)) return true;
   const prefix = owner === "core" ? "packages/cards/src/" : `packages/cards/src/${owner}/`;
-  return !frenchBaseline.files.some((f) => f.startsWith(prefix) && (owner !== "core" || !f.slice(prefix.length).includes("/")));
+  return !(frenchBaseline.files as string[]).some(
+    (f) => f.startsWith(prefix) && (owner !== "core" || !f.slice(prefix.length).includes("/")),
+  );
 }
 
 const placeholders = (s: string) => [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort();

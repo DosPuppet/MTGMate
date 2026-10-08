@@ -1,12 +1,12 @@
 /**
- * Test de fumée : cartes gérées des extensions sans fichier propre (`OWN_FILES`). Depuis The Hobbit, chaque extension a
- * le sien ; ce fichier reprend une extension ajoutée sans fichier.
+ * Smoke test: handled cards of the sets without their own file (`OWN_FILES`). Since The Hobbit, every set has its
+ * own; this file picks up a set added without one.
  */
 import { expect, it } from "vitest";
 import { OTHER_SETS, smokeTest } from "./harness";
 
 smokeTest(OTHER_SETS());
 
-it("les extensions sans fichier de fumée propre sont testées ici", () => {
+it("sets without their own smoke file are tested here", () => {
   expect(Array.isArray(OTHER_SETS())).toBe(true);
 });

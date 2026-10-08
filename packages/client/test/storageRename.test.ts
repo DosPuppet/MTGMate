@@ -1,4 +1,4 @@
-/** Changement de nom : les clés « mtgmate.* » du navigateur sont reprises sous « planecircle.* ». */
+/** Rename: the browser's "mtgmate.*" keys are carried over to "planecircle.*". */
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 function stubStorage(entries: Record<string, string>): Map<string, string> {
@@ -15,13 +15,13 @@ function stubStorage(entries: Record<string, string>): Map<string, string> {
   return store;
 }
 
-describe("reprise des clés de MTG Mate", () => {
+describe("carrying over MTG Mate keys", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.resetModules();
   });
 
-  it("chaque clé mtgmate.* passe sous planecircle.*, sans écraser une clé nouvelle ; les autres clés restent", async () => {
+  it("each mtgmate.* key moves to planecircle.*, without overwriting a new key; other keys stay", async () => {
     const store = stubStorage({
       "mtgmate.board": "bois",
       "mtgmate.decks": '{"state":{}}',
@@ -38,10 +38,10 @@ describe("reprise des clés de MTG Mate", () => {
     });
   });
 
-  it("un stockage indisponible ne bloque pas le chargement", async () => {
+  it("unavailable storage does not block loading", async () => {
     vi.stubGlobal("localStorage", {
       get length(): number {
-        throw new Error("indisponible");
+        throw new Error("unavailable");
       },
     });
     await expect(import("../src/storageRename")).resolves.toBeDefined();

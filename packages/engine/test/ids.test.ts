@@ -1,10 +1,10 @@
-/** Identifiants (docs/plans/PLAN-R.md, lot F1) : un compteur par préfixe, pour que les décisions enregistrées visent toujours les mêmes objets. */
+/** Identifiers (PLAN-R in docs/history.md, lot F1): one counter per prefix, so recorded decisions always target the same objects. */
 import { describe, expect, it } from "vitest";
 import { newId } from "../src/state";
 import { scenario } from "./helpers";
 
 describe("identifiants", () => {
-  it("créer un effet ou un déclencheur ne décale pas les identifiants des objets", () => {
+  it("creating an effect or a trigger does not shift object identifiers", () => {
     const a = scenario({});
     const b = structuredClone(a);
     newId(b, "e");

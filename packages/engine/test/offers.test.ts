@@ -1,6 +1,6 @@
 /**
- * Ce que `legalActions` propose, le moteur l'accepte (docs/plans/PLAN-C.md, lot C2). Écarts trouvés par le fuzz strict
- * (`--offers`) : chaque test rejoue la position et vérifie la règle.
+ * What `legalActions` offers, the engine accepts (PLAN-C in docs/history.md, lot C2). Gaps found by the strict fuzz
+ * (`--offers`): each test replays the position and checks the rule.
  */
 import { card } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
@@ -13,9 +13,9 @@ import { forcedAttackers } from "../src/turn";
 import type { ActionOption, GameState } from "../src/types";
 import { act, advanceUntil, customCard, exiled, idOf, idsOf, lands, scenario, settle } from "./helpers";
 
-/** Artefact « {T} : ajoutez {C} » (sans se sacrifier). */
+/** Artifact "{T}: Add {C}" (without sacrificing itself). */
 const stone = (name: string) => customCard({ name, types: ["Artifact"], typeLine: "Artifact", abilities: [manaAbility("C")] });
-/** Artefact sans capacité de mana. */
+/** Artifact without a mana ability. */
 const trinket = (name: string) => customCard({ name, types: ["Artifact"], typeLine: "Artifact" });
 const bear = (name: string, subtypes: string[] = ["Bear"]) =>
   customCard({ name, power: 2, toughness: 2, subtypes, typeLine: `Creature — ${subtypes.join(" ")}` });
@@ -27,10 +27,10 @@ const activations = (s: GameState, player: string, source: string) =>
     (a): a is Extract<ActionOption, { type: "activate" }> => a.type === "activate" && a.source === source,
   );
 
-describe("options proposées, décisions acceptées", () => {
-  it("Guardian of the Great Door et Springleaf Drum : les créatures engagées pour le coût ne servent plus au Drum (fuzz strict)", () => {
-    // {W}{W} et quatre permanents à engager : la seule solution engage les deux Îles et deux créatures, et paie avec la
-    // Plaine et le Drum (qui engage la troisième créature).
+describe("offered options, accepted decisions", () => {
+  it("Guardian of the Great Door and Springleaf Drum: creatures tapped for the cost no longer serve the Drum (strict fuzz)", () => {
+    // {W}{W} and four permanents to tap: the only solution taps the two Islands and two creatures, and pays with the
+    // Plains and the Drum (which taps the third creature).
     let s = scenario({
       p1: {
         battlefield: ["Springleaf Drum", "Plains", ...lands("Island", 2), bear("Ours A"), bear("Ours B"), bear("Ours C")],
@@ -46,7 +46,7 @@ describe("options proposées, décisions acceptées", () => {
     expect(idsOf(s, "p1", "battlefield", "Guardian of the Great Door")).toHaveLength(1);
   });
 
-  it("« défaussez une carte ou payez {2} » : le paiement tient compte de la taxe de commandant (Titania depuis la zone de commandement)", () => {
+  it("'discard a card or pay {2}': payment accounts for the commander tax (Titania from the command zone)", () => {
     const affordable = (n: number) => {
       const s = scenario({
         p1: { command: ["Titania, Rugged Rumbler"], battlefield: [...lands("Forest", n)], hand: ["Forest"] },
@@ -61,7 +61,7 @@ describe("options proposées, décisions acceptées", () => {
     expect(affordable(7)).toBe(true);
   });
 
-  it("Terror of the Peaks : pas proposée comme cible si le joueur ne peut pas payer les 3 PV de plus", () => {
+  it("Terror of the Peaks: not offered as a target if the player cannot pay the extra 3 life", () => {
     const at = (life: number) => {
       const s = scenario({
         p1: { life, battlefield: ["Mountain"], hand: ["Shock"] },
@@ -75,8 +75,8 @@ describe("options proposées, décisions acceptées", () => {
     expect(at(3)).toBe(true);
   });
 
-  it("sources qui coûtent des PV : pas plus que ce que le joueur peut payer (119.4 ; Mana Confluence à 1 PV)", () => {
-    // Deux Mana Confluence pour {1}{R} : à 1 PV, une seule peut payer (le sort n'est pas proposé) ; à 3 PV, les deux.
+  it("sources that cost life: no more than the player can pay (119.4; Mana Confluence at 1 life)", () => {
+    // Two Mana Confluence for {1}{R}: at 1 life, only one can pay (the spell is not offered); at 3 life, both.
     const at = (life: number) => {
       const s = scenario({ p1: { life, battlefield: ["Mana Confluence", "Mana Confluence"], hand: ["Axgard Cavalry"] } });
       const cavalry = idOf(s, "p1", "hand", "Axgard Cavalry");
@@ -90,40 +90,40 @@ describe("options proposées, décisions acceptées", () => {
     expect(after.players.p1?.life).toBe(1);
   });
 
-  it("« X cibles » avec X = 0 : aucune cible (601.2c, Hide on the Ceiling)", () => {
+  it("'X targets' with X = 0: no target (601.2c, Hide on the Ceiling)", () => {
     let s = scenario({ p1: { battlefield: ["Island"], hand: ["Hide on the Ceiling"] } });
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Hide on the Ceiling"), x: 0, targets: { t: [] } });
     expect(s.stack).toHaveLength(1);
   });
 
-  it("flétrir en coût additionnel : la créature ciblée peut payer le coût (601.2h, Cinder Strike)", () => {
-    const giant = customCard({ name: "Géant de test", power: 5, toughness: 5 });
+  it("wither as an additional cost: the targeted creature can pay the cost (601.2h, Cinder Strike)", () => {
+    const giant = customCard({ name: "Test Giant", power: 5, toughness: 5 });
     let s = scenario({ p1: { battlefield: ["Mountain", giant], hand: ["Cinder Strike"] } });
-    const g = idOf(s, "p1", "battlefield", "Géant de test");
+    const g = idOf(s, "p1", "battlefield", "Test Giant");
     const option = castOption(s, "p1", idOf(s, "p1", "hand", "Cinder Strike"));
     expect(option?.kickerAffordable).toBe(true);
     expect(option?.kickerPermanents).toEqual([g]);
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Cinder Strike"), targets: { t: [g] }, kicked: true });
     expect(s.objects[g]?.counters["-1/-1"]).toBe(1);
     s = settle(s);
-    // 4 blessures sur une 4/4 (5/5 avec un marqueur −1/−1) : elle meurt.
-    expect(idsOf(s, "p1", "graveyard", "Géant de test")).toHaveLength(1);
+    // 4 damage on a 4/4 (5/5 with a -1/-1 counter): it dies.
+    expect(idsOf(s, "p1", "graveyard", "Test Giant")).toHaveLength(1);
   });
 
-  it("un artefact sacrifié pour le coût peut d'abord produire son mana (601.2g, Hungering Puppetbeast)", () => {
-    let s = scenario({ p1: { battlefield: ["Hungering Puppetbeast", stone("Pierre de test")] } });
+  it("an artifact sacrificed for the cost can first produce its mana (601.2g, Hungering Puppetbeast)", () => {
+    let s = scenario({ p1: { battlefield: ["Hungering Puppetbeast", stone("Test Stone")] } });
     const beast = idOf(s, "p1", "battlefield", "Hungering Puppetbeast");
     const option = activations(s, "p1", beast)[0];
     expect(option).toBeDefined();
     s = act(s, "p1", { type: "activate", source: beast, ability: option?.ability ?? -1, targets: {} });
     s = settle(s);
-    expect(idsOf(s, "p1", "graveyard", "Pierre de test")).toHaveLength(1);
+    expect(idsOf(s, "p1", "graveyard", "Test Stone")).toHaveLength(1);
     expect(s.objects[beast]?.counters["+1/+1"]).toBe(1);
   });
 
-  it("payer 0 PV est toujours possible, même avec un total négatif (119.4, Herald of Eternal Dawn)", () => {
+  it("paying 0 life is always possible, even with a negative total (119.4, Herald of Eternal Dawn)", () => {
     const squire = customCard({
-      name: "Écuyer de test",
+      name: "Test Squire",
       power: 1,
       toughness: 1,
       manaCost: { generic: 0, colored: { W: 1 }, x: 0 },
@@ -131,44 +131,44 @@ describe("options proposées, décisions acceptées", () => {
       colors: ["W"],
     });
     let s = scenario({ p1: { life: -3, battlefield: ["Plains", "Herald of Eternal Dawn"], hand: [squire] } });
-    expect(castOption(s, "p1", idOf(s, "p1", "hand", "Écuyer de test"))).toBeDefined();
-    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Écuyer de test") });
+    expect(castOption(s, "p1", idOf(s, "p1", "hand", "Test Squire"))).toBeDefined();
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Test Squire") });
     expect(s.stack).toHaveLength(1);
   });
 
-  it("les preuves d'un mana ne prennent pas la carte qui s'exile pour payer sa capacité (Cryptex, Sage of the Fang)", () => {
+  it("a mana's proofs do not take the card that exiles itself to pay for its ability (Cryptex, Sage of the Fang)", () => {
     const base = { battlefield: ["Cryptex", ...lands("Forest", 3)], graveyard: ["Sage of the Fang"] };
     let s = scenario({ p1: base, p2: { battlefield: ["Forest"] } });
     const sage = idOf(s, "p1", "graveyard", "Sage of the Fang");
-    // Seule carte du cimetière : Cryptex ne peut pas réunir de preuves sans exiler Sage of the Fang.
+    // Only card in the graveyard: Cryptex cannot gather proofs without exiling Sage of the Fang.
     expect(activations(s, "p1", sage)).toEqual([]);
     expect(() =>
       act(s, "p1", { type: "activate", source: sage, ability: 1, targets: { t: [idOf(s, "p1", "battlefield", "Cryptex")] } }),
     ).toThrow(RulesError);
-    // Avec une autre carte de valeur de mana 3 au cimetière, les preuves la prennent.
+    // With another mana value 3 card in the graveyard, the proofs take it.
     s = scenario({
       p1: {
         ...base,
-        battlefield: [...base.battlefield, bear("Ours de test")],
+        battlefield: [...base.battlefield, bear("Test Bear")],
         graveyard: ["Sage of the Fang", "Lightning Strike", "Opt", "Opt"],
       },
     });
     const sage2 = idOf(s, "p1", "graveyard", "Sage of the Fang");
     const option = activations(s, "p1", sage2)[0];
     expect(option).toBeDefined();
-    const bears = idOf(s, "p1", "battlefield", "Ours de test");
+    const bears = idOf(s, "p1", "battlefield", "Test Bear");
     s = act(s, "p1", { type: "activate", source: sage2, ability: option?.ability ?? -1, targets: { t: [bears] } });
     expect(s.exile.some((id) => s.objects[id]?.defId === card("Sage of the Fang").id)).toBe(true);
   });
 
-  it("« payez X points de vie » : X ne dépasse pas les points de vie (Krumar Initiate)", () => {
+  it("'pay X life': X does not exceed the life total (Krumar Initiate)", () => {
     const s = scenario({ p1: { life: 3, battlefield: ["Krumar Initiate", ...lands("Swamp", 8)] } });
     const option = activations(s, "p1", idOf(s, "p1", "battlefield", "Krumar Initiate"))[0];
     expect(option?.xMax).toBe(3);
   });
 
-  it("« sacrifiez un ou plusieurs artefacts » : X vaut au moins 1 (Radiant Lotus)", () => {
-    const s = scenario({ p1: { battlefield: ["Radiant Lotus", trinket("Babiole de test")] } });
+  it("'sacrifice one or more artifacts': X is at least 1 (Radiant Lotus)", () => {
+    const s = scenario({ p1: { battlefield: ["Radiant Lotus", trinket("Test Trinket")] } });
     const lotus = idOf(s, "p1", "battlefield", "Radiant Lotus");
     const option = activations(s, "p1", lotus)[0];
     expect(option?.xMin).toBe(1);
@@ -177,36 +177,36 @@ describe("options proposées, décisions acceptées", () => {
     ).toThrow(RulesError);
   });
 
-  it("« engagez X artefacts » : ceux qui paient le mana ne comptent pas (Secluded Starforge)", () => {
-    // Deux artefacts de mana paient {2} : X vaut 0. Un artefact de plus, sans mana : X vaut 1.
-    const base = ["Secluded Starforge", stone("Pierre A"), stone("Pierre B"), bear("Ours de test")];
+  it("'tap X artifacts': those that pay the mana do not count (Secluded Starforge)", () => {
+    // Two mana artifacts pay {2}: X is 0. One more artifact, without mana: X is 1.
+    const base = ["Secluded Starforge", stone("Stone A"), stone("Stone B"), bear("Test Bear")];
     let s = scenario({ p1: { battlefield: base } });
     const forge = () => idOf(s, "p1", "battlefield", "Secluded Starforge");
     const pump = () => activations(s, "p1", forge()).find((a) => a.targets.length > 0);
     expect(pump()?.xMax ?? 0).toBe(0);
-    s = scenario({ p1: { battlefield: [...base, trinket("Babiole de test")] } });
+    s = scenario({ p1: { battlefield: [...base, trinket("Test Trinket")] } });
     expect(pump()?.xMax).toBe(1);
-    const bears = idOf(s, "p1", "battlefield", "Ours de test");
+    const bears = idOf(s, "p1", "battlefield", "Test Bear");
     s = act(s, "p1", { type: "activate", source: forge(), ability: pump()?.ability ?? -1, targets: { t: [bears] }, x: 1 });
-    expect(s.objects[idOf(s, "p1", "battlefield", "Babiole de test")]?.tapped).toBe(true);
+    expect(s.objects[idOf(s, "p1", "battlefield", "Test Trinket")]?.tapped).toBe(true);
   });
 
-  it("« ce sort coûte {3} de moins s'il cible une créature engagée » : seules les cibles engagées si c'est nécessaire (Luminous Rebuke)", () => {
+  it("'this spell costs {3} less if it targets a tapped creature': only tapped targets if necessary (Luminous Rebuke)", () => {
     const s = scenario({
       p1: { battlefield: lands("Plains", 2), hand: ["Luminous Rebuke"] },
-      p2: { battlefield: [{ name: bear("Ours engagé"), tapped: true }, bear("Ours dégagé")] },
+      p2: { battlefield: [{ name: bear("Tapped Bear"), tapped: true }, bear("Untapped Bear")] },
     });
     const option = castOption(s, "p1", idOf(s, "p1", "hand", "Luminous Rebuke"));
-    expect(option?.modes[0]?.targets[0]?.legal).toEqual([idOf(s, "p2", "battlefield", "Ours engagé")]);
+    expect(option?.modes[0]?.targets[0]?.legal).toEqual([idOf(s, "p2", "battlefield", "Tapped Bear")]);
   });
 
-  it("« {W}{U} de plus par cible au-delà de la première » : pas plus de cibles que le mana n'en permet (Officious Interrogation)", () => {
+  it("'{W}{U} more for each target beyond the first': no more targets than the mana allows (Officious Interrogation)", () => {
     const s = scenario({ p1: { battlefield: ["Plains", "Island"], hand: ["Officious Interrogation"] } });
     const option = castOption(s, "p1", idOf(s, "p1", "hand", "Officious Interrogation"));
     expect(option?.modes[0]?.targets[0]?.count ?? 1).toBe(1);
   });
 
-  it("deux cibles qui partagent un type de créature : pas proposé sans une telle paire (Secret Tunnel)", () => {
+  it("two targets that share a creature type: not offered without such a pair (Secret Tunnel)", () => {
     const base = ["Secret Tunnel", ...lands("Forest", 4)];
     let s = scenario({ p1: { battlefield: [...base, bear("Ours A"), bear("Loup B", ["Wolf"])] } });
     const tunnel = () => idOf(s, "p1", "battlefield", "Secret Tunnel");
@@ -215,7 +215,7 @@ describe("options proposées, décisions acceptées", () => {
     expect(activations(s, "p1", tunnel()).some((a) => a.targets.length > 0)).toBe(true);
   });
 
-  it("une capacité de mana sans couleur possible n'est pas proposée (106.7, Pit of Offerings)", () => {
+  it("a mana ability with no possible color is not offered (106.7, Pit of Offerings)", () => {
     const s = scenario({ p1: { battlefield: ["Pit of Offerings"] } });
     const pit = idOf(s, "p1", "battlefield", "Pit of Offerings");
     const taps = legalActions(s, "p1").filter((a) => a.type === "tapForMana" && a.source === pit);
@@ -223,9 +223,9 @@ describe("options proposées, décisions acceptées", () => {
     expect(chars(s, pit).name).toBe("Pit of Offerings");
   });
 
-  it("deux Springleaf Drum se partagent la créature à engager (paiement)", () => {
+  it("two Springleaf Drums share the creature to tap (payment)", () => {
     const spell = customCard({
-      name: "Sort de test",
+      name: "Test Spell",
       types: ["Sorcery"],
       typeLine: "Sorcery",
       manaCost: { generic: 2, colored: { W: 1 }, x: 0 },
@@ -234,34 +234,34 @@ describe("options proposées, décisions acceptées", () => {
     });
     const base = ["Plains", "Springleaf Drum", "Springleaf Drum", bear("Ours A")];
     let s = scenario({ p1: { battlefield: base, hand: [spell] } });
-    expect(castOption(s, "p1", idOf(s, "p1", "hand", "Sort de test"))).toBeUndefined();
+    expect(castOption(s, "p1", idOf(s, "p1", "hand", "Test Spell"))).toBeUndefined();
     s = scenario({ p1: { battlefield: [...base, bear("Ours B")], hand: [spell] } });
-    expect(castOption(s, "p1", idOf(s, "p1", "hand", "Sort de test"))).toBeDefined();
-    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Sort de test") });
+    expect(castOption(s, "p1", idOf(s, "p1", "hand", "Test Spell"))).toBeDefined();
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Test Spell") });
     expect(s.stack).toHaveLength(1);
   });
 
-  it("harmonie : par défaut, une créature sans capacité de mana (la créature-terrain paie le reste)", () => {
+  it("harmony: by default, a creature without a mana ability (the land creature pays the rest)", () => {
     const reef = customCard({
-      name: "Récif de test",
+      name: "Test Reef",
       types: ["Land", "Creature"],
       typeLine: "Land Creature",
       power: 4,
       toughness: 4,
       abilities: [manaAbility("U")],
     });
-    const giant = customCard({ name: "Géant de test", power: 9, toughness: 9 });
+    const giant = customCard({ name: "Test Giant", power: 9, toughness: 9 });
     let s = scenario({ p1: { battlefield: [reef, giant], graveyard: ["Winternight Stories"] } });
     const stories = idOf(s, "p1", "graveyard", "Winternight Stories");
     const option = castOption(s, "p1", stories);
-    expect(option?.additional?.tap?.suggested).toEqual([idOf(s, "p1", "battlefield", "Géant de test")]);
+    expect(option?.additional?.tap?.suggested).toEqual([idOf(s, "p1", "battlefield", "Test Giant")]);
     s = act(s, "p1", { type: "cast", card: stories });
     expect(s.stack).toHaveLength(1);
   });
 
-  it("« entre zéro et deux cibles » (`minCount: 0`) : l'activation sans cible est acceptée", () => {
+  it("'up to two targets' (`minCount: 0`): activation without a target is accepted", () => {
     const hearse = customCard({
-      name: "Corbillard de test",
+      name: "Test Hearse",
       types: ["Artifact"],
       typeLine: "Artifact",
       abilities: [
@@ -273,15 +273,15 @@ describe("options proposées, décisions acceptées", () => {
       ],
     });
     let s = scenario({ p1: { battlefield: [hearse] } });
-    const source = idOf(s, "p1", "battlefield", "Corbillard de test");
+    const source = idOf(s, "p1", "battlefield", "Test Hearse");
     expect(activations(s, "p1", source)).toHaveLength(1);
     s = act(s, "p1", { type: "activate", source, ability: 0, targets: { t: [] } });
     expect(s.stack).toHaveLength(1);
   });
 
-  it("émerger : la créature sacrifiée ne paie pas le mana du coût alternatif (Cresting Mosasaurus)", () => {
+  it("emerge: the sacrificed creature does not pay the alternative cost's mana (Cresting Mosasaurus)", () => {
     const alt = (s: GameState) => castOption(s, "p1", idOf(s, "p1", "hand", "Cresting Mosasaurus"))?.altAvailable;
-    // {6}{U} moins 1 (Llanowar Elves) : six mana, sans celui des Elfes sacrifiés.
+    // {6}{U} minus 1 (Llanowar Elves): six mana, without that of the sacrificed Elves.
     let s = scenario({ p1: { battlefield: [...lands("Island", 5), "Llanowar Elves"], hand: ["Cresting Mosasaurus"] } });
     expect(alt(s)).toBeFalsy();
     s = scenario({ p1: { battlefield: [...lands("Island", 6), "Llanowar Elves"], hand: ["Cresting Mosasaurus"] } });
@@ -290,9 +290,9 @@ describe("options proposées, décisions acceptées", () => {
     expect(s.stack).toHaveLength(1);
   });
 
-  it("contempler et exiler : le permanent exilé avant le mana n'en ajoute plus (Champion of the Path, Lavaleaper)", () => {
+  it("delve and exile: the permanent exiled before the mana no longer adds any (Champion of the Path, Lavaleaper)", () => {
     const champion = (s: GameState) => castOption(s, "p1", idOf(s, "p1", "hand", "Champion of the Path"));
-    // {3}{R} : deux Montagnes en produisent quatre avec Lavaleaper, mais Lavaleaper est le seul Élémental à exiler.
+    // {3}{R}: two Mountains produce four with Lavaleaper, but Lavaleaper is the only Elemental to exile.
     let s = scenario({ p1: { battlefield: ["Lavaleaper", ...lands("Mountain", 3)], hand: ["Champion of the Path"] } });
     expect(champion(s)).toBeUndefined();
     s = scenario({ p1: { battlefield: ["Lavaleaper", ...lands("Mountain", 4)], hand: ["Champion of the Path"] } });
@@ -300,7 +300,7 @@ describe("options proposées, décisions acceptées", () => {
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Champion of the Path") });
     expect(s.stack).toHaveLength(1);
     expect(exiled(s, "Lavaleaper")).toHaveLength(1);
-    // Un Élémental de la main est contemplé à sa place : Lavaleaper reste, les deux Montagnes suffisent.
+    // An Elemental from hand is exiled in its place: Lavaleaper stays, the two Mountains suffice.
     s = scenario({
       p1: { battlefield: ["Lavaleaper", ...lands("Mountain", 2)], hand: ["Champion of the Path", "Lavaleaper"] },
     });
@@ -310,9 +310,9 @@ describe("options proposées, décisions acceptées", () => {
     expect(idsOf(s, "p1", "battlefield", "Lavaleaper")).toHaveLength(1);
   });
 
-  it("web-slinging : la créature renvoyée avant le mana ne triple plus le mana (Spider-Man, Brooklyn Visionary, Nyxbloom Ancient)", () => {
+  it("web-slinging: the creature returned before the mana no longer triples the mana (Spider-Man, Brooklyn Visionary, Nyxbloom Ancient)", () => {
     const spider = (s: GameState) => castOption(s, "p1", idOf(s, "p1", "hand", "Spider-Man, Brooklyn Visionary"));
-    // {2}{G} : Chromatic Lantern en produit trois avec Nyxbloom Ancient, mais Nyxbloom est la seule créature engagée.
+    // {2}{G}: Chromatic Lantern produces three with Nyxbloom Ancient, but Nyxbloom is the only tapped creature.
     let s = scenario({
       p1: {
         battlefield: [{ name: "Nyxbloom Ancient", tapped: true }, "Chromatic Lantern"],
@@ -320,7 +320,7 @@ describe("options proposées, décisions acceptées", () => {
       },
     });
     expect(spider(s)).toBeUndefined();
-    // Une autre créature engagée, moins chère, est renvoyée par défaut : Nyxbloom reste.
+    // Another, cheaper tapped creature is returned by default: Nyxbloom stays.
     s = scenario({
       p1: {
         battlefield: [{ name: "Nyxbloom Ancient", tapped: true }, { name: "Llanowar Elves", tapped: true }, "Chromatic Lantern"],
@@ -333,21 +333,21 @@ describe("options proposées, décisions acceptées", () => {
     expect(idsOf(s, "p1", "hand", "Llanowar Elves")).toHaveLength(1);
   });
 
-  it("« attaque à chaque combat si possible » sans défenseur permis : pas obligée d'attaquer (508.1d, The Void et Storm, Windrider)", () => {
-    // The Void (jeton de The Sentry) : vol, attaque à chaque combat ; Storm : les créatures volantes ne peuvent pas vous attaquer.
-    const voidToken = customCard({ name: "Vide de test", power: 5, toughness: 5, keywords: ["flying", "mustAttack"] });
+  it("'attacks each combat if able' with no allowed defender: not forced to attack (508.1d, The Void and Storm, Windrider)", () => {
+    // The Void (The Sentry's token): flying, attacks each combat; Storm: flying creatures cannot attack you.
+    const voidToken = customCard({ name: "Test Void", power: 5, toughness: 5, keywords: ["flying", "mustAttack"] });
     let s = scenario({ p1: { battlefield: [voidToken] }, p2: { battlefield: ["Storm, Windrider"] } });
-    const v = idOf(s, "p1", "battlefield", "Vide de test");
+    const v = idOf(s, "p1", "battlefield", "Test Void");
     s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
     expect(forcedAttackers(s, "p1")).toEqual([]);
     expect(() => act(s, "p1", { type: "declareAttackers", attackers: [{ id: v, defender: "p2" }] })).toThrow(RulesError);
     const p = s.pending;
-    if (p?.kind !== "declareAttackers") throw new Error("déclaration des attaquants attendue");
+    if (p?.kind !== "declareAttackers") throw new Error("declare attackers decision expected");
     expect(fallbackDecision(s, p)).toEqual({ type: "declareAttackers", attackers: [] });
     s = act(s, "p1", fallbackDecision(s, p));
     expect(s.combat?.attackers ?? []).toHaveLength(0);
   });
-  it("terrain avec une question « en arrivant » (PLAN-H H9) : chaque réponse proposée, et « aucune » quand c'est permis, est acceptée", () => {
+  it("land with an 'as it enters' question (PLAN-H H9): each offered answer, and 'none' when allowed, is accepted", () => {
     const s = scenario({
       p1: { hand: ["Echoing Deeps", "Cavern of Souls", "Multiversal Passage"], graveyard: ["Forest"] },
       p2: { graveyard: ["Restless Vents"] },
@@ -360,7 +360,7 @@ describe("options proposées, décisions acceptées", () => {
       for (const chosen of answers.slice(0, 5))
         expect(() => act(s, "p1", { ...decision, ...(chosen !== undefined ? { chosen } : {}) })).not.toThrow();
     }
-    // Multiversal Passage : le type de terrain de base vient de l'option, pas de `chosen`.
+    // Multiversal Passage: the basic land type comes from the option, not from `chosen`.
     const passage = idOf(s, "p1", "hand", "Multiversal Passage");
     expect(() => act(s, "p1", { type: "playLand", card: passage, chosen: "Island" })).toThrow(RulesError);
   });

@@ -1,5 +1,5 @@
 /**
- * Outils de test : construire une position de jeu précise et jouer des décisions.
+ * Test tools: build a precise game position and play decisions.
  */
 import { card } from "@mtgx/cards";
 import { addControlEffect, syncControl } from "../src/control";
@@ -13,10 +13,10 @@ import type { CardDef, CastNowRequest, ChoiceRequest, ChoiceValue, Decision, Gam
 export interface Permanent {
   name: string | CardDef;
   tapped?: boolean;
-  /** Arrivée ce tour-ci (mal d'invocation). */
+  /** Arrived this turn (summoning sick). */
   sick?: boolean;
   damage?: number;
-  /** Marqueurs déjà posés (une créature 0/0 qui doit survivre). */
+  /** Counters already placed (a 0/0 creature that must survive). */
   counters?: Record<string, number>;
 }
 
@@ -26,20 +26,20 @@ export interface Side {
   hand?: (string | CardDef)[];
   library?: (string | CardDef)[];
   graveyard?: (string | CardDef)[];
-  /** Commander (PLAN-E) : commandants dans la zone de commandement (la partie devient une partie de Commander). */
+  /** Commander (PLAN-E): commanders in the command zone (the game becomes a Commander game). */
   command?: (string | CardDef)[];
 }
 
 const def = (c: string | CardDef): CardDef => (typeof c === "string" ? card(c) : c);
 
-const NAMES = ["Alice", "Bob", "Chloé", "David", "Emma", "Farid"];
+const NAMES = ["Alice", "Bob", "Chloe", "David", "Emma", "Farid"];
 
 export interface ScenarioOptions {
   p1?: Side;
   p2?: Side;
   p3?: Side;
   p4?: Side;
-  /** Nombre de joueurs (2 par défaut) : p1, p2, p3… */
+  /** Number of players (2 by default): p1, p2, p3... */
   players?: number;
   active?: PlayerId;
   step?: Step;
@@ -66,16 +66,16 @@ export function scenario(opts: ScenarioOptions): GameState {
       onceFired: [],
       startingPlayer: "p1",
     };
-    // Rang de la phase principale de départ (505.1a) : la seconde phase principale d'un tour sans combat ajouté.
+    // Rank of the starting main phase (505.1a): the second main phase of a turn with no added combat.
     if (s.turn.step === "main1" || s.turn.step === "main2") s.turn.mainPhase = s.turn.step === "main1" ? 1 : 2;
     for (const p of ids) {
       const side = (opts as Record<string, Side | undefined>)[p] ?? {};
       const player = s.players[p];
       if (!player) continue;
       player.life = side.life ?? 20;
-      // Tout le monde a déjà joué un tour : les créatures présentes n'ont pas le mal d'invocation.
+      // Everyone has already taken a turn: the creatures present are not summoning sick.
       player.lastTurnStarted = p === s.turn.active ? turn : Math.max(1, turn - 1);
-      // Tours déjà commencés par ce joueur (Jace Reawakened) : un tour sur deux à deux joueurs.
+      // Turns already begun by this player (Jace Reawakened): every other turn in a two-player game.
       player.turnsTaken = Math.ceil(turn / 2);
       player.drewFromEmptyLibrary = false;
       const add = (c: string | CardDef, zone: "hand" | "library" | "graveyard") => {
@@ -118,7 +118,7 @@ export function act(s: GameState, player: PlayerId, d: Decision): GameState {
   return submit(s, player, d).state;
 }
 
-/** Le joueur qui doit décider passe, jusqu'à ce que `until` soit vrai (ou 200 passes). */
+/** The player who must decide passes, until `until` is true (or 200 passes). */
 export function passUntil(s: GameState, until: (s: GameState) => boolean): GameState {
   let cur = s;
   for (let i = 0; i < 200 && !until(cur) && cur.pending?.kind === "priority"; i++) {
@@ -127,7 +127,7 @@ export function passUntil(s: GameState, until: (s: GameState) => boolean): GameS
   return cur;
 }
 
-/** Comme passUntil, mais accepte aussi la réponse suggérée aux choix (répartition des blessures…). */
+/** Like passUntil, but also accepts the suggested answer to choices (damage assignment...). */
 export function passAccepting(s: GameState, until: (s: GameState) => boolean): GameState {
   let cur = s;
   for (let i = 0; i < 300 && !until(cur); i++) {
@@ -139,17 +139,17 @@ export function passAccepting(s: GameState, until: (s: GameState) => boolean): G
   return cur;
 }
 
-/** Priorité « lancer maintenant » en attente pendant une résolution (608.2g), ou `undefined`. */
+/** "Cast now" priority pending during a resolution (608.2g), or `undefined`. */
 export function castNowOf(s: GameState): CastNowRequest | undefined {
   return s.pending?.kind === "priority" ? s.pending.castNow : undefined;
 }
 
-/** Passe (et suit les choix suggérés) jusqu'à une priorité « lancer maintenant ». */
+/** Passes (and follows suggested choices) up to a "cast now" priority. */
 export function untilCastNow(s: GameState): GameState {
   return passAccepting(s, (x) => !!castNowOf(x));
 }
 
-/** Les deux joueurs passent une fois : résout le dessus de la pile (ou termine l'étape). */
+/** Both players pass once: resolves the top of the stack (or ends the step). */
 export function passBoth(s: GameState): GameState {
   let cur = s;
   for (let i = 0; i < 2 && cur.pending?.kind === "priority"; i++) cur = act(cur, cur.pending.player, { type: "pass" });
@@ -170,7 +170,7 @@ export function idOf(s: GameState, player: PlayerId, zone: "hand" | "battlefield
   return id;
 }
 
-/** Un joueur prend le contrôle d'un permanent (effet de contrôle permanent, couche 2), sur l'état reçu. */
+/** A player takes control of a permanent (permanent control effect, layer 2), on the given state. */
 export function steal(s: GameState, id: string, to: PlayerId): GameState {
   addControlEffect(s, [id], to, "permanent");
   syncControl(s);
@@ -196,8 +196,8 @@ export function customCard(partial: Partial<CardDef> & { name: string }): CardDe
 }
 
 /**
- * Avance la partie jusqu'à la condition : passe la priorité, n'attaque (sauf les attaques obligées, 508.1d) ni ne bloque,
- * défausse l'excédent et accepte les choix suggérés.
+ * Advances the game until the condition: passes priority, neither attacks (except forced attacks, 508.1d) nor blocks,
+ * discards the excess and accepts suggested choices.
  */
 export function advanceUntil(s: GameState, until: (s: GameState) => boolean, max = 600): GameState {
   let cur = s;
@@ -218,8 +218,8 @@ export function advanceUntil(s: GameState, until: (s: GameState) => boolean, max
 }
 
 /**
- * Comme `advanceUntil` (sans attaquer ni bloquer), en relevant les étapes commencées (événements `step`, une entrée par
- * étape, les étapes ajoutées comprises ; l'étape de dégagement d'un nouveau tour n'en émet pas).
+ * Like `advanceUntil` (neither attacking nor blocking), collecting the steps begun (`step` events, one entry per
+ * step, added steps included; a new turn's untap step emits none).
  */
 export function stepTrail(s: GameState, until: (s: GameState) => boolean, max = 600): { s: GameState; steps: Step[] } {
   let cur = s;
@@ -240,10 +240,10 @@ export function stepTrail(s: GameState, until: (s: GameState) => boolean, max = 
 }
 
 // ---------------------------------------------------------------------------
-// Aides des fichiers de tests d'extension (docs/plans/PLAN-C.md, lot C2) : une seule écriture, importée par chacun.
+// Helpers for the set test files (PLAN-C in docs/history.md, lot C2): written once, imported by each.
 // ---------------------------------------------------------------------------
 
-/** Réponse à un choix pendant `settle` : `undefined` prend la réponse suggérée. */
+/** Answer to a choice during `settle`: `undefined` takes the suggested answer. */
 export type Answer = (req: ChoiceRequest, player: PlayerId, s: GameState) => ChoiceValue[] | undefined;
 
 export const lands = (name: string, n: number) => Array(n).fill(name) as string[];
@@ -265,13 +265,13 @@ function settleWith(s: GameState, answer: Answer, noBlocks: boolean): GameState 
   return cur;
 }
 
-/** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
+/** Passes and answers choices (suggested answer by default) until an empty stack, with no pending trigger. */
 export const settle = (s: GameState, answer: Answer = () => undefined): GameState => settleWith(s, answer, false);
 
-/** Comme `settle`, et les défenseurs ne bloquent pas. */
+/** Like `settle`, and the defenders don't block. */
 export const settleNoBlocks = (s: GameState, answer: Answer = () => undefined): GameState => settleWith(s, answer, true);
 
-/** Joue (sans attaquer ni bloquer) jusqu'à la seconde phase principale, en répondant aux choix. */
+/** Plays (without attacking or blocking) to the second main phase, answering choices. */
 export function throughCombat(s: GameState, answer: Answer = () => undefined): GameState {
   let cur = s;
   for (let i = 0; i < 300 && cur.turn.step !== "main2"; i++) {
@@ -285,11 +285,11 @@ export function throughCombat(s: GameState, answer: Answer = () => undefined): G
   return cur;
 }
 
-/** Lance la carte nommée depuis la main ; `extra` complète la décision (cibles, X, kicker…). */
+/** Casts the named card from hand; `extra` completes the decision (targets, X, kicker...). */
 export const cast = (s: GameState, player: PlayerId, name: string, extra: object = {}) =>
   act(s, player, { type: "cast", card: idOf(s, player, "hand", name), ...extra });
 
-/** Variante de `cast` avec les cibles en paramètre. */
+/** Variant of `cast` with the targets as a parameter. */
 export const castTargets = (
   s: GameState,
   player: PlayerId,
@@ -304,7 +304,7 @@ export const castable = (s: GameState, player: PlayerId, card: string) =>
 export const canActivate = (s: GameState, player: PlayerId, source: string) =>
   legalActions(s, player).some((x) => x.type === "activate" && x.source === source);
 
-/** Réponse qui choisit les objets (ou joueurs) voulus quand ils font partie des options. */
+/** Answer that picks the wanted objects (or players) when they are among the options. */
 export const picking =
   (want: string[]) =>
   (req: ChoiceRequest, _player?: PlayerId, s?: GameState): ChoiceValue[] | undefined => {
@@ -317,23 +317,23 @@ export const picking =
     return picked.length > 0 ? picked : undefined;
   };
 
-/** Question « nom » (nom de carte, type de créature) : le premier nom voulu qui est accepté ; aucun sinon. */
+/** "Name" question (card name, creature type): the first wanted name that is accepted; none otherwise. */
 export const wantedName = (s: GameState, req: ChoiceRequest, want: string[]): string[] =>
   req.type === "name" ? want.filter((w) => isNameAllowed(s, req.of, w)).slice(0, 1) : [];
 
-/** Sélectionne dans les options d'un choix l'objet nommé `name`. */
+/** Selects the object named `name` among a choice's options. */
 export const pickNamed = (s: GameState, req: ChoiceRequest, name: string) =>
   req.type === "pick" ? req.options.filter((id) => nameOf(s, id) === name).slice(0, 1) : undefined;
 
-/** Va à la déclaration des attaquants de p1 et attaque le joueur `defender` avec `attackers` (partie à plusieurs). */
+/** Goes to p1's declare attackers and attacks player `defender` with `attackers` (multiplayer game). */
 export function attackPlayer(s: GameState, attackers: string[], defender: PlayerId): GameState {
   const cur = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
   return act(cur, "p1", { type: "declareAttackers", attackers: attackers.map((id) => ({ id, defender })) });
 }
 
 /**
- * Joue le combat (comme `throughCombat`) en notant, par nom, les options de chaque choix de cible d'une capacité
- * déclenchée ; « vous pouvez » : oui ; sinon la réponse suggérée.
+ * Plays the combat (like `throughCombat`) noting, by name, the options of each target choice of a triggered
+ * ability; "you may": yes; otherwise the suggested answer.
  */
 export function combatTargetsOffered(s: GameState): { s: GameState; offered: (string | undefined)[][] } {
   const offered: (string | undefined)[][] = [];
@@ -345,15 +345,15 @@ export function combatTargetsOffered(s: GameState): { s: GameState; offered: (st
   return { s: out, offered };
 }
 
-/** Va à la déclaration des attaquants de p1 et attaque p2 avec `attackers`. */
+/** Goes to p1's declare attackers and attacks p2 with `attackers`. */
 export function attack(s: GameState, attackers: string[]): GameState {
   const cur = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
   return act(cur, "p1", { type: "declareAttackers", attackers: attackers.map((id) => ({ id, defender: "p2" })) });
 }
 
 /**
- * « Vous mettez des marqueurs » : `player` lance Fleeting Flight (de sa main, avec une Plaine) sur `target` et laisse le
- * sort se résoudre ; renvoie l'état et les noms des sources des capacités déclenchées qui attendent sur la pile.
+ * "You put counters": `player` casts Fleeting Flight (from its hand, with a Plains) on `target` and lets the
+ * spell resolve; returns the state and the source names of the triggered abilities waiting on the stack.
  */
 export function counterFrom(s: GameState, player: PlayerId, target: string): { s: GameState; triggered: string[] } {
   let cur = act(s, player, { type: "cast", card: idOf(s, player, "hand", "Fleeting Flight"), targets: { t: [target] } });

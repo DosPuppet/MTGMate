@@ -1,8 +1,8 @@
 /**
- * Secrets of Strixhaven (extension partielle : cartes des decks du méta) : chaque carte gérée est confrontée à son texte
- * Oracle (plan R, lot R7). Préparation (Emeritus of Ideation), Opus (Colorstorm Stallion), Infusion (Moseo), Hardened
+ * Secrets of Strixhaven (partial set: cards from the meta decks): each handled card is checked against its Oracle
+ * text (plan R, lot R7). Prepare (Emeritus of Ideation), Opus (Colorstorm Stallion), Infusion (Moseo), Hardened
  * Academic, flashback (Practiced Offense, Daydream, Flashback), Witherbloom Charm, Professor Dellian Fel, Tablet of
- * Discovery, Dissection Practice et les terrains bicolores de l'extension.
+ * Discovery, Dissection Practice and the set's dual lands.
  */
 
 import { describe, expect, it } from "vitest";
@@ -36,7 +36,7 @@ type S = GameState;
 const castOptions = (s: S, player: string, card: string) =>
   legalActions(s, player).filter((a) => a.type === "cast" && a.card === card);
 
-/** Active la capacité de `source` dont le libellé contient `label` (la première si absent). */
+/** Activates the ability of `source` whose label contains `label` (the first if absent). */
 const activate = (
   s: S,
   player: string,
@@ -51,8 +51,8 @@ const activate = (
   return act(s, player, { type: "activate", source, ability: a?.type === "activate" ? a.ability : -1, targets, ...extra });
 };
 describe("Secrets of Strixhaven", () => {
-  describe("Préparation : Emeritus of Ideation", () => {
-    it("vol et parade {2} ; arrive préparée : Ancestral Recall se lance depuis l'exil (un joueur ciblé pioche trois cartes)", () => {
+  describe("Prepare: Emeritus of Ideation", () => {
+    it("flying and ward {2}; enters prepared: Ancestral Recall is cast from exile (a targeted player draws three cards)", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Island", 6)], hand: ["Emeritus of Ideation"], library: lands("Forest", 5) },
       });
@@ -68,7 +68,7 @@ describe("Secrets of Strixhaven", () => {
       expect(exiled(s, "Ancestral Recall")).toHaveLength(0);
     });
 
-    it("en attaquant, exiler huit cartes du cimetière la rend préparée ; avec sept, rien", () => {
+    it("on attacking, exiling eight cards from the graveyard makes it prepared; with seven, nothing", () => {
       const run = (graveyard: number) => {
         let s = scenario({ p1: { battlefield: ["Emeritus of Ideation"], graveyard: lands("Island", graveyard) } });
         s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
@@ -87,8 +87,8 @@ describe("Secrets of Strixhaven", () => {
     });
   });
 
-  describe("Opus : Colorstorm Stallion", () => {
-    it("chaque éphémère ou rituel lancé : +1/+1 jusqu'à la fin du tour ; cinq mana ou plus dépensés : un jeton copie", () => {
+  describe("Opus: Colorstorm Stallion", () => {
+    it("each instant or sorcery cast: +1/+1 until end of turn; five or more mana spent: a copy token", () => {
       let s = scenario({
         p1: {
           battlefield: ["Colorstorm Stallion", ...lands("Island", 3), ...lands("Mountain", 3)],
@@ -101,7 +101,7 @@ describe("Secrets of Strixhaven", () => {
       s = settle(cast(s, "p1", "Opt"));
       expect([chars(s, stallion).power, chars(s, stallion).toughness]).toEqual([4, 4]);
       expect(idsOf(s, "p1", "battlefield", "Colorstorm Stallion")).toHaveLength(1);
-      // X = 3 : {3}{U}{R}, cinq mana dépensés.
+      // X = 3: {3}{U}{R}, five mana spent.
       s = settle(cast(s, "p1", "Traumatic Critique", { t: ["p2"] }, { x: 3 }));
       expect(s.players.p2?.life).toBe(17);
       expect([chars(s, stallion).power, chars(s, stallion).toughness]).toEqual([5, 5]);
@@ -112,7 +112,7 @@ describe("Secrets of Strixhaven", () => {
       expect([chars(s, stallion).power, chars(s, stallion).toughness]).toEqual([3, 3]);
     });
 
-    it("un sort de créature ne déclenche pas l'Opus", () => {
+    it("a creature spell doesn't trigger Opus", () => {
       let s = scenario({ p1: { battlefield: ["Colorstorm Stallion", ...lands("Forest", 2)], hand: ["Bear Cub"] } });
       s = settle(cast(s, "p1", "Bear Cub"));
       const stallion = idOf(s, "p1", "battlefield", "Colorstorm Stallion");
@@ -120,8 +120,8 @@ describe("Secrets of Strixhaven", () => {
     });
   });
 
-  describe("Infusion : Moseo, Vein's New Dean", () => {
-    it("en arrivant : un Nuisible 1/1 noir et vert qui fait gagner 1 PV quand il attaque", () => {
+  describe("Infusion: Moseo, Vein's New Dean", () => {
+    it("on entering: a 1/1 black and green Pest that gains 1 life when it attacks", () => {
       let s = scenario({ p1: { battlefield: lands("Swamp", 3), hand: ["Moseo, Vein's New Dean"] } });
       s = settle(cast(s, "p1", "Moseo, Vein's New Dean"));
       const pest = idOf(s, "p1", "battlefield", "Pest");
@@ -134,7 +134,7 @@ describe("Secrets of Strixhaven", () => {
       expect(s.players.p1?.life).toBe(21);
     });
 
-    it("à votre étape de fin, si vous avez gagné X PV : une carte de créature de VM X ou moins revient du cimetière", () => {
+    it("at your end step, if you gained X life: a creature card with MV X or less returns from the graveyard", () => {
       const run = (life: "charm" | "practice" | "none") => {
         let s = scenario({
           p1: {
@@ -148,16 +148,16 @@ describe("Secrets of Strixhaven", () => {
         s = advanceUntil(s, (x) => x.turn.active === "p2", 200);
         return s;
       };
-      // 5 PV gagnés : l'Ange (VM 5) revient.
+      // 5 life gained: the Angel (MV 5) returns.
       expect(idsOf(run("charm"), "p1", "battlefield", "Serra Angel")).toHaveLength(1);
-      // 1 PV gagné : VM 5 > 1, l'Ange reste au cimetière.
+      // 1 life gained: MV 5 > 1, the Angel stays in the graveyard.
       expect(idsOf(run("practice"), "p1", "graveyard", "Serra Angel")).toHaveLength(1);
       expect(idsOf(run("none"), "p1", "graveyard", "Serra Angel")).toHaveLength(1);
     });
   });
 
-  describe("Moseo : valeur de mana vérifiée au ciblage (PLAN-D, D4)", () => {
-    it("1 PV gagné : seule une carte de valeur de mana 1 ou moins peut être ciblée", () => {
+  describe("Moseo: mana value checked on targeting (PLAN-D, D4)", () => {
+    it("1 life gained: only a card with mana value 1 or less can be targeted", () => {
       let s = scenario({
         p1: {
           battlefield: ["Moseo, Vein's New Dean", "Swamp", "Forest"],
@@ -184,7 +184,7 @@ describe("Secrets of Strixhaven", () => {
   });
 
   describe("Hardened Academic", () => {
-    it("vol et célérité ; défaussez une carte : lien de vie jusqu'à la fin du tour", () => {
+    it("flying and haste; discard a card: lifelink until end of turn", () => {
       let s = scenario({ p1: { battlefield: ["Hardened Academic"], hand: ["Opt"] } });
       const academic = idOf(s, "p1", "battlefield", "Hardened Academic");
       expect(chars(s, academic).keywords).toEqual(expect.arrayContaining(["flying", "haste"]));
@@ -196,7 +196,7 @@ describe("Secrets of Strixhaven", () => {
       expect(chars(s, academic).keywords).not.toContain("lifelink");
     });
 
-    it("des cartes quittent votre cimetière : un marqueur +1/+1 sur une créature ciblée que vous contrôlez ; le cimetière adverse, non", () => {
+    it("cards leave your graveyard: a +1/+1 counter on a targeted creature you control; the opposing graveyard, no", () => {
       const run = (whose: "p1" | "p2") => {
         let s = scenario({
           p1: {
@@ -219,8 +219,8 @@ describe("Secrets of Strixhaven", () => {
     });
   });
 
-  describe("Flashback : Practiced Offense", () => {
-    it("un marqueur +1/+1 sur chaque créature du joueur ciblé ; la créature ciblée gagne la double initiative ou le lien de vie", () => {
+  describe("Flashback: Practiced Offense", () => {
+    it("a +1/+1 counter on each creature of the targeted player; the targeted creature gains double strike or lifelink", () => {
       let s = scenario({
         p1: { battlefield: ["Bear Cub", "Serra Angel", ...lands("Plains", 3)], hand: ["Practiced Offense"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -235,7 +235,7 @@ describe("Secrets of Strixhaven", () => {
       expect(idsOf(s, "p1", "graveyard", "Practiced Offense")).toHaveLength(1);
     });
 
-    it("flashback {1}{W} depuis le cimetière (lien de vie), puis la carte est exilée", () => {
+    it("flashback {1}{W} from the graveyard (lifelink), then the card is exiled", () => {
       let s = scenario({
         p1: { battlefield: ["Bear Cub", ...lands("Plains", 2)], graveyard: ["Practiced Offense"] },
       });
@@ -243,7 +243,7 @@ describe("Secrets of Strixhaven", () => {
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       expect(castOptions(s, "p1", card)).not.toHaveLength(0);
       s = act(s, "p1", { type: "cast", card, targets: { p: ["p1"], c: [bear] } });
-      // « Au choix » : demandé à la résolution (608.2d), ce n'est pas un mode.
+      // "Choose one": asked on resolution (608.2d), it's not a mode.
       s = passAccepting(s, (x) => x.pending?.kind === "choice");
       const p = s.pending;
       expect(p?.kind === "choice" && p.request.type === "pick" && p.request.labels?.["1"]).toBe("lifelink");
@@ -256,7 +256,7 @@ describe("Secrets of Strixhaven", () => {
   });
 
   describe("Daydream", () => {
-    it("exile une créature que vous contrôlez et la renvoie avec un marqueur +1/+1 (blessures effacées) ; flashback {2}{W}", () => {
+    it("exiles a creature you control and returns it with a +1/+1 counter (damage cleared); flashback {2}{W}", () => {
       let s = scenario({ p1: { battlefield: [{ name: "Serra Angel", damage: 3 }, ...lands("Plains", 4)], hand: ["Daydream"] } });
       const angel = idOf(s, "p1", "battlefield", "Serra Angel");
       s = settle(cast(s, "p1", "Daydream", { t: [angel] }));
@@ -267,19 +267,19 @@ describe("Secrets of Strixhaven", () => {
       const card = idOf(s, "p1", "graveyard", "Daydream");
       s = settle(act(s, "p1", { type: "cast", card, targets: { t: [back] } }));
       const again = idOf(s, "p1", "battlefield", "Serra Angel");
-      // Nouvel objet : un seul marqueur.
+      // New object: a single counter.
       expect(s.objects[again]?.counters["+1/+1"]).toBe(1);
       expect(exiled(s, "Daydream")).toHaveLength(1);
     });
 
-    it("une créature adverse n'est pas une cible légale", () => {
+    it("an opposing creature is not a legal target", () => {
       const s = scenario({ p1: { battlefield: ["Plains"], hand: ["Daydream"] }, p2: { battlefield: ["Bear Cub"] } });
       expect(() => cast(s, "p1", "Daydream", { t: [idOf(s, "p2", "battlefield", "Bear Cub")] })).toThrow();
     });
   });
 
-  describe("Flashback (la carte)", () => {
-    it("un éphémère de votre cimetière gagne le flashback jusqu'à la fin du tour, pour son coût de mana", () => {
+  describe("Flashback (the card)", () => {
+    it("an instant in your graveyard gains flashback until end of turn, for its mana cost", () => {
       let s = scenario({ p1: { battlefield: lands("Mountain", 3), hand: ["Flashback"], graveyard: ["Lightning Strike"] } });
       const strike = idOf(s, "p1", "graveyard", "Lightning Strike");
       expect(castOptions(s, "p1", strike)).toHaveLength(0);
@@ -291,7 +291,7 @@ describe("Secrets of Strixhaven", () => {
       expect(s.battlefield.filter((id) => s.objects[id]?.tapped)).toHaveLength(3);
     });
 
-    it("la permission cesse à la fin du tour", () => {
+    it("the permission ends at end of turn", () => {
       let s = scenario({ p1: { battlefield: lands("Mountain", 3), hand: ["Flashback"], graveyard: ["Lightning Strike"] } });
       const strike = idOf(s, "p1", "graveyard", "Lightning Strike");
       s = settle(cast(s, "p1", "Flashback", { t: [strike] }));
@@ -300,14 +300,14 @@ describe("Secrets of Strixhaven", () => {
       expect(castOptions(s, "p1", strike)).toHaveLength(0);
     });
 
-    it("une carte de créature n'est pas une cible légale", () => {
+    it("a creature card is not a legal target", () => {
       const s = scenario({ p1: { battlefield: ["Mountain"], hand: ["Flashback"], graveyard: ["Bear Cub"] } });
       expect(() => cast(s, "p1", "Flashback", { t: [idOf(s, "p1", "graveyard", "Bear Cub")] })).toThrow();
     });
   });
 
   describe("Witherbloom Charm", () => {
-    it("vous pouvez sacrifier un permanent : si vous le faites, piochez deux cartes", () => {
+    it("you may sacrifice a permanent: if you do, draw two cards", () => {
       const run = (sacrifice: boolean) => {
         let s = scenario({
           p1: { battlefield: ["Swamp", "Forest", "Bear Cub"], hand: ["Witherbloom Charm"], library: lands("Island", 3) },
@@ -331,7 +331,7 @@ describe("Secrets of Strixhaven", () => {
       expect(no.players.p1?.hand).toHaveLength(0);
     });
 
-    it("détruit un permanent non-terrain de VM 2 ou moins ; VM 3, non", () => {
+    it("destroys a nonland permanent with MV 2 or less; MV 3, no", () => {
       let s = scenario({
         p1: { battlefield: ["Swamp", "Forest"], hand: ["Witherbloom Charm"] },
         p2: { battlefield: ["Bear Cub", "Brazen Scourge"] },
@@ -343,7 +343,7 @@ describe("Secrets of Strixhaven", () => {
       expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
     });
 
-    it("vous gagnez 5 PV", () => {
+    it("you gain 5 life", () => {
       let s = scenario({ p1: { battlefield: ["Swamp", "Forest"], hand: ["Witherbloom Charm"] } });
       s = settle(cast(s, "p1", "Witherbloom Charm", undefined, { mode: 1 }));
       expect(s.players.p1?.life).toBe(25);
@@ -351,7 +351,7 @@ describe("Secrets of Strixhaven", () => {
   });
 
   describe("Professor Dellian Fel", () => {
-    it("+2 : 3 PV ; 0 : piochez et perdez 1 PV ; −3 : détruit une créature", () => {
+    it("+2: 3 life; 0: draw and lose 1 life; -3: destroys a creature", () => {
       let s = scenario({
         p1: { battlefield: ["Professor Dellian Fel"], library: lands("Swamp", 3) },
         p2: { battlefield: ["Serra Angel"] },
@@ -361,7 +361,7 @@ describe("Secrets of Strixhaven", () => {
       s = settle(activate(s, "p1", pw, "Gain 3"));
       expect(s.players.p1?.life).toBe(23);
       expect(s.objects[pw]?.counters.loyalty).toBe(7);
-      // Une seule capacité de fidélité par tour.
+      // Only one loyalty ability per turn.
       expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === pw)).toBe(false);
       s = advanceUntil(s, (x) => x.turn.number === 5 && x.turn.step === "main1" && x.pending?.kind === "priority");
       const hand = s.players.p1?.hand.length ?? 0;
@@ -376,7 +376,7 @@ describe("Secrets of Strixhaven", () => {
       expect(s.objects[pw]?.counters.loyalty).toBe(4);
     });
 
-    it("−6 : emblème « chaque fois que vous gagnez des PV, un adversaire ciblé perd autant de PV »", () => {
+    it('-6: emblem "whenever you gain life, a targeted opponent loses that much life"', () => {
       let s = scenario({ p1: { battlefield: ["Professor Dellian Fel", "Swamp", "Forest"], hand: ["Witherbloom Charm"] } });
       const pw = idOf(s, "p1", "battlefield", "Professor Dellian Fel");
       (s.objects[pw] as { counters: Record<string, number> }).counters.loyalty = 6;
@@ -390,7 +390,7 @@ describe("Secrets of Strixhaven", () => {
   });
 
   describe("Tablet of Discovery", () => {
-    it("en arrivant, meulez une carte : vous pouvez la jouer ce tour-ci (ici un éphémère, lancé depuis le cimetière)", () => {
+    it("on entering, mill a card: you may play it this turn (here an instant, cast from the graveyard)", () => {
       let s = scenario({
         p1: { battlefield: lands("Mountain", 5), hand: ["Tablet of Discovery"], library: ["Lightning Strike", "Forest"] },
       });
@@ -401,7 +401,7 @@ describe("Secrets of Strixhaven", () => {
       expect(s.players.p2?.life).toBe(17);
     });
 
-    it("la permission cesse à la fin du tour", () => {
+    it("the permission ends at end of turn", () => {
       let s = scenario({
         p1: { battlefield: lands("Mountain", 5), hand: ["Tablet of Discovery"], library: ["Lightning Strike", "Forest"] },
       });
@@ -412,7 +412,7 @@ describe("Secrets of Strixhaven", () => {
       expect(castOptions(s, "p1", strike)).toHaveLength(0);
     });
 
-    it("{T} : ajoutez {R}", () => {
+    it("{T}: add {R}", () => {
       let s = scenario({ p1: { battlefield: ["Tablet of Discovery"], hand: ["Burst Lightning"] } });
       const tablet = idOf(s, "p1", "battlefield", "Tablet of Discovery");
       expect(legalActions(s, "p1").some((a) => a.type === "tapForMana" && a.source === tablet && a.colors.includes("R"))).toBe(
@@ -425,7 +425,7 @@ describe("Secrets of Strixhaven", () => {
   });
 
   describe("Dissection Practice", () => {
-    it("un adversaire perd 1 PV, vous en gagnez 1 ; jusqu'à une créature +1/+1, jusqu'à une autre −1/−1", () => {
+    it("an opponent loses 1 life, you gain 1; up to one creature +1/+1, up to one other -1/-1", () => {
       let s = scenario({
         p1: { battlefield: ["Swamp", "Bear Cub"], hand: ["Dissection Practice"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -439,8 +439,8 @@ describe("Secrets of Strixhaven", () => {
     });
   });
 
-  describe("Terrains bicolores (Sundown Pass, Shattered Sanctum, Stormcarved Coast, Deathcap Glade)", () => {
-    it("arrivent engagés, sauf si vous contrôlez deux autres terrains ou plus", () => {
+  describe("Dual lands (Sundown Pass, Shattered Sanctum, Stormcarved Coast, Deathcap Glade)", () => {
+    it("enter tapped, unless you control two or more other lands", () => {
       const play = (name: string, others: number) => {
         let s = scenario({ p1: { battlefield: lands("Plains", others), hand: [name] } });
         s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", name) });
@@ -457,13 +457,13 @@ describe("Secrets of Strixhaven", () => {
   });
 });
 
-describe("Secrets of Strixhaven, socle : Increment, Repartee, Opus, Infusion", () => {
+describe("Secrets of Strixhaven, core: Increment, Repartee, Opus, Infusion", () => {
   const tester = (name: string, power: number, toughness: number, ...abilities: AbilityDef[]) =>
     customCard({ name, power, toughness, abilities });
-  /** Rituel incolore de coût {N} : « piochez une carte ». */
+  /** Colorless sorcery with cost {N}: "draw a card". */
   const sorcery = (n: number) =>
     customCard({
-      name: `Rituel à ${n}`,
+      name: `Sorcery costing ${n}`,
       types: ["Sorcery"],
       typeLine: "Sorcery",
       manaCost: { generic: n, colored: {}, x: 0 },
@@ -471,24 +471,24 @@ describe("Secrets of Strixhaven, socle : Increment, Repartee, Opus, Infusion", (
       spell: spell([], [fx.draw(1)]),
     });
 
-  it("Increment : un marqueur si le mana dépensé dépasse la force ou l'endurance (la plus petite des deux), pas sinon", () => {
-    const pupil = tester("Élève d'essai", 1, 3, INCREMENT);
+  it("Increment: a counter if the mana spent exceeds the power or toughness (the lesser of the two), not otherwise", () => {
+    const pupil = tester("Test Pupil", 1, 3, INCREMENT);
     let s = scenario({ p1: { battlefield: [pupil, ...lands("Island", 3)], hand: ["Opt", sorcery(2)] } });
     const id = idOf(s, "p1", "battlefield", pupil.name);
-    // Opt : 1 mana, pas plus que la force 1.
+    // Opt: 1 mana, not more than power 1.
     s = settle(cast(s, "p1", "Opt"));
     expect(s.objects[id]?.counters["+1/+1"] ?? 0).toBe(0);
-    // 2 mana > force 1 (mais pas > endurance 3).
-    s = settle(cast(s, "p1", "Rituel à 2"));
+    // 2 mana > power 1 (but not > toughness 3).
+    s = settle(cast(s, "p1", "Sorcery costing 2"));
     expect(s.objects[id]?.counters["+1/+1"]).toBe(1);
   });
 
-  it("Repartee : un éphémère ou rituel qui cible une créature, pas un joueur ; pas un sort de créature", () => {
+  it("Repartee: an instant or sorcery that targets a creature, not a player; not a creature spell", () => {
     const duelist = tester(
-      "Duelliste d'essai",
+      "Test Duelist",
       1,
       1,
-      triggered(REPARTEE, [fx.addCounters(ref.self, 1)], { label: "Repartee : un marqueur +1/+1" }),
+      triggered(REPARTEE, [fx.addCounters(ref.self, 1)], { label: "Repartee: a +1/+1 counter" }),
     );
     let s = scenario({
       p1: { battlefield: [duelist, ...lands("Mountain", 6)], hand: ["Lightning Strike", "Lightning Strike"] },
@@ -502,23 +502,23 @@ describe("Secrets of Strixhaven, socle : Increment, Repartee, Opus, Infusion", (
     expect(s.objects[id]?.counters["+1/+1"]).toBe(1);
   });
 
-  it("Opus : à chaque éphémère ou rituel ; cinq mana ou plus dépensés : l'effet renforcé", () => {
+  it("Opus: on each instant or sorcery; five or more mana spent: the stronger effect", () => {
     const soloist = tester(
-      "Soliste d'essai",
+      "Test Soloist",
       1,
       3,
       triggered(OPUS, opusInstead([fx.damage(1, ref.eachOpponent)], [fx.damage(3, ref.eachOpponent)]), {
-        label: "Opus : 1 blessure (3 si cinq mana)",
+        label: "Opus: 1 damage (3 if five mana)",
       }),
     );
     let s = scenario({ p1: { battlefield: [soloist, ...lands("Island", 6)], hand: ["Opt", sorcery(5)] } });
     s = settle(cast(s, "p1", "Opt"));
     expect(s.players.p2?.life).toBe(19);
-    s = settle(cast(s, "p1", "Rituel à 5"));
+    s = settle(cast(s, "p1", "Sorcery costing 5"));
     expect(s.players.p2?.life).toBe(16);
   });
 
-  it("Infusion : vrai seulement si vous avez gagné des points de vie ce tour-ci", () => {
+  it("Infusion: true only if you gained life this turn", () => {
     const s = scenario({});
     expect(checkCondition(s, INFUSION, "p1")).toBe(false);
     s.turnLog.push({ e: "lifeGain", player: "p1", amount: 1 });
@@ -528,19 +528,19 @@ describe("Secrets of Strixhaven, socle : Increment, Repartee, Opus, Infusion", (
 
 describe("Secrets of Strixhaven, lot A — blanc", () => {
   /**
-   * Secrets of Strixhaven, lot A — cartes blanches : chaque carte au comportement non trivial est confrontée à son texte
-   * Oracle (plan R, lot R7) : préparation (sorts préparés lancés depuis l'exil, « devient préparée »), Repartee,
-   * flashback, retour depuis le cimetière, exil temporaire.
+   * Secrets of Strixhaven, lot A - white cards: each card with non-trivial behavior is checked against its Oracle
+   * text (plan R, lot R7): prepare (prepared spells cast from exile, "becomes prepared"), Repartee,
+   * flashback, return from the graveyard, temporary exile.
    */
   type S = GameState;
   const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
 
-  /** Répond `ids` à la première demande « pick » qui les propose tous. */
+  /** Answers `ids` to the first "pick" request that offers them all. */
   const pickIds =
     (...ids: string[]): Answer =>
     (req) =>
       req.type === "pick" && ids.every((id) => req.options.includes(id)) ? ids : undefined;
-  /** Lance le sort préparé (la copie exilée) de la carte. */
+  /** Casts the card's prepared spell (the exiled copy). */
   const castPrepared = (s: S, player: string, spellName: string, targets?: Record<string, string[]>) =>
     act(s, player, { type: "cast", card: exiled(s, spellName)[0] as string, targets });
   const activate = (s: S, player: string, source: string, targets?: Record<string, string[]>) => {
@@ -548,8 +548,8 @@ describe("Secrets of Strixhaven, lot A — blanc", () => {
     return act(s, player, { type: "activate", source, ability: a?.type === "activate" ? a.ability : -1, targets });
   };
 
-  describe("Sorts", () => {
-    it("Ajani's Response : coûte {3} de moins contre une créature engagée ; détruit la créature ciblée", () => {
+  describe("Spells", () => {
+    it("Ajani's Response: costs {3} less against a tapped creature; destroys the targeted creature", () => {
       const setup = () =>
         scenario({
           p1: { battlefield: lands("Plains", 2), hand: ["Ajani's Response"] },
@@ -558,12 +558,12 @@ describe("Secrets of Strixhaven, lot A — blanc", () => {
       let s = setup();
       s = settle(cast(s, "p1", "Ajani's Response", { t: [idOf(s, "p2", "battlefield", "Serra Angel")] }));
       expect(idsOf(s, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
-      // Une créature dégagée : {4}{W}, impossible avec deux terrains.
+      // An untapped creature: {4}{W}, impossible with two lands.
       const t = setup();
       expect(() => cast(t, "p1", "Ajani's Response", { t: [idOf(t, "p2", "battlefield", "Bear Cub")] })).toThrow();
     });
 
-    it("Antiquities on the Loose : deux Esprits 2/2 ; en flashback, un marqueur +1/+1 sur chaque Esprit, puis exilée", () => {
+    it("Antiquities on the Loose: two 2/2 Spirits; with flashback, a +1/+1 counter on each Spirit, then exiled", () => {
       let s = scenario({ p1: { battlefield: lands("Plains", 9), hand: ["Antiquities on the Loose"] } });
       s = settle(cast(s, "p1", "Antiquities on the Loose"));
       const spirits = idsOf(s, "p1", "battlefield", "Spirit");
@@ -579,7 +579,7 @@ describe("Secrets of Strixhaven, lot A — blanc", () => {
       expect(exiled(s, "Antiquities on the Loose")).toHaveLength(1);
     });
 
-    it("Dig Site Inventory : un marqueur +1/+1 et la vigilance jusqu'à la fin du tour ; flashback {W}", () => {
+    it("Dig Site Inventory: a +1/+1 counter and vigilance until end of turn; flashback {W}", () => {
       let s = scenario({ p1: { battlefield: ["Bear Cub", ...lands("Plains", 2)], hand: ["Dig Site Inventory"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = settle(cast(s, "p1", "Dig Site Inventory", { t: [bear] }));
@@ -592,7 +592,7 @@ describe("Secrets of Strixhaven, lot A — blanc", () => {
       expect(chars(s, bear).keywords).not.toContain("vigilance");
     });
 
-    it("Harsh Annotation : détruit la créature ; son contrôleur crée un Inkling 1/1 blanc et noir volant", () => {
+    it("Harsh Annotation: destroys the creature; its controller creates a 1/1 white and black flying Inkling", () => {
       let s = scenario({
         p1: { battlefield: lands("Plains", 2), hand: ["Harsh Annotation"] },
         p2: { battlefield: ["Serra Angel"] },
@@ -605,7 +605,7 @@ describe("Secrets of Strixhaven, lot A — blanc", () => {
       expect(idsOf(s, "p1", "battlefield", "Inkling")).toHaveLength(0);
     });
 
-    it("Interjection : +2/+2 et l'initiative jusqu'à la fin du tour", () => {
+    it("Interjection: +2/+2 and first strike until end of turn", () => {
       let s = scenario({ p1: { battlefield: ["Bear Cub", "Plains"], hand: ["Interjection"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = settle(cast(s, "p1", "Interjection", { t: [bear] }));
@@ -615,7 +615,7 @@ describe("Secrets of Strixhaven, lot A — blanc", () => {
       expect(pt(s, bear)).toEqual([2, 2]);
     });
 
-    it("Rapier Wit : engage la créature et pioche ; un marqueur d'étourdissement seulement pendant votre tour", () => {
+    it("Rapier Wit: taps the creature and draws; a stun counter only during your turn", () => {
       const run = (active: "p1" | "p2") => {
         let s = scenario({
           active,
@@ -631,7 +631,7 @@ describe("Secrets of Strixhaven, lot A — blanc", () => {
       expect(run("p2")).toEqual({ tapped: true, stun: 0, hand: 1 });
     });
 
-    it("Restoration Seminar : une carte de permanent non-terrain revient de votre cimetière ; le sort est exilé (Paradigme)", () => {
+    it("Restoration Seminar: a nonland permanent card returns from your graveyard; the spell is exiled (Paradigm)", () => {
       let s = scenario({
         p1: { battlefield: lands("Plains", 7), hand: ["Restoration Seminar"], graveyard: ["Serra Angel", "Plains"] },
       });
@@ -642,7 +642,7 @@ describe("Secrets of Strixhaven, lot A — blanc", () => {
       expect(exiled(s, "Restoration Seminar")).toHaveLength(1);
     });
 
-    it("Stand Up for Yourself : seulement une créature de force 3 ou plus", () => {
+    it("Stand Up for Yourself: only a creature with power 3 or greater", () => {
       let s = scenario({
         p1: { battlefield: lands("Plains", 3), hand: ["Stand Up for Yourself"] },
         p2: { battlefield: ["Bear Cub", "Serra Angel"] },
@@ -653,8 +653,8 @@ describe("Secrets of Strixhaven, lot A — blanc", () => {
     });
   });
 
-  describe("Créatures préparées", () => {
-    it("Elite Interceptor : arrive préparée ; Rejoinder engage une créature dégagée et fait piocher, puis elle est dé-préparée", () => {
+  describe("Prepared creatures", () => {
+    it("Elite Interceptor: enters prepared; Rejoinder taps an untapped creature and draws, then it becomes unprepared", () => {
       let s = scenario({
         p1: { battlefield: lands("Plains", 3), hand: ["Elite Interceptor"], library: lands("Plains", 3) },
         p2: { battlefield: ["Bear Cub"] },
@@ -669,7 +669,7 @@ describe("Secrets of Strixhaven, lot A — blanc", () => {
       expect(s.objects[interceptor]?.preparedCopy).toBeUndefined();
     });
 
-    it("Elite Interceptor : Rejoinder peut dégager une créature engagée", () => {
+    it("Elite Interceptor: Rejoinder can untap a tapped creature", () => {
       let s = scenario({
         p1: {
           battlefield: [{ name: "Serra Angel", tapped: true }, ...lands("Plains", 3)],
@@ -684,7 +684,7 @@ describe("Secrets of Strixhaven, lot A — blanc", () => {
       expect(s.players.p1?.hand).toHaveLength(1);
     });
 
-    it("Emeritus of Truce : le joueur ciblé crée un Inkling ; préparée si un adversaire a plus de créatures ; Swords to Plowshares", () => {
+    it("Emeritus of Truce: the targeted player creates an Inkling; prepared if an opponent has more creatures; Swords to Plowshares", () => {
       const run = (who: "p1" | "p2") => {
         let s = scenario({
           p1: { battlefield: lands("Plains", 4), hand: ["Emeritus of Truce"] },
@@ -693,7 +693,7 @@ describe("Secrets of Strixhaven, lot A — blanc", () => {
         s = settle(cast(s, "p1", "Emeritus of Truce"), pickIds(who));
         return s;
       };
-      // L'Inkling chez l'adversaire : deux créatures contre une, l'Émérite devient préparée.
+      // The Inkling on the opponent's side: two creatures against one, the Emeritus becomes prepared.
       let s = run("p2");
       expect(idsOf(s, "p2", "battlefield", "Inkling")).toHaveLength(1);
       expect(exiled(s, "Swords to Plowshares")).toHaveLength(1);
@@ -702,13 +702,13 @@ describe("Secrets of Strixhaven, lot A — blanc", () => {
       expect(exiled(s, "Serra Angel")).toHaveLength(1);
       expect(s.players.p2?.life).toBe(24);
       expect(s.players.p1?.life).toBe(20);
-      // L'Inkling chez vous : deux contre une, pas de préparation.
+      // The Inkling on your side: two against one, no preparation.
       const t = run("p1");
       expect(idsOf(t, "p1", "battlefield", "Inkling")).toHaveLength(1);
       expect(exiled(t, "Swords to Plowshares")).toHaveLength(0);
     });
 
-    it("Honorbound Page et Quill-Blade Laureate : Forum's Favor (+1/+0, vol) et Twofold Intent (+1/+0, double initiative)", () => {
+    it("Honorbound Page and Quill-Blade Laureate: Forum's Favor (+1/+0, flying) and Twofold Intent (+1/+0, double strike)", () => {
       let s = scenario({
         p1: { battlefield: ["Bear Cub", ...lands("Plains", 9)], hand: ["Honorbound Page", "Quill-Blade Laureate"] },
       });
@@ -725,7 +725,7 @@ describe("Secrets of Strixhaven, lot A — blanc", () => {
       expect(chars(s, bear).keywords).toContain("doubleStrike");
     });
 
-    it("Joined Researchers : à chaque étape de fin, préparée si un adversaire a plus de cartes en main ; Secret Rendezvous", () => {
+    it("Joined Researchers: at each end step, prepared if an opponent has more cards in hand; Secret Rendezvous", () => {
       const run = (oppHand: number) =>
         advanceUntil(
           scenario({
@@ -737,7 +737,7 @@ describe("Secrets of Strixhaven, lot A — blanc", () => {
       expect(exiled(run(0), "Secret Rendezvous")).toHaveLength(0);
       let s = run(3);
       expect(exiled(s, "Secret Rendezvous")).toHaveLength(1);
-      // Au tour suivant de p1, le sort préparé se lance (rituel) : chacun pioche trois cartes.
+      // On p1's next turn, the prepared spell is cast (sorcery): each player draws three cards.
       s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.pending?.kind === "priority");
       const [h1, h2] = [s.players.p1?.hand.length ?? 0, s.players.p2?.hand.length ?? 0];
       s = settle(castPrepared(s, "p1", "Secret Rendezvous", { t: ["p2"] }));
@@ -745,7 +745,7 @@ describe("Secrets of Strixhaven, lot A — blanc", () => {
       expect(s.players.p2?.hand.length).toBe(h2 + 3);
     });
 
-    it("Spiritcall Enthusiast : des jetons arrivent sous votre contrôle → préparée ; Scrollboost : +2/+2 à une ou deux créatures", () => {
+    it("Spiritcall Enthusiast: tokens enter under your control -> prepared; Scrollboost: +2/+2 to one or two creatures", () => {
       let s = scenario({
         p1: { battlefield: ["Spiritcall Enthusiast", "Bear Cub", ...lands("Plains", 6)], hand: ["Eager Glyphmage"] },
       });
@@ -759,7 +759,7 @@ describe("Secrets of Strixhaven, lot A — blanc", () => {
       expect(pt(s, enthusiast)).toEqual([5, 5]);
     });
 
-    it("Spiritcall Enthusiast : un jeton adverse ne la prépare pas", () => {
+    it("Spiritcall Enthusiast: an opposing token doesn't prepare it", () => {
       let s = scenario({
         p1: { battlefield: lands("Plains", 2), hand: ["Harsh Annotation"] },
         p2: { battlefield: ["Spiritcall Enthusiast", "Bear Cub"] },
@@ -784,7 +784,7 @@ describe("Secrets of Strixhaven, lot A — blanc", () => {
       });
     const strikes = (s: S) => idsOf(s, "p1", "hand", "Lightning Strike");
 
-    it("Graduation Day : un sort qui cible une créature met un marqueur +1/+1 sur une créature ciblée que vous contrôlez", () => {
+    it("Graduation Day: a spell that targets a creature puts a +1/+1 counter on a targeted creature you control", () => {
       let s = strikeSetup("Graduation Day");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = settle(act(s, "p1", { type: "cast", card: strikes(s)[0] as string, targets: { t: ["p2"] } }));
@@ -794,7 +794,7 @@ describe("Secrets of Strixhaven, lot A — blanc", () => {
       expect(s.objects[bear]?.counters["+1/+1"]).toBe(1);
     });
 
-    it("Informed Inkwright : un Inkling 1/1 volant", () => {
+    it("Informed Inkwright: a 1/1 flying Inkling", () => {
       let s = strikeSetup("Informed Inkwright");
       expect(chars(s, idOf(s, "p1", "battlefield", "Informed Inkwright")).keywords).toContain("vigilance");
       s = settle(
@@ -807,7 +807,7 @@ describe("Secrets of Strixhaven, lot A — blanc", () => {
       expect(idsOf(s, "p1", "battlefield", "Inkling")).toHaveLength(1);
     });
 
-    it("Inkshape Demonstrator : garde {2} ; +1/+0 et le lien de vie jusqu'à la fin du tour", () => {
+    it("Inkshape Demonstrator: ward {2}; +1/+0 and lifelink until end of turn", () => {
       let s = strikeSetup("Inkshape Demonstrator");
       const demo = idOf(s, "p1", "battlefield", "Inkshape Demonstrator");
       expect(chars(s, demo).keywords).toContain("ward");
@@ -825,7 +825,7 @@ describe("Secrets of Strixhaven, lot A — blanc", () => {
       expect(chars(s, demo).keywords).not.toContain("lifelink");
     });
 
-    it("Rehearsed Debater : +1/+1 jusqu'à la fin du tour", () => {
+    it("Rehearsed Debater: +1/+1 until end of turn", () => {
       let s = strikeSetup("Rehearsed Debater");
       const debater = idOf(s, "p1", "battlefield", "Rehearsed Debater");
       s = settle(
@@ -838,7 +838,7 @@ describe("Secrets of Strixhaven, lot A — blanc", () => {
       expect(pt(s, debater)).toEqual([4, 4]);
     });
 
-    it("Stirring Hopesinger : un marqueur +1/+1 sur chaque créature que vous contrôlez, pas sur celles de l'adversaire", () => {
+    it("Stirring Hopesinger: a +1/+1 counter on each creature you control, not on the opponent's", () => {
       let s = strikeSetup("Stirring Hopesinger");
       const hope = idOf(s, "p1", "battlefield", "Stirring Hopesinger");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -847,14 +847,14 @@ describe("Secrets of Strixhaven, lot A — blanc", () => {
       expect(s.objects[hope]?.counters["+1/+1"]).toBe(1);
       expect(s.objects[bear]?.counters["+1/+1"]).toBe(1);
       expect(s.objects[angel]?.counters["+1/+1"] ?? 0).toBe(0);
-      // Un sort qui ne cible qu'un joueur ne déclenche pas Repartee.
+      // A spell that only targets a player doesn't trigger Repartee.
       s = settle(act(s, "p1", { type: "cast", card: strikes(s)[0] as string, targets: { t: ["p2"] } }));
       expect(s.objects[hope]?.counters["+1/+1"]).toBe(1);
     });
   });
 
-  describe("Autres permanents", () => {
-    it("Ascendant Dustspeaker : un marqueur +1/+1 sur une autre créature ; au début de votre combat, exile une carte d'un cimetière", () => {
+  describe("Other permanents", () => {
+    it("Ascendant Dustspeaker: a +1/+1 counter on another creature; at the beginning of your combat, exiles a card from a graveyard", () => {
       let s = scenario({
         p1: { battlefield: ["Bear Cub", ...lands("Plains", 5)], hand: ["Ascendant Dustspeaker"] },
         p2: { graveyard: ["Serra Angel"] },
@@ -872,13 +872,13 @@ describe("Secrets of Strixhaven, lot A — blanc", () => {
       expect(exiled(s, "Serra Angel")).toHaveLength(1);
     });
 
-    it("Eager Glyphmage : un Inkling 1/1 volant en arrivant", () => {
+    it("Eager Glyphmage: a 1/1 flying Inkling on entering", () => {
       let s = scenario({ p1: { battlefield: lands("Plains", 4), hand: ["Eager Glyphmage"] } });
       s = settle(cast(s, "p1", "Eager Glyphmage"));
       expect(chars(s, idOf(s, "p1", "battlefield", "Inkling")).keywords).toContain("flying");
     });
 
-    it("Ennis, Debate Moderator : exile une autre créature jusqu'à l'étape de fin ; un marqueur +1/+1 si des cartes ont été exilées", () => {
+    it("Ennis, Debate Moderator: exiles another creature until the end step; a +1/+1 counter if cards were exiled", () => {
       const run = (exile: boolean) => {
         let s = scenario({ p1: { battlefield: ["Bear Cub", ...lands("Plains", 2)], hand: ["Ennis, Debate Moderator"] } });
         const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -898,7 +898,7 @@ describe("Secrets of Strixhaven, lot A — blanc", () => {
       expect(run(false)).toEqual({ mid: { bear: 1, exiled: 0 }, bear: 1, counters: 0 });
     });
 
-    it("Owlin Historian et Stone Docent : surveillance 1 ; exiler le Docent du cimetière (2 PV, surveillance 1) donne +1/+1", () => {
+    it("Owlin Historian and Stone Docent: surveil 1; exiling the Docent from the graveyard (2 life, surveil 1) gives +1/+1", () => {
       let s = scenario({
         p1: {
           battlefield: lands("Plains", 4),
@@ -916,14 +916,14 @@ describe("Secrets of Strixhaven, lot A — blanc", () => {
       expect(pt(s, owl)).toEqual([3, 4]);
     });
 
-    it("Stone Docent : seulement en rituel", () => {
+    it("Stone Docent: sorcery speed only", () => {
       let s = scenario({ p1: { battlefield: ["Plains"], graveyard: ["Stone Docent"] } });
       s = advanceUntil(s, (x) => x.turn.step === "beginCombat" && x.pending?.kind === "priority");
       const docent = idOf(s, "p1", "graveyard", "Stone Docent");
       expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === docent)).toBe(false);
     });
 
-    it("Primary Research : renvoie une carte de permanent de VM 3 ou moins ; à votre étape de fin, piochez si une carte a quitté votre cimetière", () => {
+    it("Primary Research: returns a permanent card with MV 3 or less; at your end step, draw if a card left your graveyard", () => {
       const setup = () =>
         scenario({
           p1: {
@@ -935,7 +935,7 @@ describe("Secrets of Strixhaven, lot A — blanc", () => {
         });
       let s = setup();
       const angel = idOf(s, "p1", "graveyard", "Serra Angel");
-      // L'Ange (VM 5) n'est pas une cible possible : l'Ourson est la seule.
+      // The Angel (MV 5) is not a possible target: the Bear Cub is the only one.
       s = settle(cast(s, "p1", "Primary Research"), (req) => {
         if (req.type === "pick") expect(req.options).not.toContain(angel);
         return undefined;
@@ -947,13 +947,13 @@ describe("Secrets of Strixhaven, lot A — blanc", () => {
       expect(s.players.p1?.hand.length).toBe(hand + 1);
     });
 
-    it("Primary Research : sans carte sortie du cimetière, pas de pioche", () => {
+    it("Primary Research: with no card leaving the graveyard, no draw", () => {
       let s = scenario({ p1: { battlefield: ["Primary Research"], library: lands("Plains", 5) } });
       s = advanceUntil(s, (x) => x.turn.active === "p2");
       expect(s.players.p1?.hand).toHaveLength(0);
     });
 
-    it("Shattered Acolyte : lien de vie ; {1}, sacrifiez-la : détruit un artefact ou un enchantement", () => {
+    it("Shattered Acolyte: lifelink; {1}, sacrifice it: destroys an artifact or enchantment", () => {
       let s = scenario({
         p1: { battlefield: ["Shattered Acolyte", "Plains"] },
         p2: { battlefield: ["Fishing Pole", "Graduation Day"] },
@@ -965,7 +965,7 @@ describe("Secrets of Strixhaven, lot A — blanc", () => {
       expect(idsOf(s, "p1", "graveyard", "Shattered Acolyte")).toHaveLength(1);
     });
 
-    it("Summoned Dromedary : {1}{W} : revient du cimetière dans votre main", () => {
+    it("Summoned Dromedary: {1}{W}: returns from the graveyard to your hand", () => {
       let s = scenario({ p1: { battlefield: lands("Plains", 2), graveyard: ["Summoned Dromedary"] } });
       s = settle(activate(s, "p1", idOf(s, "p1", "graveyard", "Summoned Dromedary")));
       expect(idsOf(s, "p1", "hand", "Summoned Dromedary")).toHaveLength(1);
@@ -975,10 +975,10 @@ describe("Secrets of Strixhaven, lot A — blanc", () => {
 
 describe("Secrets of Strixhaven, lot A — bleu", () => {
   /**
-   * Secrets of Strixhaven, lot A — cartes bleues : chaque carte au comportement non trivial est confrontée à son texte
-   * Oracle (plan R, lot R7). Préparation (Campus Composer, Encouraging Aviator, Harmonized Trio, Jadzi, Skycoach
-   * Conductor…), Opus (Deluge Virtuoso, Exhibition Tidecaller, Muse Seeker), Increment (Pensive Professor, Tester of the
-   * Tangential, Textbook Tabulator), marqueurs d'étourdissement, réductions de coût et sorts à X.
+   * Secrets of Strixhaven, lot A - blue cards: each card with non-trivial behavior is checked against its Oracle text
+   * (plan R, lot R7). Prepare (Campus Composer, Encouraging Aviator, Harmonized Trio, Jadzi, Skycoach
+   * Conductor...), Opus (Deluge Virtuoso, Exhibition Tidecaller, Muse Seeker), Increment (Pensive Professor, Tester of the
+   * Tangential, Textbook Tabulator), stun counters, cost reductions and X spells.
    */
   type S = GameState;
   type Answer = (req: ChoiceRequest, player: string, s: S) => ChoiceValue[] | undefined;
@@ -986,7 +986,7 @@ describe("Secrets of Strixhaven, lot A — bleu", () => {
     legalActions(s, player).filter((a) => a.type === "cast" && a.card === card);
   const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
 
-  /** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
+  /** Passes and answers choices (suggested answer by default) until the stack is empty, with no trigger pending. */
   const settle = (s: S, answer: Answer = () => undefined): S => {
     let cur = s;
     for (let i = 0; i < 300; i++) {
@@ -1009,7 +1009,7 @@ describe("Secrets of Strixhaven, lot A — bleu", () => {
     (s.objects[id] as { counters: Record<string, number> }).counters["+1/+1"] = n;
   };
 
-  it("Banishing Betrayal : renvoie un permanent non-terrain dans la main de son propriétaire, puis surveillance 1", () => {
+  it("Banishing Betrayal: returns a nonland permanent to its owner's hand, then surveil 1", () => {
     let s = scenario({
       p1: { battlefield: lands("Island", 2), hand: ["Banishing Betrayal"], library: ["Opt", "Forest"] },
       p2: { battlefield: ["Serra Angel", "Plains"] },
@@ -1024,7 +1024,7 @@ describe("Secrets of Strixhaven, lot A — bleu", () => {
     expect(nameOf(s, s.players.p1?.library[0] as string)).toBe("Forest");
   });
 
-  it("Campus Composer : parade {2} ; arrive préparée, Aqueous Aria crée un Élémental 3/3 bleu et rouge volant", () => {
+  it("Campus Composer: ward {2}; enters prepared, Aqueous Aria creates a 3/3 blue and red flying Elemental", () => {
     let s = scenario({ p1: { battlefield: lands("Island", 9), hand: ["Campus Composer"] } });
     s = settle(cast(s, "p1", "Campus Composer"));
     const composer = idOf(s, "p1", "battlefield", "Campus Composer");
@@ -1038,7 +1038,7 @@ describe("Secrets of Strixhaven, lot A — bleu", () => {
     expect(s.objects[composer]?.preparedCopy).toBeUndefined();
   });
 
-  it("Chase Inspiration : une créature que vous contrôlez gagne +0/+3 et la défense talismanique jusqu'à la fin du tour", () => {
+  it("Chase Inspiration: a creature you control gets +0/+3 and hexproof until end of turn", () => {
     let s = scenario({
       p1: { battlefield: ["Bear Cub", "Island"], hand: ["Chase Inspiration"] },
       p2: { battlefield: ["Bear Cub"] },
@@ -1053,7 +1053,7 @@ describe("Secrets of Strixhaven, lot A — bleu", () => {
   });
 
   describe("Deluge Virtuoso", () => {
-    it("en arrivant : engage une créature adverse et y met un marqueur d'étourdissement", () => {
+    it("on entering: taps an opposing creature and puts a stun counter on it", () => {
       let s = scenario({ p1: { battlefield: lands("Island", 3), hand: ["Deluge Virtuoso"] }, p2: { battlefield: ["Bear Cub"] } });
       const bear = idOf(s, "p2", "battlefield", "Bear Cub");
       s = settle(cast(s, "p1", "Deluge Virtuoso"), (req) =>
@@ -1061,13 +1061,13 @@ describe("Secrets of Strixhaven, lot A — bleu", () => {
       );
       expect(s.objects[bear]?.tapped).toBe(true);
       expect(s.objects[bear]?.counters.stun).toBe(1);
-      // Le marqueur d'étourdissement remplace le dégagement suivant.
+      // The stun counter replaces the next untap.
       s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
       expect(s.objects[bear]?.tapped).toBe(true);
       expect(s.objects[bear]?.counters.stun ?? 0).toBe(0);
     });
 
-    it("Opus : +1/+1 ; cinq mana ou plus dépensés : +2/+2 à la place", () => {
+    it("Opus: +1/+1; five or more mana spent: +2/+2 instead", () => {
       let s = scenario({
         p1: {
           battlefield: ["Deluge Virtuoso", ...lands("Island", 7)],
@@ -1085,7 +1085,7 @@ describe("Secrets of Strixhaven, lot A — bleu", () => {
     });
   });
 
-  it("Divergent Equation : renvoie X cartes d'éphémère et de rituel du cimetière en main, puis s'exile", () => {
+  it("Divergent Equation: returns X instant and sorcery cards from the graveyard to hand, then exiles itself", () => {
     let s = scenario({
       p1: { battlefield: lands("Island", 5), hand: ["Divergent Equation"], graveyard: ["Opt", "Boltwave", "Bear Cub"] },
     });
@@ -1099,7 +1099,7 @@ describe("Secrets of Strixhaven, lot A — bleu", () => {
     expect(exiled(s, "Divergent Equation")).toHaveLength(1);
   });
 
-  it("Echocasting Symposium : le joueur ciblé crée un jeton copie d'une créature que vous contrôlez ; Paradigme", () => {
+  it("Echocasting Symposium: the targeted player creates a token copy of a creature you control; Paradigm", () => {
     let s = scenario({ p1: { battlefield: ["Serra Angel", ...lands("Island", 6)], hand: ["Echocasting Symposium"] } });
     const angel = idOf(s, "p1", "battlefield", "Serra Angel");
     s = settle(cast(s, "p1", "Echocasting Symposium", { p: ["p1"], c: [angel] }));
@@ -1111,12 +1111,12 @@ describe("Secrets of Strixhaven, lot A — bleu", () => {
     let t = scenario({ p1: { battlefield: ["Serra Angel", ...lands("Island", 6)], hand: ["Echocasting Symposium"] } });
     t = settle(cast(t, "p1", "Echocasting Symposium", { p: ["p2"], c: [idOf(t, "p1", "battlefield", "Serra Angel")] }));
     expect(idsOf(t, "p2", "battlefield", "Serra Angel")).toHaveLength(1);
-    // Le joueur ciblé crée le jeton : il en est le propriétaire, pas seulement le contrôleur.
+    // The targeted player creates the token: they are its owner, not just its controller.
     const token = t.objects[idOf(t, "p2", "battlefield", "Serra Angel")];
     expect([token?.owner, token?.controller]).toEqual(["p2", "p2"]);
   });
 
-  it("Encouraging Aviator : en attaquant, devient préparée ; Jump donne le vol à une créature jusqu'à la fin du tour", () => {
+  it("Encouraging Aviator: on attacking, becomes prepared; Jump gives flying to a creature until end of turn", () => {
     let s = scenario({ p1: { battlefield: ["Encouraging Aviator", "Bear Cub", "Island"] } });
     const aviator = idOf(s, "p1", "battlefield", "Encouraging Aviator");
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -1129,7 +1129,7 @@ describe("Secrets of Strixhaven, lot A — bleu", () => {
     expect(chars(s, bear).keywords).toContain("flying");
   });
 
-  it("Exhibition Tidecaller : Opus, le joueur ciblé meule trois cartes ; dix si cinq mana ou plus", () => {
+  it("Exhibition Tidecaller: Opus, the targeted player mills three cards; ten if five or more mana", () => {
     let s = scenario({
       p1: { battlefield: ["Exhibition Tidecaller", ...lands("Island", 7)], hand: ["Opt", "Homesickness"] },
       p2: { library: lands("Forest", 20) },
@@ -1142,7 +1142,7 @@ describe("Secrets of Strixhaven, lot A — bleu", () => {
   });
 
   describe("Flow State", () => {
-    it("regarde trois cartes : une en main, les autres au-dessous", () => {
+    it("looks at three cards: one into hand, the others on the bottom", () => {
       let s = scenario({
         p1: { battlefield: lands("Island", 2), hand: ["Flow State"], library: ["Opt", "Bear Cub", "Serra Angel", "Forest"] },
       });
@@ -1152,7 +1152,7 @@ describe("Secrets of Strixhaven, lot A — bleu", () => {
       expect(nameOf(s, s.players.p1?.library[0] as string)).toBe("Forest");
     });
 
-    it("avec un éphémère et un rituel au cimetière : deux cartes en main à la place", () => {
+    it("with an instant and a sorcery in the graveyard: two cards into hand instead", () => {
       let s = scenario({
         p1: {
           battlefield: lands("Island", 2),
@@ -1167,7 +1167,7 @@ describe("Secrets of Strixhaven, lot A — bleu", () => {
     });
   });
 
-  it("Fractal Anomaly : une Fractale 0/0 avec un marqueur +1/+1 par carte piochée ce tour-ci (0 : elle meurt)", () => {
+  it("Fractal Anomaly: a 0/0 Fractal with a +1/+1 counter per card drawn this turn (0: it dies)", () => {
     let s = scenario({ p1: { battlefield: lands("Island", 3), hand: ["Fractal Anomaly", "Opt"], library: lands("Forest", 5) } });
     s = settle(cast(s, "p1", "Opt"));
     s = settle(cast(s, "p1", "Fractal Anomaly"));
@@ -1180,7 +1180,7 @@ describe("Secrets of Strixhaven, lot A — bleu", () => {
     expect(idsOf(t, "p1", "battlefield", "Fractal")).toHaveLength(0);
   });
 
-  it("Fractalize : jusqu'à la fin du tour, la créature devient une Fractale verte et bleue de F/E de base X+1", () => {
+  it("Fractalize: until end of turn, the creature becomes a green and blue Fractal with base P/T X+1", () => {
     let s = scenario({ p1: { battlefield: lands("Island", 4), hand: ["Fractalize"] }, p2: { battlefield: ["Serra Angel"] } });
     const angel = idOf(s, "p2", "battlefield", "Serra Angel");
     s = settle(cast(s, "p1", "Fractalize", { t: [angel] }, { x: 3 }));
@@ -1195,7 +1195,7 @@ describe("Secrets of Strixhaven, lot A — bleu", () => {
     expect(chars(s, angel).colors).toEqual(["W"]);
   });
 
-  it("Harmonized Trio : {T} et engager deux créatures, devient préparée ; Brainstorm pioche trois et en remet deux", () => {
+  it("Harmonized Trio: {T} and tap two creatures, becomes prepared; Brainstorm draws three and puts two back", () => {
     let s = scenario({
       p1: {
         battlefield: ["Harmonized Trio", "Bear Cub", "Serra Angel", "Island"],
@@ -1225,7 +1225,7 @@ describe("Secrets of Strixhaven, lot A — bleu", () => {
     ).toEqual(["Forest", "Opt"]);
   });
 
-  it("Homesickness : le joueur ciblé pioche deux cartes ; jusqu'à deux créatures engagées avec un marqueur d'étourdissement", () => {
+  it("Homesickness: the targeted player draws two cards; up to two tapped creatures with a stun counter", () => {
     let s = scenario({
       p1: { battlefield: lands("Island", 6), hand: ["Homesickness"] },
       p2: { battlefield: ["Bear Cub", "Serra Angel"] },
@@ -1240,22 +1240,22 @@ describe("Secrets of Strixhaven, lot A — bleu", () => {
     }
   });
 
-  it("Hydro-Channeler : son mana ne sert qu'aux éphémères et rituels ; {1}, {T} : un mana de n'importe quelle couleur", () => {
+  it("Hydro-Channeler: its mana can only be used for instants and sorceries; {1}, {T}: one mana of any color", () => {
     const s = scenario({ p1: { battlefield: ["Hydro-Channeler", "Forest"], hand: ["Opt", "Boltwave"] } });
     expect(castOptions(s, "p1", idOf(s, "p1", "hand", "Opt"))).not.toHaveLength(0);
-    // Le Boltwave ({R}) : la seconde capacité, {1} payé par la Forêt, donne {R}.
+    // The Boltwave ({R}): the second ability, {1} paid by the Forest, gives {R}.
     let r = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Hydro-Channeler")), (req) =>
       req.type === "pick" && req.options.includes("R") ? ["R"] : undefined,
     );
     r = settle(cast(r, "p1", "Boltwave"));
     expect(r.players.p2?.life).toBe(17);
-    // Son mana ne paie pas un sort de créature.
+    // Its mana doesn't pay for a creature spell.
     const t = scenario({ p1: { battlefield: ["Hydro-Channeler", "Forest"], hand: ["Bear Cub"] } });
     expect(castOptions(t, "p1", idOf(t, "p1", "hand", "Bear Cub"))).toHaveLength(0);
   });
 
   describe("Jadzi, Steward of Fate", () => {
-    it("en arrivant : piochez deux cartes, puis défaussez-en deux ; arrive préparée", () => {
+    it("on entering: draw two cards, then discard two; enters prepared", () => {
       let s = scenario({
         p1: { battlefield: lands("Island", 3), hand: ["Jadzi, Steward of Fate"], library: lands("Forest", 4) },
       });
@@ -1265,7 +1265,7 @@ describe("Secrets of Strixhaven, lot A — bleu", () => {
       expect(exiled(s, "Oracle's Gift")).toHaveLength(1);
     });
 
-    it("Oracle's Gift : X Fractales, puis X marqueurs +1/+1 sur chaque Fractale que vous contrôlez", () => {
+    it("Oracle's Gift: X Fractals, then X +1/+1 counters on each Fractal you control", () => {
       let s = scenario({
         p1: {
           battlefield: lands("Island", 10),
@@ -1273,7 +1273,7 @@ describe("Secrets of Strixhaven, lot A — bleu", () => {
           library: lands("Forest", 6),
         },
       });
-      // Une Fractale 1/1 déjà présente (une carte piochée par Opt).
+      // A 1/1 Fractal already present (a card drawn by Opt).
       s = settle(cast(s, "p1", "Opt"));
       s = settle(cast(s, "p1", "Fractal Anomaly"));
       const first = idOf(s, "p1", "battlefield", "Fractal");
@@ -1286,14 +1286,14 @@ describe("Secrets of Strixhaven, lot A — bleu", () => {
     });
   });
 
-  it("Landscape Painter : arrive préparée ; Vibrant Idea pioche deux cartes", () => {
+  it("Landscape Painter: enters prepared; Vibrant Idea draws two cards", () => {
     let s = scenario({ p1: { battlefield: lands("Island", 7), hand: ["Landscape Painter"], library: lands("Forest", 4) } });
     s = settle(cast(s, "p1", "Landscape Painter"));
     s = settle(castExiled(s, "Vibrant Idea"));
     expect(s.players.p1?.hand).toHaveLength(2);
   });
 
-  it("Mathemagics : le joueur ciblé pioche 2^X cartes", () => {
+  it("Mathemagics: the targeted player draws 2^X cards", () => {
     const run = (x: number) => {
       let s = scenario({ p1: { battlefield: lands("Island", 8), hand: ["Mathemagics"], library: lands("Forest", 20) } });
       s = settle(cast(s, "p1", "Mathemagics", { p: ["p1"] }, { x }));
@@ -1304,27 +1304,27 @@ describe("Secrets of Strixhaven, lot A — bleu", () => {
     expect(run(3)).toBe(8);
   });
 
-  /** Défausse une autre carte que Homesickness. */
+  /** Discards a card other than Homesickness. */
   const keepHomesickness: Answer = (req, _p, cur) =>
     req.type === "pick" && req.options.some((id) => nameOf(cur, id) === "Homesickness")
       ? req.options.filter((id) => nameOf(cur, id) !== "Homesickness").slice(0, 1)
       : undefined;
 
-  it("Muse Seeker : Opus, piochez puis défaussez ; pas de défausse si cinq mana ou plus", () => {
+  it("Muse Seeker: Opus, draw then discard; no discard if five or more mana", () => {
     let s = scenario({
       p1: { battlefield: ["Muse Seeker", ...lands("Island", 7)], hand: ["Opt", "Homesickness"], library: lands("Forest", 10) },
     });
     s = settle(cast(s, "p1", "Opt"), keepHomesickness);
-    // Opt pioche une carte, Muse Seeker en pioche une et en défausse une : Homesickness + une carte.
+    // Opt draws a card, Muse Seeker draws one and discards one: Homesickness + one card.
     expect(s.players.p1?.hand).toHaveLength(2);
     expect(s.players.p1?.graveyard).toHaveLength(2);
     s = settle(cast(s, "p1", "Homesickness", { p: ["p2"], c: [] }));
-    // Homesickness (six mana) : Muse Seeker pioche sans défausser.
+    // Homesickness (six mana): Muse Seeker draws without discarding.
     expect(s.players.p1?.hand).toHaveLength(2);
     expect(s.players.p1?.graveyard).toHaveLength(3);
   });
 
-  it("Muse's Encouragement : un Élémental 3/3 volant, puis surveillance 2", () => {
+  it("Muse's Encouragement: a 3/3 flying Elemental, then surveil 2", () => {
     let s = scenario({
       p1: { battlefield: lands("Island", 5), hand: ["Muse's Encouragement"], library: ["Opt", "Opt", "Forest"] },
     });
@@ -1333,8 +1333,8 @@ describe("Secrets of Strixhaven, lot A — bleu", () => {
     expect(s.players.p1?.graveyard.filter((id) => nameOf(s, id) === "Opt")).toHaveLength(2);
   });
 
-  it("Orysa, Tide Choreographer : coûte {3} de moins avec une endurance totale de 10 ou plus ; pioche deux cartes en arrivant", () => {
-    const wall = customCard({ name: "Mur d'essai", power: 0, toughness: 10 });
+  it("Orysa, Tide Choreographer: costs {3} less with total toughness 10 or greater; draws two cards on entering", () => {
+    const wall = customCard({ name: "Test Wall", power: 0, toughness: 10 });
     const s = scenario({ p1: { battlefield: lands("Island", 2), hand: ["Orysa, Tide Choreographer"] } });
     expect(castOptions(s, "p1", idOf(s, "p1", "hand", "Orysa, Tide Choreographer"))).toHaveLength(0);
     let t = scenario({
@@ -1345,22 +1345,22 @@ describe("Secrets of Strixhaven, lot A — bleu", () => {
     expect(t.players.p1?.hand).toHaveLength(2);
   });
 
-  it("Pensive Professor : Increment, puis chaque marqueur +1/+1 mis sur elle fait piocher une carte", () => {
+  it("Pensive Professor: Increment, then each +1/+1 counter put on it draws a card", () => {
     let s = scenario({
       p1: { battlefield: ["Pensive Professor", ...lands("Island", 2)], hand: ["Opt", "Opt"], library: lands("Forest", 5) },
     });
     const prof = idOf(s, "p1", "battlefield", "Pensive Professor");
     s = settle(cast(s, "p1", "Opt"));
-    // 1 mana > force 0 : un marqueur, et une carte piochée (plus celle d'Opt).
+    // 1 mana > power 0: a counter, and a card drawn (plus the one from Opt).
     expect(s.objects[prof]?.counters["+1/+1"]).toBe(1);
     expect(s.players.p1?.hand).toHaveLength(3);
-    // 1 mana n'est supérieur ni à la force (1) ni à l'endurance (3) : rien.
+    // 1 mana is greater than neither power (1) nor toughness (3): nothing.
     s = settle(cast(s, "p1", "Opt"));
     expect(s.objects[prof]?.counters["+1/+1"]).toBe(1);
     expect(s.players.p1?.hand).toHaveLength(3);
   });
 
-  it("Procrastinate : engage la créature ciblée et y met deux fois X marqueurs d'étourdissement", () => {
+  it("Procrastinate: taps the targeted creature and puts twice X stun counters on it", () => {
     let s = scenario({ p1: { battlefield: lands("Island", 3), hand: ["Procrastinate"] }, p2: { battlefield: ["Serra Angel"] } });
     const angel = idOf(s, "p2", "battlefield", "Serra Angel");
     s = settle(cast(s, "p1", "Procrastinate", { t: [angel] }, { x: 2 }));
@@ -1369,7 +1369,7 @@ describe("Secrets of Strixhaven, lot A — bleu", () => {
   });
 
   describe("Run Behind", () => {
-    it("le propriétaire met la créature au-dessus ou au-dessous de sa bibliothèque", () => {
+    it("the owner puts the creature on top or on the bottom of their library", () => {
       let s = scenario({ p1: { battlefield: lands("Island", 4), hand: ["Run Behind"] }, p2: { battlefield: ["Serra Angel"] } });
       const angel = idOf(s, "p2", "battlefield", "Serra Angel");
       s = settle(cast(s, "p1", "Run Behind", { t: [angel] }), (req, player) =>
@@ -1378,7 +1378,7 @@ describe("Secrets of Strixhaven, lot A — bleu", () => {
       expect(nameOf(s, s.players.p2?.library[0] as string)).toBe("Serra Angel");
     });
 
-    it("coûte {1} de moins s'il cible une créature attaquante", () => {
+    it("costs {1} less if it targets an attacking creature", () => {
       let s = scenario({
         p1: { battlefield: lands("Island", 3), hand: ["Run Behind"] },
         p2: { battlefield: ["Serra Angel"] },
@@ -1394,7 +1394,7 @@ describe("Secrets of Strixhaven, lot A — bleu", () => {
     });
   });
 
-  it("Skycoach Conductor : All Aboard exile une créature non-Pilote que vous contrôlez et la renvoie", () => {
+  it("Skycoach Conductor: All Aboard exiles a non-Pilot creature you control and returns it", () => {
     let s = scenario({
       p1: { battlefield: [{ name: "Bear Cub", tapped: true }, ...lands("Island", 4)], hand: ["Skycoach Conductor"] },
     });
@@ -1409,7 +1409,7 @@ describe("Secrets of Strixhaven, lot A — bleu", () => {
     expect(s.objects[back]?.tapped).toBe(false);
   });
 
-  it("Spellbook Seeker : arrive préparée ; Careful Study pioche deux cartes puis en défausse deux", () => {
+  it("Spellbook Seeker: enters prepared; Careful Study draws two cards then discards two", () => {
     let s = scenario({ p1: { battlefield: lands("Island", 5), hand: ["Spellbook Seeker"], library: lands("Forest", 4) } });
     s = settle(cast(s, "p1", "Spellbook Seeker"));
     s = settle(castExiled(s, "Careful Study"));
@@ -1417,7 +1417,7 @@ describe("Secrets of Strixhaven, lot A — bleu", () => {
     expect(s.players.p1?.graveyard).toHaveLength(2);
   });
 
-  it("Tester of the Tangential : au début du combat, payez {X} pour déplacer X marqueurs +1/+1 sur une autre créature", () => {
+  it("Tester of the Tangential: at the beginning of combat, pay {X} to move X +1/+1 counters onto another creature", () => {
     let s = scenario({ p1: { battlefield: ["Tester of the Tangential", "Bear Cub", ...lands("Island", 2)] } });
     const tester = idOf(s, "p1", "battlefield", "Tester of the Tangential");
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -1431,19 +1431,19 @@ describe("Secrets of Strixhaven, lot A — bleu", () => {
     expect(s.battlefield.filter((id) => nameOf(s, id) === "Island" && s.objects[id]?.tapped)).toHaveLength(2);
   });
 
-  it("Textbook Tabulator : surveillance 2 en arrivant ; Increment selon le mana dépensé", () => {
+  it("Textbook Tabulator: surveil 2 on entering; Increment according to the mana spent", () => {
     let s = scenario({
       p1: { battlefield: lands("Island", 7), hand: ["Textbook Tabulator", "Opt", "Homesickness"], library: lands("Forest", 6) },
     });
     s = settle(cast(s, "p1", "Textbook Tabulator"), (req) => (req.type === "pick" ? req.options : undefined));
     expect(s.players.p1?.graveyard).toHaveLength(2);
     const tab = idOf(s, "p1", "battlefield", "Textbook Tabulator");
-    // 1 mana > force 0 : un marqueur.
+    // 1 mana > power 0: a counter.
     s = settle(cast(s, "p1", "Opt"));
     expect(s.objects[tab]?.counters["+1/+1"]).toBe(1);
   });
 
-  it("Wisdom of Ages : toutes les cartes d'éphémère et de rituel du cimetière reviennent en main ; plus de main maximale", () => {
+  it("Wisdom of Ages: all instant and sorcery cards in the graveyard return to hand; no maximum hand size", () => {
     let s = scenario({
       p1: {
         battlefield: lands("Island", 7),
@@ -1456,7 +1456,7 @@ describe("Secrets of Strixhaven, lot A — bleu", () => {
     expect(idsOf(s, "p1", "graveyard", "Bear Cub")).toHaveLength(1);
     expect(s.players.p1?.graveyard).toHaveLength(1);
     expect(exiled(s, "Wisdom of Ages")).toHaveLength(1);
-    // Fin du tour : pas de défausse à sept cartes, ni ce tour-ci ni plus tard.
+    // End of turn: no discard at seven cards, neither this turn nor later.
     s = advanceUntil(s, (x) => x.turn.active === "p2" || x.pending?.kind === "discard");
     expect(s.pending?.kind).not.toBe("discard");
     expect(s.players.p1?.hand).toHaveLength(9);
@@ -1465,15 +1465,15 @@ describe("Secrets of Strixhaven, lot A — bleu", () => {
 
 describe("Secrets of Strixhaven, lot A — noir", () => {
   /**
-   * Secrets of Strixhaven, lot A — cartes noires : chaque carte gérée est confrontée à son texte Oracle (plan R, lot R7).
-   * Préparation (Adventurous Eater, Cheerful Osteomancer, Emeritus of Woe, Grave Researcher, Leech Collector, Scathing
-   * Shadelock, Scheming Silvertongue), Repartee, Infusion, convergence et sorts de la couleur.
+   * Secrets of Strixhaven, lot A - black cards: each handled card is checked against its Oracle text (plan R, lot R7).
+   * Prepare (Adventurous Eater, Cheerful Osteomancer, Emeritus of Woe, Grave Researcher, Leech Collector, Scathing
+   * Shadelock, Scheming Silvertongue), Repartee, Infusion, converge and spells of the color.
    */
   type S = GameState;
-  /** Lance la copie du sort préparé de `source` (elle attend en exil). */
+  /** Casts the prepared spell copy of `source` (it waits in exile). */
   const castPrepared = (s: S, player: string, source: string, targets?: Record<string, string[]>) => {
     const copy = s.objects[source]?.preparedCopy;
-    if (!copy) throw new Error("créature non préparée");
+    if (!copy) throw new Error("creature not prepared");
     return act(s, player, { type: "cast", card: copy, targets });
   };
   const prepared = (s: S, id: string) => !!s.objects[id]?.preparedCopy;
@@ -1481,11 +1481,11 @@ describe("Secrets of Strixhaven, lot A — noir", () => {
     const a = legalActions(s, player).find((x) => x.type === "activate" && x.source === source);
     return act(s, player, { type: "activate", source, ability: a?.type === "activate" ? a.ability : -1, targets });
   };
-  /** Witherbloom Charm, mode « gagnez 5 PV » ({B}{G}) : de quoi remplir l'Infusion. */
+  /** Witherbloom Charm, mode "gain 5 life" ({B}{G}): enough to fill the Infusion. */
   const gainFive = (s: S) => settle(cast(s, "p1", "Witherbloom Charm", undefined, { mode: 1 }));
 
-  describe("Préparation", () => {
-    it("Adventurous Eater arrive préparée : Have a Bite met un marqueur +1/+1 et fait gagner 1 PV", () => {
+  describe("Prepare", () => {
+    it("Adventurous Eater enters prepared: Have a Bite puts a +1/+1 counter and gains 1 life", () => {
       let s = scenario({ p1: { battlefield: [...lands("Swamp", 4), "Bear Cub"], hand: ["Adventurous Eater"] } });
       s = settle(cast(s, "p1", "Adventurous Eater"));
       const eater = idOf(s, "p1", "battlefield", "Adventurous Eater");
@@ -1497,7 +1497,7 @@ describe("Secrets of Strixhaven, lot A — noir", () => {
       expect(prepared(s, eater)).toBe(false);
     });
 
-    it("Cheerful Osteomancer : Raise Dead renvoie une carte de créature de votre cimetière dans votre main", () => {
+    it("Cheerful Osteomancer: Raise Dead returns a creature card from your graveyard to your hand", () => {
       let s = scenario({
         p1: { battlefield: lands("Swamp", 5), hand: ["Cheerful Osteomancer"], graveyard: ["Bear Cub", "Opt"] },
       });
@@ -1510,7 +1510,7 @@ describe("Secrets of Strixhaven, lot A — noir", () => {
       expect(s.players.p1?.graveyard.map((id) => nameOf(s, id))).toEqual(["Opt"]);
     });
 
-    it("Emeritus of Woe : Demonic Tutor met une carte de la bibliothèque dans votre main", () => {
+    it("Emeritus of Woe: Demonic Tutor puts a card from the library into your hand", () => {
       let s = scenario({
         p1: { battlefield: lands("Swamp", 6), hand: ["Emeritus of Woe"], library: [...lands("Forest", 4), "Serra Angel"] },
       });
@@ -1525,7 +1525,7 @@ describe("Secrets of Strixhaven, lot A — noir", () => {
       expect(prepared(s, emeritus)).toBe(false);
     });
 
-    it("Emeritus of Woe redevient préparée à votre étape de fin si deux créatures sont mortes ce tour-ci, pas une seule", () => {
+    it("Emeritus of Woe becomes prepared again at your end step if two creatures died this turn, not just one", () => {
       const run = (bears: number) => {
         let s = scenario({
           p1: { battlefield: ["Emeritus of Woe", ...lands("Swamp", 3)], hand: ["Withering Curse"] },
@@ -1542,7 +1542,7 @@ describe("Secrets of Strixhaven, lot A — noir", () => {
       expect(run(1)).toBe(false);
     });
 
-    it("Grave Researcher : à votre entretien, surveillance 1, puis préparée avec trois cartes de créature au cimetière", () => {
+    it("Grave Researcher: at your upkeep, surveil 1, then prepared with three creature cards in the graveyard", () => {
       const run = (creatures: number) => {
         let s = scenario({
           active: "p2",
@@ -1550,7 +1550,7 @@ describe("Secrets of Strixhaven, lot A — noir", () => {
           p1: { battlefield: ["Grave Researcher"], graveyard: lands("Bear Cub", creatures), library: lands("Island", 5) },
         });
         const researcher = idOf(s, "p1", "battlefield", "Grave Researcher");
-        // La surveillance met la carte du dessus (un terrain) au cimetière : elle ne compte pas.
+        // Surveil puts the top card (a land) into the graveyard: it doesn't count.
         s = advanceUntil(s, (x) => x.pending?.kind === "choice" && x.pending.request.intent === "surveilGraveyard", 300);
         s = settle(s, (req) => (req.type === "pick" ? req.options : undefined));
         return { s, researcher };
@@ -1562,7 +1562,7 @@ describe("Secrets of Strixhaven, lot A — noir", () => {
       expect(prepared(t.s, t.researcher)).toBe(false);
     });
 
-    it("Grave Researcher : Reanimate met une créature d'un cimetière adverse sous votre contrôle, et vous perdez sa VM en PV", () => {
+    it("Grave Researcher: Reanimate puts a creature from an opposing graveyard under your control, and you lose life equal to its MV", () => {
       let s = scenario({
         active: "p2",
         step: "main2",
@@ -1579,7 +1579,7 @@ describe("Secrets of Strixhaven, lot A — noir", () => {
       expect(s.players.p1?.life).toBe(15);
     });
 
-    it("Leech Collector devient préparée la première fois que vous gagnez des PV ; Bloodletting : chaque adversaire perd 2 PV", () => {
+    it("Leech Collector becomes prepared the first time you gain life; Bloodletting: each opponent loses 2 life", () => {
       let s = scenario({
         p1: { battlefield: ["Leech Collector", "Swamp", "Swamp", "Forest"], hand: ["Witherbloom Charm"] },
       });
@@ -1592,7 +1592,7 @@ describe("Secrets of Strixhaven, lot A — noir", () => {
       expect(prepared(s, leech)).toBe(false);
     });
 
-    it("Scathing Shadelock devient préparée au début de votre première phase principale ; Venomous Words : +2/+0 et contact mortel", () => {
+    it("Scathing Shadelock becomes prepared at the beginning of your first main phase; Venomous Words: +2/+0 and deathtouch", () => {
       let s = scenario({ active: "p2", step: "main2", p1: { battlefield: ["Scathing Shadelock", "Swamp", "Bear Cub"] } });
       const shadelock = idOf(s, "p1", "battlefield", "Scathing Shadelock");
       expect(prepared(s, shadelock)).toBe(false);
@@ -1605,7 +1605,7 @@ describe("Secrets of Strixhaven, lot A — noir", () => {
       expect(chars(s, bear).keywords).toContain("deathtouch");
     });
 
-    it("Scheming Silvertongue : préparée au début de votre seconde phase principale si vous avez gagné 2 PV ou plus ; Sign in Blood", () => {
+    it("Scheming Silvertongue: prepared at the beginning of your second main phase if you gained 2 or more life; Sign in Blood", () => {
       const run = (gain: boolean) => {
         let s = scenario({
           p1: {
@@ -1624,7 +1624,7 @@ describe("Secrets of Strixhaven, lot A — noir", () => {
       expect(c.keywords).toEqual(expect.arrayContaining(["flying", "lifelink"]));
       expect(prepared(base, silver)).toBe(true);
       const s = settle(castPrepared(base, "p1", silver, { t: ["p1"] }));
-      // Le Charme a quitté la main : les deux cartes piochées.
+      // The Charm left the hand: both drawn cards.
       expect(s.players.p1?.hand).toHaveLength(2);
       expect(s.players.p1?.life).toBe(23);
       const t = run(false);
@@ -1633,7 +1633,7 @@ describe("Secrets of Strixhaven, lot A — noir", () => {
   });
 
   describe("Repartee", () => {
-    it("Lecturing Scornmage : un marqueur +1/+1 si l'éphémère cible une créature, pas s'il cible un joueur", () => {
+    it("Lecturing Scornmage: a +1/+1 counter if the instant targets a creature, not if it targets a player", () => {
       let s = scenario({
         p1: { battlefield: ["Lecturing Scornmage", ...lands("Mountain", 4)], hand: ["Lightning Strike", "Lightning Strike"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -1645,7 +1645,7 @@ describe("Secrets of Strixhaven, lot A — noir", () => {
       expect(s.objects[mage]?.counters["+1/+1"]).toBe(1);
     });
 
-    it("Melancholic Poet : chaque adversaire perd 1 PV et vous gagnez 1 PV", () => {
+    it("Melancholic Poet: each opponent loses 1 life and you gain 1 life", () => {
       let s = scenario({
         p1: { battlefield: ["Melancholic Poet", ...lands("Mountain", 2)], hand: ["Lightning Strike"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -1655,7 +1655,7 @@ describe("Secrets of Strixhaven, lot A — noir", () => {
       expect(s.players.p1?.life).toBe(21);
     });
 
-    it("Forum Necroscribe : garde (défausser une carte) ; renvoie une carte de créature de votre cimetière sur le champ de bataille", () => {
+    it("Forum Necroscribe: ward (discard a card); returns a creature card from your graveyard to the battlefield", () => {
       let s = scenario({
         p1: {
           battlefield: ["Forum Necroscribe", ...lands("Mountain", 2)],
@@ -1672,7 +1672,7 @@ describe("Secrets of Strixhaven, lot A — noir", () => {
   });
 
   describe("Infusion", () => {
-    it("Foolish Fate détruit la créature ; si vous avez gagné des PV, son contrôleur perd 3 PV", () => {
+    it("Foolish Fate destroys the creature; if you gained life, its controller loses 3 life", () => {
       const run = (gain: boolean) => {
         let s = scenario({
           p1: { battlefield: [...lands("Swamp", 4), "Forest"], hand: ["Foolish Fate", "Witherbloom Charm"] },
@@ -1687,7 +1687,7 @@ describe("Secrets of Strixhaven, lot A — noir", () => {
       expect(run(true)).toBe(17);
     });
 
-    it("Poisoner's Apprentice : -4/-4 sur une créature adverse en arrivant, seulement si vous avez gagné des PV", () => {
+    it("Poisoner's Apprentice: -4/-4 on an opposing creature on entering, only if you gained life", () => {
       const run = (gain: boolean) => {
         let s = scenario({
           p1: { battlefield: [...lands("Swamp", 4), "Forest"], hand: ["Poisoner's Apprentice", "Witherbloom Charm"] },
@@ -1701,7 +1701,7 @@ describe("Secrets of Strixhaven, lot A — noir", () => {
       expect(run(true)).toBe(0);
     });
 
-    it("Ulna Alley Shopkeep : menace ; +2/+0 tant que vous avez gagné des PV ce tour-ci", () => {
+    it("Ulna Alley Shopkeep: menace; +2/+0 as long as you gained life this turn", () => {
       let s = scenario({
         p1: { battlefield: ["Ulna Alley Shopkeep", "Swamp", "Forest"], hand: ["Witherbloom Charm"] },
       });
@@ -1714,7 +1714,7 @@ describe("Secrets of Strixhaven, lot A — noir", () => {
       expect(chars(s, shop).power).toBe(2);
     });
 
-    it("Tragedy Feaster : à votre étape de fin, sacrifiez un permanent, sauf si vous avez gagné des PV", () => {
+    it("Tragedy Feaster: at your end step, sacrifice a permanent, unless you gained life", () => {
       const run = (gain: boolean) => {
         let s = scenario({
           p1: { battlefield: ["Tragedy Feaster", "Swamp", "Forest", "Bear Cub"], hand: ["Witherbloom Charm"] },
@@ -1729,7 +1729,7 @@ describe("Secrets of Strixhaven, lot A — noir", () => {
       expect(run(true)).toBe(4);
     });
 
-    it("Withering Curse : -2/-2 à toutes les créatures ; avec l'Infusion, détruit toutes les créatures à la place", () => {
+    it("Withering Curse: -2/-2 to all creatures; with Infusion, destroys all creatures instead", () => {
       const run = (gain: boolean) => {
         let s = scenario({
           p1: { battlefield: [...lands("Swamp", 4), "Forest"], hand: ["Withering Curse", "Witherbloom Charm"] },
@@ -1749,8 +1749,8 @@ describe("Secrets of Strixhaven, lot A — noir", () => {
     });
   });
 
-  describe("Autres cartes", () => {
-    it("Arcane Omens (convergence) : le joueur ciblé défausse autant de cartes que de couleurs de mana dépensées", () => {
+  describe("Other cards", () => {
+    it("Arcane Omens (converge): the targeted player discards as many cards as colors of mana spent", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Swamp", 3), "Island", "Mountain"], hand: ["Arcane Omens"] },
         p2: { hand: lands("Plains", 5) },
@@ -1760,7 +1760,7 @@ describe("Secrets of Strixhaven, lot A — noir", () => {
       expect(s.players.p2?.graveyard).toHaveLength(3);
     });
 
-    it("Arnyn : une créature que vous contrôlez de force ou d'endurance 1 ou moins meurt : un adversaire perd 2 PV, vous gagnez 2 PV", () => {
+    it("Arnyn: a creature you control with power or toughness 1 or less dies: an opponent loses 2 life, you gain 2 life", () => {
       let s = scenario({
         p1: {
           battlefield: ["Arnyn, Deathbloom Botanist", "Burrog Banemaker", "Bear Cub", ...lands("Mountain", 4)],
@@ -1774,7 +1774,7 @@ describe("Secrets of Strixhaven, lot A — noir", () => {
       expect([s.players.p1?.life, s.players.p2?.life]).toEqual([22, 18]);
     });
 
-    it("Burrog Banemaker : contact mortel ; {1}{B} : +1/+1 jusqu'à la fin du tour", () => {
+    it("Burrog Banemaker: deathtouch; {1}{B}: +1/+1 until end of turn", () => {
       let s = scenario({ p1: { battlefield: ["Burrog Banemaker", "Swamp", "Swamp"] } });
       const frog = idOf(s, "p1", "battlefield", "Burrog Banemaker");
       expect(chars(s, frog).keywords).toContain("deathtouch");
@@ -1784,7 +1784,7 @@ describe("Secrets of Strixhaven, lot A — noir", () => {
       expect(chars(s, frog).power).toBe(1);
     });
 
-    it("Cost of Brilliance : le joueur ciblé pioche deux cartes et perd 2 PV ; un marqueur +1/+1 sur jusqu'à une créature", () => {
+    it("Cost of Brilliance: the targeted player draws two cards and loses 2 life; a +1/+1 counter on up to one creature", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Swamp", 3), "Bear Cub"], hand: ["Cost of Brilliance"] },
         p2: { library: lands("Island", 5) },
@@ -1796,7 +1796,7 @@ describe("Secrets of Strixhaven, lot A — noir", () => {
       expect(s.objects[bear]?.counters["+1/+1"]).toBe(1);
     });
 
-    it("End of the Hunt : l'adversaire exile sa créature ou son planeswalker de plus grande valeur de mana", () => {
+    it("End of the Hunt: the opponent exiles their creature or planeswalker with the greatest mana value", () => {
       let s = scenario({
         p1: { battlefield: lands("Swamp", 2), hand: ["End of the Hunt"] },
         p2: { battlefield: ["Bear Cub", "Serra Angel"] },
@@ -1807,7 +1807,7 @@ describe("Secrets of Strixhaven, lot A — noir", () => {
       expect(s.players.p2?.graveyard).toHaveLength(0);
     });
 
-    it("Eternal Student : {1}{B}, exilez-la de votre cimetière : deux Inklings 1/1 blancs et noirs volants", () => {
+    it("Eternal Student: {1}{B}, exile it from your graveyard: two 1/1 white and black flying Inklings", () => {
       let s = scenario({ p1: { battlefield: lands("Swamp", 2), graveyard: ["Eternal Student"] } });
       const student = idOf(s, "p1", "graveyard", "Eternal Student");
       s = settle(activate(s, "p1", student));
@@ -1818,7 +1818,7 @@ describe("Secrets of Strixhaven, lot A — noir", () => {
       expect(exiled(s, "Eternal Student")).toHaveLength(1);
     });
 
-    it("Masterful Flourish : +1/+0 et indestructible jusqu'à la fin du tour, seulement sur votre créature", () => {
+    it("Masterful Flourish: +1/+0 and indestructible until end of turn, only on your creature", () => {
       let s = scenario({
         p1: { battlefield: ["Swamp", "Bear Cub"], hand: ["Masterful Flourish"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -1830,7 +1830,7 @@ describe("Secrets of Strixhaven, lot A — noir", () => {
       expect(chars(s, bear).keywords).toContain("indestructible");
     });
 
-    it("Postmortem Professor : ne peut pas bloquer ; en attaquant, draine 1 ; revient du cimetière en exilant un éphémère ou un rituel", () => {
+    it("Postmortem Professor: can't block; on attacking, drains 1; returns from the graveyard by exiling an instant or sorcery", () => {
       let s = scenario({ p1: { battlefield: ["Postmortem Professor"] } });
       const prof = idOf(s, "p1", "battlefield", "Postmortem Professor");
       expect(chars(s, prof).keywords).toContain("cantBlock");
@@ -1849,7 +1849,7 @@ describe("Secrets of Strixhaven, lot A — noir", () => {
       expect(exiled(t, "Opt")).toHaveLength(1);
     });
 
-    it("Pull from the Grave : jusqu'à deux cartes de créature de votre cimetière en main, et vous gagnez 2 PV", () => {
+    it("Pull from the Grave: up to two creature cards from your graveyard to hand, and you gain 2 life", () => {
       let s = scenario({
         p1: { battlefield: lands("Swamp", 3), hand: ["Pull from the Grave"], graveyard: ["Bear Cub", "Serra Angel", "Opt"] },
       });
@@ -1859,7 +1859,7 @@ describe("Secrets of Strixhaven, lot A — noir", () => {
       expect(s.players.p1?.life).toBe(22);
     });
 
-    it("Rabid Attack : vos créatures ciblées gagnent +1/+0 et « quand elle meurt, piochez une carte »", () => {
+    it('Rabid Attack: your targeted creatures get +1/+0 and "when it dies, draw a card"', () => {
       let s = scenario({
         p1: {
           battlefield: ["Bear Cub", "Serra Angel", "Swamp", "Swamp", "Mountain", "Mountain"],
@@ -1876,21 +1876,21 @@ describe("Secrets of Strixhaven, lot A — noir", () => {
       expect(s.players.p1?.hand).toHaveLength(1);
     });
 
-    it("Send in the Pest : chaque adversaire défausse une carte, et vous créez un Nuisible", () => {
+    it("Send in the Pest: each opponent discards a card, and you create a Pest", () => {
       let s = scenario({ p1: { battlefield: lands("Swamp", 2), hand: ["Send in the Pest"] }, p2: { hand: ["Opt", "Opt"] } });
       s = settle(cast(s, "p1", "Send in the Pest"));
       expect(s.players.p2?.hand).toHaveLength(1);
       expect(idsOf(s, "p1", "battlefield", "Pest")).toHaveLength(1);
     });
 
-    it("Sneering Shadewriter : vol ; en arrivant, chaque adversaire perd 2 PV et vous gagnez 2 PV", () => {
+    it("Sneering Shadewriter: flying; on entering, each opponent loses 2 life and you gain 2 life", () => {
       let s = scenario({ p1: { battlefield: lands("Swamp", 5), hand: ["Sneering Shadewriter"] } });
       s = settle(cast(s, "p1", "Sneering Shadewriter"));
       expect(chars(s, idOf(s, "p1", "battlefield", "Sneering Shadewriter")).keywords).toContain("flying");
       expect([s.players.p1?.life, s.players.p2?.life]).toEqual([22, 18]);
     });
 
-    it("Wander Off exile la créature ciblée", () => {
+    it("Wander Off exiles the targeted creature", () => {
       let s = scenario({ p1: { battlefield: lands("Swamp", 4), hand: ["Wander Off"] }, p2: { battlefield: ["Serra Angel"] } });
       s = settle(cast(s, "p1", "Wander Off", { t: [idOf(s, "p2", "battlefield", "Serra Angel")] }));
       expect(exiled(s, "Serra Angel")).toHaveLength(1);
@@ -1900,33 +1900,33 @@ describe("Secrets of Strixhaven, lot A — noir", () => {
 
 describe("Secrets of Strixhaven, lot A — rouge", () => {
   /**
-   * Secrets of Strixhaven, lot A — cartes rouges : chaque carte est confrontée à son texte Oracle (plan R, lot R7).
-   * Préparation (Blazing Firesinger, Goblin Glasswright, Maelstrom Artisan, Pigment Wrangler, Strife Scholar, Emeritus of
-   * Conflict), Opus (Expressive Firedancer, Molten-Core Maestro, Tackle Artist, Thunderdrum Soloist), convergence
-   * (Archaic's Agony), Paradigme (Improvisation Capstone), cartes qui quittent le cimetière (Garrison Excavator, Living
-   * History), copies (Mica), sorts de blessures et de pioche.
+   * Secrets of Strixhaven, lot A - red cards: each card is checked against its Oracle text (plan R, lot R7).
+   * Prepare (Blazing Firesinger, Goblin Glasswright, Maelstrom Artisan, Pigment Wrangler, Strife Scholar, Emeritus of
+   * Conflict), Opus (Expressive Firedancer, Molten-Core Maestro, Tackle Artist, Thunderdrum Soloist), converge
+   * (Archaic's Agony), Paradigm (Improvisation Capstone), cards that leave the graveyard (Garrison Excavator, Living
+   * History), copies (Mica), damage and draw spells.
    */
   type S = GameState;
   const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
   const castOptions = (s: S, player: string, card: string) =>
     legalActions(s, player).filter((a) => a.type === "cast" && a.card === card);
 
-  /** Active la capacité de `source` dont le libellé contient `label` (la première si absent). */
+  /** Activates the ability of `source` whose label contains `label` (the first if absent). */
   const activate = (s: S, player: string, source: string, label?: string, extra: object = {}) => {
     const a = legalActions(s, player).find(
       (x) => x.type === "activate" && x.source === source && (!label || (x.label ?? "").includes(label)),
     );
     return act(s, player, { type: "activate", source, ability: a?.type === "activate" ? a.ability : -1, ...extra });
   };
-  /** Lance le sort préparé de la créature (sa copie en exil). */
+  /** Casts the creature's prepared spell (its copy in exile). */
   const castPrepared = (s: S, spellName: string, targets?: Record<string, string[]>) => {
     const copy = exiled(s, spellName)[0];
-    if (!copy) throw new Error(`${spellName} n'est pas en exil`);
+    if (!copy) throw new Error(`${spellName} is not in exile`);
     return act(s, "p1", { type: "cast", card: copy, targets });
   };
 
   describe("Ancestral Anger", () => {
-    it("piétinement et +X/+0, X = 1 plus les Ancestral Anger de votre cimetière ; piochez une carte", () => {
+    it("trample and +X/+0, X = 1 plus the Ancestral Anger in your graveyard; draw a card", () => {
       let s = scenario({
         p1: {
           battlefield: ["Bear Cub", "Mountain", "Mountain"],
@@ -1937,18 +1937,18 @@ describe("Secrets of Strixhaven, lot A — rouge", () => {
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       const [first, second] = idsOf(s, "p1", "hand", "Ancestral Anger") as [string, string];
       s = settle(act(s, "p1", { type: "cast", card: first, targets: { t: [bear] } }));
-      // Deux exemplaires au cimetière pendant la résolution (le sort lui-même est sur la pile) : +3/+0.
+      // Two copies in the graveyard during resolution (the spell itself is on the stack): +3/+0.
       expect(pt(s, bear)).toEqual([5, 2]);
       expect(chars(s, bear).keywords).toContain("trample");
       expect(s.players.p1?.hand).toHaveLength(2);
       s = settle(act(s, "p1", { type: "cast", card: second, targets: { t: [bear] } }));
-      // Trois au cimetière cette fois : +4/+0 de plus.
+      // Three in the graveyard this time: +4/+0 more.
       expect(pt(s, bear)).toEqual([9, 2]);
     });
   });
 
   describe("Archaic's Agony", () => {
-    it("convergence : X blessures (cinq couleurs) ; l'excès exile autant de cartes, jouables jusqu'à la fin de votre prochain tour", () => {
+    it("converge: X damage (five colors); the excess exiles as many cards, playable until the end of your next turn", () => {
       let s = scenario({
         p1: {
           battlefield: ["Plains", "Island", "Swamp", "Mountain", "Forest"],
@@ -1959,7 +1959,7 @@ describe("Secrets of Strixhaven, lot A — rouge", () => {
       });
       s = settle(cast(s, "p1", "Archaic's Agony", { t: [idOf(s, "p2", "battlefield", "Bear Cub")] }));
       expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
-      // 5 blessures à une 2/2 : 3 en excès, trois cartes exilées.
+      // 5 damage to a 2/2: 3 excess, three cards exiled.
       expect(s.players.p1?.library).toHaveLength(1);
       expect(s.exile).toHaveLength(3);
       const forest = exiled(s, "Forest")[0] as string;
@@ -1968,7 +1968,7 @@ describe("Secrets of Strixhaven, lot A — rouge", () => {
       expect(exiled(s, "Forest")).toHaveLength(0);
     });
 
-    it("une seule couleur dépensée : 1 blessure, aucun excès, rien n'est exilé", () => {
+    it("a single color spent: 1 damage, no excess, nothing is exiled", () => {
       let s = scenario({
         p1: { battlefield: lands("Mountain", 5), hand: ["Archaic's Agony"], library: lands("Forest", 4) },
         p2: { battlefield: ["Bear Cub"] },
@@ -1990,20 +1990,20 @@ describe("Secrets of Strixhaven, lot A — rouge", () => {
       return settle(cast(s, "p1", "Artistic Process", targets?.(s), { mode }));
     };
 
-    it("6 blessures à une créature ciblée", () => {
+    it("6 damage to a targeted creature", () => {
       const s = run(0, (x: S) => ({ t: [idOf(x, "p2", "battlefield", "Serra Angel")] }));
       expect(idsOf(s, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
       expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
     });
 
-    it("2 blessures à chaque créature que vous ne contrôlez pas", () => {
+    it("2 damage to each creature you don't control", () => {
       const s = run(1);
       expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
       expect(s.objects[idOf(s, "p2", "battlefield", "Serra Angel")]?.damage).toBe(2);
       expect(s.objects[idOf(s, "p1", "battlefield", "Bear Cub")]?.damage).toBe(0);
     });
 
-    it("un Élémental 3/3 bleu et rouge volant, avec la célérité jusqu'à la fin du tour", () => {
+    it("a 3/3 blue and red flying Elemental, with haste until end of turn", () => {
       let s = run(2);
       const token = idOf(s, "p1", "battlefield", "Elemental");
       const c = chars(s, token);
@@ -2014,8 +2014,8 @@ describe("Secrets of Strixhaven, lot A — rouge", () => {
     });
   });
 
-  describe("Préparation", () => {
-    it("Blazing Firesinger : arrive préparée ; Seething Song ajoute {R}{R}{R}{R}{R}", () => {
+  describe("Prepare", () => {
+    it("Blazing Firesinger: enters prepared; Seething Song adds {R}{R}{R}{R}{R}", () => {
       let s = scenario({ p1: { battlefield: lands("Mountain", 6), hand: ["Blazing Firesinger", "Artistic Process"] } });
       s = settle(cast(s, "p1", "Blazing Firesinger"));
       const singer = idOf(s, "p1", "battlefield", "Blazing Firesinger");
@@ -2023,19 +2023,19 @@ describe("Secrets of Strixhaven, lot A — rouge", () => {
       s = settle(castPrepared(s, "Seething Song"));
       expect(s.players.p1?.manaPool.R).toBe(5);
       expect(s.objects[singer]?.preparedCopy).toBeUndefined();
-      // Le mana sert à lancer un sort à cinq mana sans autre terrain.
+      // The mana is used to cast a five-mana spell with no other land.
       s = settle(cast(s, "p1", "Artistic Process", undefined, { mode: 2 }));
       expect(idsOf(s, "p1", "battlefield", "Elemental")).toHaveLength(1);
     });
 
-    it("Goblin Glasswright : Craft with Pride crée un Trésor", () => {
+    it("Goblin Glasswright: Craft with Pride creates a Treasure", () => {
       let s = scenario({ p1: { battlefield: lands("Mountain", 3), hand: ["Goblin Glasswright"] } });
       s = settle(cast(s, "p1", "Goblin Glasswright"));
       s = settle(castPrepared(s, "Craft with Pride"));
       expect(idsOf(s, "p1", "battlefield", "Treasure")).toHaveLength(1);
     });
 
-    it("Maelstrom Artisan : célérité ; Rocket Volley détruit un terrain non-base, pas un terrain de base", () => {
+    it("Maelstrom Artisan: haste; Rocket Volley destroys a nonbasic land, not a basic land", () => {
       let s = scenario({
         p1: { battlefield: lands("Mountain", 5), hand: ["Maelstrom Artisan"] },
         p2: { battlefield: ["Sundown Pass", "Plains"] },
@@ -2047,7 +2047,7 @@ describe("Secrets of Strixhaven, lot A — rouge", () => {
       expect(idsOf(s, "p2", "graveyard", "Sundown Pass")).toHaveLength(1);
     });
 
-    it("Strife Scholar : garde ; Awaken the Ages crée deux Esprits 2/2 rouges et blancs", () => {
+    it("Strife Scholar: ward; Awaken the Ages creates two 2/2 red and white Spirits", () => {
       let s = scenario({ p1: { battlefield: lands("Mountain", 9), hand: ["Strife Scholar"] } });
       s = settle(cast(s, "p1", "Strife Scholar"));
       expect(chars(s, idOf(s, "p1", "battlefield", "Strife Scholar")).keywords).toContain("ward");
@@ -2058,7 +2058,7 @@ describe("Secrets of Strixhaven, lot A — rouge", () => {
       expect([c.power, c.toughness, [...c.colors].sort()]).toEqual([2, 2, ["R", "W"]]);
     });
 
-    it("Pigment Wrangler : vol ; Striking Palette copie le prochain éphémère ou rituel lancé ce tour-ci", () => {
+    it("Pigment Wrangler: flying; Striking Palette copies the next instant or sorcery cast this turn", () => {
       let s = scenario({
         p1: { battlefield: lands("Mountain", 10), hand: ["Pigment Wrangler", "Lightning Strike", "Lightning Strike"] },
       });
@@ -2066,14 +2066,14 @@ describe("Secrets of Strixhaven, lot A — rouge", () => {
       expect(chars(s, idOf(s, "p1", "battlefield", "Pigment Wrangler")).keywords).toContain("flying");
       s = settle(castPrepared(s, "Striking Palette"));
       s = settle(cast(s, "p1", "Lightning Strike", { t: ["p2"] }));
-      // Le sort et sa copie : 6 blessures.
+      // The spell and its copy: 6 damage.
       expect(s.players.p2?.life).toBe(14);
-      // Une seule fois : le second Lightning Strike n'est pas copié.
+      // Only once: the second Lightning Strike is not copied.
       s = settle(cast(s, "p1", "Lightning Strike", { t: ["p2"] }));
       expect(s.players.p2?.life).toBe(11);
     });
 
-    it("Emeritus of Conflict : initiative ; votre troisième sort du tour la prépare, Lightning Bolt inflige 3 blessures", () => {
+    it("Emeritus of Conflict: first strike; your third spell of the turn prepares it, Lightning Bolt deals 3 damage", () => {
       let s = scenario({
         p1: {
           battlefield: ["Emeritus of Conflict", ...lands("Island", 3), "Mountain"],
@@ -2094,7 +2094,7 @@ describe("Secrets of Strixhaven, lot A — rouge", () => {
   });
 
   describe("Opus", () => {
-    it("Expressive Firedancer : +1/+1 ; cinq mana ou plus : la double initiative aussi", () => {
+    it("Expressive Firedancer: +1/+1; five or more mana: double strike too", () => {
       let s = scenario({
         p1: {
           battlefield: ["Expressive Firedancer", "Island", ...lands("Mountain", 5)],
@@ -2114,7 +2114,7 @@ describe("Secrets of Strixhaven, lot A — rouge", () => {
       expect(chars(s, dancer).keywords).not.toContain("doubleStrike");
     });
 
-    it("Molten-Core Maestro : un marqueur +1/+1 ; cinq mana ou plus : autant de {R} que sa force", () => {
+    it("Molten-Core Maestro: a +1/+1 counter; five or more mana: as much {R} as its power", () => {
       let s = scenario({
         p1: {
           battlefield: ["Molten-Core Maestro", "Island", ...lands("Mountain", 5)],
@@ -2129,11 +2129,11 @@ describe("Secrets of Strixhaven, lot A — rouge", () => {
       expect(s.players.p1?.manaPool.R ?? 0).toBe(0);
       s = settle(cast(s, "p1", "Artistic Process", undefined, { mode: 1 }));
       expect(s.objects[maestro]?.counters["+1/+1"]).toBe(2);
-      // Force 4 après le second marqueur.
+      // Power 4 after the second counter.
       expect(s.players.p1?.manaPool.R).toBe(4);
     });
 
-    it("Tackle Artist : un marqueur +1/+1, deux si cinq mana ou plus ; un sort de créature ne compte pas", () => {
+    it("Tackle Artist: a +1/+1 counter, two if five or more mana; a creature spell doesn't count", () => {
       let s = scenario({
         p1: {
           battlefield: ["Tackle Artist", "Island", "Forest", ...lands("Mountain", 6)],
@@ -2150,7 +2150,7 @@ describe("Secrets of Strixhaven, lot A — rouge", () => {
       expect(s.objects[artist]?.counters["+1/+1"]).toBe(3);
     });
 
-    it("Thunderdrum Soloist : 1 blessure à chaque adversaire, 3 à la place si cinq mana ou plus", () => {
+    it("Thunderdrum Soloist: 1 damage to each opponent, 3 instead if five or more mana", () => {
       let s = scenario({
         players: 3,
         p1: {
@@ -2167,8 +2167,8 @@ describe("Secrets of Strixhaven, lot A — rouge", () => {
     });
   });
 
-  describe("Cartes qui quittent votre cimetière", () => {
-    it("Garrison Excavator : un Esprit 2/2 quand des cartes quittent votre cimetière (flashback de Duel Tactics)", () => {
+  describe("Cards that leave your graveyard", () => {
+    it("Garrison Excavator: a 2/2 Spirit when cards leave your graveyard (Duel Tactics flashback)", () => {
       let s = scenario({
         p1: { battlefield: ["Garrison Excavator", ...lands("Mountain", 2)], graveyard: ["Duel Tactics"] },
         p2: { battlefield: ["Serra Angel"] },
@@ -2180,7 +2180,7 @@ describe("Secrets of Strixhaven, lot A — rouge", () => {
       expect(exiled(s, "Duel Tactics")).toHaveLength(1);
     });
 
-    it("Living History : un Esprit en arrivant ; vous attaquez après qu'une carte a quitté votre cimetière : +2/+0 à un attaquant", () => {
+    it("Living History: a Spirit on entering; you attack after a card left your graveyard: +2/+0 to an attacker", () => {
       const run = (leave: boolean) => {
         let s = scenario({
           p1: {
@@ -2208,7 +2208,7 @@ describe("Secrets of Strixhaven, lot A — rouge", () => {
       expect(run(false)).toEqual([2, 2]);
     });
 
-    it("Zealous Lorecaster : renvoie une carte d'éphémère ou de rituel de votre cimetière en main (pas une créature)", () => {
+    it("Zealous Lorecaster: returns an instant or sorcery card from your graveyard to hand (not a creature)", () => {
       let s = scenario({
         p1: { battlefield: lands("Mountain", 6), hand: ["Zealous Lorecaster"], graveyard: ["Lightning Strike", "Bear Cub"] },
       });
@@ -2225,7 +2225,7 @@ describe("Secrets of Strixhaven, lot A — rouge", () => {
   });
 
   describe("Mica, Reader of Ruins", () => {
-    it("garde ; vous pouvez sacrifier un artefact : si vous le faites, le sort d'éphémère ou de rituel est copié", () => {
+    it("ward; you may sacrifice an artifact: if you do, the instant or sorcery spell is copied", () => {
       const run = (sacrifice: boolean) => {
         let s = scenario({
           p1: {
@@ -2252,7 +2252,7 @@ describe("Secrets of Strixhaven, lot A — rouge", () => {
   });
 
   describe("Rubble Rouser", () => {
-    it("en arrivant, vous pouvez défausser une carte pour en piocher une", () => {
+    it("on entering, you may discard a card to draw one", () => {
       let s = scenario({
         p1: { battlefield: lands("Mountain", 3), hand: ["Rubble Rouser", "Opt"], library: ["Island", "Forest"] },
       });
@@ -2263,7 +2263,7 @@ describe("Secrets of Strixhaven, lot A — rouge", () => {
       expect(s.players.p1?.hand.map((id) => nameOf(s, id))).toEqual(["Island"]);
     });
 
-    it("{T}, exilez une carte de votre cimetière : ajoutez {R}, puis 1 blessure à chaque adversaire", () => {
+    it("{T}, exile a card from your graveyard: add {R}, then 1 damage to each opponent", () => {
       let s = scenario({ p1: { battlefield: ["Rubble Rouser"], graveyard: ["Opt"] } });
       const rouser = idOf(s, "p1", "battlefield", "Rubble Rouser");
       s = activate(s, "p1", rouser, "Exile");
@@ -2273,7 +2273,7 @@ describe("Secrets of Strixhaven, lot A — rouge", () => {
       expect(s.players.p2?.life).toBe(19);
     });
 
-    it("sans carte au cimetière, la capacité ne peut pas être activée", () => {
+    it("with no card in the graveyard, the ability can't be activated", () => {
       const s = scenario({ p1: { battlefield: ["Rubble Rouser"] } });
       const rouser = idOf(s, "p1", "battlefield", "Rubble Rouser");
       expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === rouser)).toBe(false);
@@ -2281,7 +2281,7 @@ describe("Secrets of Strixhaven, lot A — rouge", () => {
   });
 
   describe("Steal the Show", () => {
-    it("le joueur ciblé défausse autant de cartes qu'il veut, puis en pioche autant", () => {
+    it("the targeted player discards as many cards as they want, then draws that many", () => {
       let s = scenario({
         p1: { battlefield: lands("Mountain", 3), hand: ["Steal the Show"] },
         p2: { hand: ["Opt", "Opt", "Bear Cub"], library: lands("Island", 5) },
@@ -2293,7 +2293,7 @@ describe("Secrets of Strixhaven, lot A — rouge", () => {
       expect(s.players.p2?.hand.map((id) => nameOf(s, id)).sort()).toEqual(["Bear Cub", "Island", "Island"]);
     });
 
-    it("blessures égales au nombre de cartes d'éphémère et de rituel de votre cimetière ; les deux modes ensemble", () => {
+    it("damage equal to the number of instant and sorcery cards in your graveyard; both modes together", () => {
       let s = scenario({
         p1: {
           battlefield: lands("Mountain", 3),
@@ -2310,8 +2310,8 @@ describe("Secrets of Strixhaven, lot A — rouge", () => {
     });
   });
 
-  describe("Sorts de blessures", () => {
-    it("Duel Tactics : 1 blessure et la créature ne peut pas bloquer ce tour-ci ; flashback {1}{R}", () => {
+  describe("Damage spells", () => {
+    it("Duel Tactics: 1 damage and the creature can't block this turn; flashback {1}{R}", () => {
       let s = scenario({
         p1: { battlefield: ["Bear Cub", ...lands("Mountain", 3)], hand: ["Duel Tactics"] },
         p2: { battlefield: ["Serra Angel"] },
@@ -2327,7 +2327,7 @@ describe("Secrets of Strixhaven, lot A — rouge", () => {
       expect(exiled(s, "Duel Tactics")).toHaveLength(1);
     });
 
-    it("Heated Argument : 6 blessures ; une carte exilée du cimetière : 2 blessures au contrôleur de la créature", () => {
+    it("Heated Argument: 6 damage; a card exiled from the graveyard: 2 damage to the creature's controller", () => {
       const run = (exile: boolean) => {
         let s = scenario({
           p1: { battlefield: lands("Mountain", 5), hand: ["Heated Argument"], graveyard: ["Opt"] },
@@ -2347,7 +2347,7 @@ describe("Secrets of Strixhaven, lot A — rouge", () => {
       expect(idsOf(no, "p1", "graveyard", "Opt")).toHaveLength(1);
     });
 
-    it("Tome Blast : 2 blessures à n'importe quelle cible ; flashback {4}{R}", () => {
+    it("Tome Blast: 2 damage to any target; flashback {4}{R}", () => {
       let s = scenario({ p1: { battlefield: lands("Mountain", 7), hand: ["Tome Blast"] } });
       s = settle(cast(s, "p1", "Tome Blast", { t: ["p2"] }));
       expect(s.players.p2?.life).toBe(18);
@@ -2357,7 +2357,7 @@ describe("Secrets of Strixhaven, lot A — rouge", () => {
       expect(exiled(s, "Tome Blast")).toHaveLength(1);
     });
 
-    it("Unsubtle Mockery : 4 blessures à une créature, puis surveillance 1", () => {
+    it("Unsubtle Mockery: 4 damage to a creature, then surveil 1", () => {
       let s = scenario({
         p1: { battlefield: lands("Mountain", 3), hand: ["Unsubtle Mockery"], library: ["Island", "Forest"] },
         p2: { battlefield: ["Serra Angel"] },
@@ -2373,7 +2373,7 @@ describe("Secrets of Strixhaven, lot A — rouge", () => {
   });
 
   describe("Charging Strifeknight", () => {
-    it("célérité ; {T}, défaussez une carte : piochez une carte", () => {
+    it("haste; {T}, discard a card: draw a card", () => {
       let s = scenario({ p1: { battlefield: ["Charging Strifeknight"], hand: ["Opt"], library: ["Island"] } });
       const knight = idOf(s, "p1", "battlefield", "Charging Strifeknight");
       expect(chars(s, knight).keywords).toContain("haste");
@@ -2385,7 +2385,7 @@ describe("Secrets of Strixhaven, lot A — rouge", () => {
   });
 
   describe("Improvisation Capstone", () => {
-    it("exile jusqu'à une valeur de mana totale de 4 ou plus ; les sorts exilés se lancent sans payer leur coût", () => {
+    it("exiles up to a total mana value of 4 or more; the exiled spells are cast without paying their cost", () => {
       let s = scenario({
         p1: {
           battlefield: lands("Mountain", 7),
@@ -2394,7 +2394,7 @@ describe("Secrets of Strixhaven, lot A — rouge", () => {
         },
       });
       s = untilCastNow(cast(s, "p1", "Improvisation Capstone"));
-      // Lightning Strike (2) + Forest (0) + Bear Cub (2) = 4 : trois cartes exilées, le terrain n'est pas proposé.
+      // Lightning Strike (2) + Forest (0) + Bear Cub (2) = 4: three cards exiled, the land is not offered.
       expect(s.players.p1?.library).toHaveLength(2);
       const strike = exiled(s, "Lightning Strike")[0] as string;
       const bear = s.exile.find((id) => nameOf(s, id) === "Bear Cub") as string;
@@ -2404,9 +2404,9 @@ describe("Secrets of Strixhaven, lot A — rouge", () => {
       s = settle(s);
       expect(s.players.p2?.life).toBe(17);
       expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
-      // Paradigme : le sort est exilé après sa résolution.
+      // Paradigm: the spell is exiled after it resolves.
       expect(exiled(s, "Improvisation Capstone")).toHaveLength(1);
-      // Mana : seuls les sept terrains ont servi pour la Capstone ; les sorts exilés étaient gratuits.
+      // Mana: only the seven lands were used for the Capstone; the exiled spells were free.
       expect(s.battlefield.filter((id) => s.objects[id]?.tapped)).toHaveLength(7);
     });
   });
@@ -2414,14 +2414,14 @@ describe("Secrets of Strixhaven, lot A — rouge", () => {
 
 describe("Secrets of Strixhaven, lot A — vert", () => {
   /**
-   * Secrets of Strixhaven, lot A — cartes vertes : chaque carte au comportement non trivial est confrontée à son texte
-   * Oracle (plan R, lot R7) : Opus et Increment chiffrés, Fractales, Infusion, préparation (Regrowth, Stream of Life,
-   * Rampant Growth, Bind to Life), convergence, marqueurs d'étourdissement d'arrivée.
+   * Secrets of Strixhaven, lot A - green cards: each card with non-trivial behavior is checked against its Oracle text
+   * (plan R, lot R7): Opus and Increment in numbers, Fractals, Infusion, prepare (Regrowth, Stream of Life,
+   * Rampant Growth, Bind to Life), converge, stun counters on entering.
    */
   type S = GameState;
   const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
 
-  /** Active la capacité de `source` dont le libellé contient `label` (la première si absent). */
+  /** Activates the ability of `source` whose label contains `label` (the first if absent). */
   const activate = (s: S, player: string, source: string, label?: string, targets?: Record<string, string[]>) => {
     const a = legalActions(s, player).find(
       (x) => x.type === "activate" && x.source === source && (!label || (x.label ?? "").includes(label)),
@@ -2430,13 +2430,13 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
   };
   const canActivate = (s: S, player: string, source: string) =>
     legalActions(s, player).some((a) => a.type === "activate" && a.source === source);
-  /** Lance le sort préparé de `creature` (sa copie en exil). */
+  /** Casts the prepared spell of `creature` (its copy in exile). */
   const castPrepared = (s: S, creature: string, targets?: Record<string, string[]>, extra: object = {}) => {
     const copy = s.objects[creature]?.preparedCopy;
-    if (!copy) throw new Error("créature non préparée");
+    if (!copy) throw new Error("creature not prepared");
     return act(s, s.objects[creature]?.controller ?? "p1", { type: "cast", card: copy, targets, ...extra });
   };
-  /** Déclare `attacker` attaquant le joueur p2. */
+  /** Declares `attacker` as attacking player p2. */
   const attackWith = (s: S, name: string) => {
     let cur = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
     const id = idOf(cur, "p1", "battlefield", name);
@@ -2444,7 +2444,7 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
     return cur;
   };
 
-  it("Aberrant Manawurm : piétinement ; chaque éphémère ou rituel lancé lui donne +X/+0, X = mana dépensé", () => {
+  it("Aberrant Manawurm: trample; each instant or sorcery cast gives it +X/+0, X = mana spent", () => {
     let s = scenario({
       p1: { battlefield: ["Aberrant Manawurm", "Island", ...lands("Mountain", 2)], hand: ["Opt", "Lightning Strike"] },
     });
@@ -2458,7 +2458,7 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
     expect(pt(s, wurm)).toEqual([2, 5]);
   });
 
-  it("Additive Evolution : une Fractale 0/0 verte et bleue avec trois marqueurs ; au début du combat, un marqueur et la vigilance", () => {
+  it("Additive Evolution: a green and blue 0/0 Fractal with three counters; at the beginning of combat, a counter and vigilance", () => {
     let s = scenario({ p1: { battlefield: lands("Forest", 5), hand: ["Additive Evolution"] } });
     s = settle(cast(s, "p1", "Additive Evolution"));
     const fractal = idOf(s, "p1", "battlefield", "Fractal");
@@ -2466,17 +2466,17 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
     expect([...chars(s, fractal).colors].sort()).toEqual(["G", "U"]);
     expect(pt(s, fractal)).toEqual([3, 3]);
     expect(chars(s, fractal).keywords).not.toContain("vigilance");
-    // La Fractale vient d'arriver : pas d'attaque, le combat de ce tour passe jusqu'à la seconde phase principale.
+    // The Fractal just entered: no attack, this turn's combat passes through to the second main phase.
     s = advanceUntil(s, (x) => x.turn.step === "main2");
     expect(s.objects[fractal]?.counters["+1/+1"]).toBe(4);
     expect(chars(s, fractal).keywords).toContain("vigilance");
   });
 
   describe("Ambitious Augmenter", () => {
-    it("Increment, puis en mourant avec des marqueurs : une Fractale qui reçoit ses marqueurs", () => {
+    it("Increment, then dying with counters: a Fractal that receives its counters", () => {
       let s = scenario({ p1: { battlefield: ["Ambitious Augmenter", ...lands("Mountain", 2)], hand: ["Lightning Strike"] } });
       const augmenter = idOf(s, "p1", "battlefield", "Ambitious Augmenter");
-      // Lightning Strike : 2 mana > force 1 → un marqueur (résolu avant le sort), puis 3 blessures le tuent.
+      // Lightning Strike: 2 mana > power 1 -> a counter (resolved before the spell), then 3 damage kills it.
       s = settle(cast(s, "p1", "Lightning Strike", { t: [augmenter] }));
       expect(idsOf(s, "p1", "graveyard", "Ambitious Augmenter")).toHaveLength(1);
       const fractal = idOf(s, "p1", "battlefield", "Fractal");
@@ -2484,7 +2484,7 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
       expect(pt(s, fractal)).toEqual([1, 1]);
     });
 
-    it("sans marqueur en mourant : pas de Fractale", () => {
+    it("no counter on dying: no Fractal", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: ["Ambitious Augmenter"] },
@@ -2496,7 +2496,7 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
     });
   });
 
-  it("Burrog Barrage : +1/+0 seulement après un autre éphémère ou rituel, puis blessures égales à sa force", () => {
+  it("Burrog Barrage: +1/+0 only after another instant or sorcery, then damage equal to its power", () => {
     const run = (optFirst: boolean) => {
       let s = scenario({
         p1: { battlefield: ["Bear Cub", "Island", ...lands("Forest", 2)], hand: ["Opt", "Burrog Barrage"] },
@@ -2511,7 +2511,7 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
     expect(run(true)).toBe(3);
   });
 
-  it("Chelonian Tackle : +0/+10, puis elle se bat contre une créature adverse", () => {
+  it("Chelonian Tackle: +0/+10, then it fights an opposing creature", () => {
     let s = scenario({
       p1: { battlefield: ["Bear Cub", ...lands("Forest", 3)], hand: ["Chelonian Tackle"] },
       p2: { battlefield: ["Serra Angel"] },
@@ -2524,7 +2524,7 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
     expect(s.objects[angel]?.damage).toBe(2);
   });
 
-  it("Comforting Counsel : un marqueur de croissance par gain de PV ; à cinq, vos créatures ont +3/+3", () => {
+  it("Comforting Counsel: a growth counter per life gain; at five, your creatures get +3/+3", () => {
     let s = scenario({
       p1: {
         battlefield: ["Comforting Counsel", "Bear Cub", ...lands("Forest", 2)],
@@ -2538,7 +2538,7 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
     s = settle(cast(s, "p1", "Oracle's Restoration", { t: [bear] }));
     expect(s.objects[counsel]?.counters.growth).toBe(1);
     expect(pt(s, bear)).toEqual([3, 3]);
-    // Trois gains de plus (mis en place directement), puis le cinquième par un sort.
+    // Three more gains (set up directly), then the fifth through a spell.
     (s.objects[counsel] as { counters: Record<string, number> }).counters.growth = 4;
     s.version += 1;
     expect(pt(s, bear)).toEqual([3, 3]);
@@ -2548,7 +2548,7 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
     expect(pt(s, theirs)).toEqual([2, 2]);
   });
 
-  it("Efflorescence : deux marqueurs +1/+1 ; Infusion : piétinement et indestructible jusqu'à la fin du tour", () => {
+  it("Efflorescence: two +1/+1 counters; Infusion: trample and indestructible until end of turn", () => {
     const run = (gain: boolean) => {
       let s = scenario({
         p1: { battlefield: ["Bear Cub", ...lands("Forest", 4)], hand: ["Oracle's Restoration", "Efflorescence"] },
@@ -2567,7 +2567,7 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
   });
 
   describe("Emeritus of Abundance", () => {
-    it("vigilance ; arrive préparée : Regrowth renvoie une carte de votre cimetière dans votre main", () => {
+    it("vigilance; enters prepared: Regrowth returns a card from your graveyard to your hand", () => {
       let s = scenario({
         p1: { battlefield: lands("Forest", 5), hand: ["Emeritus of Abundance"], graveyard: ["Serra Angel"] },
       });
@@ -2580,7 +2580,7 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
       expect(s.objects[emeritus]?.preparedCopy).toBeUndefined();
     });
 
-    it("en attaquant avec huit terrains ou plus, elle devient préparée ; avec sept, non", () => {
+    it("on attacking with eight or more lands, it becomes prepared; with seven, no", () => {
       const run = (n: number) => {
         const s = settle(
           attackWith(
@@ -2595,7 +2595,7 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
     });
   });
 
-  it("Emil, Vastlands Roamer : piétinement aux créatures à marqueurs +1/+1 ; Fractale avec X marqueurs (noms de terrains)", () => {
+  it("Emil, Vastlands Roamer: trample for creatures with +1/+1 counters; Fractal with X counters (land names)", () => {
     let s = scenario({
       p1: { battlefield: ["Emil, Vastlands Roamer", ...lands("Forest", 3), "Island", "Swamp"] },
     });
@@ -2603,13 +2603,13 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
     expect(chars(s, emil).keywords).not.toContain("trample");
     s = settle(activate(s, "p1", emil));
     const fractal = idOf(s, "p1", "battlefield", "Fractal");
-    // Forest, Island, Swamp : trois noms différents.
+    // Forest, Island, Swamp: three different names.
     expect(s.objects[fractal]?.counters["+1/+1"]).toBe(3);
     expect(chars(s, fractal).keywords).toContain("trample");
     expect(s.objects[emil]?.tapped).toBe(true);
   });
 
-  it("Environmental Scientist : en arrivant, vous pouvez chercher une carte de terrain de base et la mettre en main", () => {
+  it("Environmental Scientist: on entering, you may search for a basic land card and put it into your hand", () => {
     let s = scenario({
       p1: { battlefield: lands("Forest", 2), hand: ["Environmental Scientist"], library: ["Bear Cub", "Island", "Opt"] },
     });
@@ -2618,7 +2618,7 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
     expect(s.players.p1?.library).toHaveLength(2);
   });
 
-  it("Follow the Lumarets : une créature ou un terrain parmi quatre ; Infusion : jusqu'à deux ; le reste dessous", () => {
+  it("Follow the Lumarets: a creature or land from among four; Infusion: up to two; the rest on the bottom", () => {
     const run = (gain: boolean) => {
       let s = scenario({
         p1: {
@@ -2633,18 +2633,18 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
       s = settle(cast(s, "p1", "Follow the Lumarets"), (req) => {
         if (req.type !== "pick") return undefined;
         max = req.max;
-        // Opt n'est ni une créature ni un terrain.
+        // Opt is neither a creature nor a land.
         expect(req.options.map((id) => nameOf(s, id))).not.toContain("Opt");
         return req.options.slice(0, req.max);
       });
       return { max, gained: (s.players.p1?.hand.length ?? 0) - (before - 1), lib: s.players.p1?.library.length };
     };
     expect(run(false)).toEqual({ max: 1, gained: 1, lib: 5 });
-    // Avec Oracle's Restoration (une carte piochée avant) : deux cartes prises.
+    // With Oracle's Restoration (a card drawn earlier): two cards taken.
     expect(run(true)).toEqual({ max: 2, gained: 2, lib: 3 });
   });
 
-  it("Germination Practicum : deux marqueurs +1/+1 sur chacune de vos créatures ; Paradigme (exilé)", () => {
+  it("Germination Practicum: two +1/+1 counters on each of your creatures; Paradigm (exiled)", () => {
     let s = scenario({
       p1: { battlefield: ["Bear Cub", "Bear Cub", ...lands("Forest", 5)], hand: ["Germination Practicum"] },
       p2: { battlefield: ["Bear Cub"] },
@@ -2656,7 +2656,7 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
   });
 
   describe("Glorious Decay", () => {
-    it("4 blessures à une créature avec le vol (une créature sans le vol n'est pas une cible légale)", () => {
+    it("4 damage to a creature with flying (a creature without flying is not a legal target)", () => {
       let s = scenario({
         p1: { battlefield: lands("Forest", 2), hand: ["Glorious Decay"] },
         p2: { battlefield: ["Serra Angel", "Bear Cub"] },
@@ -2666,7 +2666,7 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
       expect(idsOf(s, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
     });
 
-    it("exile une carte d'un cimetière et vous piochez une carte", () => {
+    it("exiles a card from a graveyard and you draw a card", () => {
       let s = scenario({
         p1: { battlefield: lands("Forest", 2), hand: ["Glorious Decay"] },
         p2: { graveyard: ["Serra Angel"] },
@@ -2677,7 +2677,7 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
     });
   });
 
-  it("Infirmary Healer : arrive préparée ; Stream of Life fait gagner X PV au joueur ciblé", () => {
+  it("Infirmary Healer: enters prepared; Stream of Life makes the targeted player gain X life", () => {
     let s = scenario({ p1: { battlefield: lands("Forest", 6), hand: ["Infirmary Healer"] } });
     s = settle(cast(s, "p1", "Infirmary Healer"));
     const healer = idOf(s, "p1", "battlefield", "Infirmary Healer");
@@ -2686,7 +2686,7 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
     expect(exiled(s, "Stream of Life")).toHaveLength(0);
   });
 
-  it("Lumaret's Favor : +2/+4 ; Infusion : le sort est copié en le lançant", () => {
+  it("Lumaret's Favor: +2/+4; Infusion: the spell is copied when cast", () => {
     const run = (gain: boolean) => {
       let s = scenario({
         p1: { battlefield: ["Bear Cub", ...lands("Forest", 3)], hand: ["Oracle's Restoration", "Lumaret's Favor"] },
@@ -2700,7 +2700,7 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
     expect(run(true)).toEqual([2 + 1 + 4, 2 + 1 + 8]);
   });
 
-  it("Mindful Biomancer : 1 PV en arrivant ; {2}{G} : +2/+2, une seule fois par tour", () => {
+  it("Mindful Biomancer: 1 life on entering; {2}{G}: +2/+2, only once each turn", () => {
     let s = scenario({ p1: { battlefield: lands("Forest", 8), hand: ["Mindful Biomancer"] } });
     s = settle(cast(s, "p1", "Mindful Biomancer"));
     expect(s.players.p1?.life).toBe(21);
@@ -2710,14 +2710,14 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
     expect(canActivate(s, "p1", biomancer)).toBe(false);
   });
 
-  it("Noxious Newt : contact mortel ; {T} : ajoutez {G}", () => {
+  it("Noxious Newt: deathtouch; {T}: add {G}", () => {
     const s = scenario({ p1: { battlefield: ["Noxious Newt"] } });
     const newt = idOf(s, "p1", "battlefield", "Noxious Newt");
     expect(chars(s, newt).keywords).toContain("deathtouch");
     expect(legalActions(s, "p1").some((a) => a.type === "tapForMana" && a.source === newt && a.colors.includes("G"))).toBe(true);
   });
 
-  it("Oracle's Restoration : +1/+1 sur votre créature, vous piochez une carte et gagnez 1 PV", () => {
+  it("Oracle's Restoration: +1/+1 on your creature, you draw a card and gain 1 life", () => {
     let s = scenario({ p1: { battlefield: ["Bear Cub", "Forest"], hand: ["Oracle's Restoration"] } });
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     s = settle(cast(s, "p1", "Oracle's Restoration", { t: [bear] }));
@@ -2726,7 +2726,7 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
     expect(s.players.p1?.life).toBe(21);
   });
 
-  it("Pestbrood Sloth : en mourant, deux Nuisibles 1/1 noirs et verts", () => {
+  it("Pestbrood Sloth: on dying, two 1/1 black and green Pests", () => {
     let s = scenario({
       p1: { battlefield: [{ name: "Pestbrood Sloth", damage: 1 }, ...lands("Mountain", 2)], hand: ["Lightning Strike"] },
     });
@@ -2736,7 +2736,7 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
     expect([...chars(s, pests[0] as string).colors].sort()).toEqual(["B", "G"]);
   });
 
-  it("Planar Engineering : sacrifiez deux terrains, puis quatre terrains de base arrivent engagés", () => {
+  it("Planar Engineering: sacrifice two lands, then four basic lands enter tapped", () => {
     let s = scenario({
       p1: {
         battlefield: lands("Forest", 4),
@@ -2753,14 +2753,14 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
     expect(s.players.p1?.library.map((id) => nameOf(s, id))).toEqual(["Bear Cub"]);
   });
 
-  it("Shopkeeper's Bane : piétinement ; en attaquant, vous gagnez 2 PV", () => {
+  it("Shopkeeper's Bane: trample; on attacking, you gain 2 life", () => {
     let s = scenario({ p1: { battlefield: ["Shopkeeper's Bane"] } });
     expect(chars(s, idOf(s, "p1", "battlefield", "Shopkeeper's Bane")).keywords).toContain("trample");
     s = settle(attackWith(s, "Shopkeeper's Bane"));
     expect(s.players.p1?.life).toBe(22);
   });
 
-  it("Slumbering Trudge : arrive avec 3 − X marqueurs d'étourdissement, engagée si X ≤ 2", () => {
+  it("Slumbering Trudge: enters with 3 - X stun counters, tapped if X <= 2", () => {
     const run = (x: number) => {
       let s = scenario({ p1: { battlefield: lands("Forest", x + 1), hand: ["Slumbering Trudge"] } });
       s = settle(cast(s, "p1", "Slumbering Trudge", undefined, { x }));
@@ -2773,7 +2773,7 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
     expect(run(3)).toEqual([0, false]);
   });
 
-  it("Snarl Song : convergence, deux Fractales avec X marqueurs et X PV (X = couleurs dépensées)", () => {
+  it("Snarl Song: converge, two Fractals with X counters and X life (X = colors spent)", () => {
     let s = scenario({ p1: { battlefield: [...lands("Forest", 5), "Island"], hand: ["Snarl Song"] } });
     s = settle(cast(s, "p1", "Snarl Song"));
     const fractals = idsOf(s, "p1", "battlefield", "Fractal");
@@ -2782,7 +2782,7 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
     expect(s.players.p1?.life).toBe(22);
   });
 
-  it("Studious First-Year : arrive préparée ; Rampant Growth met un terrain de base engagé sur le champ de bataille", () => {
+  it("Studious First-Year: enters prepared; Rampant Growth puts a basic land onto the battlefield tapped", () => {
     let s = scenario({ p1: { battlefield: lands("Forest", 3), hand: ["Studious First-Year"], library: ["Bear Cub", "Island"] } });
     s = settle(cast(s, "p1", "Studious First-Year"));
     const student = idOf(s, "p1", "battlefield", "Studious First-Year");
@@ -2793,7 +2793,7 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
   });
 
   describe("Tenured Concocter", () => {
-    it("ciblée par un sort adverse : vous pouvez piocher une carte", () => {
+    it("targeted by an opposing spell: you may draw a card", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: ["Tenured Concocter"] },
@@ -2808,20 +2808,20 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
       expect(s.objects[concocter]?.damage).toBe(3);
     });
 
-    it("Infusion : +2/+0 tant que vous avez gagné des PV ce tour-ci ; vos propres sorts ne font pas piocher", () => {
+    it("Infusion: +2/+0 as long as you gained life this turn; your own spells don't make you draw", () => {
       let s = scenario({ p1: { battlefield: ["Tenured Concocter", "Forest"], hand: ["Oracle's Restoration"] } });
       const concocter = idOf(s, "p1", "battlefield", "Tenured Concocter");
       expect(pt(s, concocter)).toEqual([4, 5]);
       s = settle(cast(s, "p1", "Oracle's Restoration", { t: [concocter] }));
       expect(pt(s, concocter)).toEqual([7, 6]);
-      // Seule la pioche de Restoration.
+      // Only Restoration's draw.
       expect(s.players.p1?.hand).toHaveLength(1);
       s = advanceUntil(s, (x) => x.turn.active === "p2");
       expect(pt(s, concocter)).toEqual([4, 5]);
     });
   });
 
-  it("Thornfist Striker : garde {1} ; Infusion : vos créatures ont +1/+0 et le piétinement", () => {
+  it("Thornfist Striker: ward {1}; Infusion: your creatures get +1/+0 and trample", () => {
     let s = scenario({
       p1: { battlefield: ["Thornfist Striker", "Bear Cub", "Forest"], hand: ["Oracle's Restoration"] },
       p2: { battlefield: ["Bear Cub"] },
@@ -2837,21 +2837,21 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
     expect(pt(s, idOf(s, "p2", "battlefield", "Bear Cub"))).toEqual([2, 2]);
   });
 
-  it("Topiary Lecturer : Increment ; {T} : autant de {G} que sa force", () => {
+  it("Topiary Lecturer: Increment; {T}: as much {G} as its power", () => {
     let s = scenario({ p1: { battlefield: ["Topiary Lecturer", ...lands("Forest", 2)], hand: ["Bear Cub", "Bear Cub"] } });
     const lecturer = idOf(s, "p1", "battlefield", "Topiary Lecturer");
     const [a, b] = idsOf(s, "p1", "hand", "Bear Cub");
-    // 2 mana > force 1 : un marqueur.
+    // 2 mana > power 1: a counter.
     s = settle(act(s, "p1", { type: "cast", card: a as string }));
     expect(pt(s, lecturer)).toEqual([2, 3]);
-    // Forêts engagées : le Professeur produit {G}{G} à lui seul ; 2 mana n'excède ni sa force ni son endurance.
+    // Tapped Forests: the Professor produces {G}{G} on its own; 2 mana exceeds neither its power nor its toughness.
     s = settle(act(s, "p1", { type: "cast", card: b as string }));
     expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(2);
     expect(s.objects[lecturer]?.tapped).toBe(true);
     expect(pt(s, lecturer)).toEqual([2, 3]);
   });
 
-  it("Vastlands Scavenger : contact mortel ; Bind to Life meule sept cartes et une créature meulée arrive", () => {
+  it("Vastlands Scavenger: deathtouch; Bind to Life mills seven cards and a milled creature enters", () => {
     let s = scenario({
       p1: {
         battlefield: lands("Forest", 8),
@@ -2864,12 +2864,12 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
     expect(chars(s, scavenger).keywords).toContain("deathtouch");
     s = settle(castPrepared(s, scavenger));
     expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
-    // Sept cartes meulées, dont l'Ange reparti sur le champ de bataille.
+    // Seven cards milled, including the Angel put back onto the battlefield.
     expect(s.players.p1?.graveyard).toHaveLength(6);
     expect(s.players.p1?.library.map((id) => nameOf(s, id))).toEqual(["Bear Cub"]);
   });
 
-  it("Wild Hypothesis : une Fractale avec X marqueurs, puis surveillance 2", () => {
+  it("Wild Hypothesis: a Fractal with X counters, then surveil 2", () => {
     let s = scenario({
       p1: { battlefield: lands("Forest", 3), hand: ["Wild Hypothesis"], library: ["Opt", "Island", "Bear Cub"] },
     });
@@ -2884,7 +2884,7 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
     expect(s.players.p1?.library.map((id) => nameOf(s, id))).toEqual(["Bear Cub"]);
   });
 
-  it("Zimone's Experiment : jusqu'à deux créatures ou terrains parmi cinq : terrains engagés en jeu, créatures en main", () => {
+  it("Zimone's Experiment: up to two creatures or lands from among five: lands tapped onto the battlefield, creatures to hand", () => {
     let s = scenario({
       p1: {
         battlefield: lands("Forest", 4),
@@ -2903,7 +2903,7 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
     expect([...lib.slice(1)].sort()).toEqual(["Lightning Strike", "Opt", "Serra Angel"]);
   });
 
-  it("Zimone's Experiment : le terrain révélé va de la bibliothèque au champ de bataille, sans passer par la main (PLAN-H, H2)", () => {
+  it("Zimone's Experiment: the revealed land goes from the library to the battlefield, without passing through the hand (PLAN-H, H2)", () => {
     let s = scenario({
       p1: {
         battlefield: lands("Forest", 4),
@@ -2916,7 +2916,7 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
     );
     expect(idsOf(s, "p1", "battlefield", "Island")).toHaveLength(1);
     expect(idsOf(s, "p1", "battlefield", "Swamp")).toHaveLength(1);
-    // Aucune carte de terrain n'est entrée dans la main ; les deux arrivent depuis la bibliothèque.
+    // No land card entered the hand; both arrive from the library.
     const moves = s.turnLog.filter((e) => e.e === "zone" && e.types.includes("Land"));
     expect(moves.some((e) => e.e === "zone" && e.to === "hand")).toBe(false);
     expect(moves.filter((e) => e.e === "zone" && e.from === "library" && e.to === "battlefield")).toHaveLength(2);
@@ -2926,9 +2926,9 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
 
 describe("Secrets of Strixhaven, lot A — multicolores", () => {
   /**
-   * Secrets of Strixhaven, lot A : cartes multicolores confrontées à leur texte Oracle (plan R, lot R7). Préparation
-   * (Abigale, Kirol, Lluwen, Sanar, Tam), Repartee, Opus, Increment, Infusion, cartes qui quittent le cimetière,
-   * charmes des collèges et légendaires.
+   * Secrets of Strixhaven, lot A: multicolored cards checked against their Oracle text (plan R, lot R7). Prepare
+   * (Abigale, Kirol, Lluwen, Sanar, Tam), Repartee, Opus, Increment, Infusion, cards that leave the graveyard,
+   * college charms and legends.
    */
   type S = GameState;
   const castOptions = (s: S, player: string, card: string) =>
@@ -2936,7 +2936,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
   const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
   const counters = (s: S, id: string, kind = "+1/+1") => s.objects[id]?.counters[kind] ?? 0;
 
-  /** Réponse : choisir ces objets quand ils sont proposés ; « oui » aux questions. */
+  /** Answer: choose these objects when offered; "yes" to questions. */
   const pickIds =
     (...ids: string[]): Answer =>
     (req) => {
@@ -2945,7 +2945,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       const hit = ids.filter((id) => req.options.includes(id));
       return hit.length ? hit.slice(0, req.max) : undefined;
     };
-  /** Active la capacité de `source` dont le libellé contient `label` (la première si absent). */
+  /** Activates the ability of `source` whose label contains `label` (the first if absent). */
   const activate = (
     s: S,
     player: string,
@@ -2959,7 +2959,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
     );
     return act(s, player, { type: "activate", source, ability: a?.type === "activate" ? a.ability : -1, targets, ...extra });
   };
-  /** Passe la priorité jusqu'à la première phase principale (déclenchements résolus). */
+  /** Passes priority until the first main phase (triggers resolved). */
   const passUntilMain = (s: S): S => {
     let cur = s;
     for (let i = 0; i < 20 && !(cur.turn.step === "main1" && cur.stack.length === 0 && cur.triggers.length === 0); i++) {
@@ -2970,14 +2970,14 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
     }
     return cur;
   };
-  /** Enchantement (non-Aura) sans capacité. */
-  const ENCHANTMENT = customCard({ name: "Enchantement d'essai", types: ["Enchantment"], typeLine: "Enchantment" });
+  /** Enchantment (non-Aura) with no ability. */
+  const ENCHANTMENT = customCard({ name: "Test Enchantment", types: ["Enchantment"], typeLine: "Enchantment" });
   const canActivate = (s: S, player: string, source: string) =>
     legalActions(s, player).some((x) => x.type === "activate" && x.source === source);
-  /** Rituel incolore de coût {N} : « piochez une carte » n'est pas nécessaire ici, il ne fait rien. */
+  /** Colorless sorcery with cost {N}: "draw a card" is not needed here, it does nothing. */
   const sorcery = (n: number): CardDef =>
     customCard({
-      name: `Rituel à ${n}`,
+      name: `Sorcery costing ${n}`,
       types: ["Sorcery"],
       typeLine: "Sorcery",
       manaCost: { generic: n, colored: {}, x: 0 },
@@ -2985,8 +2985,8 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       spell: { modes: [{ targets: [], effects: [] }] },
     });
 
-  describe("Silverquill (blanc et noir)", () => {
-    it("Abigale : un sort de créature la rend préparée ; Heroic Stanza met un marqueur +1/+1 sur une créature", () => {
+  describe("Silverquill (white and black)", () => {
+    it("Abigale: a creature spell makes it prepared; Heroic Stanza puts a +1/+1 counter on a creature", () => {
       let s = scenario({
         p1: { battlefield: ["Abigale, Poet Laureate", "Plains", "Swamp", ...lands("Forest", 2)], hand: ["Bear Cub"] },
       });
@@ -3003,7 +3003,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(s.objects[abigale]?.preparedCopy).toBeUndefined();
     });
 
-    it("Conciliator's Duelist : en arrivant, piochez et chaque joueur perd 1 PV ; Repartee exile une créature jusqu'à l'étape de fin", () => {
+    it("Conciliator's Duelist: on entering, draw and each player loses 1 life; Repartee exiles a creature until the end step", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Plains", 2), ...lands("Swamp", 2), ...lands("Mountain", 2)],
@@ -3025,7 +3025,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(exiled(s, "Bear Cub")).toHaveLength(0);
     });
 
-    it("Fix What's Broken : payez X PV ; chaque carte d'artefact et de créature de VM X revient de votre cimetière", () => {
+    it("Fix What's Broken: pay X life; each artifact and creature card with MV X returns from your graveyard", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Plains", 2), ...lands("Swamp", 2)],
@@ -3042,7 +3042,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(idsOf(s, "p1", "graveyard", "Opt")).toHaveLength(1);
     });
 
-    it("Inkling Mascot : Repartee — vol jusqu'à la fin du tour et surveillance 1", () => {
+    it("Inkling Mascot: Repartee - flying until end of turn and surveil 1", () => {
       let s = scenario({
         p1: { battlefield: ["Inkling Mascot", ...lands("Mountain", 2)], hand: ["Lightning Strike"], library: lands("Island", 3) },
         p2: { battlefield: ["Serra Angel"] },
@@ -3053,13 +3053,13 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
         req.type === "pick" ? req.options.slice(0, 1) : undefined,
       );
       expect(chars(s, mascot).keywords).toContain("flying");
-      // Surveillance 1 : la carte du dessus va au cimetière.
+      // Surveil 1: the top card goes to the graveyard.
       expect(idsOf(s, "p1", "graveyard", "Island")).toHaveLength(1);
       s = advanceUntil(s, (x) => x.turn.active === "p2");
       expect(chars(s, mascot).keywords).not.toContain("flying");
     });
 
-    it("Killian's Confidence : +1/+1 et piochez ; depuis le cimetière, des blessures de combat à un joueur permettent de payer {W/B} pour la reprendre", () => {
+    it("Killian's Confidence: +1/+1 and draw; from the graveyard, combat damage to a player lets you pay {W/B} to return it", () => {
       let s = scenario({
         p1: {
           battlefield: ["Bear Cub", "Plains", "Swamp", "Plains"],
@@ -3081,7 +3081,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(idsOf(s, "p1", "hand", "Killian's Confidence")).toHaveLength(1);
     });
 
-    it("Moment of Reckoning : le même mode peut être choisi plusieurs fois (deux destructions et un retour)", () => {
+    it("Moment of Reckoning: the same mode can be chosen several times (two destructions and a return)", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Plains", 3), ...lands("Swamp", 4)],
@@ -3094,7 +3094,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       const modes = castOptions(s, "p1", card);
       const first = modes[0];
       expect(first?.type === "cast" && first.modes.length).toBe(14);
-      // Modes générés : deux destructions et un retour (index 9).
+      // Generated modes: two destructions and a return (index 9).
       const bear = idOf(s, "p2", "battlefield", "Bear Cub");
       const boots = idOf(s, "p2", "battlefield", "Swiftfoot Boots");
       const angel = idOf(s, "p1", "graveyard", "Serra Angel");
@@ -3102,7 +3102,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
       expect(idsOf(s, "p2", "graveyard", "Swiftfoot Boots")).toHaveLength(1);
       expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
-      // Un terrain n'est pas un permanent non-terrain.
+      // A land is not a nonland permanent.
       const t = scenario({
         p1: { battlefield: lands("Swamp", 7), hand: ["Moment of Reckoning"] },
         p2: { battlefield: ["Forest"] },
@@ -3111,7 +3111,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(() => cast(t, "p1", "Moment of Reckoning", { d0: [forest] }, { mode: 4 })).toThrow();
     });
 
-    it("Render Speechless : vous choisissez une carte non-terrain de la main adverse ; deux marqueurs +1/+1 sur jusqu'à une créature", () => {
+    it("Render Speechless: you choose a nonland card from the opponent's hand; two +1/+1 counters on up to one creature", () => {
       let s = scenario({
         p1: { battlefield: ["Bear Cub", ...lands("Plains", 2), ...lands("Swamp", 2)], hand: ["Render Speechless"] },
         p2: { hand: ["Forest", "Opt", "Serra Angel"] },
@@ -3132,7 +3132,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(counters(s, bear)).toBe(2);
     });
 
-    it("Scolding Administrator : Repartee, un marqueur +1/+1 ; en mourant, ses marqueurs vont sur jusqu'à une créature ciblée", () => {
+    it("Scolding Administrator: Repartee, a +1/+1 counter; on dying, its counters go on up to one targeted creature", () => {
       let s = scenario({
         p1: {
           battlefield: ["Scolding Administrator", "Bear Cub", "Serra Angel", ...lands("Mountain", 4)],
@@ -3147,13 +3147,13 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       s = settle(act(s, "p1", { type: "cast", card: a as string, targets: { t: [bear] } }));
       expect(counters(s, admin)).toBe(1);
       expect(pt(s, admin)).toEqual([3, 3]);
-      // Une blessure déjà marquée : le second Strike (après un deuxième marqueur, 4/4) la tue.
+      // Damage already marked: the second Strike (after a second counter, 4/4) kills it.
       (s.objects[admin] as { damage: number }).damage = 1;
       s = settle(act(s, "p1", { type: "cast", card: b as string, targets: { t: [admin] } }), pickIds(angel));
       expect(idsOf(s, "p1", "graveyard", "Scolding Administrator")).toHaveLength(1);
       expect(counters(s, angel)).toBe(2);
 
-      // « si elle avait des marqueurs » : sans marqueur, la capacité ne se déclenche pas (aucune cible demandée).
+      // "if it had counters": with no counter, the ability doesn't trigger (no target asked).
       let t = scenario({ p1: { battlefield: ["Scolding Administrator", "Bear Cub"] } });
       destroy(t, idOf(t, "p1", "battlefield", "Scolding Administrator"));
       expect(t.triggers).toHaveLength(0);
@@ -3166,7 +3166,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(t.stack).toHaveLength(0);
     });
 
-    it("Silverquill Charm : exile une créature de force 2 ou moins (pas 3) ; ou drain de 3", () => {
+    it("Silverquill Charm: exiles a creature with power 2 or less (not 3); or drain 3", () => {
       let s = scenario({
         p1: { battlefield: ["Plains", "Swamp", "Plains", "Swamp"], hand: ["Silverquill Charm", "Silverquill Charm"] },
         p2: { battlefield: ["Bear Cub", "Serra Angel"] },
@@ -3182,7 +3182,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect([s.players.p1?.life, s.players.p2?.life]).toEqual([23, 17]);
     });
 
-    it("Silverquill, the Disputant : sacrifier une créature de force 1 ou plus copie l'éphémère lancé", () => {
+    it("Silverquill, the Disputant: sacrificing a creature with power 1 or more copies the cast instant", () => {
       let s = scenario({
         p1: { battlefield: ["Silverquill, the Disputant", "Bear Cub", ...lands("Mountain", 2)], hand: ["Lightning Strike"] },
       });
@@ -3192,7 +3192,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(s.players.p2?.life).toBe(14);
     });
 
-    it("Snooping Page : Repartee la rend imblocable ce tour-ci ; blessures de combat à un joueur : piochez, perdez 1 PV", () => {
+    it("Snooping Page: Repartee makes it unblockable this turn; combat damage to a player: draw, lose 1 life", () => {
       let s = scenario({
         p1: { battlefield: ["Snooping Page", ...lands("Mountain", 2)], hand: ["Lightning Strike"], library: lands("Island", 3) },
         p2: { battlefield: ["Serra Angel", "Bear Cub"] },
@@ -3202,7 +3202,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(chars(s, page).keywords).toContain("unblockable");
       s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
       s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: page, defender: "p2" }] });
-      // L'Ange ne peut pas la bloquer : l'étape des bloqueurs ne demande rien.
+      // The Angel can't block it: the declare blockers step asks nothing.
       s = advanceUntil(s, (x) => x.pending?.kind === "declareBlockers" || x.turn.step === "end");
       expect(s.turn.step).toBe("end");
       expect(s.players.p2?.life).toBe(18);
@@ -3210,7 +3210,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(s.players.p1?.hand).toHaveLength(1);
     });
 
-    it("Social Snub : lancé en contrôlant une créature, il peut être copié ; chaque joueur sacrifie une créature, drain de 1 (deux fois)", () => {
+    it("Social Snub: cast while controlling a creature, it can be copied; each player sacrifices a creature, drain 1 (twice)", () => {
       let s = scenario({
         p1: { battlefield: ["Bear Cub", "Llanowar Elves", ...lands("Plains", 2), "Swamp"], hand: ["Social Snub"] },
         p2: { battlefield: ["Serra Angel", "Bear Cub"] },
@@ -3218,7 +3218,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       s = settle(cast(s, "p1", "Social Snub"), (req) => (req.type === "yesNo" ? [1] : undefined));
       expect(s.battlefield.filter((id) => chars(s, id).types.includes("Creature"))).toHaveLength(0);
       expect([s.players.p1?.life, s.players.p2?.life]).toEqual([22, 18]);
-      // Sans créature : pas de copie.
+      // With no creature: no copy.
       let t = scenario({
         p1: { battlefield: [...lands("Plains", 2), "Swamp"], hand: ["Social Snub"] },
         p2: { battlefield: ["Serra Angel", "Bear Cub"] },
@@ -3228,13 +3228,13 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(t.battlefield.filter((id) => chars(t, id).types.includes("Creature"))).toHaveLength(1);
     });
 
-    it("Social Snub : « en contrôlant une créature » se vérifie au déclenchement ; la créature partie ensuite, la copie reste possible (PLAN-D, D5)", () => {
+    it('Social Snub: "while controlling a creature" is checked on trigger; the creature gone afterwards, the copy is still possible (PLAN-D, D5)', () => {
       let s = scenario({
         p1: { battlefield: ["Bear Cub", ...lands("Plains", 2), "Swamp"], hand: ["Social Snub"] },
         p2: { battlefield: ["Serra Angel", "Bear Cub"] },
       });
       s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Social Snub") });
-      // Le déclencheur attend sur la pile ; la créature quitte le champ de bataille en réponse.
+      // The trigger waits on the stack; the creature leaves the battlefield in response.
       destroy(s, idOf(s, "p1", "battlefield", "Bear Cub"));
       let asked = false;
       s = settle(s, (req) => {
@@ -3249,8 +3249,8 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
     });
   });
 
-  describe("Lorehold (rouge et blanc)", () => {
-    it("Ark of Hunger : {T} meule une carte jouable ce tour-ci ; quand elle quitte le cimetière, 1 blessure à chaque adversaire et +1 PV", () => {
+  describe("Lorehold (red and white)", () => {
+    it("Ark of Hunger: {T} mills a card playable this turn; when it leaves the graveyard, 1 damage to each opponent and +1 life", () => {
       let s = scenario({
         p1: { battlefield: ["Ark of Hunger", ...lands("Mountain", 2)], library: ["Lightning Strike", "Forest"] },
       });
@@ -3262,7 +3262,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect([s.players.p1?.life, s.players.p2?.life]).toEqual([21, 16]);
     });
 
-    it("Aziza : engager trois créatures copie l'éphémère lancé ; sans trois créatures dégagées, pas de copie", () => {
+    it("Aziza: tapping three creatures copies the cast instant; without three untapped creatures, no copy", () => {
       const run = (creatures: string[]) => {
         let s = scenario({
           p1: { battlefield: ["Aziza, Mage Tower Captain", ...creatures, ...lands("Mountain", 2)], hand: ["Lightning Strike"] },
@@ -3276,7 +3276,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(run(["Bear Cub"]).players.p2?.life).toBe(17);
     });
 
-    it("Borrowed Knowledge : défaussez votre main, puis piochez autant que la main adverse, ou autant que de cartes défaussées", () => {
+    it("Borrowed Knowledge: discard your hand, then draw as many as the opponent's hand, or as many as cards discarded", () => {
       const setup = () =>
         scenario({
           p1: {
@@ -3295,7 +3295,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(s.players.p1?.library).toHaveLength(4);
     });
 
-    it("Colossus of the Blood Age : en arrivant, 3 blessures à chaque adversaire et +3 PV ; en mourant, défaussez autant que voulu et piochez autant plus une", () => {
+    it("Colossus of the Blood Age: on entering, 3 damage to each opponent and +3 life; on dying, discard as many as you want and draw that many plus one", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Mountain", 4), ...lands("Plains", 2), "Swamp", ...lands("Forest", 2)],
@@ -3307,7 +3307,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect([s.players.p1?.life, s.players.p2?.life]).toEqual([23, 17]);
       const colossus = idOf(s, "p1", "battlefield", "Colossus of the Blood Age");
       const opts = idsOf(s, "p1", "hand", "Opt");
-      // Grapple with Death détruit le Colosse (et fait gagner 1 PV) ; deux cartes défaussées, trois piochées.
+      // Grapple with Death destroys the Colossus (and gains 1 life); two cards discarded, three drawn.
       s = settle(cast(s, "p1", "Grapple with Death", { t: [colossus] }), pickIds(...opts));
       expect(s.players.p1?.life).toBe(24);
       expect(idsOf(s, "p1", "graveyard", "Colossus of the Blood Age")).toHaveLength(1);
@@ -3315,7 +3315,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(s.players.p1?.hand).toHaveLength(3);
     });
 
-    it("Kirol et Spirit Mascot : une carte quitte votre cimetière — Kirol devient préparé, le Mascotte prend un marqueur ; Pack a Punch", () => {
+    it("Kirol and Spirit Mascot: a card leaves your graveyard - Kirol becomes prepared, the Mascot gets a counter; Pack a Punch", () => {
       let s = scenario({
         p1: {
           battlefield: ["Kirol, History Buff", "Spirit Mascot", "Bear Cub", "Swamp", "Forest", "Mountain", "Plains", "Plains"],
@@ -3340,7 +3340,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(s.objects[kirol]?.preparedCopy).toBeUndefined();
     });
 
-    it("Lorehold Charm : sacrifice d'un artefact non-jeton adverse ; retour d'un artefact ou d'une créature de VM 2 ou moins ; +1/+1 et piétinement", () => {
+    it("Lorehold Charm: sacrifice of an opposing nontoken artifact; return of an artifact or creature with MV 2 or less; +1/+1 and trample", () => {
       let s = scenario({
         p1: {
           battlefield: ["Bear Cub", ...lands("Mountain", 3), ...lands("Plains", 3)],
@@ -3370,7 +3370,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(pt(s, idOf(s, "p2", "battlefield", "Bear Cub"))).toEqual([2, 2]);
     });
 
-    it("Practiced Scrollsmith : exile une carte non-créature et non-terrain de votre cimetière, lançable jusqu'à la fin de votre prochain tour", () => {
+    it("Practiced Scrollsmith: exiles a noncreature, nonland card from your graveyard, castable until the end of your next turn", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Mountain", 2), ...lands("Plains", 1), "Island"],
@@ -3387,7 +3387,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(idsOf(s, "p1", "graveyard", "Bear Cub")).toHaveLength(1);
       const opt = exiled(s, "Opt")[0] as string;
       expect(opt).toBeDefined();
-      // Toujours lançable au tour adverse suivant (jusqu'à la fin de votre prochain tour).
+      // Still castable on the opponent's next turn (until the end of your next turn).
       s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "upkeep" && x.pending?.kind === "priority");
       s = act(s, "p2", { type: "pass" });
       expect(castOptions(s, "p1", opt)).not.toHaveLength(0);
@@ -3395,7 +3395,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(s.players.p1?.hand).toHaveLength(1);
     });
 
-    it("Pursue the Past : +2 PV, défausser une carte pour en piocher deux ; flashback {2}{R}{W}", () => {
+    it("Pursue the Past: +2 life, discard a card to draw two; flashback {2}{R}{W}", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Mountain", 3), ...lands("Plains", 3)],
@@ -3409,14 +3409,14 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(idsOf(s, "p1", "graveyard", "Opt")).toHaveLength(1);
       expect(s.players.p1?.hand).toHaveLength(2);
       const card = idOf(s, "p1", "graveyard", "Pursue the Past");
-      // Flashback, sans défausser : seulement les PV.
+      // Flashback, without discarding: only the life.
       s = settle(act(s, "p1", { type: "cast", card }), (req) => (req.type === "pick" && req.min === 0 ? [] : undefined));
       expect(s.players.p1?.life).toBe(24);
       expect(s.players.p1?.hand).toHaveLength(2);
       expect(exiled(s, "Pursue the Past")).toHaveLength(1);
     });
 
-    it("Startled Relic Sloth : au début de votre combat, exile jusqu'à une carte d'un cimetière", () => {
+    it("Startled Relic Sloth: at the beginning of your combat, exiles up to one card from a graveyard", () => {
       let s = scenario({ p1: { battlefield: ["Startled Relic Sloth"] }, p2: { graveyard: ["Opt"] } });
       const sloth = idOf(s, "p1", "battlefield", "Startled Relic Sloth");
       expect(chars(s, sloth).keywords).toEqual(expect.arrayContaining(["trample", "lifelink"]));
@@ -3428,19 +3428,19 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(exiled(s, "Opt")).toHaveLength(1);
     });
 
-    it("Wilt in the Heat : coûte {2} de moins si une carte a quitté votre cimetière ce tour-ci ; la créature est exilée au lieu de mourir", () => {
+    it("Wilt in the Heat: costs {2} less if a card left your graveyard this turn; the creature is exiled instead of dying", () => {
       let s = scenario({
         p1: { battlefield: ["Mountain", "Plains", "Swamp", "Forest"], hand: ["Wilt in the Heat"], graveyard: ["Teacher's Pest"] },
         p2: { battlefield: ["Serra Angel"] },
       });
       const wilt = idOf(s, "p1", "hand", "Wilt in the Heat");
-      // {2}{R}{W} : quatre terrains suffisent, mais on garde Marais et Forêt pour Teacher's Pest.
+      // {2}{R}{W}: four lands suffice, but keep Swamp and Forest for Teacher's Pest.
       s = settle(activate(s, "p1", idOf(s, "p1", "graveyard", "Teacher's Pest")));
       expect(castOptions(s, "p1", wilt)).not.toHaveLength(0);
       s = settle(act(s, "p1", { type: "cast", card: wilt, targets: { t: [idOf(s, "p2", "battlefield", "Serra Angel")] } }));
       expect(exiled(s, "Serra Angel")).toHaveLength(1);
       expect(s.players.p2?.graveyard).toHaveLength(0);
-      // Sans carte sortie du cimetière : {2}{R}{W} avec deux terrains, impossible.
+      // Without a card having left the graveyard: {2}{R}{W} with two lands, impossible.
       const t = scenario({
         p1: { battlefield: ["Mountain", "Plains"], hand: ["Wilt in the Heat"] },
         p2: { battlefield: ["Serra Angel"] },
@@ -3449,8 +3449,8 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
     });
   });
 
-  describe("Prismari (bleu et rouge)", () => {
-    it("Abstract Paintmage : au début de votre première phase principale, {U}{R} réservés aux éphémères et rituels", () => {
+  describe("Prismari (blue and red)", () => {
+    it("Abstract Paintmage: at the beginning of your first main phase, {U}{R} reserved for instants and sorceries", () => {
       let s = scenario({
         step: "draw",
         p1: { battlefield: ["Abstract Paintmage"], hand: ["Lightning Strike", "Fanatical Firebrand"] },
@@ -3463,7 +3463,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(s.players.p2?.life).toBe(17);
     });
 
-    it("Elemental Mascot : Opus +1/+0 ; cinq mana ou plus, la carte du dessus est exilée et jouable", () => {
+    it("Elemental Mascot: Opus +1/+0; five or more mana, the top card is exiled and playable", () => {
       let s = scenario({
         p1: {
           battlefield: ["Elemental Mascot", ...lands("Island", 4), ...lands("Mountain", 4)],
@@ -3476,7 +3476,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       s = settle(cast(s, "p1", "Opt"));
       expect(pt(s, mascot)).toEqual([2, 4]);
       expect(exiled(s, "Lightning Strike")).toHaveLength(0);
-      s = settle(cast(s, "p1", "Rituel à 5"));
+      s = settle(cast(s, "p1", "Sorcery costing 5"));
       expect(pt(s, mascot)).toEqual([3, 4]);
       const strike = exiled(s, "Lightning Strike")[0] as string;
       expect(strike).toBeDefined();
@@ -3484,7 +3484,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(s.players.p2?.life).toBe(17);
     });
 
-    it("Prismari, the Inspiration : les éphémères et rituels ont la tempête (une copie par sort lancé avant ce tour-ci)", () => {
+    it("Prismari, the Inspiration: instants and sorceries have storm (one copy per spell cast before this turn)", () => {
       let s = scenario({
         p1: { battlefield: ["Prismari, the Inspiration", "Island", ...lands("Mountain", 2)], hand: ["Opt", "Lightning Strike"] },
       });
@@ -3496,7 +3496,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(s.players.p2?.life).toBe(14);
     });
 
-    it("Rapturous Moment : piochez trois cartes, défaussez-en deux, ajoutez {U}{U}{R}{R}{R}", () => {
+    it("Rapturous Moment: draw three cards, discard two, add {U}{U}{R}{R}{R}", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Island", 3), ...lands("Mountain", 3)],
@@ -3510,7 +3510,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(s.players.p1?.manaPool).toMatchObject({ U: 2, R: 3 });
     });
 
-    it("Resonating Lute : vos terrains produisent deux mana d'une couleur pour les éphémères et rituels ; {T} : piochez avec sept cartes en main", () => {
+    it("Resonating Lute: your lands produce two mana of one color for instants and sorceries; {T}: draw with seven cards in hand", () => {
       let s = scenario({
         p1: {
           battlefield: ["Resonating Lute", "Island"],
@@ -3528,7 +3528,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(u.players.p1?.hand).toHaveLength(8);
     });
 
-    it("Sanar : arrive préparé (Wild Idea cherche un éphémère ou un rituel) ; {T} : un Trésor si vous avez lancé un éphémère ou un rituel", () => {
+    it("Sanar: enters prepared (Wild Idea searches for an instant or sorcery); {T}: a Treasure if you cast an instant or sorcery", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Island", 4), ...lands("Mountain", 3)],
@@ -3549,17 +3549,17 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(idsOf(s, "p1", "hand", "Lightning Strike")).toHaveLength(1);
     });
 
-    it("Spectacular Skywhale : Opus +3/+0 ; cinq mana ou plus, trois marqueurs +1/+1 à la place", () => {
+    it("Spectacular Skywhale: Opus +3/+0; five or more mana, three +1/+1 counters instead", () => {
       let s = scenario({ p1: { battlefield: ["Spectacular Skywhale", ...lands("Island", 6)], hand: ["Opt", sorcery(5)] } });
       const whale = idOf(s, "p1", "battlefield", "Spectacular Skywhale");
       s = settle(cast(s, "p1", "Opt"));
       expect(pt(s, whale)).toEqual([4, 4]);
-      s = settle(cast(s, "p1", "Rituel à 5"));
+      s = settle(cast(s, "p1", "Sorcery costing 5"));
       expect(counters(s, whale)).toBe(3);
       expect(pt(s, whale)).toEqual([7, 7]);
     });
 
-    it("Splatter Technique : 4 blessures à chaque créature ; ou piochez quatre cartes", () => {
+    it("Splatter Technique: 4 damage to each creature; or draw four cards", () => {
       let s = scenario({
         p1: {
           battlefield: ["Bear Cub", ...lands("Island", 6), ...lands("Mountain", 6)],
@@ -3577,7 +3577,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(s.players.p1?.hand).toHaveLength(4);
     });
 
-    it("Stadium Tidalmage : en arrivant (et en attaquant), vous pouvez piocher puis défausser", () => {
+    it("Stadium Tidalmage: on entering (and on attacking), you may draw then discard", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Island", 2), ...lands("Mountain", 2)],
@@ -3592,7 +3592,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(idsOf(s, "p1", "hand", "Forest")).toHaveLength(1);
     });
 
-    it("Stress Dream : 5 blessures à jusqu'à une créature ; regardez deux cartes, une en main, l'autre dessous", () => {
+    it("Stress Dream: 5 damage to up to one creature; look at two cards, one into hand, the other on the bottom", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Island", 2), ...lands("Mountain", 3)],
@@ -3609,7 +3609,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(nameOf(s, lib[0] as string)).toBe("Forest");
     });
 
-    it("Visionary's Dance : deux Élémentaux 3/3 volants ; {2}, défaussez-la : une des deux cartes du dessus en main, l'autre au cimetière", () => {
+    it("Visionary's Dance: two 3/3 flying Elementals; {2}, discard it: one of the top two cards into hand, the other into the graveyard", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Island", 4), ...lands("Mountain", 3)], hand: ["Visionary's Dance"] },
       });
@@ -3630,8 +3630,8 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
     });
   });
 
-  describe("Quandrix (vert et bleu)", () => {
-    it("Applied Geometry : un jeton copie d'un permanent non-Aura que vous contrôlez, créature Fractale 0/0 avec six marqueurs +1/+1", () => {
+  describe("Quandrix (green and blue)", () => {
+    it("Applied Geometry: a token copy of a non-Aura permanent you control, 0/0 Fractal creature with six +1/+1 counters", () => {
       let s = scenario({
         p1: {
           battlefield: ["Swiftfoot Boots", ...lands("Plains", 2), ...lands("Forest", 2), ...lands("Island", 2)],
@@ -3653,12 +3653,14 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(counters(s, token)).toBe(6);
     });
 
-    it("Berta : Increment, et chaque marqueur +1/+1 mis sur elle ajoute un mana ; {X}, {T} : une Fractale avec X marqueurs", () => {
+    it("Berta: Increment, and each +1/+1 counter put on it adds one mana; {X}, {T}: a Fractal with X counters", () => {
       let s = scenario({
         p1: { battlefield: ["Berta, Wise Extrapolator", ...lands("Island", 7)], hand: [sorcery(2)] },
       });
       const berta = idOf(s, "p1", "battlefield", "Berta, Wise Extrapolator");
-      s = settle(cast(s, "p1", "Rituel à 2"), (req) => (req.type === "pick" && req.options.includes("U") ? ["U"] : undefined));
+      s = settle(cast(s, "p1", "Sorcery costing 2"), (req) =>
+        req.type === "pick" && req.options.includes("U") ? ["U"] : undefined,
+      );
       expect(counters(s, berta)).toBe(1);
       expect(s.players.p1?.manaPool.U).toBe(1);
       s = settle(activate(s, "p1", berta, undefined, undefined, { x: 3 }));
@@ -3668,17 +3670,17 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect([...chars(s, fractal).colors].sort()).toEqual(["G", "U"]);
     });
 
-    it("Cuboid Colony : Increment (un sort à deux mana dépasse 1/1, un sort à un mana non)", () => {
+    it("Cuboid Colony: Increment (a two-mana spell exceeds 1/1, a one-mana spell doesn't)", () => {
       let s = scenario({ p1: { battlefield: ["Cuboid Colony", ...lands("Island", 3)], hand: ["Opt", sorcery(2)] } });
       const colony = idOf(s, "p1", "battlefield", "Cuboid Colony");
       expect(chars(s, colony).keywords).toEqual(expect.arrayContaining(["flash", "flying", "trample"]));
       s = settle(cast(s, "p1", "Opt"));
       expect(counters(s, colony)).toBe(0);
-      s = settle(cast(s, "p1", "Rituel à 2"));
+      s = settle(cast(s, "p1", "Sorcery costing 2"));
       expect(counters(s, colony)).toBe(1);
     });
 
-    it("Embrace the Paradox : piochez trois cartes et mettez un terrain de votre main sur le champ de bataille engagé", () => {
+    it("Embrace the Paradox: draw three cards and put a land from your hand onto the battlefield tapped", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Forest", 2), ...lands("Island", 3)],
@@ -3686,14 +3688,14 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
           library: ["Opt", "Mountain", "Opt"],
         },
       });
-      // Seule la Montagne piochée est proposée.
+      // Only the drawn Mountain is offered.
       s = settle(cast(s, "p1", "Embrace the Paradox"));
       const mountain = idOf(s, "p1", "battlefield", "Mountain");
       expect(s.objects[mountain]?.tapped).toBe(true);
       expect(s.players.p1?.hand).toHaveLength(2);
     });
 
-    it("Fractal Mascot : en arrivant, engage une créature adverse et y met un marqueur d'étourdissement", () => {
+    it("Fractal Mascot: on entering, taps an opposing creature and puts a stun counter on it", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Forest", 3), ...lands("Island", 3)], hand: ["Fractal Mascot"] },
         p2: { battlefield: ["Serra Angel"] },
@@ -3702,13 +3704,13 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       s = settle(cast(s, "p1", "Fractal Mascot"), pickIds(angel));
       expect(s.objects[angel]?.tapped).toBe(true);
       expect(counters(s, angel, "stun")).toBe(1);
-      // À son étape de dégagement, le marqueur est retiré au lieu de la dégager.
+      // At its untap step, the counter is removed instead of untapping it.
       s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
       expect(s.objects[angel]?.tapped).toBe(true);
       expect(counters(s, angel, "stun")).toBe(0);
     });
 
-    it("Growth Curve : un marqueur +1/+1, puis le nombre de marqueurs est doublé", () => {
+    it("Growth Curve: a +1/+1 counter, then the number of counters is doubled", () => {
       let s = scenario({ p1: { battlefield: ["Bear Cub", "Forest", "Island"], hand: ["Growth Curve"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       (s.objects[bear] as { counters: Record<string, number> }).counters["+1/+1"] = 1;
@@ -3717,7 +3719,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(counters(s, bear)).toBe(4);
     });
 
-    it("Mind into Matter : piochez X cartes, puis une carte de permanent de VM X ou moins arrive engagée", () => {
+    it("Mind into Matter: draw X cards, then a permanent card with MV X or less enters tapped", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Forest", 2), ...lands("Island", 2)],
@@ -3730,14 +3732,14 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
         if (req.type === "pick") offered = req.options.length;
         return undefined;
       });
-      // L'Ange (VM 5) n'est pas proposé : seul l'Ourson (VM 2).
+      // The Angel (MV 5) is not offered: only the Bear Cub (MV 2).
       expect(offered).toBe(1);
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       expect(s.objects[bear]?.tapped).toBe(true);
       expect(idsOf(s, "p1", "hand", "Serra Angel")).toHaveLength(1);
     });
 
-    it("Proctor's Gaze : renvoie jusqu'à un permanent non-terrain ; un terrain de base arrive engagé", () => {
+    it("Proctor's Gaze: returns up to one nonland permanent; a basic land enters tapped", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Forest", 2), ...lands("Island", 2)], hand: ["Proctor's Gaze"], library: ["Opt", "Plains"] },
         p2: { battlefield: ["Serra Angel"] },
@@ -3748,7 +3750,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(s.objects[plains]?.tapped).toBe(true);
     });
 
-    it("Pterafractyl : arrive avec X marqueurs +1/+1 ; vous gagnez 2 PV", () => {
+    it("Pterafractyl: enters with X +1/+1 counters; you gain 2 life", () => {
       let s = scenario({ p1: { battlefield: [...lands("Forest", 2), ...lands("Island", 3)], hand: ["Pterafractyl"] } });
       s = settle(cast(s, "p1", "Pterafractyl", undefined, { x: 3 }));
       const ptera = idOf(s, "p1", "battlefield", "Pterafractyl");
@@ -3757,7 +3759,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(s.players.p1?.life).toBe(22);
     });
 
-    it("Quandrix Charm : force et endurance de base 5/5 jusqu'à la fin du tour ; détruit un enchantement ; contresort à moins de {2}", () => {
+    it("Quandrix Charm: base power and toughness 5/5 until end of turn; destroys an enchantment; counterspell unless {2}", () => {
       let s = scenario({
         p1: {
           battlefield: ["Bear Cub", ...lands("Forest", 3), ...lands("Island", 3)],
@@ -3782,7 +3784,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(idsOf(s, "p2", "graveyard", ENCHANTMENT.name)).toHaveLength(1);
       s = advanceUntil(s, (x) => x.turn.active === "p2");
       expect(pt(s, bear)).toEqual([3, 3]);
-      // Mode contresort : l'adversaire, sans mana, ne peut pas payer {2}.
+      // Counterspell mode: the opponent, with no mana, can't pay {2}.
       let t = scenario({
         active: "p2",
         p1: { battlefield: ["Forest", "Island"], hand: ["Quandrix Charm"] },
@@ -3796,7 +3798,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(idsOf(t, "p2", "graveyard", "Lightning Strike")).toHaveLength(1);
     });
 
-    it("Tam : Atterrissage — devient préparé ; Deep Sight fait piocher une carte et gagner 1 PV", () => {
+    it("Tam: Landfall - becomes prepared; Deep Sight draws a card and gains 1 life", () => {
       let s = scenario({
         p1: { battlefield: ["Tam, Observant Sequencer", "Forest", "Island"], hand: ["Forest"], library: lands("Island", 3) },
       });
@@ -3811,21 +3813,21 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
     });
   });
 
-  describe("Witherbloom (noir et vert)", () => {
-    it("Blech : chaque gain de PV met un marqueur sur chacun de vos Nuisibles, Chauves-souris, Insectes, Serpents et Araignées", () => {
-      const bat = customCard({ name: "Chauve-souris d'essai", subtypes: ["Bat"], power: 1, toughness: 1 });
+  describe("Witherbloom (black and green)", () => {
+    it("Blech: each life gain puts a counter on each of your Pests, Bats, Insects, Snakes and Spiders", () => {
+      const bat = customCard({ name: "Test Bat", subtypes: ["Bat"], power: 1, toughness: 1 });
       let s = scenario({
         p1: { battlefield: ["Blech, Loafing Pest", bat, "Bear Cub", "Swamp", "Forest"], hand: ["Witherbloom Charm"] },
-        p2: { battlefield: [customCard({ name: "Insecte adverse", subtypes: ["Insect"], power: 1, toughness: 1 })] },
+        p2: { battlefield: [customCard({ name: "Opposing Insect", subtypes: ["Insect"], power: 1, toughness: 1 })] },
       });
       s = settle(cast(s, "p1", "Witherbloom Charm", undefined, { mode: 1 }));
       expect(counters(s, idOf(s, "p1", "battlefield", "Blech, Loafing Pest"))).toBe(1);
       expect(counters(s, idOf(s, "p1", "battlefield", bat.name))).toBe(1);
       expect(counters(s, idOf(s, "p1", "battlefield", "Bear Cub"))).toBe(0);
-      expect(counters(s, idOf(s, "p2", "battlefield", "Insecte adverse"))).toBe(0);
+      expect(counters(s, idOf(s, "p2", "battlefield", "Opposing Insect"))).toBe(0);
     });
 
-    it("Bogwater Lumaret et Pest Mascot : chaque créature qui arrive sous votre contrôle fait gagner 1 PV ; chaque gain, un marqueur", () => {
+    it("Bogwater Lumaret and Pest Mascot: each creature that enters under your control gains 1 life; each gain, a counter", () => {
       let s = scenario({
         p1: { battlefield: ["Pest Mascot", ...lands("Swamp", 2), ...lands("Forest", 2)], hand: ["Bogwater Lumaret", "Bear Cub"] },
       });
@@ -3837,7 +3839,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(counters(s, mascot)).toBe(2);
     });
 
-    it("Cauldron of Essence : une de vos créatures meurt, drain de 1 ; {1}{B}{G}, {T}, sacrifiez une créature : une carte de créature revient", () => {
+    it("Cauldron of Essence: one of your creatures dies, drain 1; {1}{B}{G}, {T}, sacrifice a creature: a creature card returns", () => {
       let s = scenario({
         p1: { battlefield: ["Cauldron of Essence", "Bear Cub", "Swamp", "Forest", "Forest"], graveyard: ["Serra Angel"] },
       });
@@ -3851,7 +3853,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect([s.players.p1?.life, s.players.p2?.life]).toEqual([21, 19]);
     });
 
-    it("Dina's Guidance : une carte de créature de la bibliothèque, dans votre main ou dans votre cimetière", () => {
+    it("Dina's Guidance: a creature card from the library, into your hand or your graveyard", () => {
       const run = (toGraveyard: boolean) => {
         let s = scenario({
           p1: {
@@ -3869,7 +3871,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(g.players.p1?.hand).toHaveLength(0);
     });
 
-    it("Essenceknit Scholar : un Nuisible en arrivant ; à votre étape de fin, si une de vos créatures est morte, piochez", () => {
+    it("Essenceknit Scholar: a Pest on entering; at your end step, if one of your creatures died, draw", () => {
       const run = (kill: boolean) => {
         let s = scenario({
           p1: {
@@ -3888,7 +3890,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(run(false)).toBe(5);
     });
 
-    it("Grapple with Death : détruit un artefact ou une créature, +1 PV", () => {
+    it("Grapple with Death: destroys an artifact or creature, +1 life", () => {
       let s = scenario({
         p1: { battlefield: ["Swamp", "Forest", "Forest"], hand: ["Grapple with Death"] },
         p2: { battlefield: ["Swiftfoot Boots"] },
@@ -3898,7 +3900,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(s.players.p1?.life).toBe(21);
     });
 
-    it("Lluwen : arrive préparée (Pest Friend crée un Nuisible) ; exiler une carte de créature du cimetière la prépare de nouveau, en rituel", () => {
+    it("Lluwen: enters prepared (Pest Friend creates a Pest); exiling a creature card from the graveyard prepares it again, at sorcery speed", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Swamp", 3), ...lands("Forest", 2)],
@@ -3918,7 +3920,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(exiled(s, "Pest Friend")).toHaveLength(1);
     });
 
-    it("Mind Roots : le joueur ciblé défausse deux cartes ; un terrain défaussé arrive engagé sous votre contrôle", () => {
+    it("Mind Roots: the targeted player discards two cards; a discarded land enters tapped under your control", () => {
       let s = scenario({
         p1: { battlefield: ["Swamp", "Forest", "Forest"], hand: ["Mind Roots"] },
         p2: { hand: ["Mountain", "Opt"] },
@@ -3932,7 +3934,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(idsOf(s, "p2", "graveyard", "Opt")).toHaveLength(1);
     });
 
-    it("Old-Growth Educator : Infusion — deux marqueurs +1/+1 s'il arrive après un gain de PV", () => {
+    it("Old-Growth Educator: Infusion - two +1/+1 counters if it enters after a life gain", () => {
       const run = (gain: boolean) => {
         let s = scenario({
           p1: { battlefield: [...lands("Swamp", 3), ...lands("Forest", 3)], hand: ["Old-Growth Educator", "Witherbloom Charm"] },
@@ -3947,7 +3949,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(run(false)).toEqual([4, 4]);
     });
 
-    it("Root Manipulation : vos créatures gagnent +2/+2, la menace et « quand elle attaque, gagnez 1 PV » jusqu'à la fin du tour", () => {
+    it('Root Manipulation: your creatures get +2/+2, menace and "when it attacks, gain 1 life" until end of turn', () => {
       let s = scenario({
         p1: { battlefield: ["Bear Cub", ...lands("Swamp", 2), ...lands("Forest", 3)], hand: ["Root Manipulation"] },
         p2: { battlefield: ["Serra Angel"] },
@@ -3963,7 +3965,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(s.players.p1?.life).toBe(21);
     });
 
-    it("Teacher's Pest : menace ; quand il attaque, +1 PV ; {B}{G} : revient du cimetière engagé", () => {
+    it("Teacher's Pest: menace; when it attacks, +1 life; {B}{G}: returns from the graveyard tapped", () => {
       let s = scenario({ p1: { battlefield: ["Swamp", "Forest"], graveyard: ["Teacher's Pest"] } });
       s = settle(activate(s, "p1", idOf(s, "p1", "graveyard", "Teacher's Pest")));
       const pest = idOf(s, "p1", "battlefield", "Teacher's Pest");
@@ -3971,18 +3973,18 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(chars(s, pest).keywords).toContain("menace");
     });
 
-    it("Witherbloom, the Balancer : affinité pour les créatures, et vos éphémères et rituels l'ont aussi", () => {
+    it("Witherbloom, the Balancer: affinity for creatures, and your instants and sorceries have it too", () => {
       let s = scenario({
         p1: {
           battlefield: ["Bear Cub", "Llanowar Elves", "Bear Cub", "Swamp", "Forest", "Forest", "Forest", "Mountain"],
           hand: ["Witherbloom, the Balancer", "Lightning Strike"],
         },
       });
-      // {6}{B}{G} moins 3 : cinq terrains suffisent.
+      // {6}{B}{G} minus 3: five lands suffice.
       s = settle(cast(s, "p1", "Witherbloom, the Balancer"));
       const w = idOf(s, "p1", "battlefield", "Witherbloom, the Balancer");
       expect(chars(s, w).keywords).toEqual(expect.arrayContaining(["flying", "deathtouch"]));
-      // Plus aucun terrain dégagé : Lightning Strike ({1}{R}) coûte {R} de moins… il reste {R} à payer.
+      // No untapped land left: Lightning Strike ({1}{R}) costs {R} less... {R} remains to pay.
       const strike = idOf(s, "p1", "hand", "Lightning Strike");
       expect(castOptions(s, "p1", strike)).toHaveLength(0);
       const t = scenario({
@@ -3993,8 +3995,8 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
     });
   });
 
-  describe("Silverquill et autres : capacités d'arrivée", () => {
-    it("Imperious Inkmage (surveillance 2) et Stirring Honormancer (X = vos créatures : une en main, le reste au cimetière)", () => {
+  describe("Silverquill and others: enter abilities", () => {
+    it("Imperious Inkmage (surveil 2) and Stirring Honormancer (X = your creatures: one into hand, the rest into the graveyard)", () => {
       let s = scenario({
         p1: {
           battlefield: ["Bear Cub", ...lands("Plains", 4), ...lands("Swamp", 4)],
@@ -4005,13 +4007,13 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       s = settle(cast(s, "p1", "Imperious Inkmage"), (req) => (req.type === "pick" ? req.options.slice(0, 2) : undefined));
       expect(s.players.p1?.graveyard).toHaveLength(2);
       expect(chars(s, idOf(s, "p1", "battlefield", "Imperious Inkmage")).keywords).toContain("vigilance");
-      // Ourson, Inkmage et Honormancer : trois cartes regardées.
+      // Bear Cub, Inkmage and Honormancer: three cards looked at.
       s = settle(cast(s, "p1", "Stirring Honormancer"));
       expect(s.players.p1?.hand).toHaveLength(1);
       expect(s.players.p1?.graveyard).toHaveLength(4);
       expect(s.players.p1?.library).toHaveLength(1);
     });
-    it("Molten Note : blessures égales au mana dépensé, dégage vos créatures ; flashback {6}{R}{W}", () => {
+    it("Molten Note: damage equal to the mana spent, untaps your creatures; flashback {6}{R}{W}", () => {
       let s = scenario({
         p1: {
           battlefield: [{ name: "Bear Cub", tapped: true }, ...lands("Mountain", 6), ...lands("Plains", 6)],
@@ -4020,7 +4022,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
         p2: { battlefield: ["Serra Angel", "Shivan Dragon"] },
       });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-      // X = 2 : quatre mana dépensés.
+      // X = 2: four mana spent.
       s = settle(cast(s, "p1", "Molten Note", { t: [idOf(s, "p2", "battlefield", "Serra Angel")] }, { x: 2 }));
       expect(idsOf(s, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
       expect(s.objects[bear]?.tapped).toBe(false);
@@ -4028,12 +4030,12 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       expect(castOptions(s, "p1", note)).not.toHaveLength(0);
       const dragon = idOf(s, "p2", "battlefield", "Shivan Dragon");
       s = settle(act(s, "p1", { type: "cast", card: note, targets: { t: [dragon] } }));
-      // Huit mana dépensés : le Dragon (5/5) meurt ; la carte est exilée.
+      // Eight mana spent: the Dragon (5/5) dies; the card is exiled.
       expect(idsOf(s, "p2", "graveyard", "Shivan Dragon")).toHaveLength(1);
       expect(exiled(s, "Molten Note")).toHaveLength(1);
     });
 
-    it("Nita, Forum Conciliator : {2}, sacrifiez une autre créature : un éphémère adverse exilé se lance ce tour-ci, puis est exilé ; un marqueur sur vos créatures", () => {
+    it("Nita, Forum Conciliator: {2}, sacrifice another creature: an opposing exiled instant is cast this turn, then exiled; a counter on your creatures", () => {
       let s = scenario({
         p1: { battlefield: ["Nita, Forum Conciliator", "Bear Cub", ...lands("Island", 4)] },
         p2: { graveyard: ["Lightning Strike"] },
@@ -4056,7 +4058,7 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       s = settle(act(s, "p1", { type: "cast", card, targets: { t: ["p2"] } }));
       expect(s.players.p2?.life).toBe(17);
       expect(s.objects[nita]?.counters["+1/+1"]).toBe(before + 1);
-      // « puis exilez-la » : la carte reste en exil, et ne se relance plus.
+      // "then exile it": the card stays in exile, and is not recast.
       const again = exiled(s, "Lightning Strike")[0] as string;
       expect(again).toBeDefined();
       expect(castOptions(s, "p1", again)).toHaveLength(0);
@@ -4064,25 +4066,25 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
   });
 });
 
-describe("Secrets of Strixhaven, lot A — incolores et terrains", () => {
+describe("Secrets of Strixhaven, lot A - colorless and lands", () => {
   /**
-   * Secrets of Strixhaven, lot A — cartes incolores et terrains : chaque carte est confrontée à son texte Oracle (plan R,
-   * lot R7). Avatars à convergence (The Dawning Archaic, Rancorous, Sundering et Transcendent Archaic), préparation
+   * Secrets of Strixhaven, lot A - colorless cards and lands: each card is checked against its Oracle text (plan R,
+   * lot R7). Converge avatars (The Dawning Archaic, Rancorous, Sundering and Transcendent Archaic), prepare
    * (Biblioplex Tomekeeper, Skycoach Waypoint), Diary of Dreams, Mage Tower Referee, Page, Loose Leaf, Potioner's Trove,
-   * Strixhaven Skycoach et les terrains.
+   * Strixhaven Skycoach and the lands.
    */
   type S = GameState;
   const FIVE_COLORS = ["Plains", "Island", "Swamp", "Mountain", "Forest"];
   const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
-  /** Rituel incolore à {0} : « rien ». */
+  /** Colorless sorcery with cost {0}: "nothing". */
   const FREE_SORCERY = customCard({
-    name: "Rituel gratuit",
+    name: "Free Sorcery",
     types: ["Sorcery"],
     typeLine: "Sorcery",
     spell: spell([], []),
   });
 
-  /** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
+  /** Passes and answers choices (suggested answer by default) until the stack is empty, with no trigger pending. */
   const settle = (s: S, answer: Answer = () => undefined): S => {
     let cur = s;
     for (let i = 0; i < 300; i++) {
@@ -4104,7 +4106,7 @@ describe("Secrets of Strixhaven, lot A — incolores et terrains", () => {
     legalActions(s, player).find(
       (x) => x.type === "activate" && x.source === source && (!label || (x.label ?? "").includes(label)),
     );
-  /** Active la capacité de `source` dont le libellé contient `label` (la première si absent). */
+  /** Activates the ability of `source` whose label contains `label` (the first if absent). */
   const activate = (
     s: S,
     player: string,
@@ -4122,7 +4124,7 @@ describe("Secrets of Strixhaven, lot A — incolores et terrains", () => {
   };
 
   describe("The Dawning Archaic", () => {
-    it("coûte {1} de moins par carte d'éphémère ou de rituel de votre cimetière ; portée", () => {
+    it("costs {1} less per instant or sorcery card in your graveyard; reach", () => {
       const run = (landCount: number) =>
         scenario({
           p1: {
@@ -4140,7 +4142,7 @@ describe("Secrets of Strixhaven, lot A — incolores et terrains", () => {
       expect(pt(s, archaic)).toEqual([7, 7]);
     });
 
-    it("en attaquant : lance gratuitement un éphémère du cimetière, qui est exilé au lieu d'y retourner", () => {
+    it("on attacking: casts an instant from the graveyard for free, which is exiled instead of returning there", () => {
       let s = scenario({ p1: { battlefield: ["The Dawning Archaic"], graveyard: ["Lightning Strike"] } });
       const archaic = idOf(s, "p1", "battlefield", "The Dawning Archaic");
       s = settle(attackWith(s, archaic));
@@ -4156,8 +4158,8 @@ describe("Secrets of Strixhaven, lot A — incolores et terrains", () => {
     });
   });
 
-  describe("Convergence : Rancorous Archaic", () => {
-    it("un marqueur +1/+1 par couleur de mana dépensée ; portée et piétinement", () => {
+  describe("Converge: Rancorous Archaic", () => {
+    it("a +1/+1 counter per color of mana spent; reach and trample", () => {
       const run = (manaLands: string[]) => {
         const s = settle(
           cast(scenario({ p1: { battlefield: manaLands, hand: ["Rancorous Archaic"] } }), "p1", "Rancorous Archaic"),
@@ -4173,14 +4175,14 @@ describe("Secrets of Strixhaven, lot A — incolores et terrains", () => {
     });
   });
 
-  describe("Convergence : Sundering Archaic", () => {
+  describe("Converge: Sundering Archaic", () => {
     const board = (manaLands: string[]) =>
       scenario({
         p1: { battlefield: manaLands, hand: ["Sundering Archaic"] },
         p2: { battlefield: ["Serra Angel", "Forest"], graveyard: ["Opt"] },
       });
 
-    it("exile un permanent non-terrain adverse de valeur de mana au plus le nombre de couleurs dépensées", () => {
+    it("exiles an opposing nonland permanent with mana value at most the number of colors spent", () => {
       let s = board([...FIVE_COLORS, "Forest"]);
       const angel = idOf(s, "p2", "battlefield", "Serra Angel");
       s = settle(cast(s, "p1", "Sundering Archaic"), (req) =>
@@ -4190,14 +4192,14 @@ describe("Secrets of Strixhaven, lot A — incolores et terrains", () => {
       expect(idsOf(s, "p2", "battlefield", "Forest")).toHaveLength(1);
     });
 
-    it("avec trois couleurs dépensées, un permanent de valeur de mana 5 reste en jeu", () => {
+    it("with three colors spent, a permanent with mana value 5 stays in play", () => {
       let s = board(["Island", "Mountain", ...lands("Forest", 4)]);
       s = settle(cast(s, "p1", "Sundering Archaic"));
       expect(idsOf(s, "p2", "battlefield", "Serra Angel")).toHaveLength(1);
       expect(exiled(s, "Serra Angel")).toHaveLength(0);
     });
 
-    it("{2} : met une carte d'un cimetière au-dessous de la bibliothèque de son propriétaire", () => {
+    it("{2}: puts a card from a graveyard on the bottom of its owner's library", () => {
       let s = scenario({
         p1: { battlefield: ["Sundering Archaic", ...lands("Forest", 2)] },
         p2: { graveyard: ["Opt"], library: lands("Island", 3) },
@@ -4206,14 +4208,14 @@ describe("Secrets of Strixhaven, lot A — incolores et terrains", () => {
       const opt = idOf(s, "p2", "graveyard", "Opt");
       s = settle(activate(s, "p1", archaic, "bottom", { t: [opt] }));
       expect(s.players.p2?.graveyard).toHaveLength(0);
-      // Une carte qui change de zone devient un nouvel objet (400.7) : on la reconnaît à son nom.
+      // A card that changes zone becomes a new object (400.7): it is recognized by its name.
       expect(nameOf(s, s.players.p2?.library.at(-1) as string)).toBe("Opt");
       expect(s.players.p2?.library).toHaveLength(4);
     });
   });
 
-  describe("Convergence : Transcendent Archaic", () => {
-    it("vous pouvez piocher X cartes (X = couleurs dépensées), puis vous défaussez deux cartes", () => {
+  describe("Converge: Transcendent Archaic", () => {
+    it("you may draw X cards (X = colors spent), then you discard two cards", () => {
       const start = () =>
         scenario({
           p1: { battlefield: ["Island", "Mountain", ...lands("Forest", 5)], hand: ["Transcendent Archaic"] },
@@ -4228,8 +4230,8 @@ describe("Secrets of Strixhaven, lot A — incolores et terrains", () => {
     });
   });
 
-  describe("Préparation : Biblioplex Tomekeeper et Skycoach Waypoint", () => {
-    it("Biblioplex Tomekeeper : une créature ciblée devient préparée", () => {
+  describe("Prepare: Biblioplex Tomekeeper and Skycoach Waypoint", () => {
+    it("Biblioplex Tomekeeper: a targeted creature becomes prepared", () => {
       let s = scenario({ p1: { battlefield: ["Emeritus of Ideation", ...lands("Plains", 4)], hand: ["Biblioplex Tomekeeper"] } });
       const emeritus = idOf(s, "p1", "battlefield", "Emeritus of Ideation");
       expect(s.objects[emeritus]?.preparedCopy).toBeUndefined();
@@ -4240,7 +4242,7 @@ describe("Secrets of Strixhaven, lot A — incolores et terrains", () => {
       expect(s.objects[emeritus]?.preparedCopy).toBe(exiled(s, "Ancestral Recall")[0]);
     });
 
-    it("Biblioplex Tomekeeper : une créature ciblée cesse d'être préparée (ou aucune cible)", () => {
+    it("Biblioplex Tomekeeper: a targeted creature stops being prepared (or no target)", () => {
       const start = () =>
         scenario({
           p1: {
@@ -4256,7 +4258,7 @@ describe("Secrets of Strixhaven, lot A — incolores et terrains", () => {
       );
       expect(exiled(s, "Ancestral Recall")).toHaveLength(0);
       expect(s.objects[emeritus]?.preparedCopy).toBeUndefined();
-      // « Jusqu'à un » : aucune cible choisie, la créature reste préparée.
+      // "Up to one": no target chosen, the creature stays prepared.
       let t = settle(cast(start(), "p1", "Emeritus of Ideation"));
       t = settle(cast(t, "p1", "Biblioplex Tomekeeper"), (req) =>
         req.intent === "triggerMode" ? ["1"] : req.intent === "triggerTarget" ? [] : undefined,
@@ -4264,7 +4266,7 @@ describe("Secrets of Strixhaven, lot A — incolores et terrains", () => {
       expect(exiled(t, "Ancestral Recall")).toHaveLength(1);
     });
 
-    it("Skycoach Waypoint : {T} pour {C} ; {3}, {T} : une créature ciblée devient préparée (sans effet sans sort préparé)", () => {
+    it("Skycoach Waypoint: {T} for {C}; {3}, {T}: a targeted creature becomes prepared (no effect without a prepared spell)", () => {
       let s = scenario({ p1: { battlefield: ["Skycoach Waypoint", "Emeritus of Ideation", "Bear Cub", ...lands("Plains", 3)] } });
       const waypoint = idOf(s, "p1", "battlefield", "Skycoach Waypoint");
       const colors = legalActions(s, "p1").flatMap((a) => (a.type === "tapForMana" && a.source === waypoint ? a.colors : []));
@@ -4282,7 +4284,7 @@ describe("Secrets of Strixhaven, lot A — incolores et terrains", () => {
   });
 
   describe("Diary of Dreams", () => {
-    it("un marqueur page par éphémère ou rituel lancé ; la pioche coûte {1} de moins par marqueur page", () => {
+    it("a page counter per instant or sorcery cast; drawing costs {1} less per page counter", () => {
       let s = scenario({
         p1: { battlefield: ["Diary of Dreams", ...lands("Island", 2)], hand: [FREE_SORCERY, FREE_SORCERY, FREE_SORCERY] },
       });
@@ -4291,7 +4293,7 @@ describe("Secrets of Strixhaven, lot A — incolores et terrains", () => {
       s = settle(cast(s, "p1", FREE_SORCERY.name));
       s = settle(cast(s, "p1", FREE_SORCERY.name));
       expect(s.objects[diary]?.counters.page).toBe(2);
-      // Deux terrains : {5} − 2 = {3}, trop cher.
+      // Two lands: {5} - 2 = {3}, too expensive.
       expect(activation(s, "p1", diary, "Draw")).toBeUndefined();
       s = settle(cast(s, "p1", FREE_SORCERY.name));
       expect(s.objects[diary]?.counters.page).toBe(3);
@@ -4303,7 +4305,7 @@ describe("Secrets of Strixhaven, lot A — incolores et terrains", () => {
       expect(s.objects[diary]?.counters.page).toBe(3);
     });
 
-    it("un sort de créature n'ajoute pas de marqueur page", () => {
+    it("a creature spell doesn't add a page counter", () => {
       let s = scenario({ p1: { battlefield: ["Diary of Dreams", ...lands("Forest", 2)], hand: ["Bear Cub"] } });
       s = settle(cast(s, "p1", "Bear Cub"));
       expect(s.objects[idOf(s, "p1", "battlefield", "Diary of Dreams")]?.counters.page ?? 0).toBe(0);
@@ -4311,7 +4313,7 @@ describe("Secrets of Strixhaven, lot A — incolores et terrains", () => {
   });
 
   describe("Mage Tower Referee", () => {
-    it("chaque sort multicolore lancé : un marqueur +1/+1 ; pas pour un sort monocolore", () => {
+    it("each multicolored spell cast: a +1/+1 counter; not for a monocolored spell", () => {
       let s = scenario({
         p1: { battlefield: ["Mage Tower Referee", ...lands("Island", 2), "Mountain"], hand: ["Prismari Charm", "Opt"] },
       });
@@ -4325,7 +4327,7 @@ describe("Secrets of Strixhaven, lot A — incolores et terrains", () => {
   });
 
   describe("Page, Loose Leaf", () => {
-    it("{T} : ajoutez {C} ; Grandeur : défaussez une autre Page pour révéler jusqu'à un éphémère ou un rituel", () => {
+    it("{T}: add {C}; Grandeur: discard another Page to reveal up to one instant or sorcery", () => {
       let s = scenario({
         p1: {
           battlefield: ["Page, Loose Leaf"],
@@ -4336,7 +4338,7 @@ describe("Secrets of Strixhaven, lot A — incolores et terrains", () => {
       const page = idOf(s, "p1", "battlefield", "Page, Loose Leaf");
       const colors = legalActions(s, "p1").flatMap((a) => (a.type === "tapForMana" && a.source === page ? a.colors : []));
       expect(colors).toEqual(["C"]);
-      // Défausser une carte qui ne s'appelle pas Page, Loose Leaf est refusé.
+      // Discarding a card not named Page, Loose Leaf is refused.
       expect(() => activate(s, "p1", page, "Grandeur", undefined, { discard: [idOf(s, "p1", "hand", "Bear Cub")] })).toThrow();
       s = settle(activate(s, "p1", page, "Grandeur", undefined, { discard: [idOf(s, "p1", "hand", "Page, Loose Leaf")] }));
       expect(s.players.p1?.hand.map((id) => nameOf(s, id)).sort()).toEqual(["Bear Cub", "Opt"]);
@@ -4348,7 +4350,7 @@ describe("Secrets of Strixhaven, lot A — incolores et terrains", () => {
   });
 
   describe("Potioner's Trove", () => {
-    it("{T} : un mana de n'importe quelle couleur ; {T} : 2 PV, seulement après un éphémère ou un rituel ce tour-ci", () => {
+    it("{T}: one mana of any color; {T}: 2 life, only after an instant or sorcery this turn", () => {
       let s = scenario({ p1: { battlefield: ["Potioner's Trove", "Island"], hand: ["Opt"] } });
       const trove = idOf(s, "p1", "battlefield", "Potioner's Trove");
       const colors = legalActions(s, "p1").flatMap((a) => (a.type === "tapForMana" && a.source === trove ? a.colors : []));
@@ -4362,7 +4364,7 @@ describe("Secrets of Strixhaven, lot A — incolores et terrains", () => {
   });
 
   describe("Strixhaven Skycoach", () => {
-    it("en arrivant, vous pouvez chercher une carte de terrain de base pour votre main ; vol et Équipage 2", () => {
+    it("on entering, you may search for a basic land card for your hand; flying and Crew 2", () => {
       let s = scenario({
         p1: { battlefield: lands("Plains", 3), hand: ["Strixhaven Skycoach"], library: ["Bear Cub", "Island"] },
       });
@@ -4386,8 +4388,8 @@ describe("Secrets of Strixhaven, lot A — incolores et terrains", () => {
     });
   });
 
-  describe("Terrains", () => {
-    it("terrains à surveillance : arrivent engagés ; deux couleurs ; {2}{X}{Y}, {T} : surveillance 1", () => {
+  describe("Lands", () => {
+    it("surveil lands: enter tapped; two colors; {2}{X}{Y}, {T}: surveil 1", () => {
       const expected: Record<string, string[]> = {
         "Fields of Strife": ["R", "W"],
         "Forum of Amity": ["B", "W"],
@@ -4404,7 +4406,7 @@ describe("Secrets of Strixhaven, lot A — incolores et terrains", () => {
         const colors = legalActions(t, "p1").flatMap((a) => (a.type === "tapForMana" && a.source === id ? a.colors : []));
         expect(colors.sort()).toEqual(pair);
       }
-      // Surveillance 1 : la carte du dessus va au cimetière si vous le voulez.
+      // Surveil 1: the top card goes to the graveyard if you want.
       let s = scenario({
         p1: { battlefield: ["Fields of Strife", "Mountain", "Plains", ...lands("Plains", 2)], library: ["Opt", "Island"] },
       });
@@ -4418,7 +4420,7 @@ describe("Secrets of Strixhaven, lot A — incolores et terrains", () => {
       expect(s.players.p1?.library.map((id) => nameOf(s, id))).toEqual(["Island"]);
     });
 
-    it("Dreamroot Cascade : arrive engagé sauf si vous contrôlez deux autres terrains ou plus ; {G} ou {U}", () => {
+    it("Dreamroot Cascade: enters tapped unless you control two or more other lands; {G} or {U}", () => {
       const play = (others: number) => {
         let s = scenario({ p1: { battlefield: lands("Plains", others), hand: ["Dreamroot Cascade"] } });
         s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Dreamroot Cascade") });
@@ -4430,7 +4432,7 @@ describe("Secrets of Strixhaven, lot A — incolores et terrains", () => {
       expect(play(2)).toEqual({ tapped: false, colors: ["G", "U"] });
     });
 
-    it("Terramorphic Expanse : {T}, sacrifiez-le : un terrain de base de la bibliothèque arrive engagé", () => {
+    it("Terramorphic Expanse: {T}, sacrifice it: a basic land from the library enters tapped", () => {
       let s = scenario({ p1: { battlefield: ["Terramorphic Expanse"], library: ["Bear Cub", "Mountain", "Opt"] } });
       const expanse = idOf(s, "p1", "battlefield", "Terramorphic Expanse");
       s = settle(activate(s, "p1", expanse));
@@ -4443,10 +4445,10 @@ describe("Secrets of Strixhaven, lot A — incolores et terrains", () => {
   });
 });
 
-describe("Secrets of Strixhaven, lot B1 : sorts avec {X} dans leur coût", () => {
-  /** Rituel {X}{U} : « piochez une carte ». */
+describe("Secrets of Strixhaven, lot B1: spells with {X} in their cost", () => {
+  /** Sorcery {X}{U}: "draw a card". */
   const XSPELL = customCard({
-    name: "Équation d'essai",
+    name: "Test Equation",
     types: ["Sorcery"],
     typeLine: "Sorcery",
     colors: ["U"],
@@ -4455,7 +4457,7 @@ describe("Secrets of Strixhaven, lot B1 : sorts avec {X} dans leur coût", () =>
     spell: spell([], [fx.draw(1)]),
   });
 
-  it("Matterbending Mage : renvoie une autre créature ; un sort avec {X} la rend imblocable ce tour-ci, pas un autre", () => {
+  it("Matterbending Mage: returns another creature; a spell with {X} makes it unblockable this turn, not another", () => {
     let s = scenario({
       p1: { battlefield: lands("Island", 6), hand: ["Matterbending Mage", XSPELL, "Opt"], library: lands("Island", 5) },
       p2: { battlefield: ["Bear Cub"] },
@@ -4469,7 +4471,7 @@ describe("Secrets of Strixhaven, lot B1 : sorts avec {X} dans leur coût", () =>
     expect(chars(s, mage).keywords).toContain("unblockable");
   });
 
-  it("Geometer's Arthropod : un sort avec {X} : les X cartes du dessus, une en main, les autres au-dessous", () => {
+  it("Geometer's Arthropod: a spell with {X}: the top X cards, one into hand, the others on the bottom", () => {
     let s = scenario({
       p1: {
         battlefield: ["Geometer's Arthropod", ...lands("Island", 4)],
@@ -4480,17 +4482,17 @@ describe("Secrets of Strixhaven, lot B1 : sorts avec {X} dans leur coût", () =>
     s = settle(cast(s, "p1", XSPELL.name, undefined, { x: 3 }), (req) => {
       if (req.type !== "pick") return undefined;
       const angel = req.options.find((id) => nameOf(s, id) === "Serra Angel");
-      // Seules les trois cartes du dessus sont proposées.
+      // Only the top three cards are offered.
       expect(req.options.some((id) => nameOf(s, id) === "Shivan Dragon")).toBe(false);
       return angel ? [angel] : undefined;
     });
     expect(idsOf(s, "p1", "hand", "Serra Angel")).toHaveLength(1);
-    // La pioche du rituel a pris « Opt » ou le Dragon selon l'ordre : le Dragon est désormais au-dessus des deux autres.
+    // The sorcery's draw took "Opt" or the Dragon depending on the order: the Dragon is now above the other two.
     const lib = s.players.p1?.library.map((id) => nameOf(s, id)) ?? [];
     expect(lib.slice(-2).sort()).toEqual(["Bear Cub", "Opt"]);
   });
 
-  it("Paradox Surveyor : cinq cartes, un terrain ou une carte avec {X} en main ; pas une autre carte", () => {
+  it("Paradox Surveyor: five cards, a land or a card with {X} into hand; not another card", () => {
     let s = scenario({
       p1: {
         battlefield: [...lands("Forest", 2), "Island"],
@@ -4510,8 +4512,8 @@ describe("Secrets of Strixhaven, lot B1 : sorts avec {X} dans leur coût", () =>
   });
 });
 
-describe("Secrets of Strixhaven, lot B2 : couleurs dépensées pour le sort déclencheur", () => {
-  it("Magmablood Archaic : convergence en arrivant ; un éphémère : vos créatures +1/+0 par couleur dépensée pour lui", () => {
+describe("Secrets of Strixhaven, lot B2: colors spent on the triggering spell", () => {
+  it("Magmablood Archaic: converge on entering; an instant: your creatures get +1/+0 per color spent on it", () => {
     let s = scenario({
       p1: {
         battlefield: ["Mountain", "Forest", "Island", "Plains", "Swamp", "Bear Cub"],
@@ -4520,20 +4522,20 @@ describe("Secrets of Strixhaven, lot B2 : couleurs dépensées pour le sort déc
     });
     s = settle(cast(s, "p1", "Magmablood Archaic"));
     const archaic = idOf(s, "p1", "battlefield", "Magmablood Archaic");
-    // {2/R}{2/R}{2/R} payé avec cinq terrains de cinq couleurs : cinq marqueurs.
+    // {2/R}{2/R}{2/R} paid with five lands of five colors: five counters.
     expect(s.objects[archaic]?.counters["+1/+1"]).toBe(5);
     let t = scenario({
       p1: { battlefield: ["Magmablood Archaic", "Bear Cub", "Mountain", "Forest"], hand: ["Lightning Strike"] },
     });
     const bear = idOf(t, "p1", "battlefield", "Bear Cub");
     t = settle(cast(t, "p1", "Lightning Strike", { t: ["p2"] }));
-    // {1}{R} payé avec une Montagne et une Forêt : deux couleurs.
+    // {1}{R} paid with a Mountain and a Forest: two colors.
     expect(chars(t, bear).power).toBe(4);
     expect(chars(t, bear).toughness).toBe(2);
   });
 
-  it("Wildgrowth Archaic : un sort de créature arrive avec un marqueur +1/+1 par couleur dépensée pour lui", () => {
-    // 0/0 : deux marqueurs pour qu'il survive.
+  it("Wildgrowth Archaic: a creature spell enters with a +1/+1 counter per color spent on it", () => {
+    // 0/0: two counters so that it survives.
     let s = scenario({
       p1: { battlefield: [{ name: "Wildgrowth Archaic", counters: { "+1/+1": 2 } }, "Forest", "Island"], hand: ["Bear Cub"] },
     });
@@ -4543,15 +4545,15 @@ describe("Secrets of Strixhaven, lot B2 : couleurs dépensées pour le sort déc
   });
 });
 
-describe("Secrets of Strixhaven, lot B3 : coûts", () => {
-  it("Group Project : un Esprit 2/2 ; flashback en engageant trois créatures dégagées (sans mana), puis exil", () => {
+describe("Secrets of Strixhaven, lot B3: costs", () => {
+  it("Group Project: a 2/2 Spirit; flashback by tapping three untapped creatures (no mana), then exile", () => {
     let s = scenario({
       p1: { battlefield: ["Bear Cub", "Bear Cub", "Llanowar Elves", "Plains", "Plains"], hand: ["Group Project"] },
     });
     s = settle(cast(s, "p1", "Group Project"));
     expect(idsOf(s, "p1", "battlefield", "Spirit")).toHaveLength(1);
     const card = idOf(s, "p1", "graveyard", "Group Project");
-    // Quatre créatures dégagées (l'Esprit compris) : le flashback est possible sans mana.
+    // Four untapped creatures (the Spirit included): flashback is possible without mana.
     for (const id of s.battlefield) {
       const o = s.objects[id];
       if (o && nameOf(s, id) === "Plains") o.tapped = true;
@@ -4562,29 +4564,29 @@ describe("Secrets of Strixhaven, lot B3 : coûts", () => {
     expect(exiled(s, "Group Project")).toHaveLength(1);
     const tappedCreatures = s.battlefield.filter((id) => chars(s, id).types.includes("Creature") && s.objects[id]?.tapped);
     expect(tappedCreatures).toHaveLength(3);
-    // Deux créatures dégagées seulement : pas de flashback.
+    // Only two untapped creatures: no flashback.
     const t = scenario({ p1: { battlefield: ["Bear Cub", "Bear Cub"], graveyard: ["Group Project"] } });
     expect(castOptions(t, "p1", idOf(t, "p1", "graveyard", "Group Project"))).toHaveLength(0);
   });
 
-  it("Soaring Stoneglider : exilez deux cartes de votre cimetière ou payez {1}{W} en plus", () => {
+  it("Soaring Stoneglider: exile two cards from your graveyard or pay {1}{W} more", () => {
     let s = scenario({ p1: { battlefield: lands("Plains", 3), hand: ["Soaring Stoneglider"], graveyard: ["Opt", "Bear Cub"] } });
     const card = idOf(s, "p1", "hand", "Soaring Stoneglider");
     s = settle(act(s, "p1", { type: "cast", card, kicked: true }));
     expect(idsOf(s, "p1", "battlefield", "Soaring Stoneglider")).toHaveLength(1);
     expect(s.players.p1?.graveyard).toHaveLength(0);
     expect(s.exile).toHaveLength(2);
-    // Sans exiler : {2}{W} + {1}{W}.
+    // Without exiling: {2}{W} + {1}{W}.
     let t = scenario({ p1: { battlefield: lands("Plains", 5), hand: ["Soaring Stoneglider"], graveyard: ["Opt"] } });
     t = settle(act(t, "p1", { type: "cast", card: idOf(t, "p1", "hand", "Soaring Stoneglider") }));
     expect(idsOf(t, "p1", "battlefield", "Soaring Stoneglider")).toHaveLength(1);
     expect(t.battlefield.filter((id) => t.objects[id]?.tapped)).toHaveLength(5);
-    // Un seul terrain de trop peu, une seule carte au cimetière : impossible.
+    // One land short, only one card in the graveyard: impossible.
     const u = scenario({ p1: { battlefield: lands("Plains", 4), hand: ["Soaring Stoneglider"], graveyard: ["Opt"] } });
     expect(castOptions(u, "p1", idOf(u, "p1", "hand", "Soaring Stoneglider"))).toHaveLength(0);
   });
 
-  it("Brush Off : {1}{U} de moins s'il cible un sort d'éphémère ou de rituel ; prix plein pour un sort de créature", () => {
+  it("Brush Off: {1}{U} less if it targets an instant or sorcery spell; full price for a creature spell", () => {
     let s = scenario({
       active: "p2",
       p1: { battlefield: lands("Island", 2), hand: ["Brush Off"] },
@@ -4597,7 +4599,7 @@ describe("Secrets of Strixhaven, lot B3 : coûts", () => {
     s = settle(s);
     expect(s.players.p1?.life).toBe(20);
     expect(idsOf(s, "p2", "graveyard", "Lightning Strike")).toHaveLength(1);
-    // Un sort de créature : {2}{U}{U}, impayable avec deux Îles.
+    // A creature spell: {2}{U}{U}, unpayable with two Islands.
     let t = scenario({
       active: "p2",
       p1: { battlefield: lands("Island", 2), hand: ["Brush Off"] },
@@ -4610,8 +4612,8 @@ describe("Secrets of Strixhaven, lot B3 : coûts", () => {
   });
 });
 
-describe("Secrets of Strixhaven, lot C1 : moitiés par joueur, exil jouable, marqueurs mis, prochaine phase principale", () => {
-  it("Pox Plague : chaque joueur perd la moitié de ses PV, défausse la moitié de sa main, sacrifie la moitié de ses permanents (à l'inférieur)", () => {
+describe("Secrets of Strixhaven, lot C1: halves per player, playable exile, counters put, next main phase", () => {
+  it("Pox Plague: each player loses half their life, discards half their hand, sacrifices half their permanents (rounded down)", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Swamp", 5), "Bear Cub"], hand: ["Pox Plague", "Opt", "Opt", "Opt", "Opt"] },
       p2: { life: 15, battlefield: ["Bear Cub", "Forest", "Forest"], hand: ["Opt", "Opt", "Opt"] },
@@ -4625,7 +4627,7 @@ describe("Secrets of Strixhaven, lot C1 : moitiés par joueur, exil jouable, mar
     expect(s.battlefield.filter((id) => s.objects[id]?.controller === "p2")).toHaveLength(2);
   });
 
-  it("Suspend Aggression : un permanent non-terrain et votre carte du dessus exilés, jouables par leur propriétaire jusqu'à la fin de son prochain tour", () => {
+  it("Suspend Aggression: a nonland permanent and your top card exiled, playable by their owner until the end of their next turn", () => {
     let s = scenario({
       p1: {
         battlefield: ["Mountain", "Plains", "Island", "Island"],
@@ -4639,19 +4641,19 @@ describe("Secrets of Strixhaven, lot C1 : moitiés par joueur, exil jouable, mar
     const opt = exiled(s, "Opt")[0] as string;
     expect(bear && opt).toBeTruthy();
     expect(castOptions(s, "p1", opt)).not.toHaveLength(0);
-    // Tour de l'adversaire (4) : il peut lancer son Ours.
+    // Opponent's turn (4): they can cast their Bear.
     s = advanceUntil(s, (x) => x.turn.number === 4 && x.turn.step === "main1");
     expect(castOptions(s, "p2", bear)).not.toHaveLength(0);
-    // Votre prochain tour (5) : Opt reste jouable ; l'Ours ne l'est plus pour l'adversaire au tour 6.
+    // Your next turn (5): Opt stays playable; the Bear is no longer playable for the opponent on turn 6.
     s = advanceUntil(s, (x) => x.turn.number === 5 && x.turn.step === "main1");
     expect(castOptions(s, "p1", opt)).not.toHaveLength(0);
     s = advanceUntil(s, (x) => x.turn.number === 6 && x.turn.step === "main1");
     expect(castOptions(s, "p2", bear)).toHaveLength(0);
   });
 
-  it("Fractal Tender : à chaque étape de fin, si vous avez mis un marqueur sur elle ce tour-ci, une Fractale avec trois marqueurs", () => {
+  it("Fractal Tender: at each end step, if you put a counter on it this turn, a Fractal with three counters", () => {
     const big = customCard({
-      name: "Rituel à quatre",
+      name: "Sorcery costing four",
       types: ["Sorcery"],
       typeLine: "Sorcery",
       manaCost: { generic: 4, colored: {}, x: 0 },
@@ -4663,19 +4665,19 @@ describe("Secrets of Strixhaven, lot C1 : moitiés par joueur, exil jouable, mar
     });
     const tender = idOf(s, "p1", "battlefield", "Fractal Tender");
     s = settle(cast(s, "p1", big.name));
-    // Increment : 4 mana > 3.
+    // Increment: 4 mana > 3.
     expect(s.objects[tender]?.counters["+1/+1"]).toBe(1);
     s = advanceUntil(s, (x) => x.turn.step === "end" && x.stack.length === 0 && x.triggers.length === 0 && x.turn.number === 3);
     s = settle(s);
     const fractals = idsOf(s, "p1", "battlefield", "Fractal");
     expect(fractals).toHaveLength(1);
     expect(s.objects[fractals[0] as string]?.counters["+1/+1"]).toBe(3);
-    // Tour suivant (adversaire) : aucun marqueur mis, pas de Fractale.
+    // Next turn (opponent's): no counter put, no Fractal.
     s = advanceUntil(s, (x) => x.turn.number === 5);
     expect(idsOf(s, "p1", "battlefield", "Fractal")).toHaveLength(1);
   });
 
-  it("Mana Sculpt : contrecarre ; avec un Sorcier, {C} égal au mana dépensé pour ce sort au début de votre prochaine phase principale", () => {
+  it("Mana Sculpt: counters; with a Wizard, {C} equal to the mana spent on this spell at the beginning of your next main phase", () => {
     let s = scenario({
       active: "p2",
       turn: 4,
@@ -4692,8 +4694,8 @@ describe("Secrets of Strixhaven, lot C1 : moitiés par joueur, exil jouable, mar
   });
 });
 
-describe("Secrets of Strixhaven, lot C2 : sort gratuit une fois par tour, copies", () => {
-  it("Zaffai and the Tempests : une fois pendant chacun de vos tours, un éphémère ou un rituel de votre main sans payer", () => {
+describe("Secrets of Strixhaven, lot C2: free spell once each turn, copies", () => {
+  it("Zaffai and the Tempests: once during each of your turns, an instant or sorcery from your hand without paying", () => {
     let s = scenario({
       p1: { battlefield: ["Zaffai and the Tempests"], hand: ["Lightning Strike", "Lightning Strike", "Bear Cub"] },
     });
@@ -4701,16 +4703,16 @@ describe("Secrets of Strixhaven, lot C2 : sort gratuit une fois par tour, copies
     expect(castOptions(s, "p1", idOf(s, "p1", "hand", "Bear Cub"))).toHaveLength(0);
     s = settle(act(s, "p1", { type: "cast", card: a as string, targets: { t: ["p2"] }, free: true }));
     expect(s.players.p2?.life).toBe(17);
-    // La permission est utilisée pour ce tour.
+    // The permission is used up for this turn.
     expect(castOptions(s, "p1", b as string)).toHaveLength(0);
-    // Pendant le tour de l'adversaire : pas de sort gratuit.
+    // During the opponent's turn: no free spell.
     s = advanceUntil(s, (x) => x.turn.number === 4 && x.turn.step === "main1" && x.pending?.player === "p1");
     expect(castOptions(s, "p1", b as string)).toHaveLength(0);
     s = advanceUntil(s, (x) => x.turn.number === 5 && x.turn.step === "main1");
     expect(castOptions(s, "p1", b as string)).not.toHaveLength(0);
   });
 
-  it("Choreographed Sparks : copie un éphémère que vous contrôlez ; ne peut pas lui-même être copié", () => {
+  it("Choreographed Sparks: copies an instant you control; can't itself be copied", () => {
     let s = scenario({ p1: { battlefield: lands("Mountain", 4), hand: ["Lightning Strike", "Choreographed Sparks"] } });
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Lightning Strike"), targets: { t: ["p2"] } });
     const strike = s.stack[0]?.id as string;
@@ -4723,7 +4725,7 @@ describe("Secrets of Strixhaven, lot C2 : sort gratuit une fois par tour, copies
     expect(Object.values(s.defs).find((d) => d.name === "Choreographed Sparks")?.cantBeCopied).toBe(true);
   });
 
-  it("Choreographed Sparks : la copie d'un sort de créature a la célérité et est sacrifiée au début de l'étape de fin", () => {
+  it("Choreographed Sparks: the copy of a creature spell has haste and is sacrificed at the beginning of the end step", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Mountain", 4), ...lands("Forest", 2)], hand: ["Bear Cub", "Choreographed Sparks"] },
     });
@@ -4742,8 +4744,8 @@ describe("Secrets of Strixhaven, lot C2 : sort gratuit une fois par tour, copies
   });
 });
 
-describe("Secrets of Strixhaven, lot C3 : cascade et miracle", () => {
-  /** Joue la résolution en lançant (ou non) la carte proposée par un « lancer maintenant ». */
+describe("Secrets of Strixhaven, lot C3: cascade and miracle", () => {
+  /** Plays out the resolution, casting (or not) the card offered by a "cast now". */
   const resolveAll = (s: S, castIt: boolean, max = 80) => {
     let cur = s;
     for (let i = 0; i < max && cur.stack.length + cur.triggers.length + (cur.pending?.kind === "choice" ? 1 : 0) > 0; i++) {
@@ -4758,7 +4760,7 @@ describe("Secrets of Strixhaven, lot C3 : cascade et miracle", () => {
     return cur;
   };
 
-  it("Quandrix, the Proof : cascade (une carte non-terrain de VM inférieure, lancée gratuitement ; le reste dessous)", () => {
+  it("Quandrix, the Proof: cascade (a nonland card of lesser MV, cast for free; the rest on the bottom)", () => {
     let s = scenario({
       p1: {
         battlefield: [...lands("Forest", 3), ...lands("Island", 3)],
@@ -4768,14 +4770,14 @@ describe("Secrets of Strixhaven, lot C3 : cascade et miracle", () => {
     });
     s = resolveAll(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Quandrix, the Proof") }), true);
     expect(idsOf(s, "p1", "battlefield", "Quandrix, the Proof")).toHaveLength(1);
-    // Shivan Dragon (VM 6) n'est pas de VM inférieure à 6 : Lightning Strike est lancée gratuitement.
+    // Shivan Dragon (MV 6) is not of lesser MV than 6: Lightning Strike is cast for free.
     expect(s.players.p2?.life).toBe(17);
     const lib = s.players.p1?.library.map((id) => nameOf(s, id)) ?? [];
     expect(lib.slice(0, 2)).toEqual(["Forest", "Plains"]);
     expect(lib.slice(2).sort()).toEqual(["Island", "Shivan Dragon"]);
   });
 
-  it("Quandrix, the Proof : vos éphémères et rituels lancés depuis la main ont la cascade ; refusé, la carte va dessous", () => {
+  it("Quandrix, the Proof: your instants and sorceries cast from hand have cascade; declined, the card goes on the bottom", () => {
     let s = scenario({
       p1: {
         battlefield: ["Quandrix, the Proof", ...lands("Mountain", 2)],
@@ -4788,13 +4790,13 @@ describe("Secrets of Strixhaven, lot C3 : cascade et miracle", () => {
       false,
     );
     expect(s.players.p2?.life).toBe(17);
-    // Opt (VM 1 < 2) proposé et refusé : il va au-dessous, Plains reste au-dessus.
+    // Opt (MV 1 < 2) offered and declined: it goes on the bottom, Plains stays on top.
     const lib = s.players.p1?.library.map((id) => nameOf(s, id)) ?? [];
     expect(lib[0]).toBe("Plains");
     expect(lib.slice(1).sort()).toEqual(["Forest", "Opt"]);
   });
 
-  it("Lorehold, the Historian : la première carte piochée du tour, un éphémère ou un rituel, peut être lancée pour {2}", () => {
+  it("Lorehold, the Historian: the first card drawn each turn, an instant or sorcery, can be cast for {2}", () => {
     let s = scenario({
       turn: 2,
       active: "p2",
@@ -4803,17 +4805,17 @@ describe("Secrets of Strixhaven, lot C3 : cascade et miracle", () => {
         library: ["Lightning Strike", "Lightning Strike", ...lands("Plains", 5)],
       },
     });
-    // Tour 3 de p1 : la pioche de l'étape de pioche est la première du tour.
+    // p1's turn 3: the draw step's draw is the first of the turn.
     s = advanceUntil(s, (x) => x.turn.number === 3 && !!castNowOf(x));
     const offer = castNowOf(s);
     expect(offer).toBeDefined();
     s = resolveAll(s, true);
     expect(s.players.p2?.life).toBe(17);
-    // Deux Plaines engagées : le coût de miracle {2} (et non {1}{R}).
+    // Two tapped Plains: the miracle cost {2} (not {1}{R}).
     expect(s.battlefield.filter((id) => nameOf(s, id) === "Plains" && s.objects[id]?.tapped)).toHaveLength(2);
   });
 
-  it("Lorehold, the Historian : à l'entretien adverse, vous pouvez défausser une carte pour en piocher une", () => {
+  it("Lorehold, the Historian: at the opponent's upkeep, you may discard a card to draw one", () => {
     let s = scenario({
       active: "p1",
       p1: { battlefield: ["Lorehold, the Historian"], hand: ["Opt"], library: lands("Plains", 5) },
@@ -4827,8 +4829,8 @@ describe("Secrets of Strixhaven, lot C3 : cascade et miracle", () => {
   });
 });
 
-// Cartes des decks du méta Standard (docs/plans/PLAN-C.md, lot C13).
-describe("Secrets of Strixhaven : cartes du méta Standard", () => {
+// Cards from the Standard meta decks (PLAN-C in docs/history.md, lot C13).
+describe("Secrets of Strixhaven: Standard meta cards", () => {
   describe("Vibrant Outburst", () => {
     const setup = () =>
       scenario({
@@ -4836,7 +4838,7 @@ describe("Secrets of Strixhaven : cartes du méta Standard", () => {
         p2: { battlefield: ["Serra Angel", "Fire Elemental"] },
       });
 
-    it("3 blessures à n'importe quelle cible (un joueur) et engage jusqu'à une créature ciblée", () => {
+    it("3 damage to any target (a player) and taps up to one targeted creature", () => {
       let s = setup();
       const angel = idOf(s, "p2", "battlefield", "Serra Angel");
       s = settle(cast(s, "p1", "Vibrant Outburst", { d: ["p2"], c: [angel] }));
@@ -4845,7 +4847,7 @@ describe("Secrets of Strixhaven : cartes du méta Standard", () => {
       expect(s.objects[idOf(s, "p2", "battlefield", "Fire Elemental")]?.tapped).toBe(false);
     });
 
-    it("3 blessures à une créature, sans créature à engager", () => {
+    it("3 damage to a creature, with no creature to tap", () => {
       let s = setup();
       const fire = idOf(s, "p2", "battlefield", "Fire Elemental");
       s = settle(cast(s, "p1", "Vibrant Outburst", { d: [fire], c: [] }));

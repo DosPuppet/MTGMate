@@ -6,13 +6,13 @@ import { searchFilter } from "../src/decks/search";
 const card = (name: string) => CARDS[name] as CardDef;
 const hit = (query: string, name: string) => searchFilter(query)(card(name));
 
-describe("recherche du deckbuilder", () => {
-  it("mots libres : nom, en anglais ou en français, sans accents", () => {
+describe("deckbuilder search", () => {
+  it("free words: name, in English or French, accent-insensitive", () => {
     expect(hit("llanowar", "Llanowar Elves")).toBe(true);
     expect(hit("shivan", "Llanowar Elves")).toBe(false);
   });
 
-  it("t:, o:, c:, mv et négation", () => {
+  it("t:, o:, c:, mv and negation", () => {
     expect(hit("t:creature", "Llanowar Elves")).toBe(true);
     expect(hit("t:instant", "Llanowar Elves")).toBe(false);
     expect(hit('o:"add {g}"', "Llanowar Elves")).toBe(true);
@@ -23,7 +23,7 @@ describe("recherche du deckbuilder", () => {
     expect(hit("pow=1 tou:1", "Llanowar Elves")).toBe(true);
   });
 
-  it("requête vide : tout passe", () => {
+  it("empty query: everything passes", () => {
     expect(hit("", "Llanowar Elves")).toBe(true);
   });
 });

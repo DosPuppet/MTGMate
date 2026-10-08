@@ -1,4 +1,4 @@
-/** Mystical Archive (SOA) : tests de règles des cartes (PLAN-G). */
+/** Mystical Archive (SOA): card rules tests (PLAN-G). */
 import { describe, expect, it } from "vitest";
 import { dealDamage, loseLife } from "../src/actions";
 import { fx, ref, spell, target } from "../src/dsl";
@@ -32,14 +32,14 @@ const castOption = (s: ReturnType<typeof scenario>, card: string) =>
 
 describe("Mystical Archive", () => {
   describe("Surcharge (702.96) : Cyclonic Rift", () => {
-    it("ciblé pour {1}{U} : un permanent non-terrain adverse revient en main", () => {
+    it("targeted for {1}{U}: an opposing nonland permanent returns to hand", () => {
       let s = scenario({
         p1: { battlefield: lands("Island", 2), hand: ["Cyclonic Rift"] },
         p2: { battlefield: ["Bear Cub", "Forest"] },
       });
       const rift = idOf(s, "p1", "hand", "Cyclonic Rift");
       const opt = castOption(s, rift);
-      // Deux îles : seul le mode normal est payable.
+      // Two Islands: only the normal mode is payable.
       expect(opt?.type === "cast" && opt.modes.map((m) => m.index)).toEqual([0]);
       const bears = idOf(s, "p2", "battlefield", "Bear Cub");
       s = settle(act(s, "p1", { type: "cast", card: rift, mode: 0, targets: { t: [bears] } }));
@@ -47,13 +47,13 @@ describe("Mystical Archive", () => {
       expect(idsOf(s, "p2", "battlefield", "Forest")).toHaveLength(1);
     });
 
-    it("surchargé pour {6}{U} : chaque permanent non-terrain adverse, sans cible ; les vôtres et les terrains restent", () => {
+    it("overloaded for {6}{U}: each opposing nonland permanent, without a target; yours and the lands stay", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Island", 7), "Bear Cub"], hand: ["Cyclonic Rift"] },
         p2: { battlefield: ["Bear Cub", "Llanowar Elves", "Forest"] },
       });
       const rift = idOf(s, "p1", "hand", "Cyclonic Rift");
-      // Deux options : le coût normal (gratuité et coûts alternatifs possibles), et la surcharge à part.
+      // Two options: the normal cost (free casting and alternative costs possible), and overload separately.
       const opts = legalActions(s, "p1").filter((a) => a.type === "cast" && a.card === rift);
       expect(opts.map((o) => o.type === "cast" && o.modes.map((m) => plainText(m.label ?? "")))).toEqual([
         ["Normal cost"],
@@ -63,11 +63,11 @@ describe("Mystical Archive", () => {
       expect(s.players.p2?.hand.map((id) => nameOf(s, id)).sort()).toEqual(["Bear Cub", "Llanowar Elves"]);
       expect(idsOf(s, "p2", "battlefield", "Forest")).toHaveLength(1);
       expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
-      // Les sept îles ont payé la surcharge.
+      // The seven Islands paid for overload.
       expect(s.battlefield.filter((id) => nameOf(s, id) === "Island" && s.objects[id]?.tapped)).toHaveLength(7);
     });
 
-    it("la surcharge ne se lance pas gratuitement ni avec un autre coût alternatif (118.9a)", () => {
+    it("overload cannot be cast for free or with another alternative cost (118.9a)", () => {
       const s = scenario({ p1: { battlefield: lands("Island", 7), hand: ["Cyclonic Rift"] } });
       const rift = idOf(s, "p1", "hand", "Cyclonic Rift");
       expect(() => act(s, "p1", { type: "cast", card: rift, mode: 1, free: true })).toThrow();
@@ -76,7 +76,7 @@ describe("Mystical Archive", () => {
   });
 
   describe("Winds of Abandon", () => {
-    it("ciblé : la créature est exilée, son contrôleur cherche un terrain de base, engagé", () => {
+    it("targeted: the creature is exiled, its controller searches for a basic land, tapped", () => {
       let s = scenario({
         p1: { battlefield: lands("Plains", 2), hand: ["Winds of Abandon"] },
         p2: { battlefield: ["Bear Cub"], library: ["Forest", "Forest", "Bear Cub"] },
@@ -91,7 +91,7 @@ describe("Mystical Archive", () => {
       expect(s.objects[forests[0] as string]?.tapped).toBe(true);
     });
 
-    it("surchargé : chaque créature adverse exilée, et autant de terrains de base pour son contrôleur", () => {
+    it("overloaded: each opposing creature exiled, and as many basic lands for its controller", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Plains", 6), "Bear Cub"], hand: ["Winds of Abandon"] },
         p2: { battlefield: ["Bear Cub", "Llanowar Elves"], library: ["Forest", "Forest", "Forest", "Bear Cub"] },
@@ -102,7 +102,7 @@ describe("Mystical Archive", () => {
       expect(s.exile).toHaveLength(2);
     });
 
-    it("ciblé : c'est le contrôleur de la créature exilée qui cherche, pas son propriétaire", () => {
+    it("targeted: the controller of the exiled creature searches, not its owner", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Plains", 2), "Bear Cub"], hand: ["Winds of Abandon"], library: ["Plains", "Plains"] },
         p2: { library: ["Forest", "Forest"] },
@@ -116,7 +116,7 @@ describe("Mystical Archive", () => {
       expect(idsOf(s, "p1", "battlefield", "Plains")).toHaveLength(2);
     });
 
-    it("surchargé : chaque contrôleur cherche autant de terrains que de ses créatures exilées, volées comprises", () => {
+    it("overloaded: each controller searches for as many lands as their exiled creatures, stolen ones included", () => {
       let s = scenario({
         players: 3,
         p1: { battlefield: [...lands("Plains", 6), "Bear Cub"], hand: ["Winds of Abandon"], library: ["Plains", "Plains"] },
@@ -126,31 +126,31 @@ describe("Mystical Archive", () => {
       steal(s, idOf(s, "p1", "battlefield", "Bear Cub"), "p2");
       s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Winds of Abandon"), mode: 1 }));
       expect(s.exile).toHaveLength(3);
-      // p2 contrôlait deux créatures (ses Elves et votre Bear Cub), p3 une ; vous, aucune.
+      // p2 controlled two creatures (their Elves and your Bear Cub), p3 one; you, none.
       expect(idsOf(s, "p2", "battlefield", "Forest")).toHaveLength(2);
       expect(idsOf(s, "p3", "battlefield", "Island")).toHaveLength(1);
       expect(idsOf(s, "p1", "battlefield", "Plains")).toHaveLength(6);
     });
   });
 
-  describe("Déluge (702.40) : Empty the Warrens, Brain Freeze", () => {
-    it("une copie pour chaque sort lancé avant lui ce tour-ci, par n'importe quel joueur", () => {
+  describe("Storm (702.40): Empty the Warrens, Brain Freeze", () => {
+    it("one copy for each spell cast before it this turn, by any player", () => {
       let s = scenario({
         p1: { battlefield: lands("Mountain", 6), hand: ["Shock", "Empty the Warrens"] },
         p2: { battlefield: lands("Mountain", 1), hand: ["Shock"] },
       });
       s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Shock"), targets: { t: ["p2"] } }));
-      // L'adversaire lance un sort à son tour de priorité (en réponse à rien : il garde la main au vide de pile).
+      // The opponent casts a spell on their priority turn (in response to nothing: they keep priority at empty stack).
       s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Empty the Warrens") });
       s = act(s, "p1", { type: "pass" });
       s = act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Shock"), targets: { t: ["p1"] } });
       s = settle(s);
-      // Un sort avant Empty the Warrens (le premier Shock) : une copie, soit quatre Gobelins ; le Shock adverse, lancé
-      // après, ne compte pas.
+      // A spell before Empty the Warrens (the first Shock): one copy, so four Goblins; the opposing Shock, cast
+      // afterwards, does not count.
       expect(idsOf(s, "p1", "battlefield", "Goblin")).toHaveLength(4);
     });
 
-    it("Brain Freeze : chaque copie fait meuler trois cartes", () => {
+    it("Brain Freeze: each copy mills three cards", () => {
       let s = scenario({
         p1: { battlefield: lands("Island", 4), hand: ["Opt", "Opt", "Brain Freeze"] },
         p2: { library: lands("Forest", 20) },
@@ -166,7 +166,7 @@ describe("Mystical Archive", () => {
     const castIt = (s: S, name: string, extra: object = {}) =>
       act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", name), ...extra });
 
-    it("Prismatic Ending : exile si sa valeur de mana ne dépasse pas le nombre de couleurs dépensées", () => {
+    it("Prismatic Ending: exiles if its mana value does not exceed the number of colors spent", () => {
       const run = (lands: string[], victim: string) => {
         let s = scenario({ p1: { battlefield: lands, hand: ["Prismatic Ending"] }, p2: { battlefield: [victim] } });
         s = settle(
@@ -178,13 +178,13 @@ describe("Mystical Archive", () => {
       expect(run(["Plains", "Plains"], "Bear Cub")).toBe(1);
     });
 
-    it("Pongify : la créature est détruite (sans régénération), son contrôleur crée un Singe 3/3", () => {
+    it("Pongify: the creature is destroyed (no regeneration), its controller creates a 3/3 Ape", () => {
       let s = scenario({ p1: { battlefield: ["Island"], hand: ["Pongify"] }, p2: { battlefield: ["Shivan Dragon"] } });
       s = settle(castIt(s, "Pongify", { targets: { t: [idOf(s, "p2", "battlefield", "Shivan Dragon")] } }));
       expect([idsOf(s, "p2", "graveyard", "Shivan Dragon").length, idsOf(s, "p2", "battlefield", "Ape").length]).toEqual([1, 1]);
     });
 
-    it("Living End : suspendue ; chacun exile ses cartes de créature du cimetière, sacrifie ses créatures, puis remet les exilées", () => {
+    it("Living End: suspended; everyone exiles their creature cards from the graveyard, sacrifices their creatures, then returns the exiled ones", () => {
       let s = scenario({
         active: "p2",
         step: "end",
@@ -201,7 +201,7 @@ describe("Mystical Archive", () => {
       expect(idsOf(s, "p2", "graveyard", "Llanowar Elves")).toHaveLength(1);
     });
 
-    it("Smallpox : chaque joueur perd 1 PV, défausse, sacrifie une créature et un terrain", () => {
+    it("Smallpox: each player loses 1 life, discards, sacrifices a creature and a land", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Swamp", 2), "Bear Cub"], hand: ["Smallpox", "Forest"] },
         p2: { battlefield: ["Forest", "Llanowar Elves"], hand: ["Opt"] },
@@ -211,7 +211,7 @@ describe("Mystical Archive", () => {
       expect(s.players.p2?.graveyard.map((id) => nameOf(s, id)).sort()).toEqual(["Forest", "Llanowar Elves", "Opt"]);
     });
 
-    it("Subterranean Tremors : X blessures aux créatures sans vol ; X ≥ 4, détruisez les artefacts", () => {
+    it("Subterranean Tremors: X damage to creatures without flying; X >= 4, destroy the artifacts", () => {
       let s = scenario({
         p1: { battlefield: lands("Mountain", 5), hand: ["Subterranean Tremors"] },
         p2: { battlefield: ["Shivan Dragon", "Bear Cub", "Mana Crypt"] },
@@ -222,7 +222,7 @@ describe("Mystical Archive", () => {
       ]);
     });
 
-    it("Awaken the Woods : X Dryades des forêts, terrains-créatures", () => {
+    it("Awaken the Woods: X Forest Dryads, land creatures", () => {
       let s = scenario({ p1: { battlefield: lands("Forest", 5), hand: ["Awaken the Woods"] } });
       s = settle(castIt(s, "Awaken the Woods", { x: 3 }));
       const dryads = idsOf(s, "p1", "battlefield", "Forest Dryad");
@@ -230,7 +230,7 @@ describe("Mystical Archive", () => {
       expect(manaAbilitiesOf(s, dryads[0] as string)[0]?.produce).toEqual(["G"]);
     });
 
-    it("Berserk : piétinement et +X/+0 ; détruite à l'étape de fin si elle a attaqué", () => {
+    it("Berserk: trample and +X/+0; destroyed at the end step if it attacked", () => {
       let s = scenario({ p1: { battlefield: ["Forest", "Bear Cub"], hand: ["Berserk"] } });
       const cub = idOf(s, "p1", "battlefield", "Bear Cub");
       s = settle(castIt(s, "Berserk", { targets: { t: [cub] } }));
@@ -240,7 +240,7 @@ describe("Mystical Archive", () => {
       expect(idsOf(s, "p1", "graveyard", "Bear Cub")).toHaveLength(1);
     });
 
-    it("Glimpse of Nature : chaque sort de créature lancé ce tour-ci fait piocher", () => {
+    it("Glimpse of Nature: each creature spell cast this turn draws a card", () => {
       let s = scenario({
         p1: {
           battlefield: lands("Forest", 3),
@@ -254,7 +254,7 @@ describe("Mystical Archive", () => {
       expect(s.players.p1?.hand).toHaveLength(2);
     });
 
-    it("Culling Ritual : détruit les permanents non-terrain de VM 2 ou moins ; un mana par permanent détruit", () => {
+    it("Culling Ritual: destroys nonland permanents with MV 2 or less; one mana per destroyed permanent", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Swamp", 2), ...lands("Forest", 2)], hand: ["Culling Ritual"] },
         p2: { battlefield: ["Bear Cub", "Llanowar Elves", "Shivan Dragon"] },
@@ -265,7 +265,7 @@ describe("Mystical Archive", () => {
       expect(idsOf(s, "p2", "battlefield", "Shivan Dragon")).toHaveLength(1);
     });
 
-    it("Bring to Light : une carte de valeur de mana au plus égale aux couleurs dépensées, lancée gratuitement", () => {
+    it("Bring to Light: a card with mana value at most the colors spent, cast for free", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Forest", 3), "Island", "Mountain"],
@@ -277,7 +277,7 @@ describe("Mystical Archive", () => {
       expect(castNowOf(s)?.cards.map((id) => nameOf(s, id))).toEqual(["Bear Cub"]);
     });
 
-    it("Expressive Iteration : une carte en main, une au-dessous, une exilée jouable ce tour-ci", () => {
+    it("Expressive Iteration: one card in hand, one on the bottom, one exiled playable this turn", () => {
       let s = scenario({
         p1: {
           battlefield: ["Island", "Mountain"],
@@ -291,13 +291,13 @@ describe("Mystical Archive", () => {
     });
   });
 
-  describe("G4e : règles de joueur", () => {
-    it("Angel's Grace : vous ne perdez pas ce tour-ci ; les blessures ne descendent pas vos PV sous 1", () => {
+  describe("G4e: player rules", () => {
+    it("Angel's Grace: you don't lose this turn; damage doesn't take your life below 1", () => {
       let s = scenario({ p1: { life: 3, battlefield: ["Plains"], hand: ["Angel's Grace"] } });
       s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Angel's Grace") }));
       dealDamage(s, { defId: "test", controller: "p2", keywords: [] }, "p1", 10, false);
       expect(s.players.p1?.life).toBe(1);
-      // La perte de points de vie n'est pas limitée, mais le joueur ne perd pas la partie ce tour-ci.
+      // Life loss is not limited, but the player does not lose the game this turn.
       loseLife(s, "p1", 5);
       stateBasedActions(s);
       expect(s.players.p1?.life).toBe(-4);
@@ -305,7 +305,7 @@ describe("Mystical Archive", () => {
     });
   });
   describe("G4e : combat", () => {
-    it("Veil of Summer : pioche si un adversaire a lancé un sort bleu ou noir ; défense contre le bleu et le noir", () => {
+    it("Veil of Summer: draws if an opponent cast a blue or black spell; hexproof from blue and black", () => {
       const drain = customCard({
         name: "Drain de test",
         types: ["Instant"],
@@ -333,7 +333,7 @@ describe("Mystical Archive", () => {
       expect(isLegalTarget(s, "p2", target.player(), "p2", src)).toBe(true);
     });
 
-    it("Deflecting Palm : prévient les blessures de la source choisie et les inflige à son contrôleur", () => {
+    it("Deflecting Palm: prevents damage from the chosen source and deals it to its controller", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: ["Mountain", "Plains"], hand: ["Deflecting Palm"] },
@@ -349,8 +349,8 @@ describe("Mystical Archive", () => {
       expect(s.players.p2?.life).toBe(18);
     });
   });
-  describe("G4e : bibliothèque et pioche", () => {
-    it("Ad Nauseam : la carte du dessus en main, autant de PV perdus que sa VM ; on peut recommencer", () => {
+  describe("G4e: library and drawing", () => {
+    it("Ad Nauseam: the top card to hand, as much life lost as its MV; you can repeat", () => {
       let s = scenario({
         p1: { battlefield: lands("Swamp", 5), hand: ["Ad Nauseam"], library: ["Shivan Dragon", "Shock", "Forest", "Island"] },
       });

@@ -1,5 +1,5 @@
 /**
- * AI levels: beginner, medium, expert (see docs/ia.md).
+ * AI levels: beginner, medium, expert (see docs/ai.md).
  */
 import type { Agent } from "@mtgx/engine";
 import { decide } from "./heuristic";
@@ -56,7 +56,7 @@ export function aiAgent(level: AiLevel, opts: AiOptions = {}): Agent {
     // Time budget: the search stops at the deadline (slow machine), keeping the best found.
     deadline = ms === null ? Number.POSITIVE_INFINITY : Date.now() + ms;
     // Attacks stay with the search by simulation (combat.ts): when decided by ISMCTS, whose simulations
-    // make the opponent block naively, they became too aggressive (measured in the tournament, see docs/ia.md).
+    // make the opponent block naively, they became too aggressive (measured in the tournament, see docs/ai.md).
     const p = s.pending;
     if (ismcts && p?.kind === "priority" && p.player === me && (iterations ?? 1) > 0) {
       const d = ismctsPriority(s, me, profile, { rand, iterations, ms: ms ?? undefined });

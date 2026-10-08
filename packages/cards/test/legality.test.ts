@@ -1,4 +1,4 @@
-/** Légalités (PLAN-C, C19) : la liste des cartes bannies du README suit les données (légalités importées et dérogations). */
+/** Legalities (PLAN-C, C19): the README list of banned cards follows the data (imported legalities and overrides). */
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";

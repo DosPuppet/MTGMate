@@ -1,4 +1,4 @@
-/** Test de fumée : Final Fantasy. */
+/** Smoke test: Final Fantasy. */
 import { smokeTest } from "./harness";
 
 smokeTest(["FIN"]);

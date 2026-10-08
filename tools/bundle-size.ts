@@ -1,5 +1,5 @@
 /**
- * Size budget of the interface bundle (docs/plans/PLAN-C.md, lot C3): builds the client (`vite build`) and checks the
+ * Size budget of the interface bundle (PLAN-C in docs/history.md, lot C3): builds the client (`vite build`) and checks the
  * size of each chunk. The game worker must not embed the cards (it receives their definitions).
  *
  * Usage: npx tsx tools/bundle-size.ts   (run by `npm run verify`)

@@ -1,6 +1,6 @@
 /**
- * Objets payés en coût choisis par le joueur (docs/plans/PLAN-C.md, lots C7 et C8) : `legalActions` propose les choix
- * (`picks`), le moteur applique ceux du joueur ou, à défaut, sa suggestion, et refuse un choix invalide.
+ * Objects paid as a cost, chosen by the player (PLAN-C in docs/history.md, lots C7 and C8): `legalActions` offers the choices
+ * (`picks`), the engine applies the player's or, failing that, its own suggestion, and refuses an invalid choice.
  */
 import { describe, expect, it } from "vitest";
 import { fx, ref, spell, target } from "../src/dsl";
@@ -16,8 +16,8 @@ const activation = (s: GameState, source: string, label: string) =>
   );
 const bear = (name: string, power = 2, toughness = 2) => customCard({ name, power, toughness });
 
-describe("objets payés en coût, au choix du joueur", () => {
-  it("flétrir en coût : la créature choisie reçoit le marqueur, sinon la suggestion du moteur", () => {
+describe("objects paid as a cost, chosen by the player", () => {
+  it("blight as a cost: the chosen creature gets the counter, otherwise the engine's suggestion", () => {
     const base = { battlefield: ["Dawnhand Dissident", bear("Petit", 2, 2), bear("Gros", 4, 4)] };
     let s = scenario({ p1: base });
     const dissident = idOf(s, "p1", "battlefield", "Dawnhand Dissident");
@@ -25,7 +25,7 @@ describe("objets payés en coût, au choix du joueur", () => {
     const option = activation(s, dissident, "surveil");
     const pick = option?.picks?.find((p) => p.slot === "blight");
     expect(pick?.options).toEqual(expect.arrayContaining([petit, gros]));
-    // Suggestion : une créature qui survit (la plus résistante).
+    // Suggestion: a creature that survives (the sturdiest).
     expect(pick?.suggested).toEqual([gros]);
     s = act(s, "p1", {
       type: "activate",
@@ -36,14 +36,14 @@ describe("objets payés en coût, au choix du joueur", () => {
     });
     expect(s.objects[petit]?.counters["-1/-1"]).toBe(1);
     expect(s.objects[gros]?.counters["-1/-1"]).toBeUndefined();
-    // Sans choix : la suggestion.
+    // Without a choice: the suggestion.
     let t = scenario({ p1: base });
     const d2 = idOf(t, "p1", "battlefield", "Dawnhand Dissident");
     t = act(t, "p1", { type: "activate", source: d2, ability: activation(t, d2, "surveil")?.ability ?? -1, targets: {} });
     expect(t.objects[idOf(t, "p1", "battlefield", "Gros")]?.counters["-1/-1"]).toBe(1);
   });
 
-  it("un choix invalide est refusé (objet hors des options, mauvais nombre)", () => {
+  it("an invalid choice is refused (object outside the options, wrong number)", () => {
     const s = scenario({
       p1: { battlefield: ["Dawnhand Dissident", bear("Petit", 1, 1)] },
       p2: { battlefield: [bear("Ennemi")] },
@@ -60,7 +60,7 @@ describe("objets payés en coût, au choix du joueur", () => {
     ).toThrow(RulesError);
   });
 
-  it("réunir des preuves : les cartes choisies, de valeur de mana totale suffisante (Polygraph Orb)", () => {
+  it("collect evidence: the chosen cards, of sufficient total mana value (Polygraph Orb)", () => {
     let s = scenario({
       p1: { battlefield: ["Polygraph Orb", ...lands("Island", 2)], graveyard: ["Opt", "Opt", "Opt", "Lightning Strike"] },
     });
@@ -69,7 +69,7 @@ describe("objets payés en coût, au choix du joueur", () => {
     const pick = option?.picks?.find((p) => p.slot === "evidence");
     expect(pick?.minTotal?.n).toBe(3);
     const opts = s.players.p1?.graveyard.filter((id) => s.objects[id]?.defId === "opt") ?? [];
-    // Trois Opt (valeur 1 chacune) plutôt que Lightning Strike (valeur 2… insuffisante seule).
+    // Three Opt (value 1 each) rather than Lightning Strike (value 2... insufficient alone).
     expect(() =>
       act(s, "p1", {
         type: "activate",
@@ -83,7 +83,7 @@ describe("objets payés en coût, au choix du joueur", () => {
     expect(s.players.p1?.graveyard.map((id) => s.objects[id]?.defId)).toEqual(["lightning-strike"]);
   });
 
-  it("convocation : les créatures choisies paient (et toutes doivent servir), les autres restent dégagées", () => {
+  it("convoke: the chosen creatures pay (and all must be used), the others stay untapped", () => {
     const reds = ["Rouge A", "Rouge B", "Rouge C"].map((n) => customCard({ name: n, power: 1, toughness: 1, colors: ["R"] }));
     const base = { battlefield: [...lands("Mountain", 3), ...reds], hand: ["Collective Inferno"] };
     let s = scenario({ p1: base });
@@ -94,10 +94,10 @@ describe("objets payés en coût, au choix du joueur", () => {
     const pick = option?.picks?.find((p) => p.slot === "convoke");
     expect(pick?.atMost).toBe(true);
     const [a, b, c] = ["Rouge A", "Rouge B", "Rouge C"].map((n) => idOf(s, "p1", "battlefield", n));
-    // {3}{R}{R} : trois Montagnes et deux créatures choisies.
+    // {3}{R}{R}: three Mountains and two chosen creatures.
     s = act(s, "p1", { type: "cast", card: inferno, picks: { convoke: [a as string, c as string] } });
     expect([a, b, c].map((id) => s.objects[id as string]?.tapped)).toEqual([true, false, true]);
-    // Trop de créatures choisies pour le coût : refusé.
+    // Too many chosen creatures for the cost: refused.
     const t = scenario({ p1: { ...base, battlefield: [...lands("Mountain", 4), ...reds] } });
     const all = ["Rouge A", "Rouge B", "Rouge C"].map((n) => idOf(t, "p1", "battlefield", n));
     expect(() =>
@@ -113,28 +113,28 @@ describe("objets payés en coût, au choix du joueur", () => {
   });
 });
 
-describe("614.12 : « en arrivant, choisissez… » demandé au joueur (PLAN-C, lot C9)", () => {
-  it("Cavern of Souls jouée : le type choisi en la jouant, sinon le choix par défaut ; un choix hors des options est refusé", () => {
+describe('614.12: "as it enters, choose..." asked of the player (PLAN-C, lot C9)', () => {
+  it("Cavern of Souls played: the type chosen while playing it, otherwise the default choice; a choice outside the options is refused", () => {
     let s = scenario({ p1: { hand: ["Cavern of Souls"] } });
     const cavern = idOf(s, "p1", "hand", "Cavern of Souls");
     const option = legalActions(s, "p1").find(
       (a): a is Extract<ActionOption, { type: "playLand" }> => a.type === "playLand" && a.card === cavern,
     );
     expect(option?.choose?.type).toBe("name");
-    // Toute la liste officielle des types (205.3m), pas seulement ceux des decks de la partie.
+    // The whole official list of types (205.3m), not only those of the decks in the game.
     s = act(s, "p1", { type: "playLand", card: cavern, chosen: "Phelddagrif" });
     expect(s.objects[idOf(s, "p1", "battlefield", "Cavern of Souls")]?.chosen).toEqual({ creatureType: "Phelddagrif" });
     s = scenario({ p1: { hand: ["Cavern of Souls"] } });
-    expect(() => act(s, "p1", { type: "playLand", card: cavern, chosen: "Pas un type" })).toThrow(RulesError);
+    expect(() => act(s, "p1", { type: "playLand", card: cavern, chosen: "Not a type" })).toThrow(RulesError);
     s = act(s, "p1", { type: "playLand", card: cavern, chosen: "Elf" });
     expect(s.objects[idOf(s, "p1", "battlefield", "Cavern of Souls")]?.chosen).toEqual({ creatureType: "Elf" });
-    // Sans choix : le choix par défaut, comme avant.
+    // Without a choice: the default choice, as before.
     let t = scenario({ p1: { hand: ["Cavern of Souls"] } });
     t = act(t, "p1", { type: "playLand", card: idOf(t, "p1", "hand", "Cavern of Souls") });
     expect(t.objects[idOf(t, "p1", "battlefield", "Cavern of Souls")]?.chosen?.creatureType).toBeDefined();
   });
 
-  it("un permanent mis en jeu par un effet : la question est posée à son nouveau contrôleur", () => {
+  it("a permanent put onto the battlefield by an effect: the question is asked of its new controller", () => {
     const raise = customCard({
       name: "Rappel de test",
       types: ["Sorcery"],
@@ -155,11 +155,11 @@ describe("614.12 : « en arrivant, choisissez… » demandé au joueur (PLAN-C, 
   });
 });
 
-describe("Coûts additionnels d'un sort choisis par le joueur (lot K6)", () => {
+describe("Additional costs of a spell chosen by the player (lot K6)", () => {
   const castOpt = (s: GameState, name: string) =>
     legalActions(s, "p1").find((a) => a.type === "cast" && a.card === idOf(s, "p1", "hand", name));
 
-  it("Fear of Isolation : le joueur choisit le permanent renvoyé ; sans choix, la suggestion du moteur", () => {
+  it("Fear of Isolation: the player chooses the permanent returned; without a choice, the engine's suggestion", () => {
     const setup = () =>
       scenario({ p1: { battlefield: [...lands("Island", 2), "Bear Cub", "Serra Angel"], hand: ["Fear of Isolation"] } });
     let s = setup();
@@ -171,14 +171,14 @@ describe("Coûts additionnels d'un sort choisis par le joueur (lot K6)", () => {
     s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Fear of Isolation"), picks: { costBounce: [angel] } }));
     expect(idOf(s, "p1", "hand", "Serra Angel")).toBeDefined();
     expect(idOf(s, "p1", "battlefield", "Bear Cub")).toBeDefined();
-    // Un objet hors des options est refusé.
+    // An object outside the options is refused.
     const t = setup();
     expect(() =>
       act(t, "p1", { type: "cast", card: idOf(t, "p1", "hand", "Fear of Isolation"), picks: { costBounce: ["inconnu"] } }),
     ).toThrow(RulesError);
   });
 
-  it("Abhorrent Oculus : le joueur choisit les six cartes exilées du cimetière", () => {
+  it("Abhorrent Oculus: the player chooses the six cards exiled from the graveyard", () => {
     const gy = ["Bear Cub", "Serra Angel", "Opt", "Shock", "Island", "Forest", "Swamp"];
     let s = scenario({ p1: { battlefield: lands("Island", 3), hand: ["Abhorrent Oculus"], graveyard: gy } });
     const keep = idOf(s, "p1", "graveyard", "Serra Angel");

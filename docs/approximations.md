@@ -188,7 +188,7 @@ In the order they were added, set by set.
   - `rule` The Kingpin of Crime: "deal damage equal to their toughness" only affects the creatures present at resolution;
   - `timing` Vision Quest: the graveyard is offered before the library;
   - `rule` Cosmic Cube: the card chosen among the six goes through exile while it is being cast (visible to all), then goes to the bottom if you decline;
-  - `rule` Kang the Conqueror: "this turn, level up abilities can't be activated" is not applied to the extra turn;
+  - `rule` Kang the Conqueror: "during that turn, power-up abilities can't be activated" is not applied to the extra turn;
   - `auto choice` Baron Helmut Zemo: the black cards exiled for boast are chosen by the engine (those richest in {B} first, the fewest cards possible);
   - `timing` Worlds Within Worlds: each player chooses and puts their creatures in turn (APNAP order), and not simultaneously;
   - `rule` The Ruinous Wrecking Crew: "up to X modes" is written as combinations of modes, each under the condition X ≥ its number of modes.

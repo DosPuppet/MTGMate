@@ -1,4 +1,4 @@
-/** Sauvegarde de la partie locale : l'enregistrement est reconstruit à partir des messages du worker. */
+/** Saving the local game: the record is rebuilt from the worker's messages. */
 import type { GameRecord } from "@mtgx/engine";
 import { describe, expect, it, vi } from "vitest";
 import { type SavedLocalGame, SaveWriter } from "../src/savedGame";
@@ -8,7 +8,7 @@ const header: GameRecord = {
   version: 1,
   seed: 42,
   players: [
-    { id: "p1", name: "Vous", deck: ["Forest"] },
+    { id: "p1", name: "You", deck: ["Forest"] },
     { id: "p2", name: "IA", deck: ["Island"] },
   ],
   decisions: [],
@@ -16,8 +16,8 @@ const header: GameRecord = {
   checkpoints: [],
 };
 
-describe("sauvegarde de la partie locale", () => {
-  it("l'en-tête puis les décisions nouvelles, écrits ensemble après un court délai", () => {
+describe("saving the local game", () => {
+  it("the header, then the new decisions, written together after a short delay", () => {
     vi.useFakeTimers();
     const writes: SavedLocalGame[] = [];
     const w = new SaveWriter(
@@ -41,7 +41,7 @@ describe("sauvegarde de la partie locale", () => {
     vi.useRealTimers();
   });
 
-  it("flush écrit tout de suite (fermeture de la page) ; après stop, plus rien n'est écrit", () => {
+  it("flush writes right away (page closing); after stop, nothing more is written", () => {
     vi.useFakeTimers();
     const writes: SavedLocalGame[] = [];
     const w = new SaveWriter(
@@ -59,7 +59,7 @@ describe("sauvegarde de la partie locale", () => {
     vi.useRealTimers();
   });
 
-  it("une reprise repart de l'enregistrement rejoué, et le complète", () => {
+  it("a resume starts from the replayed record, and completes it", () => {
     const writes: SavedLocalGame[] = [];
     const w = new SaveWriter(
       () => ({ match: null }),

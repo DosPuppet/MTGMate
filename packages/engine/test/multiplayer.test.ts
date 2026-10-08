@@ -7,7 +7,7 @@ import { eliminate } from "../src/turn";
 import { act, idOf, passUntil, scenario } from "./helpers";
 
 describe("multijoueur", () => {
-  it("la priorité fait le tour de table dans l'ordre", () => {
+  it("priority goes around the table in order", () => {
     let s = scenario({ players: 4, p1: { battlefield: ["Mountain"], hand: ["Burst Lightning"] } });
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Burst Lightning"), targets: { t: ["p3"] } });
     const order: string[] = [];
@@ -20,14 +20,14 @@ describe("multijoueur", () => {
     expect(s.pending).toEqual({ kind: "priority", player: "p1" });
   });
 
-  it("le tour suivant revient au joueur suivant", () => {
+  it("the next turn goes back to the next player", () => {
     let s = scenario({ players: 3, step: "end" });
     s = passUntil(s, (x) => x.turn.active !== "p1");
     expect(s.turn.active).toBe("p2");
     expect(s.players.p2?.lastTurnStarted).toBe(s.turn.number);
   });
 
-  it("on peut attaquer des adversaires différents ; chacun déclare ses bloqueurs", () => {
+  it("different opponents can be attacked; each declares blockers", () => {
     let s = scenario({
       players: 3,
       p1: { battlefield: ["Bear Cub", "Swab Goblin"] },
@@ -58,14 +58,14 @@ describe("multijoueur", () => {
     expect(s.objects[goblin]).toBeUndefined();
   });
 
-  it("on ne peut pas attaquer un joueur éliminé ni soi-même", () => {
+  it("an eliminated player can't be attacked, nor oneself", () => {
     let s = scenario({ players: 3, p1: { battlefield: ["Bear Cub"] } });
     s = passUntil(s, (x) => x.pending?.kind === "declareAttackers");
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     expect(() => act(s, "p1", { type: "declareAttackers", attackers: [{ id: bear, defender: "p1" }] })).toThrow();
   });
 
-  it("journal du tour : un joueur éliminé n'est plus un adversaire (800.4a) ; « un adversaire a perdu des PV » l'ignore", () => {
+  it('turn log: an eliminated player is no longer an opponent (800.4a); "an opponent lost life" ignores them', () => {
     let s = scenario({
       players: 3,
       p1: { battlefield: ["Mountain", "Mountain"], hand: ["Lightning Strike"] },
@@ -75,13 +75,13 @@ describe("multijoueur", () => {
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Lightning Strike"), targets: { t: ["p2"] } });
     s = passUntil(s, (x) => x.stack.length === 0);
     expect(s.players.p2?.lost).toBe(true);
-    // p2 a perdu des PV ce tour-ci, mais a quitté la partie : aucun adversaire en partie n'en a perdu.
+    // p2 lost life this turn, but left the game: no opponent still in the game lost any.
     expect(checkCondition(s, cond.opponentLostLife, "p1")).toBe(false);
     s.turnLog.push({ e: "lifeLoss", player: "p3", amount: 1 });
     expect(checkCondition(s, cond.opponentLostLife, "p1")).toBe(true);
   });
 
-  it("un joueur éliminé quitte la partie avec ses cartes, les autres continuent", () => {
+  it("an eliminated player leaves the game with their cards, the others continue", () => {
     let s = scenario({
       players: 3,
       p1: { battlefield: ["Mountain"], hand: ["Boltwave"] },
@@ -90,19 +90,19 @@ describe("multijoueur", () => {
     });
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Boltwave") });
     s = passUntil(s, (x) => x.stack.length === 0);
-    // Boltwave inflige 3 à chaque adversaire : p2 meurt, p3 passe à 7.
+    // Boltwave deals 3 to each opponent: p2 dies, p3 goes to 7.
     expect(s.players.p2?.lost).toBe(true);
     expect(s.players.p3?.life).toBe(7);
     expect(s.over).toBe(false);
     expect(Object.values(s.objects).some((o) => o.owner === "p2")).toBe(false);
     expect(s.pending?.player).toBe("p1");
-    // La priorité ne passe plus par p2.
+    // Priority no longer goes through p2.
     s = act(s, "p1", { type: "pass" });
     expect(s.pending?.player).toBe("p3");
   });
 
-  it("le joueur actif éliminé par une action basée sur l'état ne reçoit pas la priorité", () => {
-    // Le joueur actif est à 0 point de vie : l'action basée sur l'état l'élimine, et son tour s'arrête.
+  it("the active player eliminated by a state-based action doesn't receive priority", () => {
+    // The active player is at 0 life: the state-based action eliminates them, and their turn ends.
     let s = scenario({ players: 3, p1: { hand: ["Forest"] } });
     (s.players.p1 as { life: number }).life = 0;
     s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Forest") });
@@ -111,7 +111,7 @@ describe("multijoueur", () => {
     expect(s.turn.active).toBe("p2");
   });
 
-  it("abandon en multijoueur : la partie continue sans le joueur", () => {
+  it("concession in multiplayer: the game continues without the player", () => {
     let s = scenario({ players: 3 });
     s = act(s, "p2", { type: "concede" });
     expect(s.over).toBe(false);
@@ -121,7 +121,7 @@ describe("multijoueur", () => {
     expect(s.winner).toBe("p1");
   });
 
-  it("103.8c : en multijoueur, le premier joueur pioche à son premier tour", () => {
+  it("103.8c: in multiplayer, the first player draws on their first turn", () => {
     let { state: s } = createGame({
       seed: 5,
       startingPlayer: "p1",
@@ -136,10 +136,10 @@ describe("multijoueur", () => {
     expect(s.players.p1?.hand).toHaveLength(8);
   });
 
-  it("800.4a : un sort qu'un joueur éliminé contrôle sans le posséder est exilé (pas laissé sur la pile)", () => {
+  it("800.4a: a spell an eliminated player controls without owning is exiled (not left on the stack)", () => {
     let s = scenario({ players: 3, active: "p3", p3: { battlefield: ["Mountain"], hand: ["Shock"] } });
     s = act(s, "p3", { type: "cast", card: idOf(s, "p3", "hand", "Shock"), targets: { t: ["p2"] } });
-    // La carte appartient à p1 (lancée depuis l'exil, par exemple) ; p3 quitte la partie.
+    // The card belongs to p1 (cast from exile, for example); p3 leaves the game.
     const spell = s.stack[0]?.sourceId as string;
     (s.objects[spell] as { owner: string }).owner = "p1";
     eliminate(s, ["p3"]);
@@ -148,8 +148,8 @@ describe("multijoueur", () => {
     expect(s.exile.map((id) => [s.objects[id]?.owner, s.defs[s.objects[id]?.defId ?? ""]?.name])).toEqual([["p1", "Shock"]]);
   });
 
-  // Fuzz strict, Commander à 4 (seed 62) : Willie Lumpkin tue p2 par ses blessures de combat ; sa capacité se résout
-  // ensuite et demandait à p2, éliminé, s'il voulait piocher.
+  // Strict fuzz, 4-player Commander (seed 62): Willie Lumpkin kills p2 with combat damage; its ability then resolves
+  // and asked p2, who was eliminated, whether they wanted to draw.
   const willieHits = (life: number, defender: "p2" | "p4" = "p2") => {
     let s = scenario({
       players: 4,
@@ -159,11 +159,11 @@ describe("multijoueur", () => {
     s = passUntil(s, (x) => x.pending?.kind === "declareAttackers");
     const willie = idOf(s, "p1", "battlefield", "Willie Lumpkin, Postman");
     s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: willie, defender }] });
-    // Willie ne peut pas être bloqué : aucune déclaration de bloqueurs.
+    // Willie can't be blocked: no blocker declaration.
     return passUntil(s, (x) => x.stack.length > 0 || x.pending?.kind === "choice");
   };
 
-  it("800.4a : une question posée pendant une résolution à un joueur éliminé n'est pas posée (il ne fait rien)", () => {
+  it("800.4a: a question asked during a resolution to an eliminated player isn't asked (they do nothing)", () => {
     let s = willieHits(1);
     expect(s.players.p2?.lost).toBe(true);
     expect(s.stack).toHaveLength(1);
@@ -172,7 +172,7 @@ describe("multijoueur", () => {
     expect(s.players.p1?.hand).toHaveLength(1);
   });
 
-  it("800.4a : un joueur qui abandonne pendant une question qui lui est posée en cours de résolution, la résolution se termine", () => {
+  it("800.4a: a player who concedes during a question asked to them mid-resolution: the resolution ends", () => {
     let s = willieHits(20);
     s = passUntil(s, (x) => x.pending?.kind === "choice");
     expect(s.pending?.player).toBe("p2");
@@ -183,7 +183,7 @@ describe("multijoueur", () => {
     expect(s.players.p1?.hand).toHaveLength(1);
   });
 
-  it("800.4a : le dernier joueur à avoir passé abandonne pendant sa question : la priorité revient au joueur actif (117.3b)", () => {
+  it("800.4a: the last player to have passed concedes during their question: priority returns to the active player (117.3b)", () => {
     let s = willieHits(20, "p4");
     s = passUntil(s, (x) => x.pending?.kind === "choice");
     expect(s.pending?.player).toBe("p4");
@@ -192,7 +192,7 @@ describe("multijoueur", () => {
     expect(s.pending).toEqual({ kind: "priority", player: "p1" });
   });
 
-  it("800.4a : le contrôleur de la capacité qui se résout abandonne pendant la question d'un autre : elle cesse d'exister", () => {
+  it("800.4a: the controller of the resolving ability concedes during another player's question: it ceases to exist", () => {
     let s = willieHits(20);
     s = passUntil(s, (x) => x.pending?.kind === "choice");
     expect(s.pending?.player).toBe("p2");
@@ -201,7 +201,7 @@ describe("multijoueur", () => {
     expect(s.players.p1?.lost).toBe(true);
     expect(s.pending?.kind).not.toBe("choice");
     expect(s.stack).toHaveLength(0);
-    // p2 n'a pas pioché grâce à la capacité de Willie, partie avec son contrôleur.
+    // p2 didn't draw thanks to Willie's ability, gone with its controller.
     expect(s.players.p2?.hand.length ?? 0).toBe(before);
   });
 });
@@ -214,7 +214,7 @@ describe("mulligan gratuit (103.5c)", () => {
       startingPlayer: "p1",
       players: Array.from({ length: players }, (_, i) => ({ id: `p${i + 1}`, name: `J${i + 1}`, deck: forests() })),
     }).state;
-  /** Chaque joueur garde, sauf `p1` qui prend `n` mulligans avant de garder. */
+  /** Each player keeps, except `p1` who takes `n` mulligans before keeping. */
   const mulliganThenKeep = (s0: ReturnType<typeof start>, n: number) => {
     let s = s0;
     let taken = 0;
@@ -229,7 +229,7 @@ describe("mulligan gratuit (103.5c)", () => {
     return { s, bottom: 0 };
   };
 
-  it("à trois joueurs ou plus, le premier mulligan est gratuit : sept cartes gardées, aucune au-dessous", () => {
+  it("with three or more players, the first mulligan is free: seven cards kept, none put on the bottom", () => {
     const one = mulliganThenKeep(start(3), 1);
     expect(one.bottom).toBe(0);
     expect(one.s.players.p1?.hand).toHaveLength(7);
@@ -237,11 +237,11 @@ describe("mulligan gratuit (103.5c)", () => {
     expect(two.bottom).toBe(1);
   });
 
-  it("en duel, chaque mulligan compte", () => {
+  it("in a duel, each mulligan counts", () => {
     expect(mulliganThenKeep(start(2), 1).bottom).toBe(1);
   });
 
-  it("en Commander, le premier mulligan est gratuit, duel compris : puis une carte, deux cartes…", () => {
+  it("in Commander, the first mulligan is free, duels included: then one card, two cards…", () => {
     const duel = () =>
       createGame({
         seed: 3,
@@ -259,7 +259,7 @@ describe("mulligan gratuit (103.5c)", () => {
     expect(mulliganThenKeep(duel(), 3).bottom).toBe(2);
   });
 
-  it("la décision annonce le nombre de cartes à mettre au-dessous", () => {
+  it("the decision announces the number of cards to put on the bottom", () => {
     let s = start(3);
     s = act(s, "p1", { type: "mulligan" });
     for (let i = 0; i < 5 && s.pending?.player !== "p1"; i++) s = act(s, s.pending?.player as string, { type: "keep" });

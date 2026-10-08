@@ -1,4 +1,4 @@
-/** Through the Ages (FCA) : tests de règles des cartes (PLAN-G). */
+/** Through the Ages (FCA): rules tests for the cards (PLAN-G). */
 
 import { card } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
@@ -30,8 +30,8 @@ type S = ReturnType<typeof scenario>;
 const castOption = (s: S, card: string) => legalActions(s, "p1").find((a) => a.type === "cast" && a.card === card);
 
 describe("Through the Ages", () => {
-  describe("Ruée (702.109) : Ragavan, Nimble Pilferer", () => {
-    it("lancé pour sa ruée : célérité, puis retour en main au début de la prochaine étape de fin", () => {
+  describe("Dash (702.109): Ragavan, Nimble Pilferer", () => {
+    it("cast for its dash: haste, then returns to hand at the beginning of the next end step", () => {
       let s = scenario({ p1: { battlefield: lands("Mountain", 2), hand: ["Ragavan, Nimble Pilferer"] } });
       const card = idOf(s, "p1", "hand", "Ragavan, Nimble Pilferer");
       const opt = castOption(s, card);
@@ -44,7 +44,7 @@ describe("Through the Ages", () => {
       expect(idsOf(s, "p1", "hand", "Ragavan, Nimble Pilferer")).toHaveLength(1);
     });
 
-    it("lancé normalement : ni célérité ni retour", () => {
+    it("cast normally: neither haste nor return", () => {
       let s = scenario({ p1: { battlefield: lands("Mountain", 1), hand: ["Ragavan, Nimble Pilferer"] } });
       s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Ragavan, Nimble Pilferer") }));
       const rag = idOf(s, "p1", "battlefield", "Ragavan, Nimble Pilferer");
@@ -53,7 +53,7 @@ describe("Through the Ages", () => {
       expect(idsOf(s, "p1", "battlefield", "Ragavan, Nimble Pilferer")).toHaveLength(1);
     });
 
-    it("blessures de combat à un joueur : un Trésor, et sa carte du dessus exilée, lançable ce tour-ci", () => {
+    it("combat damage to a player: a Treasure, and the top card of their library exiled, castable this turn", () => {
       let s = scenario({
         p1: { battlefield: ["Ragavan, Nimble Pilferer", ...lands("Forest", 2)] },
         p2: { library: ["Llanowar Elves", "Forest"] },
@@ -67,8 +67,8 @@ describe("Through the Ages", () => {
     });
   });
 
-  describe("Spectacle (702.137) : Light Up the Stage", () => {
-    it("le coût de spectacle n'est proposé que si un adversaire a perdu des points de vie ce tour-ci", () => {
+  describe("Spectacle (702.137): Light Up the Stage", () => {
+    it("the spectacle cost is only offered if an opponent lost life this turn", () => {
       let s = scenario({ p1: { battlefield: lands("Mountain", 3), hand: ["Light Up the Stage"], library: lands("Island", 5) } });
       const card = idOf(s, "p1", "hand", "Light Up the Stage");
       let opt = castOption(s, card);
@@ -77,7 +77,7 @@ describe("Through the Ages", () => {
       opt = castOption(s, card);
       expect(opt?.type === "cast" && plainText(opt.altLabel ?? "")).toBe("Spectacle — {R}");
       s = settle(act(s, "p1", { type: "cast", card, alternative: true }));
-      // {R} payé : deux Montagnes encore dégagées ; les deux cartes exilées sont jouables.
+      // {R} paid: two Mountains still untapped; the two exiled cards are playable.
       expect(s.battlefield.filter((id) => nameOf(s, id) === "Mountain" && !s.objects[id]?.tapped)).toHaveLength(2);
       const exiled = s.exile.filter((id) => nameOf(s, id) === "Island");
       expect(exiled).toHaveLength(2);
@@ -86,7 +86,7 @@ describe("Through the Ages", () => {
   });
 
   describe("Mizzix's Mastery", () => {
-    it("surchargé : chaque éphémère ou rituel de votre cimetière exilé, copié et lancé gratuitement", () => {
+    it("overloaded: each instant or sorcery in your graveyard exiled, copied and cast for free", () => {
       let s = scenario({
         p1: {
           battlefield: lands("Mountain", 8),
@@ -95,7 +95,7 @@ describe("Through the Ages", () => {
         },
       });
       s = untilCastNow(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Mizzix's Mastery"), mode: 1 }));
-      // Deux copies à lancer gratuitement ; la créature reste au cimetière.
+      // Two copies to cast for free; the creature stays in the graveyard.
       for (let i = 0; i < 2; i++) {
         const copy = castNowOf(s)?.cards[0] as string;
         expect(nameOf(s, copy)).toBe("Shock");
@@ -109,7 +109,7 @@ describe("Through the Ages", () => {
     });
   });
 
-  describe("G7 : Through the Ages", () => {
+  describe("G7: Through the Ages", () => {
     const castIt = (s: S, name: string, extra: object = {}) =>
       act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", name), ...extra });
     const activate = (s: S, source: string, extra: object = {}, pick?: (a: { label?: string }) => boolean) => {
@@ -117,7 +117,7 @@ describe("Through the Ages", () => {
       return act(s, "p1", { type: "activate", source, ability: ab?.type === "activate" ? ab.ability : 0, ...extra });
     };
 
-    it("Adeline : force égale au nombre de vos créatures ; vous attaquez, un Humain 1/1 attaquant", () => {
+    it("Adeline: power equal to the number of your creatures; you attack, a 1/1 Human attacking", () => {
       let s = scenario({ p1: { battlefield: ["Adeline, Resplendent Cathar", "Bear Cub"] } });
       const adeline = idOf(s, "p1", "battlefield", "Adeline, Resplendent Cathar");
       expect(chars(s, adeline).power).toBe(2);
@@ -126,7 +126,7 @@ describe("Through the Ages", () => {
       expect(s.combat?.attackers.some((a) => a.id === human)).toBe(true);
     });
 
-    it("Ranger-Captain of Eos : sacrifié, vos adversaires ne lancent pas de sorts non-créature ce tour-ci", () => {
+    it("Ranger-Captain of Eos: sacrificed, your opponents can't cast noncreature spells this turn", () => {
       let s = scenario({
         p1: { battlefield: ["Ranger-Captain of Eos"] },
         p2: { battlefield: ["Mountain", "Forest"], hand: ["Shock", "Llanowar Elves"] },
@@ -136,13 +136,13 @@ describe("Through the Ages", () => {
       expect(legalActions(s, "p2").some((a) => a.type === "cast" && a.card === idOf(s, "p2", "hand", "Shock"))).toBe(false);
     });
 
-    it("Urza : engager un artefact donne {U}", () => {
+    it("Urza: tapping an artifact gives {U}", () => {
       let s = scenario({ p1: { battlefield: ["Urza, Lord High Artificer", "Mana Crypt"] } });
       s = act(s, "p1", { type: "tapForMana", source: idOf(s, "p1", "battlefield", "Urza, Lord High Artificer"), ability: 0 });
       expect([s.players.p1?.manaPool.U, s.objects[idOf(s, "p1", "battlefield", "Mana Crypt")]?.tapped]).toEqual([1, true]);
     });
 
-    it("Venser : renvoie un sort en main", () => {
+    it("Venser: returns a spell to hand", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: lands("Island", 4), hand: ["Venser, Shaper Savant"] },
@@ -157,7 +157,7 @@ describe("Through the Ages", () => {
       expect(idsOf(s, "p2", "hand", "Bear Cub")).toHaveLength(1);
     });
 
-    it("Fatal Push : valeur de mana 2 ou moins, ou 4 avec la révolte", () => {
+    it("Fatal Push: mana value 2 or less, or 4 with revolt", () => {
       const run = (revolt: boolean) => {
         let s = scenario({
           p1: { battlefield: ["Swamp", "Ghostly Prison"], hand: ["Fatal Push"] },
@@ -171,7 +171,7 @@ describe("Through the Ages", () => {
       expect(run(true)).toBe(0);
     });
 
-    it("Syr Konrad : une créature meurt, une carte de créature quitte votre cimetière : 1 blessure à chaque adversaire", () => {
+    it("Syr Konrad: a creature dies, a creature card leaves your graveyard: 1 damage to each opponent", () => {
       let s = scenario({ p1: { battlefield: ["Syr Konrad, the Grim", "Bear Cub"], graveyard: ["Llanowar Elves"] } });
       destroy(s, idOf(s, "p1", "battlefield", "Bear Cub"));
       s = settle(s);
@@ -180,7 +180,7 @@ describe("Through the Ages", () => {
       expect(s.players.p2?.life).toBe(18);
     });
 
-    it("Purphoros : n'est une créature qu'avec cinq de dévotion au rouge ; une de vos créatures arrive, 2 blessures", () => {
+    it("Purphoros: is a creature only with five devotion to red; one of your creatures enters, 2 damage", () => {
       let s = scenario({ p1: { battlefield: ["Purphoros, God of the Forge", ...lands("Forest", 2)], hand: ["Bear Cub"] } });
       const purph = idOf(s, "p1", "battlefield", "Purphoros, God of the Forge");
       expect(chars(s, purph).types.includes("Creature")).toBe(false);
@@ -188,19 +188,19 @@ describe("Through the Ages", () => {
       expect(s.players.p2?.life).toBe(18);
     });
 
-    it("Azusa : deux terrains de plus par tour", () => {
+    it("Azusa: two more lands each turn", () => {
       let s = scenario({ p1: { battlefield: ["Azusa, Lost but Seeking"], hand: ["Forest", "Forest", "Forest", "Forest"] } });
       for (let i = 0; i < 3; i++) s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Forest") });
       expect(legalActions(s, "p1").some((a) => a.type === "playLand")).toBe(false);
     });
 
-    it("Traxos : se dégage quand vous lancez un sort historique", () => {
+    it("Traxos: untaps when you cast a historic spell", () => {
       let s = scenario({ p1: { battlefield: [{ name: "Traxos, Scourge of Kroog", tapped: true }], hand: ["Mana Crypt"] } });
       s = settle(castIt(s, "Mana Crypt"));
       expect(s.objects[idOf(s, "p1", "battlefield", "Traxos, Scourge of Kroog")]?.tapped).toBe(false);
     });
 
-    it("Kenrith : {2}{W}, le joueur ciblé gagne 5 PV", () => {
+    it("Kenrith: {2}{W}, the targeted player gains 5 life", () => {
       let s = scenario({ p1: { battlefield: ["Kenrith, the Returned King", ...lands("Plains", 3)] } });
       s = settle(
         activate(
@@ -213,14 +213,14 @@ describe("Through the Ages", () => {
       expect(s.players.p1?.life).toBe(25);
     });
 
-    it("Brainstorm : piochez trois cartes, puis remettez-en deux sur la bibliothèque", () => {
+    it("Brainstorm: draw three cards, then put two back on top of the library", () => {
       let s = scenario({ p1: { battlefield: ["Island"], hand: ["Brainstorm", "Shock"], library: lands("Forest", 5) } });
       s = settle(castIt(s, "Brainstorm"));
       expect(s.players.p1?.hand).toHaveLength(2);
       expect(s.players.p1?.library).toHaveLength(4);
     });
 
-    it("Cryptic Command : contrecarrez et piochez", () => {
+    it("Cryptic Command: counter and draw", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: lands("Island", 4), hand: ["Cryptic Command"], library: lands("Island", 3) },
@@ -237,7 +237,7 @@ describe("Through the Ages", () => {
       expect([idsOf(s, "p2", "graveyard", "Bear Cub").length, s.players.p1?.hand.length]).toEqual([1, 1]);
     });
 
-    it("Deadly Dispute : sacrifiez un artefact ou une créature ; deux cartes et un Trésor", () => {
+    it("Deadly Dispute: sacrifice an artifact or a creature; two cards and a Treasure", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Swamp", 2), "Bear Cub"], hand: ["Deadly Dispute"], library: lands("Swamp", 3) },
       });
@@ -245,24 +245,24 @@ describe("Through the Ages", () => {
       expect([s.players.p1?.hand.length, idsOf(s, "p1", "battlefield", "Treasure").length]).toEqual([2, 1]);
     });
 
-    it("Isshin : un déclenchement d'attaque se déclenche une fois de plus", () => {
+    it("Isshin: an attack trigger triggers one more time", () => {
       let s = scenario({ p1: { battlefield: ["Isshin, Two Heavens as One", "Captain Lannery Storm"] } });
       s = settle(attack(s, [idOf(s, "p1", "battlefield", "Captain Lannery Storm")]));
       expect(idsOf(s, "p1", "battlefield", "Treasure")).toHaveLength(2);
     });
 
-    it("Kinnan : un permanent non-terrain engagé pour du mana en produit un de plus", () => {
+    it("Kinnan: a nonland permanent tapped for mana produces one more", () => {
       let s = scenario({ p1: { battlefield: ["Kinnan, Bonder Prodigy", "Llanowar Elves"] } });
       s = act(s, "p1", { type: "tapForMana", source: idOf(s, "p1", "battlefield", "Llanowar Elves"), ability: 0 });
       expect(s.players.p1?.manaPool.G).toBe(2);
     });
 
-    it("Chromatic Lantern : vos terrains produisent n'importe quelle couleur", () => {
+    it("Chromatic Lantern: your lands produce any color", () => {
       const s = scenario({ p1: { battlefield: ["Chromatic Lantern", "Forest"] } });
       expect(manaAbilitiesOf(s, idOf(s, "p1", "battlefield", "Forest")).some((a) => a.produce.length === 5)).toBe(true);
     });
 
-    it("Strixhaven Stadium : dix marqueurs de point, l'adversaire perd la partie", () => {
+    it("Strixhaven Stadium: ten point counters, the opponent loses the game", () => {
       let s = scenario({ p1: { battlefield: [{ name: "Strixhaven Stadium", counters: { point: 9 } }, "Bear Cub"] } });
       s = throughCombat(attack(s, [idOf(s, "p1", "battlefield", "Bear Cub")]));
       expect(s.over).toBe(true);
@@ -270,8 +270,8 @@ describe("Through the Ages", () => {
     });
   });
 
-  describe("G4e : règles de joueur", () => {
-    it("Laboratory Maniac : piocher dans une bibliothèque vide fait gagner la partie à la place", () => {
+  describe("G4e: player rules", () => {
+    it("Laboratory Maniac: drawing from an empty library wins the game instead", () => {
       const s = scenario({ p1: { battlefield: ["Laboratory Maniac"], library: [] } });
       drawCards(s, "p1", 1);
       stateBasedActions(s);
@@ -282,7 +282,7 @@ describe("Through the Ages", () => {
       expect(t.winner).toBe("p2");
     });
 
-    it("Nyxbloom Ancient : un permanent engagé pour du mana en produit trois fois autant", () => {
+    it("Nyxbloom Ancient: a permanent tapped for mana produces three times as much", () => {
       let s = scenario({ p1: { battlefield: ["Nyxbloom Ancient", "Forest", "Llanowar Elves"] } });
       s = act(s, "p1", { type: "tapForMana", source: idOf(s, "p1", "battlefield", "Forest"), ability: 0 });
       expect(s.players.p1?.manaPool.G).toBe(3);
@@ -290,7 +290,7 @@ describe("Through the Ages", () => {
       expect(s.players.p1?.manaPool.G).toBe(6);
     });
 
-    it("Ancient Copper Dragon : blessures de combat à un joueur, un d20 et autant de Trésors", () => {
+    it("Ancient Copper Dragon: combat damage to a player, a d20 and that many Treasures", () => {
       let s = scenario({ p1: { battlefield: ["Ancient Copper Dragon"] } });
       s = throughCombat(attack(s, [idOf(s, "p1", "battlefield", "Ancient Copper Dragon")]));
       expect(s.players.p2?.life).toBe(14);
@@ -299,8 +299,8 @@ describe("Through the Ages", () => {
       expect(treasures).toBeLessThanOrEqual(20);
     });
   });
-  describe("G4e : lancer autrement", () => {
-    it("Teferi, Mage of Zhalfir : vos créatures ont le flash ; les adversaires ne lancent qu'au moment d'un rituel", () => {
+  describe("G4e: casting otherwise", () => {
+    it("Teferi, Mage of Zhalfir: your creatures have flash; opponents can only cast at sorcery speed", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: ["Teferi, Mage of Zhalfir", ...lands("Forest", 2)], hand: ["Bear Cub"] },
@@ -317,21 +317,21 @@ describe("Through the Ages", () => {
       expect(legalActions(s, "p2").some((a) => a.type === "cast" && a.card === shock)).toBe(false);
     });
   });
-  describe("G4e : bibliothèque et pioche", () => {
-    it("Atraxa, Grand Unifier : dix cartes révélées, une de chaque type de carte dans la main", () => {
+  describe("G4e: library and drawing", () => {
+    it("Atraxa, Grand Unifier: ten cards revealed, one of each card type into your hand", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Plains", 7)],
-          hand: [customCard({ name: "Atraxa de test", types: ["Creature"], abilities: card("Atraxa, Grand Unifier").abilities })],
+          hand: [customCard({ name: "Test Atraxa", types: ["Creature"], abilities: card("Atraxa, Grand Unifier").abilities })],
           library: ["Bear Cub", "Shivan Dragon", "Forest", "Shock", "Island", "Mana Crypt", "Llanowar Elves", "Lightning Strike"],
         },
       });
-      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Atraxa de test") }));
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Test Atraxa") }));
       expect(s.players.p1?.hand.map((id) => nameOf(s, id)).sort()).toEqual(["Bear Cub", "Forest", "Mana Crypt", "Shock"]);
       expect(s.players.p1?.library).toHaveLength(4);
     });
 
-    it("Carpet of Flowers : au début de votre phase principale, X mana d'une couleur (Îles de l'adversaire)", () => {
+    it("Carpet of Flowers: at the beginning of your main phase, X mana of one color (opponent's Islands)", () => {
       let s = scenario({ active: "p2", p1: { battlefield: ["Carpet of Flowers"] }, p2: { battlefield: lands("Island", 3) } });
       s = advanceUntil(
         s,
@@ -341,27 +341,27 @@ describe("Through the Ages", () => {
       expect(Object.values(pool ?? {}).reduce((a, b) => a + b, 0)).toBe(3);
     });
 
-    it("Carpet of Flowers : à chacune de vos phases principales, tant que vous n'avez pas ajouté de mana avec elle ce tour-ci", () => {
+    it("Carpet of Flowers: in each of your main phases, as long as you haven't added mana with it this turn", () => {
       const total = (x: ReturnType<typeof scenario>) => Object.values(x.players.p1?.manaPool ?? {}).reduce((a, b) => a + b, 0);
       const atMain2 = (x: ReturnType<typeof scenario>) =>
         x.turn.step === "main2" && x.stack.length === 0 && x.triggers.length === 0 && x.pending?.kind === "priority";
       const start = () =>
         scenario({ active: "p2", p1: { battlefield: ["Carpet of Flowers"] }, p2: { battlefield: lands("Island", 3) } });
-      // Refusé en première phase principale : la capacité se déclenche encore en seconde phase principale.
+      // Declined in the first main phase: the ability triggers again in the second main phase.
       let s = advanceUntil(start(), (x) => x.turn.active === "p1" && x.pending?.kind === "choice");
       expect(s.turn.step).toBe("main1");
       s = act(s, "p1", { type: "choose", values: [0] });
       s = advanceUntil(s, atMain2);
       expect(total(s)).toBe(3);
-      // Accepté en première phase principale : plus rien en seconde phase principale.
+      // Accepted in the first main phase: nothing left in the second main phase.
       let t = advanceUntil(start(), (x) => x.turn.active === "p1" && x.pending?.kind === "choice");
       t = advanceUntil(t, (x) => (x.turn.step === "main2" && x.pending?.kind !== "priority") || atMain2(x));
       expect(t.pending?.kind).toBe("priority");
       expect(total(t)).toBe(0);
     });
   });
-  describe("G4e : exil et copies", () => {
-    it("Winota : une créature non-Humain attaque, un Humain des six cartes du dessus arrive engagé, attaquant et indestructible", () => {
+  describe("G4e: exile and copies", () => {
+    it("Winota: a non-Human creature attacks, a Human from the top six cards enters tapped, attacking and indestructible", () => {
       let s = scenario({
         p1: { battlefield: ["Winota, Joiner of Forces", "Bear Cub"], library: ["Shock", "Soul Warden", "Forest"] },
       });
@@ -372,9 +372,9 @@ describe("Through the Ages", () => {
       expect(chars(s, warden).keywords).toContain("indestructible");
     });
 
-    it("Jodah, the Unifier : vos créatures légendaires +X/+X ; un sort légendaire de la main déclenche une cascade légendaire", () => {
+    it("Jodah, the Unifier: your legendary creatures get +X/+X; a legendary spell from hand triggers a legendary cascade", () => {
       const legend = customCard({
-        name: "Légende de test",
+        name: "Test Legend",
         supertypes: ["Legendary"],
         types: ["Creature"],
         manaCost: { generic: 1, colored: {}, x: 0 },
@@ -393,13 +393,13 @@ describe("Through the Ages", () => {
       expect(chars(s, jodah).power).toBe(6);
       s = untilCastNow(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Mirri, Weatherlight Duelist") }));
       const hit = castNowOf(s)?.cards[0] as string;
-      expect(nameOf(s, hit)).toBe("Légende de test");
+      expect(nameOf(s, hit)).toBe("Test Legend");
       s = settle(act(s, "p1", { type: "cast", card: hit, free: true }));
-      expect(idsOf(s, "p1", "battlefield", "Légende de test")).toHaveLength(1);
+      expect(idsOf(s, "p1", "battlefield", "Test Legend")).toHaveLength(1);
       expect(chars(s, jodah).power).toBe(8);
     });
 
-    it("Bolas's Citadel : sorts du dessus de la bibliothèque pour des PV égaux à leur VM ; terrains aussi", () => {
+    it("Bolas's Citadel: spells from the top of the library for life equal to their MV; lands too", () => {
       let s = scenario({ p1: { battlefield: ["Bolas's Citadel"], library: ["Shock", "Forest", "Island"] } });
       const shock = s.players.p1?.library[0] as string;
       s = settle(act(s, "p1", { type: "cast", card: shock, targets: { t: ["p2"] } }));
@@ -410,8 +410,8 @@ describe("Through the Ages", () => {
       expect(idsOf(s, "p1", "battlefield", "Forest")).toHaveLength(1);
     });
   });
-  describe("G4e : dernières cartes", () => {
-    it("Gix, Yawgmoth Praetor : blessures de combat à un adversaire, 1 PV pour piocher ; défaussez X, jouez X cartes adverses", () => {
+  describe("G4e: last cards", () => {
+    it("Gix, Yawgmoth Praetor: combat damage to an opponent, 1 life to draw; discard X, play X opposing cards", () => {
       let s = scenario({
         p1: {
           battlefield: ["Gix, Yawgmoth Praetor", "Bear Cub", ...lands("Swamp", 7)],
@@ -433,8 +433,8 @@ describe("Through the Ages", () => {
   });
 });
 
-describe("Through the Ages : approximations levées (PLAN-H, H2c)", () => {
-  it("Ragavan, Nimble Pilferer : un terrain exilé ne peut pas être joué (« vous pouvez lancer cette carte »)", () => {
+describe("Through the Ages: approximations lifted (PLAN-H, H2c)", () => {
+  it('Ragavan, Nimble Pilferer: an exiled land can\'t be played ("you may cast this card")', () => {
     let s = scenario({
       p1: { battlefield: ["Ragavan, Nimble Pilferer", ...lands("Forest", 2)] },
       p2: { library: ["Forest", "Llanowar Elves"] },
@@ -448,8 +448,8 @@ describe("Through the Ages : approximations levées (PLAN-H, H2c)", () => {
   });
 });
 
-describe("joueur attaqué en multijoueur (PLAN-H, lot H5)", () => {
-  it("Adeline à trois joueurs : un Humain par adversaire, qui attaque ce joueur ou un planeswalker qu'il contrôle", () => {
+describe("attacked player in multiplayer (PLAN-H, lot H5)", () => {
+  it("Adeline with three players: one Human per opponent, attacking that player or a planeswalker they control", () => {
     let s = scenario({
       players: 3,
       p1: { battlefield: ["Adeline, Resplendent Cathar", "Bear Cub"] },
@@ -464,13 +464,13 @@ describe("joueur attaqué en multijoueur (PLAN-H, lot H5)", () => {
       asked.push([...req.options].sort());
       return [walker];
     });
-    // Une question pour le Humain de p3 seulement (celui de p2 n'a qu'un défenseur possible).
+    // A question for p3's Human only (p2's has only one possible defender).
     expect(asked).toEqual([["p3", walker].sort()]);
     const humans = idsOf(s, "p1", "battlefield", "Human");
     expect(humans.map((id) => s.combat?.attackers.find((a) => a.id === id)?.defender).sort()).toEqual(["p2", walker].sort());
   });
 
-  describe("Mangara, the Diplomat : « si deux de ces créatures ou plus vous attaquent, vous et/ou vos planeswalkers »", () => {
+  describe('Mangara, the Diplomat: "if two or more of those creatures attack you, you and/or your planeswalkers"', () => {
     const run = (defenders: ("p1" | "p3" | "walker")[]) => {
       let s = scenario({
         players: 3,
@@ -489,16 +489,16 @@ describe("joueur attaqué en multijoueur (PLAN-H, lot H5)", () => {
       s = settle(s);
       return (s.players.p1?.hand.length ?? 0) - hand;
     };
-    it("deux créatures vous attaquent, vous et votre planeswalker : piochez", () => {
+    it("two creatures attack you and your planeswalker: draw", () => {
       expect(run(["p1", "p1"])).toBe(1);
       expect(run(["p1", "walker"])).toBe(1);
     });
-    it("une seule vous attaque, l'autre un autre joueur : rien", () => expect(run(["p1", "p3"])).toBe(0));
+    it("only one attacks you, the other another player: nothing", () => expect(run(["p1", "p3"])).toBe(0));
   });
 });
 
-describe("jetons créés attaquants pour un autre joueur (PLAN-H, lot H5)", () => {
-  it("Najeela, the Blade-Blossom : le contrôleur du jeton choisit ce qu'il attaque, parmi ses propres adversaires (508.4)", () => {
+describe("tokens created attacking for another player (PLAN-H, lot H5)", () => {
+  it("Najeela, the Blade-Blossom: the token's controller chooses what it attacks, among their own opponents (508.4)", () => {
     const run = (players: 2 | 3) => {
       let s = scenario({
         players,

@@ -1,6 +1,6 @@
 /**
- * Commander (pseudo-ensemble EDH) : tests de règles du préconstruit « Counter Blitz » (Final Fantasy X). Marqueurs
- * déplacés et proliférés, multikicker, prévention changée en marqueurs, Sagas créatures, serments, retour volant.
+ * Commander (EDH pseudo-set): rules tests for the "Counter Blitz" preconstructed deck (Final Fantasy X). Counters
+ * moved and proliferated, multikicker, prevention changed into counters, creature Sagas, oaths, returning with flying.
  */
 import { describe, expect, it } from "vitest";
 import { chars } from "../src/layers";
@@ -31,19 +31,19 @@ const yes = (req: { type: string }) => (req.type === "yesNo" ? [1] : undefined);
 
 describe("Counter Blitz (EDH)", () => {
   describe("commandant", () => {
-    it("Tidus : au début du combat, un marqueur passe d'une de vos créatures à une autre", () => {
+    it("Tidus: at the beginning of combat, a counter moves from one of your creatures to another", () => {
       let s = scenario({
         p1: { battlefield: ["Tidus, Yuna's Guardian", { name: "Bear Cub", counters: { "+1/+1": 2 } }, "Savannah Lions"] },
       });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       const lions = idOf(s, "p1", "battlefield", "Savannah Lions");
       s = advanceUntil(s, (x) => x.turn.step === "beginCombat" && (x.pending?.kind === "choice" || x.stack.length > 0), 50);
-      // La créature avec un marqueur est la seule source possible ; on choisit la destination.
+      // The creature with a counter is the only possible source; the destination is chosen.
       s = settle(s, (req) => (req.type === "yesNo" ? [1] : picking([lions])(req)));
       expect([plusOne(s, bear), plusOne(s, lions)]).toEqual([1, 1]);
     });
 
-    it("Tidus, encouragement : vos créatures avec des marqueurs blessent un joueur : piochez et proliférez, une fois par tour", () => {
+    it("Tidus, encouragement: your creatures with counters damage a player: draw and proliferate, once per turn", () => {
       let s = scenario({
         p1: {
           battlefield: ["Tidus, Yuna's Guardian", { name: "Bear Cub", counters: { "+1/+1": 1 } }],
@@ -52,7 +52,7 @@ describe("Counter Blitz (EDH)", () => {
       });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       const h = hand(s, "p1");
-      // Au début du combat, le marqueur n'est pas déplacé.
+      // At the beginning of combat, the counter is not moved.
       s = advanceUntil(s, (x) => x.turn.step === "beginCombat" && x.pending?.kind === "choice", 50);
       s = settle(s, (req) => (req.type === "yesNo" ? [0] : undefined));
       s = throughCombat(attack(s, [bear]), (req) =>
@@ -64,14 +64,14 @@ describe("Counter Blitz (EDH)", () => {
   });
 
   describe("marqueurs", () => {
-    it("Everflowing Chalice : multikicker payé deux fois, deux marqueurs de charge, {C}{C}", () => {
+    it("Everflowing Chalice: multikicker paid twice, two charge counters, {C}{C}", () => {
       let s = scenario({ p1: { battlefield: lands("Plains", 4), hand: ["Everflowing Chalice"] } });
       s = settle(castIt(s, "p1", "Everflowing Chalice", { x: 2 }));
       const chalice = idOf(s, "p1", "battlefield", "Everflowing Chalice");
       expect(s.objects[chalice]?.counters.charge).toBe(2);
     });
 
-    it("Gatta and Luzzu : les blessures à la créature choisie deviennent des marqueurs +1/+1 ce tour-ci", () => {
+    it("Gatta and Luzzu: damage to the chosen creature becomes +1/+1 counters this turn", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Plains", 3), "Mountain", "Bear Cub"], hand: ["Gatta and Luzzu", "Shock"] },
       });
@@ -81,7 +81,7 @@ describe("Counter Blitz (EDH)", () => {
       expect([s.objects[bear]?.damage, plusOne(s, bear)]).toEqual([0, 2]);
     });
 
-    it("Fathom Mage : évolution, puis un marqueur +1/+1 fait piocher", () => {
+    it("Fathom Mage: evolve, then a +1/+1 counter draws a card", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Forest", 2), "Fathom Mage"], hand: ["Bear Cub"], library: lands("Island", 3) },
       });
@@ -91,14 +91,14 @@ describe("Counter Blitz (EDH)", () => {
       expect(hand(s, "p1")).toBe(h - 1 + 1);
     });
 
-    it("Gyre Sage : {G} par marqueur +1/+1", () => {
+    it("Gyre Sage: {G} per +1/+1 counter", () => {
       const s = scenario({ p1: { battlefield: [{ name: "Gyre Sage", counters: { "+1/+1": 3 } }] } });
       const sage = idOf(s, "p1", "battlefield", "Gyre Sage");
       const ab = chars(s, sage).abilities.find((a) => a.kind === "mana");
       expect(ab?.kind === "mana" ? ab.amountCounters : undefined).toBe("+1/+1");
     });
 
-    it("Bane of Progress : détruit artefacts et enchantements, un marqueur par permanent détruit", () => {
+    it("Bane of Progress: destroys artifacts and enchantments, one counter per permanent destroyed", () => {
       let s = scenario({
         p1: { battlefield: lands("Forest", 6), hand: ["Bane of Progress"] },
         p2: { battlefield: ["Sol Ring", "Arcane Signet", "Propaganda"] },
@@ -108,7 +108,7 @@ describe("Counter Blitz (EDH)", () => {
       expect(onField(s, "p2", "Sol Ring")).toBe(0);
     });
 
-    it("Damning Verdict : seules les créatures sans marqueur sont détruites", () => {
+    it("Damning Verdict: only creatures without a counter are destroyed", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Plains", 5), { name: "Bear Cub", counters: { "+1/+1": 1 } }], hand: ["Damning Verdict"] },
         p2: { battlefield: ["Serra Angel"] },
@@ -117,7 +117,7 @@ describe("Counter Blitz (EDH)", () => {
       expect([onField(s, "p1", "Bear Cub"), onField(s, "p2", "Serra Angel")]).toEqual([1, 0]);
     });
 
-    it("Sin : ses marqueurs vont sur une de vos créatures quand elle meurt, puis elle rejoint la bibliothèque", () => {
+    it("Sin: its counters go onto one of your creatures when it dies, then it goes to the library", () => {
       let s = scenario({
         p1: {
           battlefield: [
@@ -138,8 +138,8 @@ describe("Counter Blitz (EDH)", () => {
     });
   });
 
-  describe("« en arrivant » (PLAN-H H9)", () => {
-    /** Passe jusqu'à ce que la carte nommée soit sur le champ de bataille (avant toute capacité déclenchée). */
+  describe('"on entering" (PLAN-H H9)', () => {
+    /** Passes until the named card is on the battlefield (before any triggered ability). */
     const untilOnField = (s: GameState, name: string, answer: Answer = () => undefined) => {
       let cur = s;
       for (let i = 0; i < 50 && onField(cur, "p1", name) === 0; i++) {
@@ -152,7 +152,7 @@ describe("Counter Blitz (EDH)", () => {
       return cur;
     };
 
-    it("Sin : retire tous les marqueurs des permanents choisis (des deux camps) et arrive avec deux fois plus de marqueurs +1/+1", () => {
+    it("Sin: removes all counters from the chosen permanents (both sides) and enters with twice as many +1/+1 counters", () => {
       let s = scenario({
         p1: {
           battlefield: [
@@ -170,7 +170,7 @@ describe("Counter Blitz (EDH)", () => {
       const angel = idOf(s, "p2", "battlefield", "Serra Angel");
       s = castIt(s, "p1", "Sin, Unending Cataclysm");
       s = untilOnField(s, "Sin, Unending Cataclysm", picking([bear, angel]));
-      // En arrivant : 2 + 1 + 1 marqueurs retirés, huit marqueurs +1/+1, déjà là quand il arrive.
+      // On entering: 2 + 1 + 1 counters removed, eight +1/+1 counters, already there when it enters.
       const sin = idOf(s, "p1", "battlefield", "Sin, Unending Cataclysm");
       expect(plusOne(s, sin)).toBe(8);
       expect([plusOne(s, bear), plusOne(s, angel), s.objects[angel]?.counters.stun ?? 0, plusOne(s, lions)]).toEqual([
@@ -178,7 +178,7 @@ describe("Counter Blitz (EDH)", () => {
       ]);
     });
 
-    it("Altered Ego : arrive en copie avec X marqueurs +1/+1 de plus ; remis en jeu par un effet, X vaut 0", () => {
+    it("Altered Ego: enters as a copy with X additional +1/+1 counters; put onto the battlefield by an effect, X is 0", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Forest", 4), ...lands("Island", 2)], hand: ["Altered Ego"] },
         p2: { battlefield: ["Serra Angel"] },
@@ -201,8 +201,8 @@ describe("Counter Blitz (EDH)", () => {
     });
   });
 
-  describe("créatures et invocations", () => {
-    it("Luminous Broodmoth : une de vos créatures sans le vol meurt et revient avec un marqueur de vol", () => {
+  describe("creatures and summons", () => {
+    it("Luminous Broodmoth: one of your creatures without flying dies and returns with a flying counter", () => {
       let s = scenario({ p1: { battlefield: ["Luminous Broodmoth", "Bear Cub", "Mountain"], hand: ["Shock"] } });
       s = settle(castIt(s, "p1", "Shock", { targets: { t: [idOf(s, "p1", "battlefield", "Bear Cub")] } }));
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -210,7 +210,7 @@ describe("Counter Blitz (EDH)", () => {
       expect(chars(s, bear).keywords).toContain("flying");
     });
 
-    it("Kimahri : un marqueur, engage une créature adverse et peut en devenir une copie (nom gardé)", () => {
+    it("Kimahri: a counter, taps an opposing creature and may become a copy of one (name kept)", () => {
       let s = scenario({ p1: { battlefield: ["Kimahri, Valiant Guardian"] }, p2: { battlefield: ["Serra Angel"] } });
       const k = idOf(s, "p1", "battlefield", "Kimahri, Valiant Guardian");
       const angel = idOf(s, "p2", "battlefield", "Serra Angel");
@@ -225,7 +225,7 @@ describe("Counter Blitz (EDH)", () => {
       ]);
     });
 
-    it("Summon: Valefor, chapitre I : chaque adversaire renvoie en main une créature de plus grande valeur de mana", () => {
+    it("Summon: Valefor, chapter I: each opponent returns to hand a creature with greater mana value", () => {
       let s = scenario({
         p1: { battlefield: lands("Island", 5), hand: ["Summon: Valefor"] },
         p2: { battlefield: ["Bear Cub", "Serra Angel"] },
@@ -235,7 +235,7 @@ describe("Counter Blitz (EDH)", () => {
       expect(s.players.p2?.hand.map((id) => nameOf(s, id))).toContain("Serra Angel");
     });
 
-    it("Wakka : à votre étape de fin, si Wakka a reçu un marqueur ce tour-ci, vos autres créatures en reçoivent un", () => {
+    it("Wakka: at your end step, if Wakka got a counter this turn, your other creatures get one", () => {
       let s = scenario({ p1: { battlefield: ["Wakka, Devoted Guardian", "Bear Cub"] } });
       const wakka = idOf(s, "p1", "battlefield", "Wakka, Devoted Guardian");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -247,7 +247,7 @@ describe("Counter Blitz (EDH)", () => {
   });
 
   describe("sorts", () => {
-    it("Collective Effort : escalade, deux modes pour {1} de plus", () => {
+    it("Collective Effort: escalate, two modes for {1} more", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Plains", 4), "Bear Cub"], hand: ["Collective Effort"] },
         p2: { battlefield: ["Serra Angel"] },
@@ -263,7 +263,7 @@ describe("Counter Blitz (EDH)", () => {
       expect(plusOne(s, idOf(s, "p1", "battlefield", "Bear Cub"))).toBe(1);
     });
 
-    it("Promise of Loyalty : chaque joueur garde une créature, avec un marqueur de serment, et sacrifie les autres", () => {
+    it("Promise of Loyalty: each player keeps one creature, with an oath counter, and sacrifices the others", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Plains", 5), "Bear Cub"], hand: ["Promise of Loyalty"] },
         p2: { battlefield: ["Serra Angel", "Savannah Lions"] },
@@ -275,13 +275,13 @@ describe("Counter Blitz (EDH)", () => {
       expect([onField(s, "p2", "Serra Angel"), onField(s, "p2", "Savannah Lions")]).toEqual([1, 0]);
       expect(s.objects[angel]?.counters.vow).toBe(1);
       expect(onField(s, "p1", "Bear Cub")).toBe(1);
-      // Les créatures avec un marqueur de serment ne peuvent pas attaquer le lanceur (ni ses planeswalkers).
+      // Creatures with an oath counter can't attack the caster (nor their planeswalkers).
       expect(chars(s, angel).blockRules.map((r) => r.cantAttackPlayer)).toEqual(["p1"]);
       s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers" && x.pending.player === "p2");
       expect(() => act(s, "p2", { type: "declareAttackers", attackers: [{ id: angel, defender: "p1" }] })).toThrow();
     });
 
-    it("Yuna's Whistle : la première créature révélée va en main ; X marqueurs, X sa valeur de mana", () => {
+    it("Yuna's Whistle: the first revealed creature goes to hand; X counters, X its mana value", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Forest", 3), "Bear Cub"],
@@ -295,7 +295,7 @@ describe("Counter Blitz (EDH)", () => {
       expect(plusOne(s, bear)).toBe(5);
     });
 
-    it("Temple of the False God : {C}{C} seulement avec cinq terrains ou plus", () => {
+    it("Temple of the False God: {C}{C} only with five or more lands", () => {
       const few = scenario({ p1: { battlefield: ["Temple of the False God", ...lands("Plains", 3)], hand: ["Serra Angel"] } });
       expect(castable(few, "p1", idOf(few, "p1", "hand", "Serra Angel"))).toBe(false);
       const many = scenario({ p1: { battlefield: ["Temple of the False God", ...lands("Plains", 4)], hand: ["Serra Angel"] } });
@@ -304,8 +304,8 @@ describe("Counter Blitz (EDH)", () => {
   });
 });
 
-describe("joueur attaqué en multijoueur (PLAN-H, lot H5)", () => {
-  /** p1 attaque : chaque créature nommée vers le défenseur donné (joueur, ou « walker » : l'Ajani de p2). */
+describe("player attacked in multiplayer (PLAN-H, lot H5)", () => {
+  /** p1 attacks: each named creature toward the given defender (player, or "walker": p2's Ajani). */
   const attackWith = (s: GameState, attackers: [string, string][]) => {
     const walker = idOf(s, "p2", "battlefield", "Ajani Resolute");
     const cur = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
@@ -318,7 +318,7 @@ describe("joueur attaqué en multijoueur (PLAN-H, lot H5)", () => {
     });
   };
 
-  it("Lulu, Stern Guardian : « un adversaire vous attaque » — pas vos planeswalkers ; la cible est une créature qui vous attaque", () => {
+  it('Lulu, Stern Guardian: "an opponent attacks you" — not your planeswalkers; the target is a creature attacking you', () => {
     const base = () =>
       scenario({
         players: 3,
@@ -341,7 +341,7 @@ describe("joueur attaqué en multijoueur (PLAN-H, lot H5)", () => {
         return undefined;
       },
     );
-    // Une seule cible possible : choisie sans question ; la créature qui attaque p3 n'est jamais proposée.
+    // Only one possible target: chosen without a question; the creature attacking p3 is never offered.
     expect(offered.flat()).not.toContain("Bear Cub");
     expect(s.objects[idOf(s, "p1", "battlefield", "Llanowar Elves")]?.counters.stun).toBe(1);
     expect(s.objects[idOf(s, "p1", "battlefield", "Bear Cub")]?.counters.stun ?? 0).toBe(0);

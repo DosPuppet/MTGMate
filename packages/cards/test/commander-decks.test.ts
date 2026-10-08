@@ -1,7 +1,7 @@
 /**
- * Commander (PLAN-E) : les decks de `docs/commander/decks/` (100 cartes, un commandant, tous les noms reconnus), le
- * pseudo-ensemble EDH importé par nom (chaque carte y est définie par EDH, avec son impression d'origine et l'identité de
- * couleur de Scryfall) et les données de `commander.json`.
+ * Commander (PLAN-E): the decks of `docs/commander/decks/` (100 cards, one commander, every name recognized), the
+ * EDH pseudo-set imported by name (each card is defined there by EDH, with its original printing and Scryfall's color
+ * identity) and the data of `commander.json`.
  */
 import { describe, expect, it } from "vitest";
 import { commanderDecks } from "../../../tools/commander-decks";
@@ -12,7 +12,7 @@ import { CARDS, DECKS, type DeckEntries, SET_BY_CODE } from "../src";
 describe("decks Commander", () => {
   const decks = commanderDecks();
 
-  it("les decks Commander : 100 cartes, un commandant, tous les noms connus du catalogue", () => {
+  it("Commander decks: 100 cards, one commander, every name known to the catalog", () => {
     expect(decks.map((d) => d.id)).toEqual([
       "counter-blitz",
       "dark-leo",
@@ -35,18 +35,18 @@ describe("decks Commander", () => {
     }
   });
 
-  it("les préconstruits Commander (cmd-<id>) reprennent exactement les decklists", () => {
+  it("Commander precons (cmd-<id>) match the decklists exactly", () => {
     for (const d of decks) {
       const precon = DECKS.find((x) => x.id === `cmd-${d.id}`);
       expect(precon?.format, d.id).toBe("commander");
-      // Les cartes et leur nombre ; l'impression peut différer (préconstruit aux illustrations personnelles).
+      // The cards and their count; the printing may differ (precon with custom art).
       const names = (entries: DeckEntries | undefined) => entries?.map(([n, name]) => [n, name]);
       expect(names(precon?.commander)).toEqual(names(d.commander));
       expect(names(precon?.main)).toEqual(names(d.main));
     }
   });
 
-  it("chaque carte des decks absente des extensions est définie par le pseudo-ensemble EDH", () => {
+  it("every deck card missing from the sets is defined by the EDH pseudo-set", () => {
     const names = new Set(edhData.map((c) => c.name));
     for (const d of decks)
       for (const [, name] of [...d.commander, ...d.main]) {
@@ -57,8 +57,8 @@ describe("decks Commander", () => {
   });
 });
 
-describe("pseudo-ensemble EDH (import par nom)", () => {
-  it("est importé par nom, hors Standard, et chacune de ses cartes y est définie (aucune autre extension ne la définit)", () => {
+describe("EDH pseudo-set (import by name)", () => {
+  it("is imported by name, outside Standard, and each of its cards is defined there (no other set defines it)", () => {
     expect(SET_BY_CODE.EDH?.byName).toBeDefined();
     for (const raw of edhData) {
       expect(CARDS[raw.name]?.set, raw.name).toBe("EDH");
@@ -66,7 +66,7 @@ describe("pseudo-ensemble EDH (import par nom)", () => {
     }
   });
 
-  it("chaque carte garde son impression d'origine (export « (C17) 36 ») et l'identité de couleur de Scryfall", () => {
+  it('each card keeps its original printing (export "(C17) 36") and Scryfall\'s color identity', () => {
     for (const raw of edhData) {
       expect(raw.origin, raw.name).toMatch(/^[A-Z0-9]{3,5}$/);
       expect(CARDS[raw.name]?.origin, raw.name).toBe(raw.origin);
@@ -76,7 +76,7 @@ describe("pseudo-ensemble EDH (import par nom)", () => {
 });
 
 describe("commander.json", () => {
-  it("listes triées, sans doublon ; les Game Changers des decks sont connus", () => {
+  it("sorted lists, no duplicates; the decks' Game Changers are known", () => {
     for (const list of [commanderData.banned, commanderData.gameChangers, commanderData.notLegal]) {
       expect([...list].sort()).toEqual(list);
       expect(new Set(list).size).toBe(list.length);

@@ -353,7 +353,7 @@ function exportName(c: CardDef | undefined, name: string): string {
 
 /** "A deck can have any number of cards named …" (Hare Apparent, Relentless Rats…). */
 const ANY_NUMBER = /A deck can have any number of cards named/;
-/** "A deck can have up to N cards named …" (Seven Dwarves, Nazgûl): N copies, even in Commander. */
+/** "A deck can have up to N cards named …" (Seven Dwarves, Nazgul): N copies, even in Commander. */
 const UP_TO = /A deck can have up to (\w+) cards named/;
 const NUMBER_WORDS: Record<string, number> = { two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9 };
 

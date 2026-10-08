@@ -1,12 +1,12 @@
 /**
- * Catalogue des noms (questions « nom » du moteur) : toutes les cartes et leurs faces ; la liste officielle des types de
- * créature (205.3m, dans le moteur) couvre tous les types des cartes et des jetons du catalogue.
+ * Name catalog (the engine's "name" questions): all cards and their faces; the official list of creature types
+ * (205.3m, in the engine) covers every type of the catalog's cards and tokens.
  */
 import { CREATURE_TYPES } from "@mtgx/engine";
 import { describe, expect, it } from "vitest";
 import { CARDS, nameCatalog, TOKEN_SPECS } from "../src";
 
-/** Sous-types d'artefact et d'enchantement (205.3g, 205.3h) que portent des créatures-artefacts ou des enchantements. */
+/** Artifact and enchantment subtypes (205.3g, 205.3h) carried by artifact creatures or enchantments. */
 const NON_CREATURE_SUBTYPES = new Set([
   "Attraction",
   "Blood",
@@ -46,8 +46,8 @@ const NON_CREATURE_SUBTYPES = new Set([
   "Shrine",
 ]);
 
-describe("catalogue des noms", () => {
-  it("toutes les cartes et chacune de leurs faces ; les terrains à part", () => {
+describe("name catalog", () => {
+  it("all cards and each of their faces; lands apart", () => {
     const c = nameCatalog();
     expect(c.cards).toContain("Llanowar Elves");
     expect(c.cards).toContain("Riling Dawnbreaker");
@@ -58,7 +58,7 @@ describe("catalogue des noms", () => {
     expect(new Set(c.cards).size).toBe(c.cards.length);
   });
 
-  it("chaque type de créature d'une carte ou d'un jeton est dans la liste officielle (205.3m)", () => {
+  it("every creature type of a card or token is in the official list (205.3m)", () => {
     const types = new Set(CREATURE_TYPES);
     const missing = new Set<string>();
     for (const card of Object.values(CARDS))

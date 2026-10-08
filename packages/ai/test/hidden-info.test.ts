@@ -1,7 +1,7 @@
 /**
- * Audit des informations cachées (jeu en ligne) : à chaque décision de parties IA contre IA, rien de ce
- * que reçoit un joueur (vue, événements filtrés, faces) ne doit citer une carte qui n'existe que dans la
- * main ou la bibliothèque d'un adversaire et qui n'a jamais été rendue publique ni révélée à ce joueur.
+ * Hidden information audit (online play): at each decision of AI vs AI games, nothing that
+ * a player receives (view, filtered events, faces) may cite a card that exists only in an
+ * opponent's hand or library and that was never made public nor revealed to this player.
  */
 import { implementedCards, toCardDef } from "@mtgx/cards";
 import {
@@ -34,7 +34,7 @@ function randomDeck(seed: number): CardDef[] {
   return deck;
 }
 
-/** Identifiants de définitions cités n'importe où dans une valeur JSON. */
+/** Definition ids cited anywhere in a JSON value. */
 function defIdsIn(value: unknown, out = new Set<string>()): Set<string> {
   if (Array.isArray(value)) for (const v of value) defIdsIn(v, out);
   else if (value && typeof value === "object") {
@@ -49,7 +49,7 @@ function defIdsIn(value: unknown, out = new Set<string>()): Set<string> {
 
 const PUBLIC_ZONES = new Set(["battlefield", "graveyard", "exile", "stack", "command"]);
 
-/** `commander` : partie de Commander à `n` joueurs, decks Commander aléatoires (PLAN-E). */
+/** `commander`: Commander game with `n` players, random Commander decks (PLAN-E). */
 function auditGame(seed: number, opts: { players?: number; commander?: boolean } = {}): string[] {
   const players = Array.from({ length: opts.players ?? 2 }, (_, i) => `p${i + 1}`);
   const cmd = opts.commander ? players.map((_, i) => randomCommanderDeck(seed * 31 + i)) : null;
@@ -65,7 +65,7 @@ function auditGame(seed: number, opts: { players?: number; commander?: boolean }
   });
   const agents = Object.fromEntries(players.map((p, i) => [p, randomAgent(seed * 7 + i)]));
   const publicSeen = new Set<string>();
-  // Chaque joueur connaît sa propre decklist ; puis ce qui lui est révélé par ses propres décisions.
+  // Each player knows their own decklist; then whatever their own decisions reveal to them.
   const known: Record<string, Set<string>> = Object.fromEntries(
     players.map((p) => [
       p,
@@ -80,15 +80,15 @@ function auditGame(seed: number, opts: { players?: number; commander?: boolean }
   const check = (s: GameState, events: Parameters<typeof filterEvents>[0]) => {
     for (const o of Object.values(s.objects)) if (PUBLIC_ZONES.has(o.zone)) publicSeen.add(o.defId);
     for (const item of s.stack) publicSeen.add(item.sourceDefId);
-    // Une carte passée par une zone publique pendant la décision (surveillée au cimetière puis reprise en main) a été vue.
+    // A card passed through a public zone during the decision (watched in the graveyard then taken back to hand) was seen.
     for (const ev of events) if (ev.type === "moved" && ev.defId && PUBLIC_ZONES.has(ev.to)) publicSeen.add(ev.defId);
-    // Cartes révélées à tous (exploration…), et cartes défaussées (publiques, même si un remplacement les envoie ailleurs
-    // qu'au cimetière : Nexus of Fate, Green Sun's Zenith).
+    // Cards revealed to everyone (explore...), and discarded cards (public, even if a replacement sends them elsewhere
+    // than the graveyard: Nexus of Fate, Green Sun's Zenith).
     for (const ev of events) if (ev.type === "reveal" || ev.type === "discard") for (const d of ev.defIds) publicSeen.add(d);
     for (const v of players) {
       const view = projectView(s, v);
       if (view.pending?.kind === "choice") for (const o of view.pending.objects ?? []) known[v]?.add(o.defId);
-      // 722 (Mindslaver) : le joueur qui contrôle le tour d'un autre voit tout ce que celui-ci peut voir, dont sa main.
+      // 722 (Mindslaver): the player who controls another's turn sees everything that player can see, including their hand.
       if (s.turnControl?.by === v && s.turn.active === s.turnControl.player)
         for (const id of s.players[s.turnControl.player]?.hand ?? []) known[v]?.add(s.objects[id]?.defId ?? "");
       const secret = new Set<string>();
@@ -119,21 +119,21 @@ function auditGame(seed: number, opts: { players?: number; commander?: boolean }
   return leaks;
 }
 
-describe("informations cachées", () => {
-  it("aucun joueur ne reçoit une carte cachée d'un adversaire (vue, événements, faces)", () => {
+describe("hidden information", () => {
+  it("no player receives a hidden card of an opponent (view, events, faces)", () => {
     const leaks: string[] = [];
     for (let seed = 1; seed <= 20; seed++) leaks.push(...auditGame(seed));
     expect(leaks.slice(0, 10)).toEqual([]);
   }, 120_000);
 
-  it("Commander à 3 et 4 joueurs (PLAN-E) : rien de caché ne fuit, commandants publics compris", () => {
+  it("Commander with 3 and 4 players (PLAN-E): nothing hidden leaks, public commanders included", () => {
     const leaks: string[] = [];
     for (let seed = 1; seed <= 4; seed++) leaks.push(...auditGame(seed, { players: 3 + (seed % 2), commander: true }));
     expect(leaks.slice(0, 10)).toEqual([]);
   }, 240_000);
 });
 
-/** Chaînes d'une question (options, noms proposés, suggestion, libellés), et de celles des terrains à jouer. */
+/** Strings of a question (options, proposed names, suggestion, labels), and those of the lands to play. */
 function requestStrings(view: ReturnType<typeof projectView>): string[] {
   const p = view.pending;
   const reqs: ChoiceRequest[] = [];
@@ -147,8 +147,8 @@ function requestStrings(view: ReturnType<typeof projectView>): string[] {
   ]);
 }
 
-describe("informations cachées : noms à choisir (nom de carte, de terrain, type de créature)", () => {
-  it("la question ne cite aucune carte que l'adversaire n'a que dans sa main ou sa bibliothèque", () => {
+describe("hidden information: names to choose (card name, land name, creature type)", () => {
+  it("the question cites no card that the opponent has only in hand or library", () => {
     const plains = ALL.find((c) => c.name === "Plains") as CardDef;
     const mine = ["Skyseer's Chariot", "Petrified Hamlet", "Cavern of Souls"].map(
       (n) => ALL.find((c) => c.name === n) as CardDef,
@@ -156,7 +156,7 @@ describe("informations cachées : noms à choisir (nom de carte, de terrain, typ
     const deck = [...Array(30).fill(plains), ...mine.flatMap((d) => Array(10).fill(d))] as CardDef[];
     let asked = 0;
     const leaks: string[] = [];
-    // Types de créature de chaque nom de carte, calculés une fois (et non un parcours du catalogue par décision).
+    // Creature types of each card name, computed once (not a catalog walk per decision).
     const subtypesOf = new Map(ALL.map((c) => [c.name, c.subtypes]));
     for (let seed = 1; seed <= 6; seed++) {
       let { state } = createGame({
@@ -181,7 +181,7 @@ describe("informations cachées : noms à choisir (nom de carte, de terrain, typ
         const strings = new Set(requestStrings(view));
         const nameAsked = view.pending?.kind === "choice" && view.pending.request?.type === "name";
         if (nameAsked) asked++;
-        // Types de créature connus de p1 : ceux des cartes publiques ou des siennes (seulement quand un nom est demandé).
+        // Creature types known to p1: those of public cards or its own (only when a name is requested).
         const knownTypes = nameAsked
           ? new Set([...publicNames, ...ownNames].flatMap((n) => subtypesOf.get(n) ?? []))
           : new Set<string>();
@@ -190,7 +190,7 @@ describe("informations cachées : noms à choisir (nom de carte, de terrain, typ
           if (!ownNames.has(name) && !publicNames.has(name) && strings.has(name))
             leaks.push(`graine ${seed}, tour ${state.turn.number} : p1 voit ${name}`);
           if (!nameAsked) continue;
-          // Types de créature : seulement ceux des cartes publiques ou des vôtres.
+          // Creature types: only those of public cards or your own.
           const types = state.defs[d]?.types.includes("Creature") ? (state.defs[d]?.subtypes ?? []) : [];
           for (const t of types) if (!knownTypes.has(t) && strings.has(t)) leaks.push(`graine ${seed} : p1 voit le type ${t}`);
         }
@@ -210,13 +210,13 @@ describe("informations cachées : noms à choisir (nom de carte, de terrain, typ
   }, 120_000);
 });
 
-/** Carte à déguisement de test : lancée face cachée, elle ne doit pas être révélée à l'adversaire. */
+/** Test disguise card: cast face down, it must not be revealed to the opponent. */
 const DISGUISED = toCardDef(
   {
-    name: "Espion d'audit",
+    name: "Audit Spy",
     number: "1",
     rarity: "common",
-    // Coûts hors d'atteinte : la carte n'est jouée que face cachée (et n'est pas retournée).
+    // Costs out of reach: the card is only played face down (and is not turned up).
     manaCost: "{12}{W}",
     cmc: 13,
     typeLine: "Creature — Human Rogue",
@@ -233,8 +233,8 @@ const DISGUISED = toCardDef(
   "TST",
 );
 
-describe("informations cachées : cartes face cachée (708)", () => {
-  it("l'adversaire ne voit pas la carte d'un permanent face cachée tant qu'elle n'est pas révélée", () => {
+describe("hidden information: face-down cards (708)", () => {
+  it("the opponent doesn't see the card of a face-down permanent until it is revealed", () => {
     const plains = ALL.find((c) => c.name === "Plains") as CardDef;
     let leaks = 0;
     let faceDownSeen = 0;
@@ -262,14 +262,14 @@ describe("informations cachées : cartes face cachée (708)", () => {
         if (r.events.some((e) => e.type === "turnedFaceUp")) revealed = true;
         if (Object.values(state.objects).some((o) => o.defId === DISGUISED.id && PUBLIC_ZONES.has(o.zone))) revealed = true;
         if (state.battlefield.some((id) => state.objects[id]?.faceDown)) faceDownSeen++;
-        // 708.5 : p2 qui prend le contrôle d'un permanent face cachée peut le regarder ; la carte lui est alors connue.
+        // 708.5: p2 taking control of a face-down permanent may look at it; the card is then known to it.
         if (state.battlefield.some((id) => state.objects[id]?.faceDown && state.objects[id]?.controller === "p2"))
           revealed = true;
         if (revealed) break;
         const view = projectView(state, "p2");
         const evs = filterEvents(r.events, "p2");
-        // Une question qui fait regarder la main ou la bibliothèque adverse (Solve for Disappointment : « choisissez la
-        // carte qu'il défausse ») révèle légitimement ces cartes : seul le permanent face cachée est audité ici.
+        // A question that makes you look at the opponent's hand or library (Solve for Disappointment: "choose the
+        // card it discards") legitimately reveals those cards: only the face-down permanent is audited here.
         const shown =
           view.pending?.kind === "choice"
             ? { ...view.pending, objects: view.pending.objects?.filter((o) => o.zone !== "hand" && o.zone !== "library") }

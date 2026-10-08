@@ -1,9 +1,9 @@
 /**
- * Safety caps of the engine (docs/moteur.md, section on the safety caps; docs/plans/PLAN-C.md, lot C1).
+ * Safety caps of the engine (docs/engine.md, section on the safety caps; PLAN-C in docs/history.md, lot C1).
  *
  * The loop guards declare the game a draw (104.4b); the others cut an amount. A cut emits the `capReached` event (game
  * log, counted by the fuzz): it signals an approximation, never normal operation. Every new cap goes here, in
- * docs/moteur.md and in docs/approximations.md.
+ * docs/engine.md and in docs/approximations.md.
  */
 import { emit } from "./events";
 

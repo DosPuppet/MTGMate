@@ -1,4 +1,4 @@
-/** Test de fumée : Wilds of Eldraine. */
+/** Smoke test: Wilds of Eldraine. */
 import { smokeTest } from "./harness";
 
 smokeTest(["WOE"]);

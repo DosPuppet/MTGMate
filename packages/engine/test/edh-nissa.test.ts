@@ -1,7 +1,7 @@
 /**
- * Commander (pseudo-ensemble EDH) : tests de règles du deck « Nissa, Non-Green Animist » (Nissa, Leyline Tamer).
- * Toucheterre, terrains rejoués, dessus de bibliothèque remis dans l'ordre choisi, arrivées doublées ou muettes (Elesh
- * Norn), canalisation, contrôle volé.
+ * Commander (EDH pseudo-set): rules tests for the "Nissa, Non-Green Animist" deck (Nissa, Leyline Tamer).
+ * Landfall, replayed lands, library tops put back in a chosen order, doubled or muted enters (Elesh
+ * Norn), channel, stolen control.
  */
 import { describe, expect, it } from "vitest";
 import { chars } from "../src/layers";
@@ -37,14 +37,14 @@ const activations = (s: GameState, p: PlayerId, source: ObjectId) =>
   legalActions(s, p).filter(
     (a): a is Extract<ActionOption, { type: "activate" }> => a.type === "activate" && a.source === source,
   );
-/** Active la capacité de rang `index` (dans la définition) de cette source. */
+/** Activates the ability of rank `index` (in the definition) of this source. */
 const activate = (s: GameState, p: PlayerId, source: ObjectId, index?: number, extra: object = {}) => {
   const o = activations(s, p, source).find((a) => index === undefined || a.ability === index);
-  if (!o) throw new Error(`pas de capacité ${index ?? ""} pour ${nameOf(s, source)}`);
+  if (!o) throw new Error(`no ability ${index ?? ""} for ${nameOf(s, source)}`);
   return act(s, p, { type: "activate", source, ability: o.ability, ...extra } as never);
 };
 const plusOne = (s: GameState, id: string) => s.objects[id]?.counters["+1/+1"] ?? 0;
-/** Répond aux questions d'ordre par les cartes nommées (la première sera piochée en premier). */
+/** Answers ordering questions with the named cards (the first will be drawn first). */
 const ordering =
   (names: string[]) =>
   (req: ChoiceRequest, _p: PlayerId, s: GameState): (string | number)[] | undefined => {
@@ -55,7 +55,7 @@ const ordering =
       return left.splice(i, 1)[0] as string;
     });
   };
-/** Choisit le mode dont le libellé est donné (capacité déclenchée modale). */
+/** Chooses the mode whose label is given (modal triggered ability). */
 const modeNamed = (label: string) => (req: ChoiceRequest) =>
   req.type === "pick" && req.intent === "triggerMode"
     ? Object.entries(req.labels ?? {})
@@ -65,42 +65,42 @@ const modeNamed = (label: string) => (req: ChoiceRequest) =>
 
 describe("Nissa, Leyline Tamer (EDH)", () => {
   describe("toucheterre", () => {
-    it("Emeria Angel : vous pouvez créer un Oiseau 1/1 avec le vol à chaque terrain", () => {
+    it("Emeria Angel: you may create a 1/1 flying Bird for each land", () => {
       let s = scenario({ p1: { battlefield: ["Emeria Angel"], hand: ["Plains"] } });
       s = settle(playLand(s, "p1", "Plains"));
       const birds = s.battlefield.filter((id) => s.objects[id]?.isToken && nameOf(s, id) === "Bird");
       expect(birds).toHaveLength(1);
       expect(chars(s, birds[0] ?? "").keywords).toContain("flying");
-      // « Vous pouvez » : refusé, pas d'Oiseau.
+      // "You may": declined, no Bird.
       let t = scenario({ p1: { battlefield: ["Emeria Angel"], hand: ["Plains"] } });
       t = settle(playLand(t, "p1", "Plains"), (req) => (req.type === "yesNo" ? [0] : undefined));
       expect(t.battlefield.filter((id) => s.objects[id]?.isToken)).toHaveLength(0);
     });
 
-    it("Emeria Shepherd : une carte de permanent non-terrain revient en main, ou sur le champ de bataille avec une Plaine", () => {
+    it("Emeria Shepherd: a nonland permanent card returns to hand, or to the battlefield with a Plains", () => {
       const start = () =>
         scenario({ p1: { battlefield: ["Emeria Shepherd"], hand: ["Plains", "Island"], graveyard: ["Bear Cub", "Shock"] } });
-      // Une Île : en main seulement (un éphémère n'est pas une carte de permanent).
+      // An Island: to hand only (an instant isn't a permanent card).
       let s = start();
       const bear = idOf(s, "p1", "graveyard", "Bear Cub");
       const shock = idOf(s, "p1", "graveyard", "Shock");
       s = playLand(s, "p1", "Island");
-      // Seule cible possible : Bear Cub (un éphémère n'est pas une carte de permanent).
+      // Only possible target: Bear Cub (an instant isn't a permanent card).
       expect(s.stack[0]?.targets).toEqual({ t: [bear] });
       expect(s.stack[0]?.targets.t).not.toContain(shock);
       s = settle(s);
       expect(handNames(s, "p1")).toEqual(["Bear Cub", "Plains"]);
-      // Une Plaine : au choix, sur le champ de bataille.
+      // A Plains: your choice, onto the battlefield.
       let t = start();
       t = settle(playLand(t, "p1", "Plains"));
       expect(idsOf(t, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
-      // Ou dans la main.
+      // Or into the hand.
       let u = start();
       u = settle(playLand(u, "p1", "Plains"), (r) => (r.type === "pick" && r.intent !== "triggerTarget" ? ["1"] : undefined));
       expect(idsOf(u, "p1", "hand", "Bear Cub")).toHaveLength(1);
     });
 
-    it("Gandalf, Shadow's Foe : jusqu'à trois terrains exilés reviennent engagés ; chaque arrivée pioche et met un marqueur", () => {
+    it("Gandalf, Shadow's Foe: up to three exiled lands return tapped; each enter draws and puts a counter", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Island", 7), "Plains"],
@@ -112,14 +112,14 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
       s = castIt(s, "p1", "Gandalf, Shadow's Foe");
       s = settle(s, picking(isles));
       const gandalf = idOf(s, "p1", "battlefield", "Gandalf, Shadow's Foe");
-      // Trois Îles reviennent engagées (de nouveaux objets) : trois toucheterres.
+      // Three Islands return tapped (new objects): three landfalls.
       expect(plusOne(s, gandalf)).toBe(3);
       expect(hand(s, "p1")).toBe(3);
       expect(idsOf(s, "p1", "battlefield", "Island")).toHaveLength(7);
       expect(idsOf(s, "p1", "battlefield", "Plains").every((id) => !s.objects[id]?.tapped)).toBe(true);
     });
 
-    it("Geode Rager : chaque créature du joueur ciblé est provoquée", () => {
+    it("Geode Rager: each creature of the targeted player is goaded", () => {
       let s = scenario({
         players: 3,
         p1: { battlefield: ["Geode Rager"], hand: ["Mountain"] },
@@ -133,18 +133,18 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
       expect(goaded("p3")).toHaveLength(0);
     });
 
-    it("Ob Nixilis, the Fallen : le joueur ciblé perd 3 PV et Ob Nixilis reçoit trois marqueurs +1/+1", () => {
+    it("Ob Nixilis, the Fallen: the targeted player loses 3 life and Ob Nixilis gets three +1/+1 counters", () => {
       let s = scenario({ p1: { battlefield: ["Ob Nixilis, the Fallen"], hand: ["Swamp"] } });
       s = settle(playLand(s, "p1", "Swamp"), picking(["p2"]));
       expect(s.players.p2?.life).toBe(17);
       expect(plusOne(s, idOf(s, "p1", "battlefield", "Ob Nixilis, the Fallen"))).toBe(3);
-      // « Si vous le faites » : refusé, ni perte ni marqueur.
+      // "If you do": declined, no loss and no counter.
       let t = scenario({ p1: { battlefield: ["Ob Nixilis, the Fallen"], hand: ["Swamp"] } });
       t = settle(playLand(t, "p1", "Swamp"), (req) => (req.type === "yesNo" ? [0] : picking(["p2"])(req)));
       expect([t.players.p2?.life, plusOne(t, idOf(t, "p1", "battlefield", "Ob Nixilis, the Fallen"))]).toEqual([20, 0]);
     });
 
-    it("Roil Elemental : la créature volée revient quand vous ne contrôlez plus Roil Elemental", () => {
+    it("Roil Elemental: the stolen creature returns when you no longer control Roil Elemental", () => {
       let s = scenario({
         p1: { battlefield: ["Roil Elemental", "Mountain"], hand: ["Island", "Shock"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -152,20 +152,20 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
       const bear = idOf(s, "p2", "battlefield", "Bear Cub");
       s = settle(playLand(s, "p1", "Island"), picking([bear]));
       expect(s.objects[bear]?.controller).toBe("p1");
-      // Roil Elemental meurt : l'effet prend fin.
+      // Roil Elemental dies: the effect ends.
       const roil = idOf(s, "p1", "battlefield", "Roil Elemental");
       s = settle(castIt(s, "p1", "Shock", { targets: { t: [roil] } }));
       expect(idsOf(s, "p1", "graveyard", "Roil Elemental")).toHaveLength(1);
       expect(s.objects[bear]?.controller).toBe("p2");
     });
 
-    it("Ruin Crab : chaque adversaire meule trois cartes", () => {
+    it("Ruin Crab: each opponent mills three cards", () => {
       let s = scenario({ players: 3, p1: { battlefield: ["Ruin Crab"], hand: ["Island"] } });
       s = settle(playLand(s, "p1", "Island"));
       expect([s.players.p1?.graveyard.length, s.players.p2?.graveyard.length, s.players.p3?.graveyard.length]).toEqual([0, 3, 3]);
     });
 
-    it("Retreat to Coralhelm : dégager une créature ciblée, ou regard 1", () => {
+    it("Retreat to Coralhelm: untap a targeted creature, or scry 1", () => {
       let s = scenario({
         p1: { battlefield: ["Retreat to Coralhelm", { name: "Bear Cub", tapped: true }], hand: ["Island", "Plains"] },
       });
@@ -175,7 +175,7 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
         (req) => modeNamed("You may tap or untap target creature")(req) ?? picking([bear])(req),
       );
       expect(s.objects[bear]?.tapped).toBe(false);
-      // Regard 1 : la carte du dessus va au-dessous.
+      // Scry 1: the top card goes to the bottom.
       const top = s.players.p1?.library[0];
       s.turn.landsPlayed = 0;
       s = settle(
@@ -185,7 +185,7 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
       expect(s.players.p1?.library.at(-1)).toBe(top);
     });
 
-    it("Retreat to Hagra : chaque adversaire perd 1 PV et vous en gagnez 1 ; ou +1/+0 et le contact mortel", () => {
+    it("Retreat to Hagra: each opponent loses 1 life and you gain 1; or +1/+0 and deathtouch", () => {
       let s = scenario({ players: 3, p1: { battlefield: ["Retreat to Hagra", "Bear Cub"], hand: ["Swamp", "Plains"] } });
       s = settle(playLand(s, "p1", "Swamp"), modeNamed("Each opponent loses 1 life; you gain 1 life"));
       expect([s.players.p1?.life, s.players.p2?.life, s.players.p3?.life]).toEqual([21, 19, 19]);
@@ -198,7 +198,7 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
       expect([chars(s, bear).power, chars(s, bear).keywords.includes("deathtouch")]).toEqual([3, true]);
     });
 
-    it("Valakut Exploration : la carte exilée se joue tant qu'elle reste exilée ; à l'étape de fin, au cimetière et blessures", () => {
+    it("Valakut Exploration: the exiled card can be played while it stays exiled; at the end step, to the graveyard and damage", () => {
       let s = scenario({
         players: 3,
         p1: { battlefield: ["Valakut Exploration"], hand: ["Mountain"], library: ["Shock", "Forest", "Island", "Island"] },
@@ -207,14 +207,14 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
       const shock = s.exile.find((id) => nameOf(s, id) === "Shock") ?? "";
       expect(shock).not.toBe("");
       expect(castable(s, "p1", shock)).toBe(true);
-      // Le Shock reste exilé jusqu'à l'étape de fin : au cimetière, 1 blessure à chaque adversaire.
+      // The Shock stays exiled until the end step: to the graveyard, 1 damage to each opponent.
       s = advanceUntil(s, (x) => x.turn.step === "end" && x.stack.length > 0);
       s = settle(s);
       expect(idsOf(s, "p1", "graveyard", "Shock")).toHaveLength(1);
       expect([s.players.p2?.life, s.players.p3?.life, s.players.p1?.life]).toEqual([19, 19, 20]);
     });
 
-    it("Valakut Exploration : un terrain exilé se joue comme terrain du tour (nouveau toucheterre) ; le reste va au cimetière", () => {
+    it("Valakut Exploration: an exiled land is played as the turn's land drop (new landfall); the rest goes to the graveyard", () => {
       let s = scenario({
         players: 3,
         p1: {
@@ -222,7 +222,7 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
           library: ["Forest", "Plains", "Shock", "Opt", "Island"],
         },
       });
-      // Wayfarer's Bauble : une Plaine arrive (toucheterre), la carte du dessus (après mélange) est exilée.
+      // Wayfarer's Bauble: a Plains enters (landfall), the top card (after the shuffle) is exiled.
       s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Wayfarer's Bauble")));
       const first = s.exile.filter((id) => s.objects[id]?.owner === "p1");
       expect(first).toHaveLength(1);
@@ -230,12 +230,12 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
         (id) => s.objects[id]?.owner === "p1" && (s.defs[s.objects[id]?.defId ?? ""]?.types ?? []).includes("Land"),
       );
       if (land) {
-        // Un terrain exilé ainsi se joue (terrain du tour) : un nouveau toucheterre exile une autre carte.
+        // A land exiled this way is played (as the turn's land): a new landfall exiles another card.
         expect(legalActions(s, "p1").some((a) => a.type === "playLand" && a.card === land)).toBe(true);
         s = settle(act(s, "p1", { type: "playLand", card: land } as never));
         expect(s.exile.filter((id) => s.objects[id]?.owner === "p1")).toHaveLength(1);
       }
-      // À l'étape de fin, chaque carte encore exilée va au cimetière : 1 blessure par carte à chaque adversaire.
+      // At the end step, each card still exiled goes to the graveyard: 1 damage per card to each opponent.
       s = advanceUntil(s, (x) => x.turn.step === "end" && x.stack.length > 0);
       s = settle(s);
       expect(s.exile.filter((id) => s.objects[id]?.owner === "p1")).toHaveLength(0);
@@ -243,14 +243,14 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
     });
   });
 
-  describe("arrivées : Elesh Norn, Mother of Machines", () => {
-    it("vos capacités déclenchées par une arrivée se déclenchent une fois de plus (toucheterre compris)", () => {
+  describe("enters: Elesh Norn, Mother of Machines", () => {
+    it("your abilities triggered by an enter trigger one more time (landfall included)", () => {
       let s = scenario({ p1: { battlefield: ["Elesh Norn, Mother of Machines", "Ruin Crab"], hand: ["Island"] } });
       s = settle(playLand(s, "p1", "Island"));
       expect(s.players.p2?.graveyard.length).toBe(6);
     });
 
-    it("les arrivées ne déclenchent pas les capacités des permanents adverses (arrivée et toucheterre)", () => {
+    it("enters don't trigger the abilities of opposing permanents (enter and landfall)", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: ["Elesh Norn, Mother of Machines"] },
@@ -258,13 +258,13 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
       });
       s = settle(playLand(s, "p2", "Plains"));
       expect(s.players.p1?.graveyard.length).toBe(0);
-      // Sans Elesh Norn, le Ruin Crab se déclenche.
+      // Without Elesh Norn, the Ruin Crab triggers.
       let t = scenario({ active: "p2", p2: { battlefield: ["Ruin Crab"], hand: ["Plains"] } });
       t = settle(playLand(t, "p2", "Plains"));
       expect(t.players.p1?.graveyard.length).toBe(3);
     });
 
-    it("la capacité « quand ce permanent arrive » d'un adversaire ne se déclenche pas ; la vôtre deux fois", () => {
+    it("an opponent's \"when this permanent enters\" ability doesn't trigger; yours twice", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: ["Elesh Norn, Mother of Machines"] },
@@ -273,7 +273,7 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
       s = settle(castIt(s, "p2", "Boggart Trawler // Boggart Bog"));
       expect(s.stack).toEqual([]);
       expect(idsOf(s, "p2", "battlefield", "Boggart Trawler // Boggart Bog")).toHaveLength(1);
-      // La vôtre se déclenche deux fois.
+      // Yours triggers twice.
       let t = scenario({
         p1: { battlefield: ["Elesh Norn, Mother of Machines", ...lands("Swamp", 3)], hand: ["Boggart Trawler // Boggart Bog"] },
         p2: { graveyard: ["Shock"] },
@@ -286,8 +286,8 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
     });
   });
 
-  describe("grandes créatures", () => {
-    it("Agent of Treachery : gagne le contrôle d'un permanent ; trois permanents qui ne sont pas à vous : piochez trois cartes", () => {
+  describe("big creatures", () => {
+    it("Agent of Treachery: gains control of a permanent; three permanents you don't own: draw three cards", () => {
       let s = scenario({
         p1: { battlefield: lands("Island", 7), hand: ["Agent of Treachery"] },
         p2: { battlefield: ["Bear Cub", "Savannah Lions", "Plains"] },
@@ -295,11 +295,11 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
       const bear = idOf(s, "p2", "battlefield", "Bear Cub");
       s = settle(castIt(s, "p1", "Agent of Treachery"), picking([bear]));
       expect(s.objects[bear]?.controller).toBe("p1");
-      // Un seul permanent volé : pas de pioche à l'étape de fin.
+      // Only one stolen permanent: no draw at the end step.
       const before = hand(s, "p1");
       let t = advanceUntil(s, (x) => x.turn.step === "end" && x.pending?.kind === "priority");
       expect(t.stack).toEqual([]);
-      // Trois permanents qui ne sont pas à vous : trois cartes.
+      // Three permanents you don't own: three cards.
       for (const name of ["Savannah Lions", "Plains"]) s = steal(s, idOf(s, "p2", "battlefield", name), "p1");
       t = advanceUntil(s, (x) => x.turn.step === "end" && x.stack.length > 0);
       expect(t.turn.number).toBe(s.turn.number);
@@ -307,7 +307,7 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
       expect(hand(t, "p1")).toBe(before + 3);
     });
 
-    it("Avacyn, Angel of Hope : vos autres permanents ont l'indestructible, pas ceux des adversaires", () => {
+    it("Avacyn, Angel of Hope: your other permanents have indestructible, not the opponents'", () => {
       const s = scenario({
         p1: { battlefield: ["Avacyn, Angel of Hope", "Bear Cub", "Plains"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -318,36 +318,36 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
       expect(chars(s, idOf(s, "p1", "battlefield", "Avacyn, Angel of Hope")).keywords).toContain("indestructible");
     });
 
-    it("Crabomination : l'adversaire exile trois cartes ; vous pouvez lancer un sort parmi elles sans payer son coût", () => {
+    it("Crabomination: the opponent exiles three cards; you may cast a spell among them without paying its cost", () => {
       let s = scenario({
         p1: { battlefield: lands("Swamp", 6), hand: ["Crabomination"] },
         p2: { hand: ["Bear Cub"], graveyard: ["Forest"], library: ["Shock", "Island"] },
       });
       s = untilCastNow(castIt(s, "p1", "Crabomination"));
-      // Le dessus de la bibliothèque, une carte au hasard du cimetière et de la main : les sorts sont proposés, pas le terrain.
+      // The top of the library, a random card from the graveyard and the hand: the spells are offered, not the land.
       expect(namesIn(s, s.exile).sort()).toEqual(["Bear Cub", "Forest", "Shock"]);
       expect(namesIn(s, castNowOf(s)?.cards).sort()).toEqual(["Bear Cub", "Shock"]);
       const bear = s.exile.find((id) => nameOf(s, id) === "Bear Cub") ?? "";
       expect(legalActions(s, "p1").find((a) => a.type === "cast" && a.card === bear)).toMatchObject({ free: true });
       s = settle(act(s, "p1", { type: "cast", card: bear, free: true } as never));
-      // Un seul sort : le Bear Cub, sous votre contrôle ; le Shock reste exilé.
+      // A single spell: the Bear Cub, under your control; the Shock stays exiled.
       expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
       expect(namesIn(s, s.exile).sort()).toEqual(["Forest", "Shock"]);
     });
 
-    it("Crabomination : émerger d'un artefact (sacrifié, coût réduit de sa valeur de mana)", () => {
+    it("Crabomination: emerge from an artifact (sacrificed, cost reduced by its mana value)", () => {
       const s = scenario({ p1: { battlefield: ["Sol Ring", ...lands("Swamp", 6)], hand: ["Crabomination"] } });
       const crab = idOf(s, "p1", "hand", "Crabomination");
       const opts = legalActions(s, "p1").filter((a) => a.type === "cast" && a.card === crab);
       expect(opts.some((a) => a.type === "cast" && a.altAvailable)).toBe(true);
       const t = scenario({ p1: { battlefield: ["Bear Cub", ...lands("Swamp", 6)], hand: ["Crabomination"] } });
       const crab2 = idOf(t, "p1", "hand", "Crabomination");
-      // Une créature ne suffit pas : « émerger d'un artefact ».
+      // A creature isn't enough: "emerge from an artifact".
       expect(legalActions(t, "p1").some((a) => a.type === "cast" && a.card === crab2 && a.altAvailable)).toBe(false);
     });
 
-    it("Hullbreaker Horror : ne peut pas être contrecarré ; vous lancez un sort : renvoyez un sort adverse dans la main", () => {
-      // Contresort : la cible est permise, mais le sort n'est pas contrecarré.
+    it("Hullbreaker Horror: can't be countered; you cast a spell: return an opposing spell to hand", () => {
+      // Counterspell: the target is allowed, but the spell isn't countered.
       let c = scenario({
         active: "p2",
         p1: { battlefield: lands("Island", 7), hand: ["Hullbreaker Horror"] },
@@ -359,7 +359,7 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
       const horror = c.stack[0]?.id ?? "";
       c = settle(act(c, "p2", { type: "cast", card: idOf(c, "p2", "hand", "Counterspell"), targets: { t: [horror] } } as never));
       expect(idsOf(c, "p1", "battlefield", "Hullbreaker Horror")).toHaveLength(1);
-      // Un sort adverse sur la pile, puis vous lancez un sort : celui de l'adversaire retourne dans sa main.
+      // An opposing spell on the stack, then you cast a spell: the opponent's returns to its hand.
       let s = scenario({
         active: "p2",
         p1: { battlefield: ["Hullbreaker Horror", "Mountain"], hand: ["Shock"] },
@@ -375,7 +375,7 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
       expect(s.players.p2?.life).toBe(18);
     });
 
-    it("Hullbreaker Horror : ou renvoyez un permanent non-terrain dans la main de son propriétaire", () => {
+    it("Hullbreaker Horror: or return a nonland permanent to its owner's hand", () => {
       let s = scenario({
         p1: { battlefield: ["Hullbreaker Horror", "Mountain"], hand: ["Shock"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -386,7 +386,7 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
       expect(handNames(s, "p2")).toEqual(["Bear Cub"]);
     });
 
-    it("Nezahal, Primal Tide : un adversaire lance un sort non-créature, vous piochez ; défaussez trois cartes : il revient engagé", () => {
+    it("Nezahal, Primal Tide: an opponent casts a noncreature spell, you draw; discard three cards: it returns tapped", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: ["Nezahal, Primal Tide"], hand: ["Island", "Island", "Island", "Plains"] },
@@ -396,7 +396,7 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
       expect(hand(s, "p1")).toBe(5);
       s = settle(castIt(s, "p2", "Bear Cub"));
       expect(hand(s, "p1")).toBe(5);
-      // Défaussez trois cartes : exilé, il revient engagé au début de la prochaine étape de fin.
+      // Discard three cards: exiled, it returns tapped at the beginning of the next end step.
       s = advanceUntil(s, (x) => x.pending?.kind === "priority" && x.pending.player === "p1");
       const nez = idOf(s, "p1", "battlefield", "Nezahal, Primal Tide");
       s = activate(s, "p1", nez);
@@ -409,7 +409,7 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
       expect(s.players.p1?.graveyard.length).toBe(3);
     });
 
-    it("Walking Atlas : {T} : vous pouvez mettre une carte de terrain de votre main sur le champ de bataille (toucheterre)", () => {
+    it("Walking Atlas: {T}: you may put a land card from your hand onto the battlefield (landfall)", () => {
       let s = scenario({ p1: { battlefield: ["Walking Atlas", "Ruin Crab"], hand: ["Island", "Bear Cub"] } });
       s.turn.landsPlayed = 1;
       s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Walking Atlas")));
@@ -418,8 +418,8 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
     });
   });
 
-  describe("dessus de bibliothèque", () => {
-    it("Ponder : les trois cartes du dessus remises dans l'ordre choisi, puis pioche", () => {
+  describe("library tops", () => {
+    it("Ponder: the top three cards put back in a chosen order, then draw", () => {
       let s = scenario({ p1: { battlefield: ["Island"], hand: ["Ponder"], library: ["Shock", "Opt", "Bear Cub", "Forest"] } });
       s = settle(
         castIt(s, "p1", "Ponder"),
@@ -429,7 +429,7 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
       expect(libraryNames(s, "p1")).toEqual(["Shock", "Opt", "Forest"]);
     });
 
-    it("Portent : vous ordonnez le dessus de la bibliothèque du joueur ciblé ; pioche au début du prochain entretien", () => {
+    it("Portent: you order the top of the targeted player's library; draw at the beginning of the next upkeep", () => {
       let s = scenario({
         p1: { battlefield: ["Island"], hand: ["Portent"] },
         p2: { library: ["Shock", "Opt", "Bear Cub", "Forest"] },
@@ -442,13 +442,13 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
       expect(libraryNames(s, "p2")).toEqual(["Opt", "Bear Cub", "Shock", "Forest"]);
       const before = hand(s, "p1");
       expect(before).toBe(0);
-      // Pioche retardée : au début de l'entretien suivant (celui de p2).
+      // Delayed draw: at the beginning of the following upkeep (p2's).
       s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "upkeep" && x.stack.length > 0);
       s = settle(s);
       expect(hand(s, "p1")).toBe(1);
     });
 
-    it("Sensei's Divining Top : {1} : ordonner les trois du dessus ; {T} : piochez, puis il va au-dessus de la bibliothèque", () => {
+    it("Sensei's Divining Top: {1}: order the top three; {T}: draw, then it goes on top of the library", () => {
       let s = scenario({
         p1: { battlefield: ["Sensei's Divining Top", "Island"], library: ["Shock", "Opt", "Bear Cub", "Forest"] },
       });
@@ -460,7 +460,7 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
       expect(libraryNames(s, "p1")[0]).toBe("Sensei's Divining Top");
     });
 
-    it("Scroll Rack : les cartes exilées de la main sont échangées contre autant de cartes du dessus, remises dans l'ordre choisi", () => {
+    it("Scroll Rack: the cards exiled from hand are swapped for as many top cards, put back in a chosen order", () => {
       let s = scenario({
         p1: {
           battlefield: ["Scroll Rack", "Island"],
@@ -475,11 +475,11 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
       );
       expect(handNames(s, "p1")).toEqual(["Bear Cub", "Opt", "Shock"]);
       expect(libraryNames(s, "p1")).toEqual(["Swamp", "Plains", "Forest"]);
-      // Aucun « piochez » : la pioche du tour n'est pas comptée.
+      // No "draw": the turn's draw step isn't counted.
       expect(s.turnLog?.some((e) => e.e === "draw")).toBeFalsy();
     });
 
-    it("Scheming Symmetry : deux joueurs ciblés cherchent chacun une carte, mélangent et la mettent au-dessus", () => {
+    it("Scheming Symmetry: two targeted players each search for a card, shuffle and put it on top", () => {
       let s = scenario({
         p1: { battlefield: ["Swamp"], hand: ["Scheming Symmetry"], library: ["Forest", "Forest", "Shock", "Forest"] },
         p2: { library: ["Island", "Bear Cub", "Island"] },
@@ -495,8 +495,8 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
     });
   });
 
-  describe("terrains et artefacts", () => {
-    it("Crucible of Worlds : jouer des terrains depuis votre cimetière", () => {
+  describe("lands and artifacts", () => {
+    it("Crucible of Worlds: playing lands from your graveyard", () => {
       const s = scenario({ p1: { battlefield: ["Crucible of Worlds"], graveyard: ["Island", "Shock"] } });
       const island = idOf(s, "p1", "graveyard", "Island");
       expect(legalActions(s, "p1").some((a) => a.type === "playLand" && a.card === island)).toBe(true);
@@ -504,20 +504,20 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
       expect(castable(s, "p1", shock)).toBe(false);
     });
 
-    it("Trade Routes : renvoyer un de vos terrains ; défausser une carte de terrain pour piocher", () => {
+    it("Trade Routes: return one of your lands; discard a land card to draw", () => {
       let s = scenario({ p1: { battlefield: ["Trade Routes", "Island", "Island", "Plains"], hand: ["Swamp", "Shock"] } });
       const routes = idOf(s, "p1", "battlefield", "Trade Routes");
       const plains = idOf(s, "p1", "battlefield", "Plains");
       s = settle(activate(s, "p1", routes, 0, { targets: { t: [plains] } }));
       expect(handNames(s, "p1")).toEqual(["Plains", "Shock", "Swamp"]);
       s = settle(activate(s, "p1", routes, 1));
-      // Une carte de terrain défaussée (pas le Shock), une carte piochée.
+      // A land card discarded (not the Shock), one card drawn.
       expect(idsOf(s, "p1", "hand", "Shock")).toHaveLength(1);
       expect(s.players.p1?.graveyard.map((id) => nameOf(s, id))).not.toContain("Shock");
       expect(hand(s, "p1")).toBe(3);
     });
 
-    it("Training Center : engagé en duel, dégagé avec deux adversaires ; Raugrin Triome : engagé, cycle {3}", () => {
+    it("Training Center: tapped in a duel, untapped with two opponents; Raugrin Triome: tapped, cycling {3}", () => {
       let duel = scenario({ p1: { hand: ["Training Center"] } });
       duel = playLand(duel, "p1", "Training Center");
       expect(duel.objects[idOf(duel, "p1", "battlefield", "Training Center")]?.tapped).toBe(true);
@@ -533,13 +533,13 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
       expect(chars(tri, triome).subtypes).toEqual(["Island", "Mountain", "Plains"]);
     });
 
-    it("Oboro, Palace in the Clouds : {1} : renvoyez Oboro dans la main", () => {
+    it("Oboro, Palace in the Clouds: {1}: return Oboro to hand", () => {
       let s = scenario({ p1: { battlefield: ["Oboro, Palace in the Clouds", "Island"] } });
       s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Oboro, Palace in the Clouds")));
       expect(handNames(s, "p1")).toEqual(["Oboro, Palace in the Clouds"]);
     });
 
-    it("Wayfarer's Bauble : un terrain de base de la bibliothèque arrive engagé", () => {
+    it("Wayfarer's Bauble: a basic land from the library enters tapped", () => {
       let s = scenario({
         p1: { battlefield: ["Wayfarer's Bauble", "Island", "Island"], library: ["Shock", "Plains", "Command Tower"] },
       });
@@ -549,7 +549,7 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
       expect(idsOf(s, "p1", "graveyard", "Wayfarer's Bauble")).toHaveLength(1);
     });
 
-    it("Eiganjo, Seat of the Empire : canalisation, 4 blessures à une créature attaquante, {1} de moins par créature légendaire", () => {
+    it("Eiganjo, Seat of the Empire: channel, 4 damage to an attacking creature, {1} less per legendary creature", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: ["Avacyn, Angel of Hope", "Plains", "Plains"], hand: ["Eiganjo, Seat of the Empire"] },
@@ -557,7 +557,7 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
       });
       const lions = idOf(s, "p2", "battlefield", "Savannah Lions");
       const eiganjo = idOf(s, "p1", "hand", "Eiganjo, Seat of the Empire");
-      // Pas de créature attaquante : rien à cibler.
+      // No attacking creature: nothing to target.
       s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
       s = act(s, "p2", { type: "declareAttackers", attackers: [{ id: lions, defender: "p1" }] } as never);
       s = advanceUntil(s, (x) => x.pending?.kind === "priority" && x.pending.player === "p1");
@@ -567,7 +567,7 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
       expect(idsOf(s, "p1", "graveyard", "Eiganjo, Seat of the Empire")).toHaveLength(1);
     });
 
-    it("Takenuma, Abandoned Mire : canalisation, meulez trois cartes puis une créature revient en main", () => {
+    it("Takenuma, Abandoned Mire: channel, mill three cards then a creature returns to hand", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Swamp", 4)],
@@ -580,7 +580,7 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
       expect(namesIn(s, s.players.p1?.graveyard).sort()).toEqual(["Forest", "Shock", "Takenuma, Abandoned Mire"]);
     });
 
-    it("Talon Gates of Madara : {4} : de la main sur le champ de bataille ; en arrivant, une créature sort de phase", () => {
+    it("Talon Gates of Madara: {4}: from hand onto the battlefield; when it enters, a creature phases out", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: lands("Island", 4), hand: ["Talon Gates of Madara"] },
@@ -593,7 +593,7 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
       expect(s.objects[bear]?.zone).toBe("phasedOut");
     });
 
-    it("Command Beacon : sacrifié, il met votre commandant dans votre main depuis la zone de commandement", () => {
+    it("Command Beacon: sacrificed, it puts your commander into your hand from the command zone", () => {
       let s = scenario({ p1: { battlefield: ["Command Beacon"], command: ["Nissa, Leyline Tamer"] } });
       let proposed: unknown;
       s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Command Beacon"), 1), (req) => {
@@ -601,13 +601,13 @@ describe("Nissa, Leyline Tamer (EDH)", () => {
         proposed = req.suggested;
         return [0];
       });
-      // En main, le garder est la réponse proposée (il se relance sans taxe).
+      // In hand, keeping it is the offered answer (it can be recast without tax).
       expect(proposed).toEqual([0]);
       expect(handNames(s, "p1")).toEqual(["Nissa, Leyline Tamer"]);
       expect(idsOf(s, "p1", "graveyard", "Command Beacon")).toHaveLength(1);
     });
 
-    it("Boggart Bog : vous pouvez payer 3 PV, sinon il arrive engagé ; Boggart Trawler exile le cimetière du joueur ciblé", () => {
+    it("Boggart Bog: you may pay 3 life, otherwise it enters tapped; Boggart Trawler exiles the targeted player's graveyard", () => {
       let s = scenario({ p1: { hand: ["Boggart Trawler // Boggart Bog"] } });
       s = act(s, "p1", {
         type: "playLand",

@@ -1,4 +1,4 @@
-/** Sauvegarde des parties en ligne : un redémarrage du serveur ne coupe plus les parties (`RoomConfig.dataDir`). */
+/** Persistence of online games: a server restart no longer cuts games off (`RoomConfig.dataDir`). */
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -29,14 +29,14 @@ async function tokenOf(c: Client): Promise<string> {
   return room?.type === "room" ? room.room.token : "";
 }
 
-describe("parties sauvegardées", () => {
-  it("après un redémarrage du serveur, les joueurs reprennent la partie avec leur jeton et la finissent", async () => {
+describe("saved games", () => {
+  it("after a server restart, players resume the game with their token and finish it", async () => {
     const dataDir = tempDir();
     const first = await server({ dataDir, graceMs: 10_000 });
     servers.push(first);
     const { a, b, code } = await duel(first.port, { bots: false });
     clients.push(a, b);
-    // Quelques décisions : les deux joueurs gardent leur main.
+    // A few decisions: both players keep their hand.
     for (let i = 0; i < 4; i++) {
       for (const c of [a, b]) {
         const v = c.lastView;
@@ -49,7 +49,7 @@ describe("parties sauvegardées", () => {
     const [ta, tb] = [await tokenOf(a), await tokenOf(b)];
     expect(existsSync(join(dataDir, `${code}.jsonl`))).toBe(true);
 
-    // Arrêt du serveur (pm2 restart) : la sauvegarde reste.
+    // Server shutdown (pm2 restart): the save remains.
     await Promise.all([a.close(), b.close()]);
     await first.close();
     servers.splice(servers.indexOf(first), 1);
@@ -65,25 +65,25 @@ describe("parties sauvegardées", () => {
     b2.send({ type: "rejoin", token: tb });
     const upA = await a2.next("update");
     const upB = await b2.next("update");
-    // La partie reprise est exactement celle d'avant (même main, même tour, mêmes points de vie).
+    // The resumed game is exactly the one from before (same hand, same turn, same life totals).
     expect(upA.view.hand.map((c) => c.id)).toEqual(before.a?.hand.map((c) => c.id));
     expect(upB.view.hand.map((c) => c.id)).toEqual(before.b?.hand.map((c) => c.id));
     expect(upA.view.turn).toEqual(before.a?.turn);
-    // Pas d'export pendant la partie (il révèle les decks et la graine).
+    // No export during the game (it would reveal the decks and the seed).
     a2.send({ type: "export" });
     expect((await a2.next("error", (m) => m.code === "state")).message).toMatch(/not over/);
-    // Et elle continue : les bots jouent quelques secondes, puis Alice concède (si elle n'est pas déjà finie).
+    // And it goes on: the bots play for a few seconds, then Alice concedes (if she is not already finished).
     a2.bot = b2.bot = true;
     a2.play(upA.view);
     b2.play(upB.view);
     await new Promise((r) => setTimeout(r, 2_000));
     a2.bot = false;
-    // Les bots jouent sans pause : la partie a pu se terminer d'elle-même.
+    // The bots play without pauses: the game may have ended by itself.
     if (!a2.lastView?.over) a2.send({ type: "decision", decision: { type: "concede" } });
     const end = await a2.next("update", (m) => m.view.over, 20_000);
     expect(end.view.winner).toBeTruthy();
     expect(end.view.turn.number).toBeGreaterThanOrEqual(upA.view.turn.number);
-    // Export de la partie terminée : il se rejoue jusqu'au même vainqueur (décisions d'avant et d'après le redémarrage).
+    // Export of the finished game: it replays to the same winner (decisions from before and after the restart).
     a2.send({ type: "export" });
     const { record } = await a2.next("record");
     expect(isGameRecord(record)).toBe(true);
@@ -92,7 +92,7 @@ describe("parties sauvegardées", () => {
     expect(replayed.state.winner).toBe(end.view.winner);
   }, 60_000);
 
-  /** Une partie en cours (les deux joueurs gardent leur main), puis l'arrêt du serveur : le fichier et les jetons. */
+  /** A game in progress (both players keep their hand), then the server shutdown: the file and the tokens. */
   async function savedGame(dataDir: string): Promise<{ file: string; tokens: string[] }> {
     const first = await server({ dataDir, graceMs: 10_000 });
     const { a, b, code } = await duel(first.port, { bots: false });
@@ -110,14 +110,14 @@ describe("parties sauvegardées", () => {
     return { file: join(dataDir, `${code}.jsonl`), tokens };
   }
 
-  it("chaque décision sauvegardée porte l'empreinte de l'état ; autre version des règles sans empreinte : partie interrompue", async () => {
+  it("each saved decision carries the state fingerprint; another rules version without fingerprints: interrupted game", async () => {
     const dataDir = tempDir();
     const { file, tokens } = await savedGame(dataDir);
     const [head, ...lines] = readFileSync(file, "utf8").split("\n").filter(Boolean);
     expect(JSON.parse(head as string).record.rules).toBe(RULES_VERSION);
     expect(lines.length).toBeGreaterThan(0);
     for (const l of lines) expect(typeof JSON.parse(l)[2]).toBe("string");
-    // Sauvegarde d'une version antérieure des règles, sans empreintes (version 0).
+    // Save from an earlier rules version, without fingerprints (version 0).
     const old = JSON.parse(head as string);
     delete old.record.rules;
     const oldLines = lines.map((l) => JSON.stringify(JSON.parse(l).slice(0, 2)));
@@ -131,7 +131,7 @@ describe("parties sauvegardées", () => {
     clients.push(c);
     c.send({ type: "rejoin", token: tokens[0] as string });
     expect((await c.next("error", (m) => m.code === "token")).message).toMatch(/interrupted by an engine update/);
-    // L'interruption survit à un second redémarrage (interrupted.json, empreintes seulement).
+    // The interruption survives a second restart (interrupted.json, fingerprints only).
     await srv.close();
     servers.splice(servers.indexOf(srv), 1);
     expect(readFileSync(join(dataDir, "interrupted.json"), "utf8")).not.toContain(tokens[0] as string);
@@ -143,7 +143,7 @@ describe("parties sauvegardées", () => {
     expect((await c2.next("error", (m) => m.code === "token")).message).toMatch(/interrupted by an engine update/);
   }, 30_000);
 
-  it("la sauvegarde ne contient que l'empreinte des jetons, et n'est lisible que par le serveur", async () => {
+  it("the save contains only the token fingerprint, and is readable only by the server", async () => {
     const dataDir = tempDir();
     const { file, tokens } = await savedGame(dataDir);
     const text = readFileSync(file, "utf8");
@@ -154,7 +154,7 @@ describe("parties sauvegardées", () => {
     expect(statSync(file).mode & 0o777).toBe(0o600);
   }, 30_000);
 
-  it("une ancienne sauvegarde (jetons en clair) reprend toujours ; les fichiers mis de côté de plus de sept jours disparaissent", async () => {
+  it("an old save (plain tokens) still resumes; files set aside for more than seven days disappear", async () => {
     const dataDir = tempDir();
     const { file, tokens } = await savedGame(dataDir);
     const [head, ...lines] = readFileSync(file, "utf8").split("\n").filter(Boolean);
@@ -174,7 +174,7 @@ describe("parties sauvegardées", () => {
     expect(existsSync(join(dataDir, "NEWNEW.jsonl.bad"))).toBe(true);
   }, 30_000);
 
-  it("au plus maxRooms salons repris, les plus récents ; les autres sont mis de côté", async () => {
+  it("at most maxRooms rooms resumed, the most recent; the others are set aside", async () => {
     const dataDir = tempDir();
     const { file } = await savedGame(dataDir);
     const copy = join(dataDir, "ZZZZZZ.jsonl");
@@ -188,7 +188,7 @@ describe("parties sauvegardées", () => {
     expect(existsSync(copy)).toBe(true);
   }, 30_000);
 
-  it("même version des règles mais empreinte différente : le fichier est mis de côté (moteur non déterministe)", async () => {
+  it("same rules version but different fingerprint: the file is set aside (non-deterministic engine)", async () => {
     const dataDir = tempDir();
     const { file } = await savedGame(dataDir);
     const [head, ...lines] = readFileSync(file, "utf8").split("\n").filter(Boolean);
@@ -201,9 +201,9 @@ describe("parties sauvegardées", () => {
     expect(readdirSync(dataDir)).toContain(`${file.split("/").at(-1)}.bad`);
   }, 30_000);
 
-  it("un salon fermé efface sa sauvegarde ; un fichier illisible est mis de côté sans bloquer le démarrage", async () => {
+  it("a closed room erases its save; an unreadable file is set aside without blocking startup", async () => {
     const dataDir = tempDir();
-    writeFileSync(join(dataDir, "ABCDEF.jsonl"), "pas du JSON\n");
+    writeFileSync(join(dataDir, "ABCDEF.jsonl"), "not JSON\n");
     const srv = await server({ dataDir, cleanupMs: 50 });
     servers.push(srv);
     expect(srv.rooms.size).toBe(0);

@@ -1,5 +1,5 @@
 /**
- * Cartes face cachée (708) : déguisement, cape, manifestation effroyable ; informations cachées.
+ * Face-down cards (708): disguise, cloak, manifest dread; hidden information.
  */
 import { type RawCard, toCardDef } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
@@ -14,7 +14,7 @@ import { act, idOf, passBoth, scenario } from "./helpers";
 
 const DISGUISED = toCardDef(
   {
-    name: "Espion déguisé",
+    name: "Disguised Spy",
     number: "1",
     rarity: "common",
     manaCost: "{3}{W}",
@@ -41,8 +41,8 @@ const resolution = (_s: GameState, controller: string) => ({
   pc: 0,
 });
 
-describe("déguisement (702.168)", () => {
-  it("lancée face cachée pour {3} : créature 2/2 sans nom avec la garde {2} ; retournée pour son coût de déguisement", () => {
+describe("disguise (702.168)", () => {
+  it("cast face down for {3}: a nameless 2/2 creature with ward {2}; turned face up for its disguise cost", () => {
     expect(DISGUISED.disguise).toBeDefined();
     let s = scenario({ p1: { battlefield: ["Plains", "Plains", "Plains", "Plains", "Plains"], hand: [DISGUISED] } });
     const card = idOf(s, "p1", "hand", DISGUISED.name);
@@ -53,12 +53,12 @@ describe("déguisement (702.168)", () => {
     s = passBoth(s);
     const id = s.battlefield.find((x) => s.objects[x]?.defId === FACE_DOWN_ID) as string;
     expect(chars(s, id)).toMatchObject({ name: "", power: 2, toughness: 2, keywords: ["ward"] });
-    // L'adversaire ne voit pas la carte ; son contrôleur, si.
+    // The opponent can't see the card; its controller can.
     const opp = projectView(s, "p2");
     expect(JSON.stringify(opp)).not.toContain(DISGUISED.id);
     const mine = projectView(s, "p1").battlefield.find((o) => o.id === id);
     expect(mine?.faceDownCard?.name).toBe(DISGUISED.name);
-    // Retourner face visible : action spéciale ({1}{W}), puis « quand elle est retournée face visible ».
+    // Turn face up: special action ({1}{W}), then "when it's turned face up".
     const up = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === id);
     expect(up?.type === "activate" && up.label).toBe("Turn face up");
     s = act(s, "p1", { type: "activate", source: id, ability: up?.type === "activate" ? up.ability : -1 });
@@ -68,7 +68,7 @@ describe("déguisement (702.168)", () => {
     expect(s.players.p1?.life).toBe(23);
   });
 
-  it("une carte face cachée qui quitte le champ de bataille est révélée", () => {
+  it("a face-down card that leaves the battlefield is revealed", () => {
     let s = scenario({ p1: { battlefield: ["Plains", "Plains", "Plains"], hand: [DISGUISED] } });
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", DISGUISED.name), faceDown: true });
     s = passBoth(s);
@@ -78,8 +78,8 @@ describe("déguisement (702.168)", () => {
   });
 });
 
-describe("manifestation effroyable (701.62) et cape (701.58)", () => {
-  it("regarde les deux cartes du dessus, en manifeste une, l'autre au cimetière ; une créature se retourne pour son coût", () => {
+describe("manifest dread (701.62) and cloak (701.58)", () => {
+  it("looks at the top two cards, manifests one, the other to the graveyard; a creature turns up for its cost", () => {
     const s = scenario({ p1: { battlefield: ["Forest", "Forest"], library: ["Bear Cub", "Forest", "Forest"] } });
     const r = resolution(s, "p1");
     const ask = runEffect(s, r as never, { op: "manifestDread" });
@@ -94,7 +94,7 @@ describe("manifestation effroyable (701.62) et cape (701.58)", () => {
     expect(up).toBeDefined(); // Bear Cub : {1}{G}
   });
 
-  it("cape : face cachée avec la garde {2} ; un terrain ne peut pas être retourné", () => {
+  it("cloak: face down with ward {2}; a land can't be turned face up", () => {
     const s = scenario({ p1: { library: ["Forest"], battlefield: lands(5) } });
     const r = resolution(s, "p1");
     const top = s.players.p1?.library[0] as string;

@@ -1,6 +1,6 @@
 /**
- * Écarts de règles relevés par l'audit du 30/09/2026 (docs/audits/2026-09-30.md, § 3.1) et corrigés par docs/plans/PLAN-R.md : un `describe` par
- * écart (numéro de l'audit, ou N… pour ceux trouvés en préparant le plan).
+ * Rules gaps found by the 2026-09-30 audit (the 2026-09-30 audit in docs/history.md, § 3.1) and fixed by PLAN-R in docs/history.md: one `describe` per
+ * gap (audit number, or N… for those found while preparing the plan).
  */
 import { card, type RawCard, toCardDef } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
@@ -48,8 +48,8 @@ const resolution = (controller: string, source?: { id: string; defId: string }) 
   pc: 0,
 });
 
-describe("#8 : 704.5b, seule une pioche impossible depuis la dernière vérification fait perdre", () => {
-  it("Herald of Eternal Dawn quitte le jeu longtemps après la pioche impossible : pas de défaite", () => {
+describe("#8: 704.5b, only a draw that was impossible since the last check makes you lose", () => {
+  it("Herald of Eternal Dawn leaves the game long after the impossible draw: no loss", () => {
     let s = scenario({ p1: { battlefield: ["Herald of Eternal Dawn"], library: [] }, step: "upkeep" });
     s = passUntil(s, (x) => x.turn.step === "main1");
     expect(s.players.p1?.lost).toBe(false);
@@ -58,7 +58,7 @@ describe("#8 : 704.5b, seule une pioche impossible depuis la dernière vérifica
     expect(s.players.p1?.lost).toBe(false);
   });
 
-  it("sans Herald, la pioche impossible fait perdre, annoncée comme telle ; le poison est annoncé comme poison", () => {
+  it("without Herald, the impossible draw makes you lose, announced as such; poison is announced as poison", () => {
     const events: GameEvent[] = [];
     let s = scenario({ p1: { library: [] }, step: "upkeep" });
     s = passUntil(s, (x) => x.over);
@@ -72,13 +72,13 @@ describe("#8 : 704.5b, seule une pioche impossible depuis la dernière vérifica
   });
 });
 
-describe("#9 : le second partagé n'empêche pas les actions spéciales (702.61b)", () => {
+describe("#9: the shared second doesn't prevent special actions (702.61b)", () => {
   const disguised = toCardDef(
-    raw("Espion déguisé", "Creature — Human Rogue", "Flying\nDisguise {1}{W}", ["Flying", "Disguise"]),
+    raw("Disguised Spy", "Creature — Human Rogue", "Flying\nDisguise {1}{W}", ["Flying", "Disguise"]),
     {},
     "TST",
   );
-  it("avec un éphémère de Samut sur la pile, on peut retourner une carte face visible, pas lancer de sort", () => {
+  it("with a Samut instant on the stack, you can turn a card face up, not cast a spell", () => {
     let s = scenario({
       p1: { battlefield: ["Plains", "Plains", "Plains", "Plains", "Plains"], hand: [disguised, "Giant Growth"] },
       p2: { battlefield: ["Samut, Tyrant of Naktamun", "Mountain", "Mountain"], hand: ["Lightning Strike"] },
@@ -98,8 +98,8 @@ describe("#9 : le second partagé n'empêche pas les actions spéciales (702.61b
   });
 });
 
-describe("#10 : gagner ou perdre la partie par un effet respecte « ne peut pas perdre »", () => {
-  it("un adversaire avec Herald of Eternal Dawn : « vous gagnez la partie » ne fait rien ; « vous perdez » non plus pour lui", () => {
+describe('#10: winning or losing the game by an effect respects "can\'t lose"', () => {
+  it('an opponent with Herald of Eternal Dawn: "you win the game" does nothing; "you lose" doesn\'t either for them', () => {
     const s = scenario({ p2: { battlefield: ["Herald of Eternal Dawn"] } });
     runEffect(s, resolution("p1") as never, fx.winGame);
     expect(s.over).toBe(false);
@@ -110,8 +110,8 @@ describe("#10 : gagner ou perdre la partie par un effet respecte « ne peut pas 
   });
 });
 
-describe("#11 : la protection contre tout ne prévient pas des blessures qui ne peuvent pas être prévenues", () => {
-  it("Progenitus subit les blessures quand elles ne peuvent pas être prévenues (Sunspine Lynx)", () => {
+describe("#11: protection from everything doesn't prevent damage that can't be prevented", () => {
+  it("Progenitus takes the damage when it can't be prevented (Sunspine Lynx)", () => {
     const s = scenario({ p1: { battlefield: ["Sunspine Lynx"] }, p2: { battlefield: ["Progenitus"] } });
     const progenitus = idOf(s, "p2", "battlefield", "Progenitus");
     const lynx = idOf(s, "p1", "battlefield", "Sunspine Lynx");
@@ -122,8 +122,8 @@ describe("#11 : la protection contre tout ne prévient pas des blessures qui ne 
   });
 });
 
-describe("#16 : 506.4, un permanent qui cesse d'être une créature quitte le combat", () => {
-  it("un attaquant devenu un simple artefact ne blesse pas le joueur défenseur", () => {
+describe("#16: 506.4, a permanent that stops being a creature leaves combat", () => {
+  it("an attacker that became a plain artifact doesn't damage the defending player", () => {
     let s = scenario({ p1: { battlefield: ["Bear Cub"] } });
     s = passUntil(s, (x) => x.pending?.kind === "declareAttackers");
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -135,8 +135,8 @@ describe("#16 : 506.4, un permanent qui cesse d'être une créature quitte le co
   });
 });
 
-describe("N2 : les marqueurs mis comme coût ne sont pas doublés par Doubling Season", () => {
-  it("+1 d'Ajani : un marqueur de loyauté de plus (coût), deux +1/+1 sur la créature (effet)", () => {
+describe("N2: counters put as a cost aren't doubled by Doubling Season", () => {
+  it("Ajani's +1: one more loyalty counter (cost), two +1/+1 on the creature (effect)", () => {
     let s = scenario({ p1: { battlefield: ["Ajani, Caller of the Pride", "Doubling Season", "Bear Cub"] } });
     const ajani = idOf(s, "p1", "battlefield", "Ajani, Caller of the Pride");
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -148,8 +148,8 @@ describe("N2 : les marqueurs mis comme coût ne sont pas doublés par Doubling S
   });
 });
 
-describe("#3 : une obligation d'attaquer n'impose pas de payer une taxe d'attaque (508.1d)", () => {
-  it("Juggernaut face à Archangel of Tithes : ne pas attaquer est accepté, avec ou sans mana ; l'automatisme n'attaque pas", () => {
+describe("#3: a requirement to attack doesn't force paying an attack tax (508.1d)", () => {
+  it("Juggernaut facing Archangel of Tithes: not attacking is accepted, with or without mana; autopilot doesn't attack", () => {
     for (const lands of [[], ["Plains"]]) {
       let s = scenario({ p1: { battlefield: ["Juggernaut", ...lands] }, p2: { battlefield: ["Archangel of Tithes"] } });
       s = passUntil(s, (x) => x.pending?.kind === "declareAttackers");
@@ -159,7 +159,7 @@ describe("#3 : une obligation d'attaquer n'impose pas de payer une taxe d'attaqu
     }
   });
 
-  it("sans taxe, Juggernaut doit toujours attaquer", () => {
+  it("without a tax, Juggernaut must still attack", () => {
     let s = scenario({ p1: { battlefield: ["Juggernaut"] } });
     s = passUntil(s, (x) => x.pending?.kind === "declareAttackers");
     expect(() => act(s, "p1", { type: "declareAttackers", attackers: [] })).toThrow(/must attack/);
@@ -167,7 +167,7 @@ describe("#3 : une obligation d'attaquer n'impose pas de payer une taxe d'attaqu
   });
 });
 
-describe("N3 : les taxes d'attaque se cumulent", () => {
+describe("N3: attack taxes add up", () => {
   it("deux Archangel of Tithes : {2} par attaquant", () => {
     let s = scenario({
       p1: { battlefield: ["Bear Cub", "Forest", "Forest"] },
@@ -182,8 +182,8 @@ describe("N3 : les taxes d'attaque se cumulent", () => {
   });
 });
 
-describe("#5 : un sort lancé sans payer son coût paie quand même les augmentations (601.2f, 118.9d)", () => {
-  it("Lightning Strike gratuit face à Thalia, the Survivor coûte {1}", () => {
+describe("#5: a spell cast without paying its cost still pays the increases (601.2f, 118.9d)", () => {
+  it("Lightning Strike for free facing Thalia, the Survivor costs {1}", () => {
     const s = scenario({ p2: { battlefield: ["Thalia, the Survivor"] } });
     const cost = spellCost(s, "p1", card("Lightning Strike"), { free: true });
     expect(cost.generic).toBe(1);
@@ -191,8 +191,8 @@ describe("#5 : un sort lancé sans payer son coût paie quand même les augmenta
   });
 });
 
-describe("#1 : étape de nettoyage, actions basées sur l'état et priorité (514.3a)", () => {
-  /** Une créature 2/2 avec deux marqueurs −1/−1, tenue en vie par Giant Growth jusqu'à la fin du tour. */
+describe("#1: cleanup step, state-based actions and priority (514.3a)", () => {
+  /** A 2/2 creature with two -1/-1 counters, kept alive by Giant Growth until end of turn. */
   function pumped(extra: (string | CardDef)[] = []) {
     let s = scenario({ p1: { battlefield: ["Forest", ...extra], hand: ["Giant Growth"] } });
     const first = extra[0];
@@ -205,7 +205,7 @@ describe("#1 : étape de nettoyage, actions basées sur l'état et priorité (51
     return { s, bear };
   }
 
-  it("la créature meurt pendant le nettoyage du même tour, pas à l'entretien suivant", () => {
+  it("the creature dies during the cleanup of the same turn, not at the next upkeep", () => {
     const { s: s0, bear } = pumped(["Bear Cub"]);
     let s = s0;
     let diedAt: [number, string] | null = null;
@@ -218,7 +218,7 @@ describe("#1 : étape de nettoyage, actions basées sur l'état et priorité (51
     expect(diedAt).toEqual([3, "cleanup"]);
   });
 
-  it("son déclencheur « quand elle meurt » se résout pendant le nettoyage, suivi d'un nouveau nettoyage", () => {
+  it('its "when it dies" trigger resolves during cleanup, followed by a new cleanup', () => {
     const mourner = customCard({
       name: "Pleureur",
       power: 2,
@@ -234,14 +234,14 @@ describe("#1 : étape de nettoyage, actions basées sur l'état et priorité (51
     expect(next.turn.cleanupAgain).toBeFalsy();
   });
 
-  it("sans rien à faire, pas de priorité pendant le nettoyage", () => {
+  it("with nothing to do, no priority during cleanup", () => {
     let s = scenario({ step: "end" });
     s = advanceUntil(s, (x) => x.turn.number === 4 || (x.turn.step === "cleanup" && x.pending?.kind === "priority"));
     expect(s.turn.number).toBe(4);
   });
 });
 
-describe("#2 : lien de vie, un gain de points de vie par source et par lot de blessures (119.9, 120.3f)", () => {
+describe("#2: lifelink, one life gain per source and per batch of damage (119.9, 120.3f)", () => {
   const lifelinker = (name: string, keywords: CardDef["keywords"]) =>
     customCard({ name, power: 5, toughness: 5, keywords: ["lifelink", ...keywords] });
 
@@ -259,26 +259,26 @@ describe("#2 : lien de vie, un gain de points de vie par source et par lot de bl
     return { s, pridemate: idOf(s, "p1", "battlefield", "Ajani's Pridemate") };
   }
 
-  it("un piétineur 5/5 bloqué par un 2/2 : 5 PV en un seul gain", () => {
-    const { s, pridemate } = combat([lifelinker("Piétineur", ["trample"])], ["Bear Cub"]);
+  it("a 5/5 trampler blocked by a 2/2: 5 life in a single gain", () => {
+    const { s, pridemate } = combat([lifelinker("Trampler", ["trample"])], ["Bear Cub"]);
     expect(s.players.p1?.life).toBe(25);
     expect(s.objects[pridemate]?.counters["+1/+1"]).toBe(1);
   });
 
-  it("deux attaquants avec le lien de vie : deux gains", () => {
+  it("two attackers with lifelink: two gains", () => {
     const { s, pridemate } = combat([lifelinker("Lien A", []), lifelinker("Lien B", [])], []);
     expect(s.players.p1?.life).toBe(30);
     expect(s.objects[pridemate]?.counters["+1/+1"]).toBe(2);
   });
 
-  it("double initiative : un gain par étape de blessures", () => {
+  it("double strike: one gain per damage step", () => {
     const { s, pridemate } = combat([lifelinker("Double", ["doubleStrike"])], []);
     expect(s.players.p1?.life).toBe(30);
     expect(s.objects[pridemate]?.counters["+1/+1"]).toBe(2);
   });
 });
 
-describe("#6 : des permanents qui arrivent en même temps se voient arriver (603.6a)", () => {
+describe("#6: permanents that enter at the same time see each other enter (603.6a)", () => {
   const WATCHER: TokenSpec = {
     name: "Guetteur",
     colors: ["W"],
@@ -289,33 +289,33 @@ describe("#6 : des permanents qui arrivent en même temps se voient arriver (603
     abilities: [triggered(when.enters({ types: ["Creature"], other: true }), [fx.gainLife(1)], { label: "1 PV" })],
   };
 
-  it("deux jetons créés ensemble : chacun voit l'autre arriver (deux déclenchements)", () => {
+  it("two tokens created together: each sees the other enter (two triggers)", () => {
     const s = scenario({});
     simultaneously(s, () => runEffect(s, resolution("p1") as never, fx.createTokens(WATCHER, 2)));
     expect(s.triggers.map((t) => t.sourceId).sort()).toEqual(s.battlefield.filter((id) => s.objects[id]?.isToken).sort());
   });
 
-  it("un jeton qui arrive seul ne se voit pas lui-même", () => {
+  it("a token that enters alone doesn't see itself", () => {
     const s = scenario({});
     simultaneously(s, () => runEffect(s, resolution("p1") as never, fx.createTokens(WATCHER, 1)));
     expect(s.triggers).toHaveLength(0);
   });
 });
 
-describe("N6 : une seule façon de lire les statiques de joueur (condition vérifiée, effets sur le joueur compris)", () => {
+describe("N6: a single way to read player statics (condition checked, effects on the player included)", () => {
   const withAbility = (name: string, ab: CardDef["abilities"][number]) =>
     customCard({ name, types: ["Enchantment"], typeLine: "Enchantment", abilities: [ab] });
 
-  it("un effet « ce tour-ci » qui augmente les gains de PV s'applique", () => {
+  it('a "this turn" effect that increases life gain applies', () => {
     const s = scenario({});
     runEffect(s, resolution("p1") as never, fx.thisTurn({ replacement: { event: "lifeGain", to: "you", modify: { add: 1 } } }));
     gainLife(s, "p1", 2);
     expect(s.players.p1?.life).toBe(23);
   });
 
-  it("une statique de joueur sous condition non remplie ne s'applique pas (délire)", () => {
+  it("a player static with an unmet condition doesn't apply (delirium)", () => {
     const aura = withAbility(
-      "Bonus sous délire",
+      "Delirium Bonus",
       eventReplacement({ event: "lifeGain", to: "you", modify: { add: 5 }, condition: cond.delirium }),
     );
     const s = scenario({ p1: { battlefield: [aura] } });
@@ -323,9 +323,9 @@ describe("N6 : une seule façon de lire les statiques de joueur (condition véri
     expect(s.players.p1?.life).toBe(22);
   });
 
-  it("un doubleur de marqueurs sous condition non remplie ne double pas", () => {
+  it("a counter doubler with an unmet condition doesn't double", () => {
     const season = withAbility(
-      "Saison sous délire",
+      "Delirium Season",
       eventReplacement({ event: "counters", to: "yourSide", modify: { times: 2 }, condition: cond.delirium }),
     );
     const s = scenario({ p1: { battlefield: [season, "Bear Cub"] } });
@@ -335,7 +335,7 @@ describe("N6 : une seule façon de lire les statiques de joueur (condition véri
   });
 });
 
-describe("#14 et #17 : ce qui accompagne une arrivée est en place avant l'événement d'arrivée (614.1c, 614.12, 508.4)", () => {
+describe("#14 and #17: what accompanies an entry is in place before the enter event (614.1c, 614.12, 508.4)", () => {
   const zombieWatcher = customCard({
     name: "Guetteur de Zombies",
     power: 1,
@@ -343,7 +343,7 @@ describe("#14 et #17 : ce qui accompagne une arrivée est en place avant l'évé
     abilities: [triggered(when.enters({ subtype: "Zombie" }), [fx.gainLife(2)], { label: "2 PV" })],
   });
 
-  it("une créature remise en jeu « en tant que Zombie en plus » déclenche « chaque fois qu'un Zombie arrive »", () => {
+  it('a creature put back "as a Zombie in addition" triggers "whenever a Zombie enters"', () => {
     const s = scenario({ p1: { battlefield: [zombieWatcher], graveyard: ["Bear Cub"] } });
     const bear = idOf(s, "p1", "graveyard", "Bear Cub");
     const r = { ...resolution("p1"), targets: { t: [bear] } };
@@ -359,7 +359,7 @@ describe("#14 et #17 : ce qui accompagne une arrivée est en place avant l'évé
     expect(s.objects[back]?.counters["+1/+1"]).toBe(1);
   });
 
-  it("un jeton créé engagé ne « devient » pas engagé", () => {
+  it('a token created tapped doesn\'t "become" tapped', () => {
     const tapWatcher: TokenSpec = {
       name: "Sentinelle",
       colors: ["W"],
@@ -378,7 +378,7 @@ describe("#14 et #17 : ce qui accompagne une arrivée est en place avant l'évé
     expect(s.triggers).toHaveLength(0);
   });
 
-  it("à plusieurs adversaires, le contrôleur choisit ce qu'attaquent les jetons « engagés et attaquants »", () => {
+  it('with several opponents, the controller chooses what the "tapped and attacking" tokens attack', () => {
     let s = scenario({ players: 3, p1: { battlefield: ["Bear Cub"] } });
     s = passUntil(s, (x) => x.pending?.kind === "declareAttackers");
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -405,10 +405,10 @@ describe("#14 et #17 : ce qui accompagne une arrivée est en place avant l'évé
   });
 });
 
-describe("N7, N8, N9, #13 : copies de permanents", () => {
+describe("N7, N8, N9, #13: permanent copies", () => {
   const CLONE = customCard({ name: "Clone de test", power: 0, toughness: 0, asEnters: [fx.chooseCopy({})] });
 
-  /** Un Clone qui arrive copie d'Ajani, Caller of the Pride (planeswalker à 4 marqueurs de loyauté, valeur de mana 3). */
+  /** A Clone that enters copies Ajani, Caller of the Pride (planeswalker with 4 loyalty counters, mana value 3). */
   function cloneOfAjani() {
     const s = scenario({ p1: { hand: [CLONE] }, p2: { battlefield: ["Ajani, Caller of the Pride"] } });
     const ajani = idOf(s, "p2", "battlefield", "Ajani, Caller of the Pride");
@@ -417,19 +417,19 @@ describe("N7, N8, N9, #13 : copies de permanents", () => {
     return { s, ajani, clone };
   }
 
-  it("N7 : un Clone qui copie un planeswalker arrive avec sa loyauté", () => {
+  it("N7: a Clone that copies a planeswalker enters with its loyalty", () => {
     const { s, ajani, clone } = cloneOfAjani();
     expect(s.objects[clone]?.counters.loyalty).toBe(s.defs[s.objects[ajani]?.defId ?? ""]?.loyalty);
     expect(chars(s, clone).types).toContain("Planeswalker");
   });
 
-  it("#13 : la valeur de mana vue par les filtres est celle de ce qui est copié", () => {
+  it("#13: the mana value seen by filters is that of what is copied", () => {
     const { s, ajani, clone } = cloneOfAjani();
     expect(snapshot(s, clone).manaValue).toBe(snapshot(s, ajani).manaValue);
     expect(snapshot(s, clone).manaValue).toBeGreaterThan(0);
   });
 
-  it("N8 : la copie en jeton d'un Clone copie ce qu'il copie, et un jeton créé engagé ne « devient » pas engagé", () => {
+  it('N8: the token copy of a Clone copies what it copies, and a token created tapped doesn\'t "become" tapped', () => {
     const { s, clone } = cloneOfAjani();
     const r = { ...resolution("p1"), targets: { t: [clone] } };
     runEffect(s, r as never, fx.copyToken(ref.target()));
@@ -437,7 +437,7 @@ describe("N7, N8, N9, #13 : copies de permanents", () => {
     expect(chars(s, token).name).toBe("Ajani, Caller of the Pride");
   });
 
-  it("N9 : Assimilation Aegis, la créature équipée devient une copie de la carte exilée", () => {
+  it("N9: Assimilation Aegis, the equipped creature becomes a copy of the exiled card", () => {
     const s = scenario({ p1: { battlefield: ["Assimilation Aegis", "Bear Cub"] }, p2: { graveyard: ["Shivan Dragon"] } });
     const aegis = idOf(s, "p1", "battlefield", "Assimilation Aegis");
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -451,16 +451,16 @@ describe("N7, N8, N9, #13 : copies de permanents", () => {
   });
 });
 
-describe("#7 et 303.4f : choix d'un permanent qui arrive sans être lancé", () => {
+describe("#7 and 303.4f: choosing a permanent that enters without being cast", () => {
   const CLONE = customCard({
-    name: "Clone réanimé",
+    name: "Reanimated Clone",
     power: 0,
     toughness: 0,
     asEnters: [fx.chooseCopy({ types: ["Creature"] }, { anyController: true })],
   });
   type Asked = { ask?: { key: string; request: { options: string[] } } };
 
-  it("#7 : un Clone réanimé pendant une résolution demande ce qu'il copie, puis arrive comme cette copie", () => {
+  it("#7: a Clone reanimated during a resolution asks what it copies, then enters as that copy", () => {
     const s = scenario({ p1: { graveyard: [CLONE] }, p2: { battlefield: ["Bear Cub", "Shivan Dragon"] } });
     const clone = idOf(s, "p1", "graveyard", CLONE.name);
     const dragon = idOf(s, "p2", "battlefield", "Shivan Dragon");
@@ -474,13 +474,13 @@ describe("#7 et 303.4f : choix d'un permanent qui arrive sans être lancé", () 
     expect(chars(s, back).name).toBe("Shivan Dragon");
   });
 
-  it("#7 : hors résolution, il copie automatiquement le premier permanent possible", () => {
+  it("#7: outside a resolution, it automatically copies the first possible permanent", () => {
     const s = scenario({ p1: { graveyard: [CLONE] }, p2: { battlefield: ["Shivan Dragon"] } });
     const id = moveObject(s, idOf(s, "p1", "graveyard", CLONE.name), "battlefield") as string;
     expect(chars(s, id).name).toBe("Shivan Dragon");
   });
 
-  it("303.4f : une Aura réanimée demande ce qu'elle enchante", () => {
+  it("303.4f: a reanimated Aura asks what it enchants", () => {
     const s = scenario({ p1: { graveyard: ["Pacifism"] }, p2: { battlefield: ["Bear Cub", "Shivan Dragon"] } });
     const aura = idOf(s, "p1", "graveyard", "Pacifism");
     const dragon = idOf(s, "p2", "battlefield", "Shivan Dragon");
@@ -494,7 +494,7 @@ describe("#7 et 303.4f : choix d'un permanent qui arrive sans être lancé", () 
     expect(s.objects[placed]?.attachedTo).toBe(dragon);
   });
 
-  it("303.4g : sans rien à enchanter, l'Aura reste au cimetière", () => {
+  it("303.4g: with nothing to enchant, the Aura stays in the graveyard", () => {
     const s = scenario({ p1: { graveyard: ["Pacifism"] } });
     const aura = idOf(s, "p1", "graveyard", "Pacifism");
     expect(moveObject(s, aura, "battlefield")).toBeNull();
@@ -502,18 +502,18 @@ describe("#7 et 303.4f : choix d'un permanent qui arrive sans être lancé", () 
   });
 });
 
-describe("R1 : ordre des remplacements qui modifient un nombre (616.1)", () => {
+describe("R1: order of replacements that modify a number (616.1)", () => {
   const ench = (name: string, ab: CardDef["abilities"][number]) =>
     customCard({ name, types: ["Enchantment"], typeLine: "Enchantment", abilities: [ab] });
 
-  it("chooseReplacementOrder : le joueur affecté obtient l'ordre le plus favorable", () => {
+  it("chooseReplacementOrder: the affected player gets the most favorable order", () => {
     expect(chooseReplacementOrder(3, [{ add: 2 }, { times: 2 }], "min")).toBe(8);
     expect(chooseReplacementOrder(3, [{ add: 2 }, { times: 2 }], "max")).toBe(10);
     expect(chooseReplacementOrder(0, [{ add: 2 }], "max")).toBe(0);
     expect(chooseReplacementOrder(1, [{ atLeast: 4 }, { times: 2 }], "min")).toBe(4);
   });
 
-  it("Artist's Talent (+2) et Twinflame Tyrant (×2) : 3 blessures à l'adversaire en font 8, pas 10", () => {
+  it("Artist's Talent (+2) and Twinflame Tyrant (×2): 3 damage to the opponent becomes 8, not 10", () => {
     const talent = ench(
       "Talent",
       eventReplacement({ event: "damage", source: { controller: "you" }, to: "opponentSide", combat: false, modify: { add: 2 } }),
@@ -529,7 +529,7 @@ describe("R1 : ordre des remplacements qui modifient un nombre (616.1)", () => {
     expect(s.players.p2?.life).toBe(12);
   });
 
-  it("Yoshimaru (+1) et Doubling Season (×2) : un marqueur +1/+1 en devient quatre", () => {
+  it("Yoshimaru (+1) and Doubling Season (×2): one +1/+1 counter becomes four", () => {
     const yoshimaru = ench(
       "Yoshimaru",
       eventReplacement({ event: "counters", to: "yourSide", counter: "+1/+1", modify: { add: 1 } }),
@@ -541,7 +541,7 @@ describe("R1 : ordre des remplacements qui modifient un nombre (616.1)", () => {
     expect(bear?.counters["+1/+1"]).toBe(4);
   });
 
-  it("gain de PV : « autant plus 1 » puis le double", () => {
+  it('life gain: "that much plus 1" then the double', () => {
     const angel = ench("Ange", eventReplacement({ event: "lifeGain", to: "you", modify: { add: 1 } }));
     const crystal = ench("Cristal", eventReplacement({ event: "lifeGain", to: "you", modify: { times: 2 } }));
     const s = scenario({ p1: { battlefield: [angel, crystal] } });
@@ -549,7 +549,7 @@ describe("R1 : ordre des remplacements qui modifient un nombre (616.1)", () => {
     expect(s.players.p1?.life).toBe(26);
   });
 
-  it("N12 : la pioche d'un cadeau passe aussi par les remplacements ; deux Vnwxt se cumulent", () => {
+  it("N12: drawing for a gift also goes through replacements; two Vnwxt stack", () => {
     const vnwxt = ench("Vnwxt", eventReplacement({ event: "draw", to: "you", modify: { times: 2 } }));
     const s = scenario({ p2: { battlefield: [vnwxt, vnwxt], hand: ["Forest", "Forest", "Forest"] } });
     const before = s.players.p2?.hand.length ?? 0;
@@ -558,12 +558,12 @@ describe("R1 : ordre des remplacements qui modifient un nombre (616.1)", () => {
   });
 });
 
-describe("#4 et N11 : copies de sorts, nouvelles cibles et objet sur la pile (707.10, 707.10c)", () => {
+describe("#4 and N11: spell copies, new targets and object on the stack (707.10, 707.10c)", () => {
   const choose = (s: GameState, values: (string | number)[]) => act(s, s.pending?.player ?? "p1", { type: "choose", values });
   const strike = (s: GameState, target: string) =>
     act(s, "p1", { type: "cast", card: idsOf(s, "p1", "hand", "Lightning Strike")[0] as string, targets: { t: [target] } });
 
-  /** Thousand-Year Storm : le second Lightning Strike du tour est copié une fois. */
+  /** Thousand-Year Storm: the second Lightning Strike each turn is copied once. */
   function stormCopy(p2: string[]) {
     let s = scenario({
       p1: {
@@ -575,30 +575,30 @@ describe("#4 et N11 : copies de sorts, nouvelles cibles et objet sur la pile (70
     s = passBoth(strike(s, "p2"));
     const elves = idOf(s, "p2", "battlefield", "Llanowar Elves");
     s = strike(s, elves);
-    // Le déclenchement de Thousand-Year Storm se résout : la copie est mise sur la pile, ses cibles sont à choisir.
+    // Thousand-Year Storm's trigger resolves: the copy is put on the stack, its targets are to be chosen.
     s = passUntil(s, (x) => x.pending?.kind === "choice");
     return { s, elves };
   }
 
-  it("la copie propose les cibles d'origine et accepte une nouvelle cible", () => {
+  it("the copy offers the original targets and accepts a new target", () => {
     const { s: s0, elves } = stormCopy(["Llanowar Elves", "Pelakka Wurm"]);
     const req = s0.pending?.kind === "choice" ? s0.pending.request : undefined;
     expect(req?.intent).toBe("changeTarget");
     expect(req?.suggested).toEqual([elves]);
     const copy = s0.stack[s0.stack.length - 1];
     expect(copy?.copy).toBe(true);
-    // N11 : la copie est un objet sur la pile (sans carte), qu'un « contrecarrez le sort ciblé » peut viser.
+    // N11: the copy is an object on the stack (with no card), which a \"counter target spell\" can target.
     expect(s0.objects[copy?.id ?? ""]?.zone).toBe("stack");
     let s = choose(s0, ["p2"]);
     expect(s.stack[s.stack.length - 1]?.targets.t).toEqual(["p2"]);
     s = passUntil(s, (x) => x.stack.length === 0);
     expect(s.players.p2?.life).toBe(20 - 3 - 3);
     expect(idsOf(s, "p2", "graveyard", "Llanowar Elves")).toHaveLength(1);
-    // La copie a cessé d'exister en quittant la pile.
+    // The copy ceased to exist when it left the stack.
     expect(s.objects[copy?.id ?? ""]).toBeUndefined();
   });
 
-  it("la cible choisie pour la copie devient sa cible : la garde se déclenche", () => {
+  it("the target chosen for the copy becomes its target: ward triggers", () => {
     const { s: s0 } = stormCopy(["Llanowar Elves", "Zul Ashur, Lich Lord"]);
     const zul = idOf(s0, "p2", "battlefield", "Zul Ashur, Lich Lord");
     const s = choose(s0, [zul]);
@@ -607,9 +607,9 @@ describe("#4 et N11 : copies de sorts, nouvelles cibles et objet sur la pile (70
     expect(s.defs[top?.sourceDefId ?? ""]?.name).toBe("Zul Ashur, Lich Lord");
   });
 
-  it("une copie n'est pas lancée : « chaque fois que vous lancez un sort qui cible » ne se déclenche pas pour elle", () => {
+  it("a copy isn't cast: \"whenever you cast a spell that targets\" doesn't trigger for it", () => {
     const heroic = customCard({
-      name: "Héros de test",
+      name: "Test Hero",
       power: 1,
       toughness: 1,
       abilities: [triggered(when.targetedBySpellYouCast, [fx.draw(1)], { label: "piochez" })],
@@ -626,15 +626,15 @@ describe("#4 et N11 : copies de sorts, nouvelles cibles et objet sur la pile (70
     const empty = (x: GameState) => x.stack.length === 0 && x.pending?.kind === "priority";
     s = passAccepting(act(s, "p1", { type: "cast", card: growth(), targets: { t: [hero] } }), empty);
     s = passAccepting(act(s, "p1", { type: "cast", card: growth(), targets: { t: [hero] } }), empty);
-    // Deux sorts lancés qui ciblent le héros : deux pioches ; la copie n'en donne pas.
+    // Two cast spells that target the hero: two draws; the copy gives none.
     expect(s.players.p1?.library).toHaveLength(2);
-    // Deux Giant Growth et la copie : +9.
+    // Two Giant Growths and the copy: +9.
     expect(chars(s, hero).power).toBe(10);
   });
 });
 
-describe("#15 : répartition annoncée à la mise sur la pile ; la part d'une cible devenue illégale est perdue (601.2d, 608.2b)", () => {
-  it("Chandra, Flameshaper −4 : 4 et 4 ; l'une des cibles disparaît, l'autre ne reçoit que ses 4", () => {
+describe("#15: division announced when put on the stack; the share of a target that became illegal is lost (601.2d, 608.2b)", () => {
+  it("Chandra, Flameshaper −4: 4 and 4; one of the targets disappears, the other receives only its 4", () => {
     let s = scenario({ p1: { battlefield: ["Chandra, Flameshaper"] }, p2: { battlefield: ["Pelakka Wurm", "Llanowar Elves"] } });
     const chandra = idOf(s, "p1", "battlefield", "Chandra, Flameshaper");
     (s.objects[chandra] as { counters: Record<string, number> }).counters.loyalty = 6;
@@ -643,7 +643,7 @@ describe("#15 : répartition annoncée à la mise sur la pile ; la part d'une ci
     const a = legalActions(s, "p1").find(
       (x) => x.type === "activate" && x.source === chandra && plainText(x.label ?? "").startsWith("−4"),
     );
-    if (a?.type !== "activate") throw new Error("capacité −4 indisponible");
+    if (a?.type !== "activate") throw new Error("ability −4 unavailable");
     s = act(s, "p1", { type: "activate", source: chandra, ability: a.ability, targets: { t: [wurm, elves] } });
     expect(s.pending?.kind === "choice" && s.pending.request.type).toBe("divide");
     s = act(s, "p1", { type: "choose", values: [4, 4] });
@@ -654,11 +654,11 @@ describe("#15 : répartition annoncée à la mise sur la pile ; la part d'une ci
   });
 });
 
-describe("#12, N10 et 800.4a : le contrôle est une couche (613.1b, 613.7)", () => {
+describe("#12, N10 and 800.4a: control is a layer (613.1b, 613.7)", () => {
   const steal = (s: GameState, id: string, to: string, e: Effect) =>
     runEffect(s, { ...resolution(to), targets: { t: [id] } } as never, e);
 
-  it("N10 : volé puis repris dans le même tour, le permanent revient à son contrôleur de base à la fin du tour", () => {
+  it("N10: stolen then taken back in the same turn, the permanent returns to its base controller at end of turn", () => {
     let s = scenario({ p2: { battlefield: ["Pelakka Wurm"] } });
     const wurm = idOf(s, "p2", "battlefield", "Pelakka Wurm");
     steal(s, wurm, "p1", fx.gainControl(ref.target()));
@@ -669,7 +669,7 @@ describe("#12, N10 et 800.4a : le contrôle est une couche (613.1b, 613.7)", () 
     expect(s.objects[wurm]?.controller).toBe("p2");
   });
 
-  it("#12 : un don permanent plus récent survit à la fin d'un vol « jusqu'à la fin du tour »", () => {
+  it('#12: a more recent permanent gift survives the end of an "until end of turn" steal', () => {
     let s = scenario({ p2: { battlefield: ["Pelakka Wurm"] } });
     const wurm = idOf(s, "p2", "battlefield", "Pelakka Wurm");
     steal(s, wurm, "p1", fx.gainControl(ref.target()));
@@ -677,11 +677,11 @@ describe("#12, N10 et 800.4a : le contrôle est une couche (613.1b, 613.7)", () 
     runEffect(s, { ...resolution("p2"), targets: { t: [wurm] } } as never, fx.giveControl(ref.target(), ref.eachOpponent));
     expect(s.objects[wurm]?.controller).toBe("p1");
     s = passUntil(s, (x) => x.turn.number === 4);
-    // L'ancien code rendait le permanent au contrôleur mémorisé au moment du vol (p2).
+    // The old code gave the permanent back to the controller remembered at the time of the steal (p2).
     expect(s.objects[wurm]?.controller).toBe("p1");
   });
 
-  it("Confiscate : le contrôle suit l'Aura et revient quand elle part", () => {
+  it("Confiscate: control follows the Aura and returns when it leaves", () => {
     const s = scenario({ p1: { hand: ["Confiscate"] }, p2: { battlefield: ["Pelakka Wurm"] } });
     const wurm = idOf(s, "p2", "battlefield", "Pelakka Wurm");
     const aura = moveObject(s, idOf(s, "p1", "hand", "Confiscate"), "battlefield", { enters: { attachTo: wurm } }) as string;
@@ -693,7 +693,7 @@ describe("#12, N10 et 800.4a : le contrôle est une couche (613.1b, 613.7)", () 
     expect(syncControl(s)).toBe(false);
   });
 
-  it("800.4a : quand le voleur quitte la partie, le permanent revient à son contrôleur au lieu d'être exilé", () => {
+  it("800.4a: when the thief leaves the game, the permanent returns to its controller instead of being exiled", () => {
     const s = scenario({ players: 3, p2: { battlefield: ["Pelakka Wurm"] } });
     const wurm = idOf(s, "p2", "battlefield", "Pelakka Wurm");
     runEffect(s, { ...resolution("p3"), targets: { t: [wurm] } } as never, fx.giveControl(ref.target(), ref.you));
@@ -704,15 +704,15 @@ describe("#12, N10 et 800.4a : le contrôle est une couche (613.1b, 613.7)", () 
   });
 });
 
-describe("R2.5 : couches, exceptions de copie, couleurs ajoutées et dépendances (707.9b, 105.3, 613.8)", () => {
-  it("707.9b : la copie d'un jeton « sauf que c'est un 1/1 Ballon rouge » reprend ces exceptions", () => {
+describe("R2.5: layers, copy exceptions, added colors and dependencies (707.9b, 105.3, 613.8)", () => {
+  it('707.9b: the copy of a token "except it\'s a 1/1 red Balloon" keeps those exceptions', () => {
     const s = scenario({ p1: { battlefield: ["Pelakka Wurm"] } });
     const wurm = idOf(s, "p1", "battlefield", "Pelakka Wurm");
     const balloon = fx.copyToken(ref.target(), { pt: 1, addColors: ["R"], addSubtypes: ["Balloon"], addKeywords: ["flying"] });
     runEffect(s, { ...resolution("p1"), targets: { t: [wurm] } } as never, balloon);
     const first = s.battlefield.find((id) => s.objects[id]?.isToken) as string;
     expect(chars(s, first)).toMatchObject({ power: 1, toughness: 1 });
-    // 105.3 : rouge en plus de ses autres couleurs.
+    // 105.3: red in addition to its other colors.
     expect(chars(s, first).colors).toEqual(expect.arrayContaining(["G", "R"]));
     runEffect(s, { ...resolution("p1"), targets: { t: [first] } } as never, fx.copyToken(ref.target()));
     const second = s.battlefield.find((id) => s.objects[id]?.isToken && id !== first) as string;
@@ -722,7 +722,7 @@ describe("R2.5 : couches, exceptions de copie, couleurs ajoutées et dépendance
     expect(chars(s, second).colors).toContain("R");
   });
 
-  it("613.8 : « pour chaque » compte un permanent qui a reçu le type par un effet", () => {
+  it('613.8: "for each" counts a permanent that got the type from an effect', () => {
     const counter = customCard({
       name: "Compteur de Dragons",
       power: 0,
@@ -748,8 +748,8 @@ describe("R2.5 : couches, exceptions de copie, couleurs ajoutées et dépendance
   });
 });
 
-describe("R4.1 : règles de blocage paramétrées par un filtre", () => {
-  it("Stromkirk Noble ne peut pas être bloquée par une créature devenue Humain par un effet", () => {
+describe("R4.1: block rules parameterized by a filter", () => {
+  it("Stromkirk Noble can't be blocked by a creature that became a Human through an effect", () => {
     const s = scenario({ p1: { battlefield: ["Stromkirk Noble"] }, p2: { battlefield: ["Bear Cub"] }, step: "declareBlockers" });
     const noble = idOf(s, "p1", "battlefield", "Stromkirk Noble");
     const bear = idOf(s, "p2", "battlefield", "Bear Cub");
@@ -765,15 +765,15 @@ describe("R4.1 : règles de blocage paramétrées par un filtre", () => {
   });
 });
 
-describe("R4.2 : protection et défense talismanique « contre [filtre] » (702.16, 702.11d)", () => {
+describe('R4.2: protection and hexproof "from [filter]" (702.16, 702.11d)', () => {
   const warded = customCard({
-    name: "Protégé des éphémères et rituels",
+    name: "Protected from Instants and Sorceries",
     power: 2,
     toughness: 2,
     abilities: [dsl.protectionAbility(dsl.protection.from({ types: ["Instant", "Sorcery"] }, "Protection"))],
   });
 
-  it("ni ciblée par un éphémère (même le sien), ni blessée par un rituel ; ciblable par une capacité", () => {
+  it("neither targeted by an instant (even its own), nor damaged by a sorcery; targetable by an ability", () => {
     const s = scenario({ p1: { battlefield: [warded], hand: ["Lightning Strike"] } });
     const id = idOf(s, "p1", "battlefield", warded.name);
     const strike = idOf(s, "p1", "hand", "Lightning Strike");
@@ -787,8 +787,8 @@ describe("R4.2 : protection et défense talismanique « contre [filtre] » (702.
   });
 });
 
-describe("R5 : blocages simultanés en multijoueur (509.1)", () => {
-  it("les blocages du premier défenseur restent cachés jusqu'à la déclaration du dernier", () => {
+describe("R5: simultaneous blocks in multiplayer (509.1)", () => {
+  it("the first defender's blocks stay hidden until the last one's declaration", () => {
     let s = scenario({
       players: 3,
       p1: { battlefield: ["Pelakka Wurm", "Bear Cub"] },
@@ -819,8 +819,8 @@ describe("R5 : blocages simultanés en multijoueur (509.1)", () => {
   });
 });
 
-describe("R6 : boucle d'actions obligatoires, partie nulle (104.4b)", () => {
-  it("« gagnez 1 PV, perdez 1 PV » sans fin : la partie est déclarée nulle", () => {
+describe("R6: mandatory action loop, drawn game (104.4b)", () => {
+  it('"gain 1 life, lose 1 life" endlessly: the game is declared a draw', () => {
     const ench = (name: string, ab: CardDef["abilities"][number]) =>
       customCard({ name, types: ["Enchantment"], typeLine: "Enchantment", abilities: [ab] });
     const gain = ench("Gain", triggered(when.loseLife("you"), [fx.gainLife(1)], { label: "gain" }));
@@ -833,8 +833,8 @@ describe("R6 : boucle d'actions obligatoires, partie nulle (104.4b)", () => {
   });
 });
 
-describe("R6 : 800.4a, les déclenchements d'un joueur qui quitte la partie cessent d'exister", () => {
-  it("un déclenchement en attente d'un joueur éliminé ne bloque plus le nettoyage", () => {
+describe("R6: 800.4a, triggers of a player who leaves the game cease to exist", () => {
+  it("a pending trigger of an eliminated player no longer blocks cleanup", () => {
     let s = scenario({ players: 3, step: "end" });
     s.triggers.push({
       id: "t-perdu",

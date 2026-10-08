@@ -1,4 +1,4 @@
-/** Effets sur les joueurs créés par des résolutions (`s.playerEffects`, statics.ts). */
+/** Effects on players created by resolutions (`s.playerEffects`, statics.ts). */
 import { describe, expect, it } from "vitest";
 import { dealDamage, gainLife, sourceFromObject } from "../src/actions";
 import { legalActions } from "../src/legal";
@@ -7,8 +7,8 @@ import { addPlayerEffect, consumePlayerEffect, playerStatic, playerStaticTotal }
 import { attackableDefenders } from "../src/turn";
 import { act, advanceUntil, customCard, idOf, lands, passBoth, scenario } from "./helpers";
 
-describe("effets sur les joueurs", () => {
-  it("ce tour-ci : cumulés, puis expirés au tour suivant (terrains supplémentaires)", () => {
+describe("player effects", () => {
+  it("this turn: accumulated, then expired on the next turn (additional lands)", () => {
     const s = scenario({ p1: {} });
     addPlayerEffect(s, "p1", { extraLands: 1 }, s.turn.number);
     addPlayerEffect(s, "p1", { extraLands: 1 }, s.turn.number);
@@ -19,7 +19,7 @@ describe("effets sur les joueurs", () => {
     expect(next.playerEffects).toEqual([]);
   });
 
-  it("toute la partie : Screaming Nemesis (ne peut plus gagner de points de vie)", () => {
+  it("whole game: Screaming Nemesis (can't gain life anymore)", () => {
     const s = scenario({ p1: {} });
     addPlayerEffect(s, "p2", { cantGainLife: true }, null);
     gainLife(s, "p2", 3);
@@ -29,7 +29,7 @@ describe("effets sur les joueurs", () => {
     expect(playerStatic(later, "p2", "cantGainLife")).toBe(true);
   });
 
-  it("usage unique : Theorist's Proxy, le prochain sort seulement ne peut pas être contrecarré", () => {
+  it("single use: Theorist's Proxy, only the next spell can't be countered", () => {
     let s = scenario({ p1: { battlefield: ["Forest", "Forest"], hand: ["Llanowar Elves", "Llanowar Elves"] } });
     addPlayerEffect(s, "p1", { nextSpell: { uncounterable: true } }, s.turn.number, true);
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Llanowar Elves") });
@@ -40,14 +40,14 @@ describe("effets sur les joueurs", () => {
     expect(consumePlayerEffect(s, "p1", "nextSpell")).toBe(false);
   });
 
-  it("un booléen compte pour 1 dans un total (cumulable)", () => {
+  it("a boolean counts as 1 in a total (cumulative)", () => {
     const s = scenario({ p1: {} });
     addPlayerEffect(s, "p2", { landsEnterUntapped: true }, s.turn.number + 1);
     addPlayerEffect(s, "p2", { landsEnterUntapped: true }, s.turn.number + 1);
     expect(playerStaticTotal(s, "p2", "landsEnterUntapped")).toBe(2);
   });
 
-  it("deux effets « blessures doublées » se cumulent (remplacements, R1)", () => {
+  it('two "doubled damage" effects stack (replacements, R1)', () => {
     const s = scenario({ p1: { battlefield: ["Shivan Dragon"] } });
     const doubled = { replacement: { event: "damage" as const, to: "yourSide" as const, modify: { times: 2 } } };
     addPlayerEffect(s, "p2", doubled, s.turn.number + 1);
@@ -57,37 +57,37 @@ describe("effets sur les joueurs", () => {
   });
 });
 
-describe("interdictions et permissions du tour (effets sur les joueurs)", () => {
-  it("Sandswirl Wanderglyph : ne peut pas attaquer ce joueur ce tour-ci, les autres oui", () => {
+describe("turn prohibitions and permissions (player effects)", () => {
+  it("Sandswirl Wanderglyph: can't attack this player this turn, the others can", () => {
     const s = scenario({ players: 3, active: "p2", p1: {}, p2: {}, p3: {} });
     addPlayerEffect(s, "p2", { cantAttack: { of: "p1" } }, s.turn.number);
     expect(attackableDefenders(s, "p2")).toEqual(["p3"]);
     expect(attackableDefenders(s, "p3")).toContain("p1");
   });
 
-  it("« ne peut pas attaquer vos Jace » (`cantAttack` avec un sous-type) : ces planeswalkers seulement ; le joueur et ses autres planeswalkers restent attaquables", () => {
+  it('"can\'t attack your Jaces" (`cantAttack` with a subtype): those planeswalkers only; the player and their other planeswalkers stay attackable', () => {
     const walker = (name: string, subtype: string) =>
       customCard({ name, types: ["Planeswalker"], typeLine: "Planeswalker", subtypes: [subtype], loyalty: 3 });
     const s = scenario({
       active: "p2",
-      p1: { battlefield: [walker("Jace d'essai", "Jace"), walker("Chandra d'essai", "Chandra")] },
+      p1: { battlefield: [walker("Test Jace", "Jace"), walker("Test Chandra", "Chandra")] },
     });
-    const jace = idOf(s, "p1", "battlefield", "Jace d'essai");
-    const chandra = idOf(s, "p1", "battlefield", "Chandra d'essai");
+    const jace = idOf(s, "p1", "battlefield", "Test Jace");
+    const chandra = idOf(s, "p1", "battlefield", "Test Chandra");
     expect(attackableDefenders(s, "p2")).toEqual(["p1", jace, chandra]);
     addPlayerEffect(s, "p2", { cantAttack: { of: "p1", subtype: "Jace" } }, s.turn.number);
     expect(attackableDefenders(s, "p2")).toEqual(["p1", chandra]);
-    // Sans sous-type : le joueur et tous ses planeswalkers (Sandswirl Wanderglyph).
+    // Without a subtype: the player and all their planeswalkers (Sandswirl Wanderglyph).
     addPlayerEffect(s, "p2", { cantAttack: { of: "p1" } }, s.turn.number);
     expect(attackableDefenders(s, "p2")).toEqual([]);
   });
 
-  it("passer (`skips`) : l'étape de pioche et les tours supplémentaires sont deux choses distinctes", () => {
+  it("skipping (`skips`): the draw step and extra turns are two distinct things", () => {
     let s = scenario({ p1: { library: lands("Forest", 5) }, p2: { library: lands("Forest", 5) } });
     addPlayerEffect(s, "p1", { skips: "drawStep" }, null);
     s.extraTurns = ["p1"];
     const hand = s.players.p1?.hand.length ?? 0;
-    // Le tour supplémentaire de p1 a lieu ; son étape de pioche n'a pas lieu.
+    // p1's extra turn takes place; its draw step does not.
     s = advanceUntil(s, (x) => x.turn.number > 3 && x.turn.step === "main1");
     expect([s.turn.active, s.players.p1?.hand.length]).toEqual(["p1", hand]);
     addPlayerEffect(s, "p1", { skips: "extraTurns" }, null);
@@ -96,7 +96,7 @@ describe("interdictions et permissions du tour (effets sur les joueurs)", () => 
     expect(s.turn.active).toBe("p2");
   });
 
-  it("The Tomb of Aclazotz : un seul sort de créature depuis le cimetière, avec un marqueur de finalité", () => {
+  it("The Tomb of Aclazotz: a single creature spell from the graveyard, with a finality counter", () => {
     let s = scenario({ p1: { battlefield: ["Forest", "Forest"], graveyard: ["Llanowar Elves", "Llanowar Elves"] } });
     const castable = () =>
       legalActions(s, "p1").filter((x) => x.type === "cast" && s.objects[x.card]?.zone === "graveyard").length;
@@ -123,7 +123,7 @@ describe("interdictions et permissions du tour (effets sur les joueurs)", () => 
     expect(s.objects[elves]?.counters.finality).toBe(1);
   });
 
-  it("Summon: Alexander : blessures prévenues sur vos créatures, pas sur vous", () => {
+  it("Summon: Alexander: damage prevented on your creatures, not on you", () => {
     const s = scenario({ p1: { battlefield: ["Bear Cub"] }, p2: { battlefield: ["Shivan Dragon"] } });
     addPlayerEffect(
       s,

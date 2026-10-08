@@ -14,8 +14,8 @@ const faces: Record<string, CardFace> = {
 const keys = (events: GameEvent[], prev: GameView | null = null, v = view()) =>
   soundsFor(events, v, prev, faces).map((c) => c.key);
 
-describe("sons des événements", () => {
-  it("un son par action de jeu, du point de vue du joueur", () => {
+describe("event sounds", () => {
+  it("one sound per game action, from the player's point of view", () => {
     expect(
       keys([
         { type: "gameStart", startingPlayer: "p1" },
@@ -32,13 +32,13 @@ describe("sons des événements", () => {
     ).toEqual(["shuffle", "turn", "draw", "land", "cast", "ability", "counter", "token"]);
   });
 
-  it("Commander : un commandant qui rejoint la zone de commandement a son son", () => {
+  it("Commander: a commander entering the command zone has its sound", () => {
     expect(keys([{ type: "moved", owner: "p1", objectId: "c", defId: "bear", from: "graveyard", to: "command" }])).toEqual([
       "command",
     ]);
   });
 
-  it("combat : attaque, blocage, coups ; une grosse blessure et une perte de PV frappent plus fort", () => {
+  it("combat: attack, block, hits; heavy damage and life loss hit harder", () => {
     expect(
       keys([
         { type: "attack", player: "p2", attackers: [{ id: "a", defId: "bear" }] },
@@ -53,7 +53,7 @@ describe("sons des événements", () => {
     ).toEqual(["attack", "hit", "hitHeavy", "hitHeavy", "heal", "dies"]);
   });
 
-  it("les délais suivent les effets visuels (0,22 s par blessure, gain ou mort)", () => {
+  it("delays follow the visual effects (0.22 s per damage, gain or death)", () => {
     const cues = soundsFor(
       [
         { type: "damage", sourceDefId: "x", target: "a", targetDefId: "bear", amount: 1, combat: true },
@@ -67,7 +67,7 @@ describe("sons des événements", () => {
     expect(cues.map((c) => c.delay)).toEqual([0, 0.22, 0.44]);
   });
 
-  it("un sort de permanent se pose à la résolution, pas un éphémère ni une capacité", () => {
+  it("a permanent spell is played on resolution, not an instant or an ability", () => {
     const prev = view({
       stack: [
         { id: "s1", kind: "spell" },
@@ -87,12 +87,12 @@ describe("sons des événements", () => {
     ).toEqual(["resolve"]);
   });
 
-  it("victoire ou défaite", () => {
+  it("victory or defeat", () => {
     expect(keys([{ type: "gameOver", winner: "p1" }])).toEqual(["win"]);
     expect(keys([{ type: "gameOver", winner: "p2" }])).toEqual(["lose"]);
   });
 
-  it("plus de 3 fois le même son : une seule lecture, plus forte", () => {
+  it("more than 3 of the same sound: a single playback, louder", () => {
     const deaths: GameEvent[] = Array.from({ length: 12 }, (_, i) => ({
       type: "dies",
       objectId: `t${i}`,
@@ -104,17 +104,17 @@ describe("sons des événements", () => {
     expect(keys(deaths.slice(0, 3))).toEqual(["dies", "dies", "dies"]);
   });
 
-  it("« tap » seulement pour vos terrains qui viennent d'être engagés", () => {
+  it('"tap" only for your lands that have just been tapped', () => {
     const prev = view({ battlefield: [land("a", false), land("b", true), land("c", false, "p2")] });
     expect(keys([], prev, view({ battlefield: [land("a", true), land("b", true), land("c", true, "p2")] }))).toEqual(["tap"]);
     expect(keys([], prev, view({ battlefield: [land("a", false), land("b", true), land("c", true, "p2")] }))).toEqual([]);
   });
 
-  it("chaque couche de son désigne un son existant", () => {
+  it("each sound layer designates an existing sound", () => {
     for (const def of Object.values(SOUNDS)) if ("layer" in def) expect(SOUNDS).toHaveProperty(def.layer);
   });
 
-  it("chaque fichier de la table est présent dans public/sounds", () => {
+  it("each file in the table is present in public/sounds", () => {
     const missing = SOUND_FILES.filter((f) => !existsSync(new URL(`../public/sounds/${f}`, import.meta.url)));
     expect(missing).toEqual([]);
   });

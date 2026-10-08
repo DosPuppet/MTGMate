@@ -12,7 +12,7 @@ const decks = () =>
   ];
 
 describe("fuzz", () => {
-  it("30 parties aléatoires respectent les invariants et se terminent", () => {
+  it("30 random games respect the invariants and finish", () => {
     for (let seed = 100; seed < 130; seed++) {
       const r = playGame({ seed, decks: decks(), agents: [randomAgent(seed), randomAgent(seed + 1)], check: true });
       expect(r.state.over).toBe(true);
@@ -20,7 +20,7 @@ describe("fuzz", () => {
     }
   }, 60_000);
 
-  it("rejeu déterministe : même graine + mêmes décisions = même état final", () => {
+  it("deterministic replay: same seed + same decisions = same final state", () => {
     const r = playGame({ seed: 7, decks: decks(), agents: [randomAgent(1), randomAgent(2)] });
     let { state } = createGame({
       seed: 7,
@@ -33,7 +33,7 @@ describe("fuzz", () => {
     expect(JSON.stringify(state)).toBe(JSON.stringify(r.state));
   });
 
-  it("rejeu déterministe à 3 joueurs, decks aléatoires de tout le pool, IA heuristique", () => {
+  it("deterministic replay with 3 players, random decks from the whole pool, heuristic AI", () => {
     const deckList = [0, 1, 2].map((i) => randomDeck(4242 + i));
     const r = playGame({ seed: 11, decks: deckList, agents: [heuristicAgent(), heuristicAgent(), randomAgent(3)] });
     let { state } = createGame({
@@ -49,7 +49,7 @@ describe("fuzz", () => {
 describe("IA heuristique", () => {
   const ai = heuristicAgent();
 
-  it("bat l'IA aléatoire", () => {
+  it("beats the random AI", () => {
     let wins = 0;
     for (let seed = 1; seed <= 6; seed++) {
       const r = playGame({ seed, decks: decks(), agents: [ai, randomAgent(seed)] });
@@ -58,19 +58,19 @@ describe("IA heuristique", () => {
     expect(wins).toBeGreaterThanOrEqual(5);
   });
 
-  it("utilise un sort de dégâts pour tuer la meilleure créature adverse", () => {
+  it("uses a damage spell to kill the opponent's best creature", () => {
     const s = scenario({
       p1: { battlefield: ["Mountain", "Mountain"], hand: ["Abrade"] },
       p2: { battlefield: ["Bear Cub", "Thornweald Archer", "Fire Elemental"] },
     });
     const d = ai(s, "p1");
     expect(d.type).toBe("cast");
-    // Fire Elemental (5/4) survit à 3 blessures : la cible doit être l'archer (contact mortel) ou l'ours.
+    // Fire Elemental (5/4) survives 3 damage: the target must be the archer (deathtouch) or the bear.
     const target = d.type === "cast" ? d.targets?.t?.[0] : undefined;
     expect(target).toBe(idOf(s, "p2", "battlefield", "Thornweald Archer"));
   });
 
-  it("bloque pour survivre à une attaque létale", () => {
+  it("blocks to survive a lethal attack", () => {
     let s = scenario({
       active: "p2",
       p1: { life: 4, battlefield: ["Bear Cub"] },
@@ -86,14 +86,14 @@ describe("IA heuristique", () => {
     expect(d.type === "declareBlockers" && d.blocks).toHaveLength(1);
   });
 
-  it("n'attaque pas dans un bloqueur qui la tue sans mourir", () => {
+  it("doesn't attack into a blocker that kills it without dying", () => {
     let s = scenario({ p1: { battlefield: ["Bear Cub"] }, p2: { battlefield: ["Magnigoth Sentry"] } });
     s = passUntil(s, (x) => x.pending?.kind === "declareAttackers");
     const d = ai(s, "p1");
     expect(d.type === "declareAttackers" && d.attackers).toHaveLength(0);
   });
 
-  it("utilise Giant Growth pour gagner un combat", () => {
+  it("uses Giant Growth to win a combat", () => {
     let s = scenario({
       active: "p2",
       p1: { battlefield: ["Forest", "Bear Cub"], hand: ["Giant Growth"] },
@@ -113,7 +113,7 @@ describe("IA heuristique", () => {
     expect(d.type).toBe("cast");
   });
 
-  it("« lancez-la » pendant une résolution (Découverte) : l'IA lance la carte gratuite", () => {
+  it('"cast it" during a resolution (Discover): the AI casts the free card', () => {
     let s = scenario({
       p1: {
         battlefield: ["Forest", "Forest", "Forest", "Forest", "Forest"],

@@ -1,4 +1,4 @@
-/** Test de fumée : Lorwyn Eclipsed. */
+/** Smoke test : Lorwyn Eclipsed. */
 import { smokeTest } from "./harness";
 
 smokeTest(["ECL"]);

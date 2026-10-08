@@ -1,9 +1,9 @@
 /**
- * The Big Score (BIG) : chaque carte gérée est confrontée à son texte Oracle (plan R, lot R7). Hideaway (Collector's
- * Cage), copies de jetons et d'artefacts, Greed's Gambit, Generous Plunderer, Harvester of Misery, Vaultborn Tyrant, Pest Control…
- * Rest in Peace, Grand Abolisher, Torpor Orb et Worldwalker Helm sont déjà couverts par otj.test.ts. Ne sont pas testés
- * ici, faute de suivre l'Oracle : la copie d'Esoteric Duplicator (l'artefact sacrifié n'est plus retrouvé, rien n'est
- * créé) et l'arrivée de Harvester of Misery (qui se donne aussi −2/−2 : `pumpAll` ignore `other`).
+ * The Big Score (BIG): every supported card is checked against its Oracle text (plan R, lot R7). Hideaway (Collector's
+ * Cage), copies of tokens and artifacts, Greed's Gambit, Generous Plunderer, Harvester of Misery, Vaultborn Tyrant, Pest Control…
+ * Rest in Peace, Grand Abolisher, Torpor Orb and Worldwalker Helm are already covered by otj.test.ts. Not tested
+ * here, because they do not follow the Oracle: the copy of Esoteric Duplicator (the sacrificed artifact is no longer found, nothing is
+ * created) and the arrival of Harvester of Misery (which also gives itself −2/−2: `pumpAll` ignores `other`).
  */
 
 import { TOKEN_SPECS } from "@mtgx/cards/tokens";
@@ -38,12 +38,12 @@ import {
 
 type S = GameState;
 
-/** Active la capacité de `source` dont le libellé contient `label` (la première sinon). */
+/** Activates the ability of `source` whose label contains `label` (the first one otherwise). */
 const activate = (s: S, player: string, source: string, label?: string, extra: object = {}) => {
   const a = legalActions(s, player).find(
     (x) => x.type === "activate" && x.source === source && (!label || x.label?.includes(label)),
   );
-  if (a?.type !== "activate") throw new Error(`capacité introuvable : ${label ?? source}`);
+  if (a?.type !== "activate") throw new Error(`ability not found: ${label ?? source}`);
   return act(s, player, { type: "activate", source, ability: a.ability, ...extra });
 };
 const castOption = (s: S, player: string, card: string) =>
@@ -65,51 +65,51 @@ describe("The Big Score", () => {
         seen = req.options.length;
         return pickNamed(cur, req, "Serra Angel");
       });
-      // Hideaway 5 : l'Ange est exilé, les quatre autres cartes vont au-dessous.
+      // Hideaway 5: the Angel is exiled, the other four cards go on the bottom.
       expect(seen).toBe(5);
       expect(exiled(s, "Serra Angel")).toHaveLength(1);
       expect(namesIn(s, s.players.p1?.library).slice(0, 2)).toEqual(["Swamp", "Swamp"]);
       return s;
     };
 
-    it("{1}, {T} : un marqueur +1/+1 ; avec trois forces différentes, la carte exilée se joue sans payer son coût", () => {
+    it("{1}, {T}: a +1/+1 counter; with three different powers, the exiled card is played without paying its cost", () => {
       let s = setup(["Llanowar Elves", "Bear Cub", "Fire Elemental"]);
       const cage = idOf(s, "p1", "battlefield", "Collector's Cage");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = settleNoBlocks(activate(s, "p1", cage, undefined, { targets: { t: [bear] } }));
       expect(s.objects[bear]?.counters["+1/+1"]).toBe(1);
       expect(s.objects[cage]?.tapped).toBe(true);
-      // Plus aucun terrain dégagé : l'Ange se lance gratuitement depuis l'exil.
+      // No untapped land left: the Angel is cast for free from exile.
       const angel = exiled(s, "Serra Angel")[0] as string;
       expect(castOption(s, "p1", angel)).toBeDefined();
       s = settleNoBlocks(act(s, "p1", { type: "cast", card: angel, free: true }));
       expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
     });
 
-    it("sans trois créatures de forces différentes, la carte reste exilée", () => {
+    it("without three creatures of different powers, the card stays exiled", () => {
       let s = setup(["Bear Cub", "Bear Cub", "Fire Elemental"]);
       const cage = idOf(s, "p1", "battlefield", "Collector's Cage");
       const fire = idOf(s, "p1", "battlefield", "Fire Elemental");
       s = settleNoBlocks(activate(s, "p1", cage, undefined, { targets: { t: [fire] } }));
-      // Forces 2, 2 et 6 : deux valeurs seulement.
+      // Powers 2, 2 and 6: only two values.
       expect(chars(s, fire).power).toBe(6);
       const angel = exiled(s, "Serra Angel")[0] as string;
       expect(castOption(s, "p1", angel)).toBeUndefined();
     });
   });
 
-  it("Oltec Matterweaver : chaque sort de créature donne un Gnome 1/1, ou la copie d'un de vos jetons d'artefact", () => {
+  it("Oltec Matterweaver: each creature spell gives a 1/1 Gnome, or a copy of one of your artifact tokens", () => {
     let s = scenario({
       p1: { battlefield: ["Oltec Matterweaver", ...lands("Forest", 4)], hand: ["Bear Cub", "Bear Cub"] },
     });
-    // Aucun jeton d'artefact à copier : le Gnome.
+    // No artifact token to copy: the Gnome.
     s = settleNoBlocks(cast(s, "p1", "Bear Cub"));
     const gnome = idOf(s, "p1", "battlefield", "Gnome");
     const c = chars(s, gnome);
     expect(c.types).toEqual(expect.arrayContaining(["Artifact", "Creature"]));
     expect([c.power, c.toughness]).toEqual([1, 1]);
     expect(c.colors).toEqual([]);
-    // Second sort : le mode « copie », qui vise le Gnome.
+    // Second spell: the "copy" mode, which targets the Gnome.
     let modes: string[] = [];
     s = settleNoBlocks(cast(s, "p1", "Bear Cub"), (req) => {
       if (req.intent !== "triggerMode" || req.type !== "pick") return undefined;
@@ -122,7 +122,7 @@ describe("The Big Score", () => {
     expect(gnomes.every((id) => s.objects[id]?.isToken)).toBe(true);
   });
 
-  it("Esoteric Duplicator : {2}, sacrifice : piochez ; son sacrifice propose de payer {2}, et sans paiement, pas de copie", () => {
+  it("Esoteric Duplicator: {2}, sacrifice: draw; its sacrifice offers to pay {2}, and without payment, no copy", () => {
     let s = scenario({ p1: { battlefield: ["Esoteric Duplicator", ...lands("Island", 4)], library: lands("Swamp", 3) } });
     const dup = idOf(s, "p1", "battlefield", "Esoteric Duplicator");
     let asked = false;
@@ -140,7 +140,7 @@ describe("The Big Score", () => {
   });
 
   describe("Greed's Gambit", () => {
-    it("en arrivant : 3 cartes, 6 PV, trois Chauves-souris 2/1 volantes ; à votre étape de fin : défausse, 2 PV, un sacrifice", () => {
+    it("on arrival: 3 cards, 6 life, three 2/1 flying Bats; at your end step: discard, 2 life, a sacrifice", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Swamp", 4), "Bear Cub"], hand: ["Greed's Gambit"], library: lands("Island", 10) },
       });
@@ -165,7 +165,7 @@ describe("The Big Score", () => {
       expect(creatures).toHaveLength(3);
     });
 
-    it("en quittant le champ de bataille : défaussez trois cartes, perdez 6 PV et sacrifiez trois créatures", () => {
+    it("on leaving the battlefield: discard three cards, lose 6 life and sacrifice three creatures", () => {
       let s = scenario({
         p1: {
           battlefield: ["Greed's Gambit", ...lands("Plains", 2), "Bear Cub", "Bear Cub", "Bear Cub", "Fire Elemental"],
@@ -195,7 +195,7 @@ describe("The Big Score", () => {
   });
 
   describe("Harvester of Misery", () => {
-    it("{1}{B}, défaussez-la : une créature ciblée a −2/−2 jusqu'à la fin du tour", () => {
+    it("{1}{B}, discard it: a targeted creature gets −2/−2 until end of turn", () => {
       let s = scenario({
         p1: { battlefield: lands("Swamp", 2), hand: ["Harvester of Misery"] },
         p2: { battlefield: ["Serra Angel"] },
@@ -208,7 +208,7 @@ describe("The Big Score", () => {
     });
   });
 
-  it("Hostile Investigator : l'adversaire ciblé défausse ; la première défausse du tour fait enquêter, une seule fois", () => {
+  it("Hostile Investigator: the targeted opponent discards; the first discard of the turn investigates, only once", () => {
     let s = scenario({
       p1: { battlefield: lands("Swamp", 6), hand: ["Hostile Investigator", "Harvester of Misery"] },
       p2: { battlefield: ["Bear Cub"], hand: ["Opt", "Forest"] },
@@ -220,14 +220,14 @@ describe("The Big Score", () => {
     expect(s.players.p2?.graveyard).toHaveLength(1);
     const clue = idOf(s, "p1", "battlefield", "Clue");
     expect(chars(s, clue).types).toContain("Artifact");
-    // Seconde défausse du tour (Harvester of Misery depuis la main) : pas de nouvel Indice.
+    // Second discard of the turn (Harvester of Misery from hand): no new Clue.
     const bear = idOf(s, "p2", "battlefield", "Bear Cub");
     s = settleNoBlocks(activate(s, "p1", idOf(s, "p1", "hand", "Harvester of Misery"), undefined, { targets: { t: [bear] } }));
     expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
     expect(idsOf(s, "p1", "battlefield", "Clue")).toHaveLength(1);
   });
 
-  it("Legion Extruder : 2 blessures à n'importe quelle cible en arrivant ; {2}, {T}, sacrifiez un autre artefact : un Golem 3/3", () => {
+  it("Legion Extruder: 2 damage to any target on arrival; {2}, {T}, sacrifice another artifact: a 3/3 Golem", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Mountain", 4), "Fishing Pole"], hand: ["Legion Extruder"] },
     });
@@ -247,11 +247,11 @@ describe("The Big Score", () => {
     expect([c.power, c.toughness]).toEqual([3, 3]);
     expect(c.types).toEqual(expect.arrayContaining(["Artifact", "Creature"]));
     expect(c.colors).toEqual([]);
-    // Plus d'autre artefact à sacrifier : la capacité n'est plus disponible.
+    // No other artifact left to sacrifice: the ability is no longer available.
     expect(canActivate(s, "p1", extruder)).toBe(false);
   });
 
-  it("Molten Duplication : copie-jeton artefact avec la célérité, sacrifiée au début de la prochaine étape de fin", () => {
+  it("Molten Duplication: artifact token copy with haste, sacrificed at the beginning of the next end step", () => {
     let s = scenario({ p1: { battlefield: [...lands("Mountain", 2), "Bear Cub"], hand: ["Molten Duplication"] } });
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     s = settleNoBlocks(cast(s, "p1", "Molten Duplication", { targets: { t: [bear] } }));
@@ -267,15 +267,15 @@ describe("The Big Score", () => {
   });
 
   describe("Vaultborn Tyrant", () => {
-    it("elle ou une autre de vos créatures de force 4 ou plus arrive : 3 PV et une carte", () => {
+    it("it or another creature you control with power 4 or greater arrives: 3 life and a card", () => {
       const t = scenario({
         p1: { battlefield: [...lands("Forest", 7), "Vaultborn Tyrant"], hand: ["Pelakka Wurm"], library: lands("Island", 5) },
       });
       const after = settleNoBlocks(cast(t, "p1", "Pelakka Wurm"));
-      // Pelakka Wurm : 7 PV, plus 3 et une carte par le Tyran.
+      // Pelakka Wurm: 7 life, plus 3 and a card from the Tyrant.
       expect(after.players.p1?.life).toBe(30);
       expect(namesIn(after, after.players.p1?.hand)).toEqual(["Island"]);
-      // Force 2 : rien.
+      // Power 2: nothing.
       let s = scenario({
         p1: { battlefield: [...lands("Forest", 2), "Vaultborn Tyrant"], hand: ["Bear Cub"], library: lands("Island", 5) },
       });
@@ -284,7 +284,7 @@ describe("The Big Score", () => {
       expect(s.players.p1?.hand).toHaveLength(0);
     });
 
-    it("meurt (pas un jeton) : une copie-jeton qui est aussi un artefact, dont l'arrivée déclenche à nouveau", () => {
+    it("dies (not a token): a token copy that is also an artifact, whose arrival triggers again", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Plains", 5), "Vaultborn Tyrant"], hand: ["Luminous Rebuke"], library: lands("Island", 5) },
       });
@@ -299,7 +299,7 @@ describe("The Big Score", () => {
       expect(s.players.p1?.hand).toHaveLength(1);
     });
 
-    it("la copie-jeton qui meurt ne revient pas", () => {
+    it("the token copy that dies does not come back", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Plains", 10), "Vaultborn Tyrant"],
@@ -316,7 +316,7 @@ describe("The Big Score", () => {
     });
   });
 
-  it("Generous Plunderer : Trésor à l'entretien (et un Trésor engagé pour l'adversaire) ; en attaquant, blessures égales à ses artefacts", () => {
+  it("Generous Plunderer: Treasure at upkeep (and a tapped Treasure for the opponent); when attacking, damage equal to its artifacts", () => {
     let s = scenario({
       active: "p2",
       p1: { battlefield: ["Generous Plunderer"] },
@@ -327,13 +327,13 @@ describe("The Big Score", () => {
     s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1");
     expect(s.objects[idOf(s, "p1", "battlefield", "Treasure")]?.tapped).toBe(false);
     expect(s.objects[idOf(s, "p2", "battlefield", "Treasure")]?.tapped).toBe(true);
-    // p2 contrôle deux artefacts (Fishing Pole et son Trésor) : 2 blessures, puis 2 de combat.
+    // p2 controls two artifacts (Fishing Pole and its Treasure): 2 damage, then 2 combat damage.
     s = throughCombat(attack(s, [plunderer]));
     expect(s.players.p2?.life).toBe(16);
   });
 
   describe("Pest Control", () => {
-    it("détruit tous les permanents non-terrains de valeur de mana 1 ou moins", () => {
+    it("destroys all nonland permanents with mana value 1 or less", () => {
       let s = scenario({
         p1: { battlefield: ["Plains", "Swamp", "Llanowar Elves", "Bear Cub"], hand: ["Pest Control"] },
         p2: { battlefield: ["Fishing Pole", "Serra Angel", "Forest"] },
@@ -347,7 +347,7 @@ describe("The Big Score", () => {
       expect(idsOf(s, "p1", "battlefield", "Plains")).toHaveLength(1);
     });
 
-    it("recyclage {2} : défaussez-la, piochez une carte", () => {
+    it("cycling {2}: discard it, draw a card", () => {
       let s = scenario({ p1: { battlefield: lands("Swamp", 2), hand: ["Pest Control"], library: lands("Island", 3) } });
       const card = idOf(s, "p1", "hand", "Pest Control");
       s = settleNoBlocks(activate(s, "p1", card));
@@ -357,10 +357,10 @@ describe("The Big Score", () => {
   });
 });
 
-// Cartes des decks du méta Standard (docs/plans/PLAN-C.md, lot C13).
-describe("The Big Score : cartes du méta Standard", () => {
+// Cards from the Standard meta decks (PLAN-C in docs/history.md, lot C13).
+describe("The Big Score: Standard meta cards", () => {
   describe("Simulacrum Synthesizer", () => {
-    it("à l'arrivée, regard 2", () => {
+    it("on arrival, scry 2", () => {
       let s = scenario({
         p1: { battlefield: lands("Island", 3), hand: ["Simulacrum Synthesizer"], library: ["Opt", "Forest", "Island"] },
       });
@@ -368,21 +368,21 @@ describe("The Big Score : cartes du méta Standard", () => {
       s = settleNoBlocks(cast(s, "p1", "Simulacrum Synthesizer"), (req) => {
         if (req.intent !== "scryBottom" || req.type !== "pick") return undefined;
         seen = req.options.length;
-        return [...req.options]; // les deux sous la bibliothèque
+        return [...req.options]; // both under the library
       });
       expect(seen).toBe(2);
-      // Les deux cartes regardées sont passées sous la troisième.
+      // The two cards looked at are put under the third.
       const library = namesIn(s, s.players.p1?.library);
       expect(library[0]).toBe("Island");
       expect(library.slice(1).sort()).toEqual(["Forest", "Opt"]);
     });
 
-    it("un autre artefact de VM 3 ou plus arrive sous votre contrôle : un Assemblage 0/0 qui a +1/+1 par artefact", () => {
+    it("another artifact with MV 3 or more enters under your control: a 0/0 Construct that gets +1/+1 per artifact", () => {
       let s = scenario({
         p1: { battlefield: ["Simulacrum Synthesizer", ...lands("Forest", 6)], hand: ["Juggernaut", "Swiftfoot Boots"] },
       });
       s = settleNoBlocks(cast(s, "p1", "Swiftfoot Boots"));
-      // VM 2 : pas d'Assemblage.
+      // MV 2: no Construct.
       expect(idsOf(s, "p1", "battlefield", "Construct")).toHaveLength(0);
       s = settleNoBlocks(cast(s, "p1", "Juggernaut"));
       const constructs = idsOf(s, "p1", "battlefield", "Construct");
@@ -390,11 +390,11 @@ describe("The Big Score : cartes du méta Standard", () => {
       const construct = constructs[0] as string;
       expect(chars(s, construct).types).toEqual(expect.arrayContaining(["Artifact", "Creature"]));
       expect(chars(s, construct).colors).toEqual([]);
-      // Synthétiseur, Bottes, Juggernaut et l'Assemblage lui-même : 4/4.
+      // Synthesizer, Boots, Juggernaut and the Construct itself: 4/4.
       expect([chars(s, construct).power, chars(s, construct).toughness]).toEqual([4, 4]);
     });
 
-    it("un artefact adverse de VM 3 ou plus ne crée rien", () => {
+    it("an opposing artifact with MV 3 or more creates nothing", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: ["Simulacrum Synthesizer"] },
@@ -407,45 +407,45 @@ describe("The Big Score : cartes du méta Standard", () => {
   });
 });
 
-describe("The Big Score, lot K8 : mythiques", () => {
+describe("The Big Score, lot K8: mythic rares", () => {
   type S = GameState;
-  /** Active la capacité de `source` dont l'étiquette commence par `label`. */
+  /** Activates the ability of `source` whose label starts with `label`. */
   const activateBy = (s: S, player: PlayerId, source: string, label: string, extra: object = {}): S => {
     const a = legalActions(s, player).find(
       (x) => x.type === "activate" && x.source === source && (x.label ?? "").startsWith(label),
     );
-    if (a?.type !== "activate") throw new Error(`capacité « ${label} » introuvable`);
+    if (a?.type !== "activate") throw new Error(`ability "${label}" not found`);
     return act(s, player, { type: "activate", source, ability: a.ability, ...extra });
   };
   const hasActivate = (s: S, player: PlayerId, source: string, label: string) =>
     legalActions(s, player).some((x) => x.type === "activate" && x.source === source && (x.label ?? "").startsWith(label));
-  /** Attache l'équipement à la créature (sans payer l'équipement). */
+  /** Attaches the Equipment to the creature (without paying the equip cost). */
   const equip = (s: S, equipment: string, creature: string) => {
     const o = s.objects[equipment];
     if (o) o.attachedTo = creature;
     bump(s);
   };
   const yesNo = (yes: boolean) => (req: ChoiceRequest) => (req.type === "yesNo" ? [yes ? 1 : 0] : undefined);
-  const GOLD = customCard({ name: "Ours bicolore", colors: ["G", "W"], power: 2, toughness: 2 });
-  const GREY = customCard({ name: "Golem gris", types: ["Artifact", "Creature"], power: 1, toughness: 1 });
-  const RED = customCard({ name: "Gobelin rouge", colors: ["R"], power: 1, toughness: 1 });
+  const GOLD = customCard({ name: "Two-color Bear", colors: ["G", "W"], power: 2, toughness: 2 });
+  const GREY = customCard({ name: "Grey Golem", types: ["Artifact", "Creature"], power: 1, toughness: 1 });
+  const RED = customCard({ name: "Red Goblin", colors: ["R"], power: 1, toughness: 1 });
   const ENCH = customCard({ name: "Enchantement nu", types: ["Enchantment"], typeLine: "Enchantment" });
 
-  it("Ancient Cornucopia : un sort coloré fait gagner 1 PV par couleur, une seule fois par tour ; un sort incolore, rien", () => {
+  it("Ancient Cornucopia: a colored spell gains 1 life per color, only once per turn; a colorless spell, nothing", () => {
     let s = scenario({ p1: { battlefield: ["Ancient Cornucopia"], hand: [GREY, GOLD, RED] } });
-    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Golem gris") }), yesNo(true));
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Grey Golem") }), yesNo(true));
     expect(s.players.p1?.life).toBe(20);
-    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Ours bicolore") }), yesNo(true));
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Two-color Bear") }), yesNo(true));
     expect(s.players.p1?.life).toBe(22);
-    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Gobelin rouge") }), yesNo(true));
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Red Goblin") }), yesNo(true));
     expect(s.players.p1?.life).toBe(22);
-    // {T} : un mana de n'importe quelle couleur.
+    // {T}: one mana of any color.
     const t = scenario({ p1: { battlefield: ["Ancient Cornucopia"] } });
     const colors = legalActions(t, "p1").flatMap((a) => (a.type === "tapForMana" ? a.colors : []));
     expect(colors).toEqual(expect.arrayContaining(["W", "U", "B", "R", "G"]));
   });
 
-  it("Bristlebud Farmer : deux Nourritures en arrivant ; en attaquant, sacrifier une Nourriture meule trois cartes et reprend un permanent", () => {
+  it("Bristlebud Farmer: two Foods on arrival; when attacking, sacrificing a Food mills three cards and returns a permanent", () => {
     let s = scenario({
       p1: { battlefield: lands("Forest", 4), hand: ["Bristlebud Farmer"], library: ["Opt", "Bear Cub", "Forest", "Island"] },
     });
@@ -466,7 +466,7 @@ describe("The Big Score, lot K8 : mythiques", () => {
     expect(idsOf(s, "p1", "battlefield", "Food")).toHaveLength(1);
     expect(namesIn(s, s.players.p1?.hand)).toEqual(["Bear Cub"]);
     expect(namesIn(s, s.players.p1?.graveyard).sort()).toEqual(["Forest", "Opt"]);
-    // Sans sacrifice, rien n'est meulé.
+    // Without a sacrifice, nothing is milled.
     let t = scenario({ p1: { battlefield: ["Bristlebud Farmer"], library: ["Opt", "Bear Cub", "Forest"] } });
     createTokens(t, "p1", TOKEN_SPECS.Food as TokenSpec, 1);
     t = attack(t, [idOf(t, "p1", "battlefield", "Bristlebud Farmer")]);
@@ -475,7 +475,7 @@ describe("The Big Score, lot K8 : mythiques", () => {
     expect(t.players.p1?.graveyard).toHaveLength(0);
   });
 
-  it("Fomori Vault : {3}, {T}, défaussez une carte : regardez X cartes (X = vos artefacts), une en main, le reste dessous", () => {
+  it("Fomori Vault: {3}, {T}, discard a card: look at X cards (X = your artifacts), one to hand, the rest on the bottom", () => {
     let s = scenario({
       p1: {
         battlefield: ["Fomori Vault", "Ancient Cornucopia", "Lost Jitte", ...lands("Plains", 3)],
@@ -489,12 +489,12 @@ describe("The Big Score, lot K8 : mythiques", () => {
     expect(namesIn(s, s.players.p1?.graveyard)).toEqual(["Opt"]);
     expect(namesIn(s, s.players.p1?.hand)).toEqual(["Bear Cub"]);
     expect(namesIn(s, s.players.p1?.library)).toEqual(["Forest", "Swamp", "Island"]);
-    // Sans carte en main, la capacité ne s'active pas.
+    // With no card in hand, the ability cannot be activated.
     const t = scenario({ p1: { battlefield: ["Fomori Vault", "Ancient Cornucopia", ...lands("Plains", 3)] } });
     expect(hasActivate(t, "p1", idOf(t, "p1", "battlefield", "Fomori Vault"), "Discard")).toBe(false);
   });
 
-  it("Loot, the Key to Everything : à votre entretien, exile autant de cartes que de types parmi vos autres permanents non-terrains, jouables ce tour-ci", () => {
+  it("Loot, the Key to Everything: at your upkeep, exile as many cards as there are types among your other nonland permanents, playable this turn", () => {
     let s = scenario({
       active: "p2",
       step: "main2",
@@ -505,7 +505,7 @@ describe("The Big Score, lot K8 : mythiques", () => {
     });
     expect(chars(s, idOf(s, "p1", "battlefield", "Loot, the Key to Everything")).keywords).toContain("ward");
     s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1");
-    // Artefact, créature, enchantement : trois cartes (Loot elle-même et le terrain ne comptent pas).
+    // Artifact, creature, enchantment: three cards (Loot itself and the land do not count).
     expect(s.exile.map((id) => nameOf(s, id))).toEqual(["Mountain", "Opt", "Bear Cub"]);
     const mountain = exiled(s, "Mountain")[0] as string;
     expect(legalActions(s, "p1").some((a) => a.type === "playLand" && a.card === mountain)).toBe(true);
@@ -516,7 +516,7 @@ describe("The Big Score, lot K8 : mythiques", () => {
   });
 
   describe("Lost Jitte", () => {
-    it("la créature équipée inflige des blessures de combat : un marqueur de charge", () => {
+    it("the equipped creature deals combat damage: a charge counter", () => {
       let s = scenario({ p1: { battlefield: ["Lost Jitte", "Bear Cub"] } });
       const jitte = idOf(s, "p1", "battlefield", "Lost Jitte");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -527,7 +527,7 @@ describe("The Big Score, lot K8 : mythiques", () => {
       expect(s.objects[jitte]?.counters.charge).toBe(1);
     });
 
-    it("retirez un marqueur de charge : dégagez un terrain, une créature ne peut pas bloquer, ou un marqueur +1/+1 sur la créature équipée", () => {
+    it("remove a charge counter: untap a land, a creature can't block, or a +1/+1 counter on the equipped creature", () => {
       let s = scenario({
         p1: { battlefield: [{ name: "Lost Jitte", counters: { charge: 3 } }, "Bear Cub", { name: "Forest", tapped: true }] },
         p2: { battlefield: ["Serra Angel"] },
@@ -536,7 +536,7 @@ describe("The Big Score, lot K8 : mythiques", () => {
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       const forest = idOf(s, "p1", "battlefield", "Forest");
       const angel = idOf(s, "p2", "battlefield", "Serra Angel");
-      // Sans créature équipée, pas de marqueur +1/+1.
+      // Without an equipped creature, no +1/+1 counter.
       expect(hasActivate(s, "p1", jitte, "+1/+1 counter")).toBe(false);
       equip(s, jitte, bear);
       s = settle(activateBy(s, "p1", jitte, "+1/+1 counter"));
@@ -552,7 +552,7 @@ describe("The Big Score, lot K8 : mythiques", () => {
     });
   });
 
-  it("Lotus Ring : indestructible ; la créature équipée a +3/+3, la vigilance et « {T}, sacrifiez-la : trois mana d'une couleur »", () => {
+  it('Lotus Ring: indestructible; the equipped creature gets +3/+3, vigilance and "{T}, sacrifice it: add three mana of any one color"', () => {
     let s = scenario({ p1: { battlefield: ["Lotus Ring", "Bear Cub"] } });
     const ring = idOf(s, "p1", "battlefield", "Lotus Ring");
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -569,7 +569,7 @@ describe("The Big Score, lot K8 : mythiques", () => {
     expect(s.objects[ring]?.zone).toBe("battlefield");
   });
 
-  it("Memory Vessel : {T}, exilez-le : chaque joueur exile sept cartes, jouables par leur propriétaire jusqu'à votre prochain tour", () => {
+  it("Memory Vessel: {T}, exile it: each player exiles seven cards, playable by their owner until your next turn", () => {
     let s = scenario({
       p1: { battlefield: ["Memory Vessel"], library: lands("Mountain", 9) },
       p2: { library: lands("Swamp", 9) },
@@ -581,16 +581,16 @@ describe("The Big Score, lot K8 : mythiques", () => {
     expect(exiled(s, "Swamp")).toHaveLength(7);
     const mountain = exiled(s, "Mountain")[0] as string;
     expect(legalActions(s, "p1").some((a) => a.type === "playLand" && a.card === mountain)).toBe(true);
-    // L'adversaire joue ses cartes exilées pendant son tour.
+    // The opponent plays their exiled cards during their turn.
     const p2turn = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
     const swamp = exiled(p2turn, "Swamp")[0] as string;
     expect(legalActions(p2turn, "p2").some((a) => a.type === "playLand" && a.card === swamp)).toBe(true);
-    // À votre prochain tour, l'effet a pris fin.
+    // At your next turn, the effect has ended.
     const back = advanceUntil(p2turn, (x) => x.turn.active === "p1" && x.turn.step === "main1");
     expect(legalActions(back, "p1").some((a) => a.type === "playLand" && a.card === mountain)).toBe(false);
   });
 
-  it("Nexus of Becoming : au début de votre combat, piochez, puis exilez une carte d'artefact ou de créature : copie-jeton Golem artefact 3/3", () => {
+  it("Nexus of Becoming: at the beginning of your combat, draw, then exile an artifact or creature card: a 3/3 artifact Golem token copy", () => {
     let s = scenario({
       step: "main1",
       p1: { battlefield: ["Nexus of Becoming"], hand: ["Shivan Dragon", "Opt"], library: ["Island", "Forest"] },
@@ -606,11 +606,11 @@ describe("The Big Score, lot K8 : mythiques", () => {
     expect(c.types).toEqual(expect.arrayContaining(["Artifact", "Creature"]));
     expect(c.subtypes).toEqual(expect.arrayContaining(["Dragon", "Golem"]));
     expect(c.keywords).toContain("flying");
-    // Au combat de l'adversaire, rien.
+    // At the opponent's combat, nothing.
     let t = scenario({ active: "p2", p1: { battlefield: ["Nexus of Becoming"], hand: ["Shivan Dragon"] } });
     t = advanceUntil(t, (x) => x.turn.step === "main2");
     expect(t.players.p1?.hand).toHaveLength(1);
-    // Refuser d'exiler : pas de jeton.
+    // Refusing to exile: no token.
     let u = scenario({ p1: { battlefield: ["Nexus of Becoming"], hand: ["Shivan Dragon"] } });
     u = passUntil(u, (x) => x.turn.step === "beginCombat" && x.stack.length > 0);
     u = settle(u, (req) => (req.type === "pick" ? [] : undefined));
@@ -618,7 +618,7 @@ describe("The Big Score, lot K8 : mythiques", () => {
     expect(idsOf(u, "p1", "battlefield", "Shivan Dragon")).toHaveLength(0);
   });
 
-  it("Omenpath Journey : exile jusqu'à cinq terrains de noms différents ; à votre étape de fin, l'un d'eux arrive engagé, au hasard", () => {
+  it("Omenpath Journey: exiles up to five lands with different names; at your end step, one of them enters tapped, at random", () => {
     let s = scenario({
       p1: {
         battlefield: lands("Forest", 4),
@@ -640,14 +640,14 @@ describe("The Big Score, lot K8 : mythiques", () => {
     expect(namesIn(s, s.players.p1?.library).sort()).toEqual(["Forest", "Opt"]);
     s = advanceUntil(s, (x) => x.turn.step === "cleanup" || x.turn.active === "p2");
     const arrived = s.battlefield.filter((id) => s.objects[id]?.controller === "p1" && names.includes(nameOf(s, id) ?? ""));
-    // Quatre Forêts au départ, plus une carte exilée.
+    // Four Forests to start, plus one exiled card.
     expect(arrived).toHaveLength(5);
     expect(s.exile).toHaveLength(4);
     const fresh = arrived.find((id) => s.objects[id]?.tapped && !s.exile.includes(id));
     expect(fresh).toBeDefined();
   });
 
-  it("Sandstorm Salvager : un Golem 3/3 incolore en arrivant ; {2}, {T} : un marqueur +1/+1 et le piétinement pour vos seuls jetons de créature", () => {
+  it("Sandstorm Salvager: a 3/3 colorless Golem on arrival; {2}, {T}: a +1/+1 counter and trample for your creature tokens only", () => {
     let s = scenario({
       p1: { battlefield: ["Bear Cub", ...lands("Forest", 5)], hand: ["Sandstorm Salvager"] },
       p2: { battlefield: [] },
@@ -665,13 +665,13 @@ describe("The Big Score, lot K8 : mythiques", () => {
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     expect(chars(s, bear)).toMatchObject({ power: 2, toughness: 2 });
     expect(chars(s, salvager).keywords).not.toContain("trample");
-    // Le piétinement dure jusqu'à la fin du tour ; le marqueur reste.
+    // Trample lasts until end of turn; the counter stays.
     s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
     expect(chars(s, golem)).toMatchObject({ power: 4, toughness: 4 });
     expect(chars(s, golem).keywords).not.toContain("trample");
   });
 
-  it("Sword of Wealth and Power : +2/+2, protection contre les éphémères ; blessures de combat à un joueur : un Trésor, et le prochain éphémère est copié", () => {
+  it("Sword of Wealth and Power: +2/+2, protection from instants; combat damage to a player: a Treasure, and the next instant is copied", () => {
     let s = scenario({
       p1: { battlefield: ["Sword of Wealth and Power", "Bear Cub", "Mountain"], hand: ["Shock"] },
       p2: { battlefield: ["Swab Goblin"], hand: ["Shock"] },
@@ -680,7 +680,7 @@ describe("The Big Score, lot K8 : mythiques", () => {
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     equip(s, sword, bear);
     expect(chars(s, bear)).toMatchObject({ power: 4, toughness: 4 });
-    // Protection contre les éphémères : Choc ne peut pas la cibler.
+    // Protection from instants: Shock can't target it.
     const shockOpt = legalActions(s, "p1").find((a) => a.type === "cast" && nameOf(s, a.card) === "Shock");
     const legal = shockOpt?.type === "cast" ? (shockOpt.modes[0]?.targets[0]?.legal ?? []) : [];
     expect(legal).not.toContain(bear);
@@ -690,11 +690,11 @@ describe("The Big Score, lot K8 : mythiques", () => {
     expect(idsOf(s, "p1", "battlefield", "Treasure")).toHaveLength(1);
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Shock"), targets: { t: ["p2"] } });
     s = settle(s);
-    // Choc et sa copie : 4 blessures.
+    // Shock and its copy: 4 damage.
     expect(s.players.p2?.life).toBe(12);
   });
 
-  it("Tarnation Vista : arrive engagé avec une couleur choisie ; {1}, {T} : un mana de chaque couleur de vos permanents monocolores", () => {
+  it("Tarnation Vista: enters tapped with a chosen color; {1}, {T}: one mana of each color among your monocolored permanents", () => {
     let s = scenario({ p1: { battlefield: [GOLD, RED, GREY, "Bear Cub", "Plains"], hand: ["Tarnation Vista"] } });
     const opt = legalActions(s, "p1").find((a) => a.type === "playLand");
     expect(opt?.type === "playLand" && opt.choose).toBeTruthy();
@@ -708,11 +708,11 @@ describe("The Big Score, lot K8 : mythiques", () => {
     expect(colors).toEqual(["U"]);
     s = activateBy(s, "p1", vista, "One mana of each");
     s = settle(s);
-    // Rouge (Gobelin) et vert (Bear Cub) ; ni l'Ours bicolore ni le Golem incolore.
+    // Red (Goblin) and green (Bear Cub); neither the two-color Bear nor the colorless Golem.
     expect(s.players.p1?.manaPool).toMatchObject({ R: 1, G: 1, W: 0, U: 0, B: 0 });
   });
 
-  it("Territory Forge : lancé, il exile un artefact ou un terrain ciblé et gagne ses capacités activées", () => {
+  it("Territory Forge: when cast, it exiles a targeted artifact or land and gains its activated abilities", () => {
     let s = scenario({
       p1: { battlefield: lands("Mountain", 5), hand: ["Territory Forge"] },
       p2: { battlefield: ["Transmutation Font", "Bear Cub"] },
@@ -725,7 +725,7 @@ describe("The Big Score, lot K8 : mythiques", () => {
       offered = namesIn(cur, req.options) as string[];
       return [font];
     });
-    // Un artefact ou un terrain, de n'importe quel joueur ; pas une créature.
+    // An artifact or a land, of any player; not a creature.
     expect(offered).toEqual(expect.arrayContaining(["Transmutation Font", "Mountain"]));
     expect(offered).not.toContain("Bear Cub");
     expect(exiled(s, "Transmutation Font")).toHaveLength(1);
@@ -734,7 +734,7 @@ describe("The Big Score, lot K8 : mythiques", () => {
     expect(idsOf(s, "p1", "battlefield", "Clue")).toHaveLength(1);
   });
 
-  it("Transmutation Font : {T} : un jeton Sang, Indice ou Nourriture ; {3}, {T}, sacrifiez trois jetons d'artefact : un artefact de la bibliothèque sur le champ de bataille (un Territory Forge non lancé n'exile rien)", () => {
+  it("Transmutation Font: {T}: a Blood, Clue or Food token; {3}, {T}, sacrifice three artifact tokens: an artifact from the library onto the battlefield (an uncast Territory Forge exiles nothing)", () => {
     let s = scenario({ p1: { battlefield: ["Transmutation Font"] } });
     const font = idOf(s, "p1", "battlefield", "Transmutation Font");
     for (const label of ["Blood token", "Clue token", "Food token"]) expect(hasActivate(s, "p1", font, label)).toBe(true);
@@ -750,23 +750,23 @@ describe("The Big Score, lot K8 : mythiques", () => {
     });
     for (const name of ["Clue", "Food", "Treasure"]) createTokens(t, "p1", TOKEN_SPECS[name] as TokenSpec, 1);
     const font2 = idOf(t, "p1", "battlefield", "Transmutation Font");
-    // Vitesse de rituel seulement.
+    // Sorcery speed only.
     const inCombat = passUntil(t, (x) => x.turn.step === "beginCombat");
     expect(hasActivate(inCombat, "p1", font2, "An artifact")).toBe(false);
     t = activateBy(t, "p1", font2, "An artifact");
     t = settle(t, (req, _p, cur) => pickNamed(cur, req, "Territory Forge"));
     expect(idsOf(t, "p1", "battlefield", "Territory Forge")).toHaveLength(1);
     for (const n of ["Clue", "Food", "Treasure"]) expect(idsOf(t, "p1", "battlefield", n)).toHaveLength(0);
-    // Territory Forge n'a pas été lancé : la Lost Jitte adverse reste.
+    // Territory Forge was not cast: the opposing Lost Jitte stays.
     expect(idsOf(t, "p2", "battlefield", "Lost Jitte")).toHaveLength(1);
     expect(t.stack).toHaveLength(0);
   });
 
-  it("Transmutation Font : les trois jetons d'artefact sacrifiés ont des noms différents", () => {
+  it("Transmutation Font: the three sacrificed artifact tokens have different names", () => {
     let s = scenario({ p1: { battlefield: ["Transmutation Font", ...lands("Plains", 3)], library: ["Territory Forge"] } });
     for (const name of ["Clue", "Clue", "Food"]) createTokens(s, "p1", TOKEN_SPECS[name] as TokenSpec, 1);
     const font = idOf(s, "p1", "battlefield", "Transmutation Font");
-    // Deux noms seulement : la capacité n'est pas proposée.
+    // Only two names: the ability is not offered.
     expect(hasActivate(s, "p1", font, "An artifact")).toBe(false);
     createTokens(s, "p1", TOKEN_SPECS.Treasure as TokenSpec, 1);
     const clues = idsOf(s, "p1", "battlefield", "Clue");
@@ -775,12 +775,12 @@ describe("The Big Score, lot K8 : mythiques", () => {
     const ability = legalActions(s, "p1").find(
       (x) => x.type === "activate" && x.source === font && x.label?.startsWith("An artifact"),
     );
-    if (ability?.type !== "activate") throw new Error("capacité introuvable");
-    // Deux Indices : refusé.
+    if (ability?.type !== "activate") throw new Error("ability not found");
+    // Two Clues: refused.
     expect(() => act(s, "p1", { type: "activate", source: font, ability: ability.ability, sacrifice: [...clues, food] })).toThrow(
       RulesError,
     );
-    // Le choix par défaut prend un jeton de chaque nom.
+    // The default choice takes one token of each name.
     s = settle(act(s, "p1", { type: "activate", source: font, ability: ability.ability }));
     expect(idsOf(s, "p1", "battlefield", "Territory Forge")).toHaveLength(1);
     expect(idsOf(s, "p1", "battlefield", "Clue")).toHaveLength(1);

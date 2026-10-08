@@ -1,5 +1,5 @@
 /**
- * Golden games (docs/plans/PLAN-R.md, lot F1; made into detectors by docs/plans/PLAN-C.md, lot C2): a few fixed-seed
+ * Golden games (PLAN-R in docs/history.md, lot F1; made into detectors by PLAN-C in docs/history.md, lot C2): a few fixed-seed
  * games, recorded with their checkpoints (`packages/ai/test/golden/*.json`). The test `ai/test/golden.test.ts`
  * replays them all:
  * - a game that replays identically passes, whatever the rules version that recorded it;

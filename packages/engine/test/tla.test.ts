@@ -1,7 +1,7 @@
 /**
- * Avatar: The Last Airbender (extension partielle : cartes des decks du méta) : chaque carte gérée est confrontée à son
- * texte Oracle (plan R, lot R7). Maîtrise de l'air (Avatar's Wrath, Appa), maîtrise de la terre (Ba Sing Se), Leçons
- * (Combustion Technique, Accumulate Wisdom), kicker, coûts additionnels et contresorts.
+ * Avatar: The Last Airbender (partial set: cards of the meta decks): each handled card is checked against its
+ * Oracle text (plan R, lot R7). Airbending (Avatar's Wrath, Appa), earthbending (Ba Sing Se), Lessons
+ * (Combustion Technique, Accumulate Wisdom), kicker, additional costs and counterspells.
  */
 import { card } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
@@ -57,7 +57,7 @@ describe("Avatar: The Last Airbender", () => {
       return { s, angel };
     };
 
-    it("la créature choisie reste ; toutes les autres sont exilées par la maîtrise de l'air, puis le sort s'exile", () => {
+    it("the chosen creature stays; all the others are exiled by airbending, then the spell exiles itself", () => {
       const { s, angel } = setup();
       expect(s.battlefield).toContain(angel);
       expect(idsOf(s, "p1", "battlefield", "Shivan Dragon")).toHaveLength(0);
@@ -68,17 +68,17 @@ describe("Avatar: The Last Airbender", () => {
       expect(s.players.p1?.graveyard).toHaveLength(0);
     });
 
-    it("son propriétaire peut relancer une carte exilée par la maîtrise de l'air pour {2}", () => {
+    it("its owner can recast a card exiled by airbending for {2}", () => {
       let { s } = setup();
       const dragon = exiled(s, "Shivan Dragon")[0] as string;
-      // Il ne reste que deux Plaines dégagées : le Dragon ({4}{R}{R}) se lance pour {2}.
+      // Only two untapped Plains remain: the Dragon ({4}{R}{R}) is cast for {2}.
       expect(castable(s, "p1", dragon)).toBe(true);
       s = settle(act(s, "p1", { type: "cast", card: dragon }));
       expect(idsOf(s, "p1", "battlefield", "Shivan Dragon")).toHaveLength(1);
       expect(s.battlefield.filter((id) => nameOf(s, id) === "Plains" && !s.objects[id]?.tapped)).toHaveLength(0);
     });
 
-    it("jusqu'à votre prochain tour, les adversaires ne lancent de sorts que depuis leur main", () => {
+    it("until your next turn, opponents can cast spells only from their hand", () => {
       let { s } = setup();
       const fire = exiled(s, "Fire Elemental")[0] as string;
       s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
@@ -89,7 +89,7 @@ describe("Avatar: The Last Airbender", () => {
     });
   });
 
-  it("Appa : maîtrise de l'air de vos autres permanents non-terrains ; un sort lancé depuis l'exil crée un Allié 1/1", () => {
+  it("Appa: airbending of your other nonland permanents; a spell cast from exile creates a 1/1 Ally", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Plains", 6), "Serra Angel"], hand: ["Appa, Steadfast Guardian"] },
       p2: { battlefield: ["Bear Cub"] },
@@ -103,7 +103,7 @@ describe("Avatar: The Last Airbender", () => {
       options = req.options.map(String);
       return [angel];
     });
-    // Ni un terrain, ni un permanent adverse, ni Appa elle-même.
+    // Neither a land, nor an opponent's permanent, nor Appa herself.
     expect(options).toContain(angel);
     expect(options).not.toContain(bear);
     expect(options).not.toContain(plains[0]);
@@ -116,7 +116,7 @@ describe("Avatar: The Last Airbender", () => {
     expect([chars(s, ally).power, chars(s, ally).toughness, chars(s, ally).colors]).toEqual([1, 1, ["W"]]);
   });
 
-  describe("Maîtrise de la terre et Heartless Act", () => {
+  describe("Earthbending and Heartless Act", () => {
     const setup = () => {
       let s = scenario({
         p1: { battlefield: ["Ba Sing Se", ...lands("Forest", 4), ...lands("Swamp", 2)], hand: ["Heartless Act"] },
@@ -127,7 +127,7 @@ describe("Avatar: The Last Airbender", () => {
       return { s, land };
     };
 
-    it("la maîtrise de la terre 2 fait du terrain une créature 0/0 avec deux marqueurs +1/+1", () => {
+    it("earthbending 2 turns the land into a 0/0 creature with two +1/+1 counters", () => {
       const { s, land } = setup();
       expect(s.objects[land]?.counters["+1/+1"]).toBe(2);
       const c = chars(s, land);
@@ -135,7 +135,7 @@ describe("Avatar: The Last Airbender", () => {
       expect([c.power, c.toughness]).toEqual([2, 2]);
     });
 
-    it("Heartless Act ne détruit qu'une créature sans marqueur", () => {
+    it("Heartless Act destroys only a creature with no counters", () => {
       const { s, land } = setup();
       const bear = idOf(s, "p2", "battlefield", "Bear Cub");
       expect(() => cast(s, "p1", "Heartless Act", { mode: 0, targets: { t: [land] } })).toThrow();
@@ -143,7 +143,7 @@ describe("Avatar: The Last Airbender", () => {
       expect(idsOf(t, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
     });
 
-    it("Heartless Act retire les marqueurs : le terrain 0/0 meurt et revient engagé, simple terrain", () => {
+    it("Heartless Act removes the counters: the 0/0 land dies and returns tapped, as a plain land", () => {
       const { s: s0, land } = setup();
       const forests = idsOf(s0, "p1", "battlefield", "Forest");
       const s = settle(cast(s0, "p1", "Heartless Act", { mode: 1, targets: { u: [land] } }));
@@ -156,8 +156,8 @@ describe("Avatar: The Last Airbender", () => {
     });
   });
 
-  describe("Leçons", () => {
-    it("Combustion Technique : 2 blessures plus une par Leçon du cimetière ; la créature qui meurt est exilée", () => {
+  describe("Lessons", () => {
+    it("Combustion Technique: 2 damage plus one per Lesson in the graveyard; the creature that dies is exiled", () => {
       const run = (graveyard: string[]) => {
         let s = scenario({
           p1: { battlefield: lands("Mountain", 2), hand: ["Combustion Technique"], graveyard },
@@ -175,7 +175,7 @@ describe("Avatar: The Last Airbender", () => {
       expect(exiled(two.s, "Serra Angel")).toHaveLength(1);
     });
 
-    it("Firebending Lesson : 2 blessures, ou 5 si elle est kickée", () => {
+    it("Firebending Lesson: 2 damage, or 5 if kicked", () => {
       const run = (kicked: boolean) => {
         let s = scenario({
           p1: { battlefield: lands("Mountain", 5), hand: ["Firebending Lesson"] },
@@ -194,7 +194,7 @@ describe("Avatar: The Last Airbender", () => {
       ).toHaveLength(5);
     });
 
-    it("Accumulate Wisdom : une carte sur trois, ou les trois avec trois Leçons au cimetière", () => {
+    it("Accumulate Wisdom: one card out of three, or all three with three Lessons in the graveyard", () => {
       const run = (graveyard: string[]) => {
         let s = scenario({
           p1: {
@@ -210,7 +210,7 @@ describe("Avatar: The Last Airbender", () => {
       const one = run(["Shared Roots", "Opt"]);
       expect(one.players.p1?.hand).toHaveLength(1);
       expect(one.players.p1?.library).toHaveLength(3);
-      // Les deux autres vont sous la bibliothèque : la Forêt reste au-dessus.
+      // The other two go to the bottom of the library: the Forest stays on top.
       expect(nameOf(one, one.players.p1?.library[0] ?? "")).toBe("Forest");
       const three = run(["Shared Roots", "Firebending Lesson", "Price of Freedom"]);
       expect(three.players.p1?.hand.map((id) => nameOf(three, id)).sort()).toEqual(["Bear Cub", "Opt", "Plains"]);
@@ -231,13 +231,13 @@ describe("Avatar: The Last Airbender", () => {
       return cast(s, "p1", "It'll Quench Ya!", { targets: { t: [bolt] } });
     };
 
-    it("contrecarre le sort si son contrôleur ne peut pas payer {2}", () => {
+    it("counters the spell if its controller can't pay {2}", () => {
       const s = settle(setup(1));
       expect(s.players.p1?.life).toBe(20);
       expect(idsOf(s, "p2", "graveyard", "Burst Lightning")).toHaveLength(1);
     });
 
-    it("le sort se résout si son contrôleur paie {2}", () => {
+    it("the spell resolves if its controller pays {2}", () => {
       let asked = false;
       const s = settle(setup(3), (req) => {
         if (req.intent !== "unlessPay") return undefined;
@@ -251,7 +251,7 @@ describe("Avatar: The Last Airbender", () => {
   });
 
   describe("Deadly Precision", () => {
-    it("sacrifier une créature en coût additionnel : détruit la créature ciblée", () => {
+    it("sacrificing a creature as an additional cost: destroys the targeted creature", () => {
       let s = scenario({
         p1: { battlefield: ["Swamp", "Bear Cub"], hand: ["Deadly Precision"] },
         p2: { battlefield: ["Serra Angel"] },
@@ -263,7 +263,7 @@ describe("Avatar: The Last Airbender", () => {
       expect(idsOf(s, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
     });
 
-    it("sans rien sacrifier, il faut payer {4} de plus", () => {
+    it("without sacrificing anything, {4} more must be paid", () => {
       const setup = (swamps: number) =>
         scenario({
           p1: { battlefield: lands("Swamp", swamps), hand: ["Deadly Precision"] },
@@ -280,7 +280,7 @@ describe("Avatar: The Last Airbender", () => {
     });
   });
 
-  it("Price of Freedom : détruit un terrain adverse, son contrôleur cherche un terrain de base engagé, vous piochez", () => {
+  it("Price of Freedom: destroys an opponent's land, its controller searches for a tapped basic land, you draw", () => {
     let s = scenario({
       p1: { battlefield: lands("Mountain", 2), hand: ["Price of Freedom"], library: ["Opt", "Forest"] },
       p2: { battlefield: ["Island"], library: ["Plains", "Bear Cub"] },
@@ -297,7 +297,7 @@ describe("Avatar: The Last Airbender", () => {
     expect(s.players.p1?.hand.map((id) => nameOf(s, id))).toEqual(["Opt"]);
   });
 
-  it("Callous Inspector : menace ; en mourant, 1 blessure à son contrôleur et un Indice", () => {
+  it("Callous Inspector: menace; when it dies, 1 damage to its controller and a Clue", () => {
     let s = scenario({ p1: { battlefield: ["Callous Inspector", "Mountain"], hand: ["Burst Lightning"] } });
     const inspector = idOf(s, "p1", "battlefield", "Callous Inspector");
     expect(chars(s, inspector).keywords).toContain("menace");
@@ -308,7 +308,7 @@ describe("Avatar: The Last Airbender", () => {
     expect(idsOf(s, "p1", "battlefield", "Clue")).toHaveLength(1);
   });
 
-  it("Momo : le premier sort de créature volante du tour coûte {1} de moins ; Momo gagne +1/+1 à son arrivée", () => {
+  it("Momo: the first flying creature spell each turn costs {1} less; Momo gets +1/+1 when it enters", () => {
     let s = scenario({
       p1: { battlefield: ["Momo, Friendly Flier", ...lands("Plains", 8)], hand: ["Serra Angel", "Serra Angel"] },
     });
@@ -316,27 +316,27 @@ describe("Avatar: The Last Airbender", () => {
     const [first, second] = idsOf(s, "p1", "hand", "Serra Angel") as [string, string];
     s = settle(act(s, "p1", { type: "cast", card: first }));
     expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
-    // Le premier Ange ({3}{W}{W}) n'a coûté que quatre Plaines.
+    // The first Angel ({3}{W}{W}) cost only four Plains.
     expect(s.battlefield.filter((id) => nameOf(s, id) === "Plains" && !s.objects[id]?.tapped)).toHaveLength(4);
     expect([chars(s, momo).power, chars(s, momo).toughness]).toEqual([2, 2]);
-    // Plus de réduction pour le second : quatre Plaines ne suffisent pas.
+    // No more reduction for the second: four Plains are not enough.
     expect(castable(s, "p1", second)).toBe(false);
     s = advanceUntil(s, (x) => x.turn.active === "p2");
     expect([chars(s, momo).power, chars(s, momo).toughness]).toEqual([1, 1]);
   });
 
-  it("Momo : un sort de créature sans le vol lancé d'abord ne consomme pas la réduction (premier non-Lémurien avec le vol)", () => {
+  it("Momo: a creature spell without flying cast first doesn't use up the reduction (first non-Lemur with flying)", () => {
     let s = scenario({
       p1: { battlefield: ["Momo, Friendly Flier", ...lands("Plains", 6)], hand: ["Savannah Lions", "Serra Angel"] },
     });
     s = settle(cast(s, "p1", "Savannah Lions"));
-    // Cinq Plaines restantes : l'Ange ({3}{W}{W}) coûte {1} de moins et en laisse une dégagée.
+    // Five Plains left: the Angel ({3}{W}{W}) costs {1} less and leaves one untapped.
     s = settle(cast(s, "p1", "Serra Angel"));
     expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
     expect(s.battlefield.filter((id) => nameOf(s, id) === "Plains" && !s.objects[id]?.tapped)).toHaveLength(1);
   });
 
-  it("Obsessive Pursuit : en arrivant, perdez 1 PV et créez un Indice ; X marqueurs sur un attaquant (permanents sacrifiés)", () => {
+  it("Obsessive Pursuit: when it enters, lose 1 life and create a Clue; X counters on an attacker (permanents sacrificed)", () => {
     let s = scenario({ p1: { battlefield: [...lands("Swamp", 4), "Bear Cub"], hand: ["Obsessive Pursuit"] } });
     s = settle(cast(s, "p1", "Obsessive Pursuit"));
     expect(s.players.p1?.life).toBe(19);
@@ -352,8 +352,8 @@ describe("Avatar: The Last Airbender", () => {
   });
 });
 
-describe("Avatar: The Last Airbender, socle : maîtrise de l'eau et du feu", () => {
-  /** « Waterbend {3} : piochez une carte » (enchantement de test). */
+describe("Avatar: The Last Airbender, foundation: waterbending and firebending", () => {
+  /** "Waterbend {3}: draw a card" (test enchantment). */
   const fountain = customCard({
     name: "Test Fountain",
     types: ["Enchantment"],
@@ -363,12 +363,12 @@ describe("Avatar: The Last Airbender, socle : maîtrise de l'eau et du feu", () 
         mana: "{3}",
         waterbend: true,
         effects: [dsl.fx.draw(1)],
-        label: "Maîtrise de l'eau {3} : piochez une carte",
+        label: "Waterbend {3}: draw a card",
       }),
     ],
   });
   const drawn = (s: S) => s.players.p1?.hand.length ?? 0;
-  /** Rituel ordinaire à {1}{U}. */
+  /** Plain {1}{U} sorcery. */
   const divination = customCard({
     name: "Test Divination",
     types: ["Sorcery"],
@@ -379,7 +379,7 @@ describe("Avatar: The Last Airbender, socle : maîtrise de l'eau et du feu", () 
     spell: dsl.spell([], [dsl.fx.draw(1)]),
   });
 
-  it("maîtrise de l'eau : chaque artefact ou créature dégagé paie {1}, après les terrains", () => {
+  it("waterbending: each untapped artifact or creature pays {1}, after the lands", () => {
     let s = scenario({ p1: { battlefield: [fountain, "Island", "Bear Cub", "Bear Cub"], library: lands("Island", 3) } });
     const source = idOf(s, "p1", "battlefield", "Test Fountain");
     const hand = drawn(s);
@@ -389,7 +389,7 @@ describe("Avatar: The Last Airbender, socle : maîtrise de l'eau et du feu", () 
     expect(s.objects[idOf(s, "p1", "battlefield", "Island")]?.tapped).toBe(true);
   });
 
-  it("maîtrise de l'eau : les créatures engagées ne paient rien ; un sort ordinaire ne peut pas s'en servir", () => {
+  it("waterbending: tapped creatures pay nothing; an ordinary spell can't use them", () => {
     const s = scenario({
       p1: { battlefield: [fountain, "Island", "Bear Cub", { name: "Bear Cub", tapped: true }], hand: [divination] },
     });
@@ -398,19 +398,19 @@ describe("Avatar: The Last Airbender, socle : maîtrise de l'eau et du feu", () 
     expect(castable(s, "p1", idOf(s, "p1", "hand", "Test Divination"))).toBe(false);
   });
 
-  it("maîtrise de l'eau {X} : X peut monter avec les artefacts et créatures dégagés", () => {
+  it("waterbending {X}: X can go up with untapped artifacts and creatures", () => {
     const katara = customCard({
       name: "Test Tide",
       types: ["Enchantment"],
       typeLine: "Enchantment",
-      abilities: [dsl.activated({ mana: "{X}", waterbend: true, effects: [dsl.fx.draw(1)], label: "Maîtrise de l'eau {X}" })],
+      abilities: [dsl.activated({ mana: "{X}", waterbend: true, effects: [dsl.fx.draw(1)], label: "Waterbending {X}" })],
     });
     const s = scenario({ p1: { battlefield: [katara, "Island", "Bear Cub", "Bear Cub"] } });
     const a = legalActions(s, "p1").find((x) => x.type === "activate" && x.source === idOf(s, "p1", "battlefield", "Test Tide"));
     expect(a?.type === "activate" ? a.xMax : null).toBe(3);
   });
 
-  it("maîtrise du feu N lue parmi d'autres mots-clés (« Trample, firebending 4, haste »)", () => {
+  it('firebending N read among other keywords ("Trample, firebending 4, haste")', () => {
     const ozai = card("Ozai, the Phoenix King");
     expect(ozai.abilities.some((ab) => ab.kind === "triggered" && plainText(ab.label ?? "") === "Firebending 4")).toBe(true);
     expect(
@@ -418,7 +418,7 @@ describe("Avatar: The Last Airbender, socle : maîtrise de l'eau et du feu", () 
     ).toBe(true);
   });
 
-  it("maîtrise du feu : le mana reste pendant le combat, puis se vide à la fin du combat", () => {
+  it("firebending: the mana stays during combat, then empties at end of combat", () => {
     const firebender = customCard({ name: "Test Firebender", power: 2, toughness: 2, abilities: [dsl.firebending(2)] });
     let s = scenario({ p1: { battlefield: [firebender] } });
     const id = idOf(s, "p1", "battlefield", "Test Firebender");
@@ -436,7 +436,7 @@ describe("lot A, blanc", () => {
   const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
   const handNames = (s: S, p = "p1") => (s.players[p]?.hand ?? []).map((id) => nameOf(s, id));
 
-  /** Choisit le mode `n` d'une capacité déclenchée modale, puis les objets voulus. */
+  /** Chooses mode `n` of a modal triggered ability, then the wanted objects. */
   const modeThen =
     (n: number, want: string[] = []): Answer =>
     (req, p) =>
@@ -447,7 +447,7 @@ describe("lot A, blanc", () => {
   };
   const canActivate = (s: S, player: string, source: string) =>
     legalActions(s, player).some((a) => a.type === "activate" && a.source === source);
-  /** Déclare les attaquants de p1 (vers p2) et résout les déclenchements d'attaque. */
+  /** Declares p1's attackers (toward p2) and resolves the attack triggers. */
   const attackWith = (s: S, ids: string[], answer?: Answer): S => {
     let cur = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers" && x.pending.player === "p1");
     cur = act(cur, "p1", { type: "declareAttackers", attackers: ids.map((id) => ({ id, defender: "p2" })) });
@@ -455,7 +455,7 @@ describe("lot A, blanc", () => {
   };
 
   describe("Avatar: The Last Airbender, lot A — blanc", () => {
-    it("Aang, the Last Airbender : maîtrise de l'air en arrivant ; une Leçon lancée lui donne le lien de vie", () => {
+    it("Aang, the Last Airbender: airbending when it enters; a Lesson cast gives it lifelink", () => {
       let s = scenario({
         p1: { battlefield: lands("Plains", 5), hand: ["Aang, the Last Airbender", "Yip Yip!"] },
         p2: { battlefield: ["Serra Angel", ...lands("Plains", 2)] },
@@ -470,13 +470,13 @@ describe("lot A, blanc", () => {
       expect(chars(s, aang).keywords).not.toContain("lifelink");
       s = settle(cast(s, "p1", "Yip Yip!", { targets: { t: [aang] } }));
       expect(chars(s, aang).keywords).toContain("lifelink");
-      // Son propriétaire peut relancer l'Ange pour {2}.
+      // Its owner can recast the Angel for {2}.
       s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
       expect(chars(s, aang).keywords).not.toContain("lifelink");
       expect(castable(s, "p2", card)).toBe(true);
     });
 
-    it("Aang's Iceberg : exile un permanent jusqu'à son départ ; maîtrise de l'eau {3} le sacrifie, regard 2", () => {
+    it("Aang's Iceberg: exiles a permanent until it leaves; waterbending {3} sacrifices it, scry 2", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Plains", 3), "Bear Cub", "Bear Cub", "Bear Cub"], hand: ["Aang's Iceberg"] },
         p2: { battlefield: ["Serra Angel"] },
@@ -493,12 +493,12 @@ describe("lot A, blanc", () => {
       expect(scried).toBe(true);
       expect(idsOf(s, "p1", "graveyard", "Aang's Iceberg")).toHaveLength(1);
       expect(idsOf(s, "p2", "battlefield", "Serra Angel")).toHaveLength(1);
-      // Les terrains étaient engagés : ce sont les trois créatures qui ont payé la maîtrise de l'eau.
+      // The lands were tapped: the three creatures paid for the waterbending.
       expect(idsOf(s, "p1", "battlefield", "Bear Cub").every((id) => s.objects[id]?.tapped)).toBe(true);
     });
 
     describe("Airbender's Reversal", () => {
-      it("détruit une créature attaquante, mais pas une créature qui n'attaque pas", () => {
+      it("destroys an attacking creature, but not a creature that isn't attacking", () => {
         let s = scenario({
           active: "p2",
           p1: { battlefield: lands("Plains", 2), hand: ["Airbender's Reversal"] },
@@ -513,7 +513,7 @@ describe("lot A, blanc", () => {
         expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
       });
 
-      it("maîtrise de l'air d'une de vos créatures : exilée, relançable pour {2}", () => {
+      it("airbending of one of your creatures: exiled, recastable for {2}", () => {
         let s = scenario({ p1: { battlefield: [...lands("Plains", 4), "Serra Angel"], hand: ["Airbender's Reversal"] } });
         const angel = idOf(s, "p1", "battlefield", "Serra Angel");
         s = settle(cast(s, "p1", "Airbender's Reversal", { mode: 1, targets: { u: [angel] } }));
@@ -523,7 +523,7 @@ describe("lot A, blanc", () => {
       });
     });
 
-    it("Airbending Lesson : maîtrise de l'air d'un permanent non-terrain, puis piochez", () => {
+    it("Airbending Lesson: airbending of a nonland permanent, then draw", () => {
       let s = scenario({
         p1: { battlefield: lands("Plains", 3), hand: ["Airbending Lesson"], library: ["Opt"] },
         p2: { battlefield: ["Aang's Iceberg", "Island"] },
@@ -535,7 +535,7 @@ describe("lot A, blanc", () => {
       expect(handNames(s)).toEqual(["Opt"]);
     });
 
-    it("Appa, Loyal Sky Bison : en arrivant, maîtrise de l'air d'un autre de vos permanents non-terrains", () => {
+    it("Appa, Loyal Sky Bison: when it enters, airbending of another of your nonland permanents", () => {
       let s = scenario({ p1: { battlefield: [...lands("Plains", 6), "Bear Cub"], hand: ["Appa, Loyal Sky Bison"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = settle(cast(s, "p1", "Appa, Loyal Sky Bison"), modeThen(1, [bear]));
@@ -543,7 +543,7 @@ describe("lot A, blanc", () => {
       expect(idsOf(s, "p1", "battlefield", "Appa, Loyal Sky Bison")).toHaveLength(1);
     });
 
-    it("Appa, Loyal Sky Bison : en attaquant, une de vos créatures gagne le vol jusqu'à la fin du tour", () => {
+    it("Appa, Loyal Sky Bison: when attacking, one of your creatures gains flying until end of turn", () => {
       let s = scenario({ p1: { battlefield: ["Appa, Loyal Sky Bison", "Bear Cub"] } });
       const appa = idOf(s, "p1", "battlefield", "Appa, Loyal Sky Bison");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -551,23 +551,23 @@ describe("lot A, blanc", () => {
       expect(chars(s, bear).keywords).toContain("flying");
     });
 
-    it("Avatar Enthusiasts et Kyoshi Warriors : un marqueur +1/+1 pour chaque autre Allié qui arrive", () => {
+    it("Avatar Enthusiasts and Kyoshi Warriors: a +1/+1 counter for each other Ally that enters", () => {
       let s = scenario({ p1: { battlefield: [...lands("Plains", 4), "Avatar Enthusiasts"], hand: ["Kyoshi Warriors"] } });
       const fan = idOf(s, "p1", "battlefield", "Avatar Enthusiasts");
       s = settle(cast(s, "p1", "Kyoshi Warriors"));
-      // Les Guerrières (Alliées) et le jeton Allié créé par elles.
+      // The Warriors (Allies) and the Ally token they create.
       expect(idsOf(s, "p1", "battlefield", "Ally")).toHaveLength(1);
       expect(s.objects[fan]?.counters["+1/+1"]).toBe(2);
     });
 
-    it("Compassionate Healer : quand elle devient engagée, gagnez 1 PV et regard 1", () => {
+    it("Compassionate Healer: when it becomes tapped, gain 1 life and scry 1", () => {
       let s = scenario({ p1: { battlefield: ["Compassionate Healer"] } });
       const healer = idOf(s, "p1", "battlefield", "Compassionate Healer");
       s = attackWith(s, [healer]);
       expect(s.players.p1?.life).toBe(21);
     });
 
-    it("Curious Farm Animals : {2}, sacrifice : détruit un enchantement ; en mourant, gagnez 3 PV", () => {
+    it("Curious Farm Animals: {2}, sacrifice: destroys an enchantment; when it dies, gain 3 life", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Plains", 2), "Curious Farm Animals"] },
         p2: { battlefield: ["Aang's Iceberg"] },
@@ -579,7 +579,7 @@ describe("lot A, blanc", () => {
       expect(s.players.p1?.life).toBe(23);
     });
 
-    it("Earth Kingdom Jailer : exile un permanent adverse de valeur de mana 3 ou plus jusqu'à son départ", () => {
+    it("Earth Kingdom Jailer: exiles an opponent's permanent with mana value 3 or greater until it leaves", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Plains", 3), ...lands("Mountain", 2)], hand: ["Earth Kingdom Jailer", "Lightning Strike"] },
         p2: { battlefield: ["Serra Angel", "Bear Cub"] },
@@ -594,14 +594,14 @@ describe("lot A, blanc", () => {
       });
       expect(options).not.toContain(bear);
       expect(exiled(s, "Serra Angel")).toHaveLength(1);
-      // Le Geôlier quitte le champ de bataille : l'Ange revient.
+      // The Jailer leaves the battlefield: the Angel returns.
       const jailer = idOf(s, "p1", "battlefield", "Earth Kingdom Jailer");
       s = settle(cast(s, "p1", "Lightning Strike", { targets: { t: [jailer] } }));
       expect(idsOf(s, "p1", "graveyard", "Earth Kingdom Jailer")).toHaveLength(1);
       expect(idsOf(s, "p2", "battlefield", "Serra Angel")).toHaveLength(1);
     });
 
-    it("Earth Kingdom Protectors : sacrifice : un autre Allié que vous contrôlez gagne l'indestructible", () => {
+    it("Earth Kingdom Protectors: sacrifice: another Ally you control gains indestructible", () => {
       let s = scenario({ p1: { battlefield: ["Earth Kingdom Protectors", "Kyoshi Warriors", "Bear Cub"] } });
       const protectors = idOf(s, "p1", "battlefield", "Earth Kingdom Protectors");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -613,7 +613,7 @@ describe("lot A, blanc", () => {
       expect(chars(s, warriors).keywords).toContain("indestructible");
     });
 
-    it("Enter the Avatar State : Avatar, vol, initiative, lien de vie et défense talismanique jusqu'à la fin du tour", () => {
+    it("Enter the Avatar State: Avatar, flying, first strike, lifelink and hexproof until end of turn", () => {
       let s = scenario({ p1: { battlefield: ["Plains", "Bear Cub"], hand: ["Enter the Avatar State"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = settle(cast(s, "p1", "Enter the Avatar State", { targets: { t: [bear] } }));
@@ -624,7 +624,7 @@ describe("lot A, blanc", () => {
       expect(chars(s, bear).subtypes).not.toContain("Avatar");
     });
 
-    it("Fancy Footwork : dégage une ou deux créatures, +2/+2 chacune", () => {
+    it("Fancy Footwork: untaps one or two creatures, +2/+2 each", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Plains", 3), { name: "Bear Cub", tapped: true }, { name: "Bear Cub", tapped: true }],
@@ -639,7 +639,7 @@ describe("lot A, blanc", () => {
       }
     });
 
-    it("Gather the White Lotus : un Allié 1/1 blanc par Plaine que vous contrôlez", () => {
+    it("Gather the White Lotus: a white 1/1 Ally for each Plains you control", () => {
       let s = scenario({ p1: { battlefield: [...lands("Plains", 3), ...lands("Island", 2)], hand: ["Gather the White Lotus"] } });
       s = settle(cast(s, "p1", "Gather the White Lotus"));
       const allies = idsOf(s, "p1", "battlefield", "Ally");
@@ -647,7 +647,7 @@ describe("lot A, blanc", () => {
       expect(chars(s, allies[0] as string).colors).toEqual(["W"]);
     });
 
-    it("Glider Staff : maîtrise de l'air d'une créature en arrivant ; la créature équipée a +1/+1 et le vol", () => {
+    it("Glider Staff: airbending of a creature when it enters; the equipped creature gets +1/+1 and flying", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Plains", 5), "Bear Cub"], hand: ["Glider Staff"] },
         p2: { battlefield: ["Serra Angel"] },
@@ -661,7 +661,7 @@ describe("lot A, blanc", () => {
       expect(chars(s, bear).keywords).toContain("flying");
     });
 
-    it("Hakoda : lancez des sorts d'Allié du dessus de votre bibliothèque ; sacrifice : +0/+5 et indestructible", () => {
+    it("Hakoda: cast Ally spells from the top of your library; sacrifice: +0/+5 and indestructible", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Plains", 4), "Hakoda, Selfless Commander", "Bear Cub"],
@@ -673,7 +673,7 @@ describe("lot A, blanc", () => {
       expect(castable(s, "p1", top)).toBe(true);
       s = settle(act(s, "p1", { type: "cast", card: top }));
       expect(idsOf(s, "p1", "battlefield", "Kyoshi Warriors")).toHaveLength(1);
-      // L'Ange n'est pas un Allié.
+      // The Angel is not an Ally.
       expect(castable(s, "p1", s.players.p1?.library[0] as string)).toBe(false);
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Hakoda, Selfless Commander")));
@@ -682,14 +682,14 @@ describe("lot A, blanc", () => {
       expect(chars(s, bear).keywords).toContain("indestructible");
     });
 
-    it("Jeong Jeong's Deserters : un marqueur +1/+1 sur une créature ciblée", () => {
+    it("Jeong Jeong's Deserters: a +1/+1 counter on a targeted creature", () => {
       let s = scenario({ p1: { battlefield: [...lands("Plains", 2), "Bear Cub"], hand: ["Jeong Jeong's Deserters"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = settle(cast(s, "p1", "Jeong Jeong's Deserters"), picking([bear]));
       expect(s.objects[bear]?.counters["+1/+1"]).toBe(1);
     });
 
-    it("The Legend of Yangchen : I exile un permanent adverse de VM 3+, II pioche trois cartes chacun, III se transforme", () => {
+    it("The Legend of Yangchen: I exiles an opponent's permanent with MV 3+, II each draws three cards, III transforms", () => {
       let s = scenario({
         p1: {
           battlefield: lands("Plains", 5),
@@ -702,14 +702,14 @@ describe("lot A, blanc", () => {
       s = settle(cast(s, "p1", "The Legend of Yangchen // Avatar Yangchen"), picking([angel]));
       expect(exiled(s, "Serra Angel")).toHaveLength(1);
       expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
-      // Chapitre II, à votre tour suivant.
+      // Chapter II, on your next turn.
       s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "draw" && x.pending?.kind === "priority");
       const before = { p1: s.players.p1?.hand.length ?? 0, p2: s.players.p2?.hand.length ?? 0 };
       s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.stack.length > 0);
       s = settle(s, (req) => (req.type === "yesNo" ? [1] : undefined));
       expect(s.players.p1?.hand.length).toBe(before.p1 + 3);
       expect(s.players.p2?.hand.length).toBe(before.p2 + 3);
-      // Chapitre III : la Saga revient transformée en Avatar Yangchen.
+      // Chapter III: the Saga returns transformed as Avatar Yangchen.
       s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number > s.turn.number);
       s = settle(s);
       const yangchen = s.battlefield.find((id) => chars(s, id).name === "Avatar Yangchen") as string;
@@ -720,7 +720,7 @@ describe("lot A, blanc", () => {
       expect(c.keywords).toContain("flying");
     });
 
-    it("The Legend of Yangchen (I) à plusieurs : en commençant par vous, chaque joueur choisit jusqu'à un permanent adverse de VM 3+ ; exilés ensemble (PLAN-H, H2)", () => {
+    it("The Legend of Yangchen (I) in multiplayer: starting with you, each player chooses up to one opponent's permanent with MV 3+; exiled together (PLAN-H, H2)", () => {
       let s = scenario({
         players: 3,
         p1: { battlefield: [...lands("Plains", 5), "Serra Angel"], hand: ["The Legend of Yangchen // Avatar Yangchen"] },
@@ -735,15 +735,15 @@ describe("lot A, blanc", () => {
       s = settle(cast(s, "p1", "The Legend of Yangchen // Avatar Yangchen"), (req, player) => {
         if (req.type !== "pick" || req.intent !== "pickCards") return undefined;
         asked.push({ player: player as PlayerId, options: req.options.map(String).sort() });
-        // La réponse suggérée est un permanent d'un autre joueur que celui qui choisit.
+        // The suggested answer is a permanent of a player other than the one choosing.
         expect(req.suggested).toHaveLength(1);
         expect(s.objects[String(req.suggested[0])]?.controller).not.toBe(player);
-        // p1 choisit l'Ange de p2, p2 le Dragon de p3, p3 ne choisit rien.
+        // p1 chooses p2's Angel, p2 chooses p3's Dragon, p3 chooses nothing.
         if (player === "p1") return [angel];
         if (player === "p2") return [dragon];
         return [];
       });
-      // Chacun choisit parmi les permanents des adversaires du contrôleur (pas parmi ceux de p1), p1 d'abord.
+      // Each chooses among the permanents of the controller's opponents (not among p1's), p1 first.
       expect(asked.map((a) => a.player)).toEqual(["p1", "p2", "p3"]);
       for (const a of asked) expect(a.options).toEqual([angel, dragon, wurm].sort());
       expect(s.objects[mine]?.zone).toBe("battlefield");
@@ -753,7 +753,7 @@ describe("lot A, blanc", () => {
       expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
     });
 
-    it("The Legend of Yangchen (I) en duel : l'adversaire ne se voit suggérer aucun de ses propres permanents", () => {
+    it("The Legend of Yangchen (I) in a duel: the opponent is not suggested any of their own permanents", () => {
       let s = scenario({
         p1: { battlefield: lands("Plains", 5), hand: ["The Legend of Yangchen // Avatar Yangchen"] },
         p2: { battlefield: ["Serra Angel", "Shivan Dragon"] },
@@ -771,12 +771,12 @@ describe("lot A, blanc", () => {
       expect(idsOf(s, "p2", "battlefield", "Shivan Dragon")).toHaveLength(1);
     });
 
-    it("Avatar Yangchen : votre deuxième sort du tour donne la maîtrise de l'air d'un autre permanent non-terrain", () => {
+    it("Avatar Yangchen: your second spell each turn gives airbending of another nonland permanent", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Plains", 2), "The Legend of Yangchen // Avatar Yangchen"], hand: ["Yip Yip!", "Yip Yip!"] },
         p2: { battlefield: ["Serra Angel"] },
       });
-      // La carte est mise directement sur son verso (comme après le chapitre III).
+      // The card is put directly on its back face (as after chapter III).
       const saga = idOf(s, "p1", "battlefield", "The Legend of Yangchen // Avatar Yangchen");
       const o = s.objects[saga] as NonNullable<S["objects"][string]>;
       o.faceDefId = s.defs[o.defId]?.faceDefs?.[1]?.id;
@@ -790,7 +790,7 @@ describe("lot A, blanc", () => {
       expect(exiled(s, "Serra Angel")).toHaveLength(1);
     });
 
-    it("Master Piandao : en attaquant, un Allié, un Équipement ou une Leçon parmi les quatre du dessus", () => {
+    it("Master Piandao: when attacking, an Ally, an Equipment or a Lesson among the top four", () => {
       let s = scenario({
         p1: { battlefield: ["Master Piandao"], library: ["Bear Cub", "Glider Staff", "Opt", "Plains", "Island"] },
       });
@@ -803,11 +803,11 @@ describe("lot A, blanc", () => {
       });
       expect(options).toEqual(["Glider Staff"]);
       expect(handNames(s)).toEqual(["Glider Staff"]);
-      // Les trois autres sont sous la bibliothèque : l'Île reste au-dessus.
+      // The other three are on the bottom of the library: the Island stays on top.
       expect(nameOf(s, s.players.p1?.library[0] ?? "")).toBe("Island");
     });
 
-    it("Momo, Playful Pet : en quittant le champ de bataille, une Nourriture (ou un autre mode)", () => {
+    it("Momo, Playful Pet: when it leaves the battlefield, a Food (or another mode)", () => {
       let s = scenario({
         p1: { battlefield: ["Momo, Playful Pet", "Mountain", "Mountain", "Bear Cub"], hand: ["Lightning Strike"] },
       });
@@ -823,7 +823,7 @@ describe("lot A, blanc", () => {
       expect(idsOf(t, "p1", "battlefield", "Food")).toHaveLength(1);
     });
 
-    it("Path to Redemption : la créature enchantée ne peut ni attaquer ni bloquer ; {5}, sacrifice, pendant votre tour", () => {
+    it("Path to Redemption: the enchanted creature can't attack or block; {5}, sacrifice, during your turn", () => {
       let s = scenario({
         p1: { battlefield: lands("Plains", 7), hand: ["Path to Redemption"] },
         p2: { battlefield: ["Serra Angel"] },
@@ -832,7 +832,7 @@ describe("lot A, blanc", () => {
       s = settle(cast(s, "p1", "Path to Redemption", { targets: { enchant: [angel] } }));
       expect(chars(s, angel).keywords).toEqual(expect.arrayContaining(["cantAttack", "cantBlock"]));
       const aura = idOf(s, "p1", "battlefield", "Path to Redemption");
-      // Pas pendant le tour adverse.
+      // Not during the opponent's turn.
       let opp = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
       opp = advanceUntil(opp, (x) => x.pending?.kind === "priority" && x.pending.player === "p1");
       expect(canActivate(opp, "p1", aura)).toBe(false);
@@ -843,7 +843,7 @@ describe("lot A, blanc", () => {
       expect(idsOf(s, "p1", "battlefield", "Ally")).toHaveLength(1);
     });
 
-    it("Rabaroo Troop : atterrissage, le vol jusqu'à la fin du tour et 1 PV ; cycle de Plaine", () => {
+    it("Rabaroo Troop: landfall, flying until end of turn and 1 life; Plains cycling", () => {
       let s = scenario({ p1: { battlefield: ["Rabaroo Troop"], hand: ["Plains"] } });
       const troop = idOf(s, "p1", "battlefield", "Rabaroo Troop");
       expect(chars(s, troop).keywords).not.toContain("flying");
@@ -855,7 +855,7 @@ describe("lot A, blanc", () => {
       expect(handNames(t)).toEqual(["Plains"]);
     });
 
-    it("Razor Rings : 4 blessures à une créature attaquante, vous gagnez autant de PV que l'excédent", () => {
+    it("Razor Rings: 4 damage to an attacking creature, you gain life equal to the excess", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: lands("Plains", 2), hand: ["Razor Rings"] },
@@ -871,7 +871,7 @@ describe("lot A, blanc", () => {
       expect(s.players.p1?.life).toBe(22);
     });
 
-    it("Sandbenders' Storm : détruit une créature de force 4 ou plus, ou maîtrise de la terre 3", () => {
+    it("Sandbenders' Storm: destroys a creature with power 4 or greater, or earthbending 3", () => {
       const setup = () =>
         scenario({
           p1: { battlefield: lands("Plains", 5), hand: ["Sandbenders' Storm"] },
@@ -890,27 +890,27 @@ describe("lot A, blanc", () => {
       expect(pt(t, land)).toEqual([3, 3]);
     });
 
-    it("South Pole Voyager : 1 PV par Allié qui arrive ; à la deuxième résolution du tour seulement, piochez", () => {
+    it("South Pole Voyager: 1 life per Ally that enters; only on the second resolution each turn, draw", () => {
       let s = scenario({
         p1: { battlefield: lands("Plains", 6), hand: ["South Pole Voyager", "Kyoshi Warriors"], library: lands("Island", 5) },
       });
       s = settle(cast(s, "p1", "South Pole Voyager"));
       expect(s.players.p1?.life).toBe(21);
       expect(s.players.p1?.hand).toHaveLength(1);
-      // Les Guerrières puis leur jeton Allié : deuxième résolution (pioche), puis troisième (pas de pioche).
+      // The Warriors then their Ally token: second resolution (draw), then third (no draw).
       s = settle(cast(s, "p1", "Kyoshi Warriors"));
       expect(s.players.p1?.life).toBe(23);
       expect(s.players.p1?.hand).toHaveLength(1);
     });
 
-    it("Southern Air Temple : X marqueurs +1/+1 sur chacune de vos créatures (X : vos Sanctuaires)", () => {
+    it("Southern Air Temple: X +1/+1 counters on each of your creatures (X: your Sanctuaries)", () => {
       let s = scenario({ p1: { battlefield: [...lands("Plains", 4), "Bear Cub"], hand: ["Southern Air Temple"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = settle(cast(s, "p1", "Southern Air Temple"));
       expect(s.objects[bear]?.counters["+1/+1"]).toBe(1);
     });
 
-    it("Suki : vos autres créatures ont +1/+0 ; un permanent qui part pendant votre tour crée un Allié, une fois par tour", () => {
+    it("Suki: your other creatures get +1/+0; a permanent that leaves during your turn creates an Ally, once each turn", () => {
       let s = scenario({
         p1: {
           battlefield: [
@@ -929,13 +929,13 @@ describe("lot A, blanc", () => {
       s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Curious Farm Animals")));
       expect(idsOf(s, "p1", "battlefield", "Ally")).toHaveLength(1);
       expect(pt(s, idOf(s, "p1", "battlefield", "Ally"))).toEqual([2, 1]);
-      // Une seule fois par tour : le second sacrifice ne crée pas d'autre Allié.
+      // Only once each turn: the second sacrifice doesn't create another Ally.
       s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Curious Farm Animals")));
       expect(idsOf(s, "p1", "graveyard", "Curious Farm Animals")).toHaveLength(2);
       expect(idsOf(s, "p1", "battlefield", "Ally")).toHaveLength(1);
     });
 
-    it("Team Avatar : une créature qui attaque seule gagne +X/+X ; {2}{W}, défaussez-la : X blessures", () => {
+    it("Team Avatar: a creature that attacks alone gets +X/+X; {2}{W}, discard it: X damage", () => {
       let s = scenario({ p1: { battlefield: ["Team Avatar", "Bear Cub", "Bear Cub"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = attackWith(s, [bear]);
@@ -950,7 +950,7 @@ describe("lot A, blanc", () => {
       expect(t.objects[angel]?.damage).toBe(2);
     });
 
-    it("United Front : X Alliés 1/1, puis un marqueur +1/+1 sur chacune de vos créatures", () => {
+    it("United Front: X 1/1 Allies, then a +1/+1 counter on each of your creatures", () => {
       let s = scenario({ p1: { battlefield: [...lands("Plains", 4), "Bear Cub"], hand: ["United Front"] } });
       s = settle(cast(s, "p1", "United Front", { x: 2 }));
       const allies = idsOf(s, "p1", "battlefield", "Ally");
@@ -958,7 +958,7 @@ describe("lot A, blanc", () => {
       for (const id of [...allies, idOf(s, "p1", "battlefield", "Bear Cub")]) expect(s.objects[id]?.counters["+1/+1"]).toBe(1);
     });
 
-    it("Vengeful Villagers : en attaquant, engage une créature adverse ; en sacrifiant, un marqueur d'étourdissement", () => {
+    it("Vengeful Villagers: when attacking, taps an opponent's creature; when sacrificed, a stun counter", () => {
       let s = scenario({ p1: { battlefield: ["Vengeful Villagers", "Bear Cub"] }, p2: { battlefield: ["Serra Angel"] } });
       const villagers = idOf(s, "p1", "battlefield", "Vengeful Villagers");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -974,14 +974,14 @@ describe("lot A, blanc", () => {
       expect(s.objects[angel]?.counters.stun).toBe(1);
     });
 
-    it("Water Tribe Captain : {5} : vos créatures gagnent +1/+1 jusqu'à la fin du tour", () => {
+    it("Water Tribe Captain: {5}: your creatures get +1/+1 until end of turn", () => {
       let s = scenario({ p1: { battlefield: [...lands("Plains", 5), "Water Tribe Captain", "Bear Cub"] } });
       s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Water Tribe Captain")));
       expect(pt(s, idOf(s, "p1", "battlefield", "Water Tribe Captain"))).toEqual([4, 4]);
       expect(pt(s, idOf(s, "p1", "battlefield", "Bear Cub"))).toEqual([3, 3]);
     });
 
-    it("Water Tribe Rallier : maîtrise de l'eau {5}, une créature de force 3 ou moins parmi les quatre du dessus", () => {
+    it("Water Tribe Rallier: waterbending {5}, a creature with power 3 or less among the top four", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Plains", 2), "Water Tribe Rallier", "Bear Cub", "Bear Cub"],
@@ -998,7 +998,7 @@ describe("lot A, blanc", () => {
       expect(handNames(s)).toEqual(["Bear Cub"]);
     });
 
-    it("Yip Yip! : +2/+2 ; un Allié gagne aussi le vol", () => {
+    it("Yip Yip!: +2/+2; an Ally also gains flying", () => {
       let s = scenario({
         p1: { battlefield: ["Plains", "Plains", "Kyoshi Warriors", "Bear Cub"], hand: ["Yip Yip!", "Yip Yip!"] },
       });
@@ -1030,14 +1030,14 @@ describe("lot A, bleu", () => {
     const cur = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers" && x.pending.player === "p1");
     return act(cur, "p1", { type: "declareAttackers", attackers: ids.map((id) => ({ id, defender: "p2" })) });
   };
-  /** Rituel à {0} : « piochez deux cartes ». */
+  /** {0} sorcery: "draw two cards". */
   const drawTwo = customCard({
     name: "Test Double Draw",
     types: ["Sorcery"],
     typeLine: "Sorcery",
     spell: dsl.spell([], [dsl.fx.draw(2)]),
   });
-  /** Rituel à {1}{U} : « piochez une carte ». */
+  /** {1}{U} sorcery: "draw a card". */
   const divination = customCard({
     name: "Test Divination",
     types: ["Sorcery"],
@@ -1061,19 +1061,19 @@ describe("lot A, bleu", () => {
         return s;
       };
 
-      it("renvoie votre permanent dans votre main et vous fait piocher", () => {
+      it("returns your permanent to your hand and makes you draw", () => {
         const s = run("p1");
         expect(s.players.p1?.hand.map((id) => nameOf(s, id)).sort()).toEqual(["Bear Cub", "Forest"]);
       });
 
-      it("renvoie un permanent adverse sans pioche", () => {
+      it("returns an opponent's permanent with no draw", () => {
         const s = run("p2");
         expect(s.players.p2?.hand.map((id) => nameOf(s, id))).toEqual(["Bear Cub"]);
         expect(s.players.p1?.hand).toHaveLength(0);
       });
     });
 
-    it("Ember Island Production : copie non légendaire 4/4 Héros d'une de vos créatures, ou 2/2 Lâche d'une adverse", () => {
+    it("Ember Island Production: nonlegendary 4/4 Hero copy of one of your creatures, or 2/2 Coward of an opponent's", () => {
       const base = () =>
         scenario({
           p1: { battlefield: [...lands("Island", 5), "Gran-Gran"], hand: ["Ember Island Production"] },
@@ -1099,26 +1099,26 @@ describe("lot A, bleu", () => {
       expect(chars(t, copy).keywords).toContain("flying");
     });
 
-    it("First-Time Flyer : +1/+1 tant qu'une carte de Leçon est dans votre cimetière", () => {
+    it("First-Time Flyer: +1/+1 while a Lesson card is in your graveyard", () => {
       const without = scenario({ p1: { battlefield: ["First-Time Flyer"], graveyard: ["Opt"] } });
       expect(pt(without, idOf(without, "p1", "battlefield", "First-Time Flyer"))).toEqual([1, 2]);
       const withLesson = scenario({ p1: { battlefield: ["First-Time Flyer"], graveyard: ["Octopus Form"] } });
       expect(pt(withLesson, idOf(withLesson, "p1", "battlefield", "First-Time Flyer"))).toEqual([2, 3]);
     });
 
-    it("Flexible Waterbender : maîtrise de l'eau {3}, F/E de base 5/2 jusqu'à la fin du tour", () => {
+    it("Flexible Waterbender: waterbending {3}, base P/T 5/2 until end of turn", () => {
       let s = scenario({ p1: { battlefield: ["Flexible Waterbender", "Island", "Bear Cub"] } });
       const w = idOf(s, "p1", "battlefield", "Flexible Waterbender");
       s = settle(activate(s, "p1", w));
       expect(pt(s, w)).toEqual([5, 2]);
-      // Payée par l'Île, l'Ours et la créature elle-même (chacun paie {1}) ; la vigilance reste.
+      // Paid by the Island, the Bear and the creature itself (each pays {1}); vigilance stays.
       expect(s.battlefield.every((id) => s.objects[id]?.tapped)).toBe(true);
       expect(chars(s, w).keywords).toContain("vigilance");
       s = advanceUntil(s, (x) => x.turn.active === "p2");
       expect(pt(s, w)).toEqual([2, 5]);
     });
 
-    it("Geyser Leaper : maîtrise de l'eau {4}, piochez une carte puis défaussez-en une", () => {
+    it("Geyser Leaper: waterbending {4}, draw a card then discard one", () => {
       let s = scenario({
         p1: { battlefield: ["Geyser Leaper", ...lands("Island", 4)], hand: ["Opt"], library: ["Bear Cub", "Forest"] },
       });
@@ -1128,7 +1128,7 @@ describe("lot A, bleu", () => {
       expect(idsOf(s, "p1", "graveyard", "Opt")).toHaveLength(1);
     });
 
-    it("Giant Koi : maîtrise de l'eau {3}, imblocable ce tour-ci ; cycle d'Île {2}", () => {
+    it("Giant Koi: waterbending {3}, unblockable this turn; Island cycling {2}", () => {
       let s = scenario({ p1: { battlefield: ["Giant Koi", ...lands("Island", 3)] } });
       const koi = idOf(s, "p1", "battlefield", "Giant Koi");
       expect(chars(s, koi).keywords).not.toContain("unblockable");
@@ -1145,7 +1145,7 @@ describe("lot A, bleu", () => {
     });
 
     describe("Gran-Gran", () => {
-      it("quand elle devient engagée, piochez puis défaussez", () => {
+      it("when it becomes tapped, draw then discard", () => {
         let s = scenario({ p1: { battlefield: ["Gran-Gran"], hand: ["Opt"], library: ["Bear Cub", "Forest"] } });
         const gran = idOf(s, "p1", "battlefield", "Gran-Gran");
         const opt = idOf(s, "p1", "hand", "Opt");
@@ -1154,7 +1154,7 @@ describe("lot A, bleu", () => {
         expect(idsOf(s, "p1", "graveyard", "Opt")).toHaveLength(1);
       });
 
-      it("sorts non-créatures à {1} de moins avec trois Leçons ou plus au cimetière", () => {
+      it("noncreature spells cost {1} less with three or more Lessons in the graveyard", () => {
         const run = (graveyard: string[]) => {
           const s = scenario({ p1: { battlefield: ["Gran-Gran", "Island"], hand: [divination, "Bear Cub"], graveyard } });
           return castable(s, "p1", idOf(s, "p1", "hand", "Test Divination"));
@@ -1164,7 +1164,7 @@ describe("lot A, bleu", () => {
       });
     });
 
-    it("Honest Work : engage, retire les marqueurs ; Citoyen 1/1 sans capacités, « {T} : ajoutez {C} », nommé Humble Merchant", () => {
+    it('Honest Work: taps, removes the counters; 1/1 Citizen with no abilities, "{T}: Add {C}", named Humble Merchant', () => {
       let s = scenario({
         p1: { battlefield: ["Island"], hand: ["Honest Work"] },
         p2: { battlefield: [{ name: "Serra Angel", counters: { "+1/+1": 2 } }] },
@@ -1182,7 +1182,7 @@ describe("lot A, bleu", () => {
       expect(c.abilities.some((a) => a.kind === "mana" && a.produce.includes("C"))).toBe(true);
     });
 
-    it("Invasion Submersible : renvoie un permanent ; exhaust, maîtrise de l'eau {3} : créature-artefact avec trois marqueurs", () => {
+    it("Invasion Submersible: returns a permanent; exhaust, waterbending {3}: artifact creature with three counters", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Island", 6)], hand: ["Invasion Submersible"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -1195,14 +1195,14 @@ describe("lot A, bleu", () => {
       s = settle(activate(s, "p1", sub));
       expect(s.objects[sub]?.counters["+1/+1"]).toBe(3);
       expect(chars(s, sub).types).toEqual(expect.arrayContaining(["Artifact", "Creature"]));
-      // L'effet dure : toujours une créature 3/3 au tour suivant ; exhaust ne s'active qu'une fois.
+      // The effect lasts: still a 3/3 creature next turn; exhaust can be activated only once.
       s = advanceUntil(s, (x) => x.turn.active === "p2");
       expect(pt(s, sub)).toEqual([3, 3]);
       expect(activations(s, "p1", sub)).toHaveLength(0);
     });
 
     describe("Katara, Bending Prodigy", () => {
-      it("au début de votre étape de fin, un marqueur +1/+1 seulement si elle est engagée", () => {
+      it("at the beginning of your end step, a +1/+1 counter only if it is tapped", () => {
         const run = (tapped: boolean) => {
           let s = scenario({ p1: { battlefield: [{ name: "Katara, Bending Prodigy", tapped }] } });
           const k = idOf(s, "p1", "battlefield", "Katara, Bending Prodigy");
@@ -1213,27 +1213,27 @@ describe("lot A, bleu", () => {
         expect(run(false)).toBe(0);
       });
 
-      it("maîtrise de l'eau {6} : piochez une carte", () => {
+      it("waterbending {6}: draw a card", () => {
         let s = scenario({ p1: { battlefield: ["Katara, Bending Prodigy", ...lands("Island", 3), "Bear Cub", "Bear Cub"] } });
         const k = idOf(s, "p1", "battlefield", "Katara, Bending Prodigy");
         s = settle(activate(s, "p1", k));
         expect(s.players.p1?.hand).toHaveLength(1);
-        // Les trois Îles, les deux Ours et Katara elle-même ont payé.
+        // The three Islands, the two Bears and Katara herself paid.
         expect(s.objects[k]?.tapped).toBe(true);
       });
     });
 
-    it("Knowledge Seeker : un marqueur +1/+1 à la deuxième carte piochée de chaque tour", () => {
+    it("Knowledge Seeker: a +1/+1 counter on the second card drawn each turn", () => {
       let s = scenario({ p1: { battlefield: ["Knowledge Seeker"], hand: [drawTwo, drawTwo] } });
       const seeker = idOf(s, "p1", "battlefield", "Knowledge Seeker");
       s = settle(cast(s, "p1", "Test Double Draw"));
       expect(s.objects[seeker]?.counters["+1/+1"]).toBe(1);
-      // Une seule fois par tour : les troisième et quatrième cartes ne comptent pas.
+      // Only once each turn: the third and fourth cards don't count.
       s = settle(cast(s, "p1", "Test Double Draw"));
       expect(pt(s, seeker)).toEqual([3, 2]);
     });
 
-    it("Knowledge Seeker : quand elle meurt, créez un Indice", () => {
+    it("Knowledge Seeker: when it dies, create a Clue", () => {
       let s = scenario({ p1: { battlefield: ["Knowledge Seeker", "Mountain"], hand: ["Burst Lightning"] } });
       const seeker = idOf(s, "p1", "battlefield", "Knowledge Seeker");
       s = settle(cast(s, "p1", "Burst Lightning", { targets: { t: [seeker] } }));
@@ -1244,7 +1244,7 @@ describe("lot A, bleu", () => {
     describe("The Legend of Kuruk // Avatar Kuruk", () => {
       const KURUK = "The Legend of Kuruk // Avatar Kuruk";
 
-      it("chapitre I : regard 2, puis piochez une carte", () => {
+      it("chapter I: scry 2, then draw a card", () => {
         let s = scenario({ p1: { battlefield: lands("Island", 4), hand: [KURUK], library: ["Bear Cub", "Opt", "Forest"] } });
         s = settle(cast(s, "p1", KURUK));
         const saga = idOf(s, "p1", "battlefield", KURUK);
@@ -1253,7 +1253,7 @@ describe("lot A, bleu", () => {
         expect(s.players.p1?.library).toHaveLength(2);
       });
 
-      it("chapitre III : Avatar Kuruk 4/3 ; un Esprit à chaque sort ; exhaust, maîtrise de l'eau {20} : un tour en plus", () => {
+      it("chapter III: Avatar Kuruk 4/3; a Spirit with each spell; exhaust, waterbending {20}: an extra turn", () => {
         let s = scenario({
           p1: {
             battlefield: [{ name: KURUK, counters: { lore: 2 } }, ...lands("Island", 19)],
@@ -1278,7 +1278,7 @@ describe("lot A, bleu", () => {
         const spirit = idOf(s, "p1", "battlefield", "Spirit");
         expect(pt(s, spirit)).toEqual([1, 1]);
         expect(chars(s, spirit).colors).toEqual([]);
-        // Les 18 Îles restantes, l'Esprit et Avatar Kuruk paient les 20.
+        // The remaining 18 Islands, the Spirit and Avatar Kuruk pay the 20.
         expect(s.extraTurns ?? []).toHaveLength(0);
         s = settle(activate(s, "p1", avatar));
         expect(s.extraTurns).toEqual(["p1"]);
@@ -1294,7 +1294,7 @@ describe("lot A, bleu", () => {
           p2: { battlefield: ["Bear Cub"], library: ["Forest", "Forest", "Forest"] },
         });
         const bear = idOf(s, "p2", "battlefield", "Bear Cub");
-        // Une créature de p2 contrôlée par p1 : c'est toujours son propriétaire qui choisit.
+        // A p2 creature controlled by p1: its owner still chooses.
         if (stolen) steal(s, bear, "p1");
         let asked = "";
         s = settle(cast(s, "p1", "Lost Days", { targets: { t: [bear] } }), (req, player) => {
@@ -1305,27 +1305,27 @@ describe("lot A, bleu", () => {
         return { s, asked };
       };
 
-      it("le propriétaire la met en deuxième position depuis le dessus ; vous créez un Indice", () => {
+      it("the owner puts it second from the top; you create a Clue", () => {
         const { s, asked } = run(false);
         expect(asked).toBe("p2");
         expect(s.players.p2?.library.map((id) => nameOf(s, id))).toEqual(["Forest", "Bear Cub", "Forest", "Forest"]);
         expect(idsOf(s, "p1", "battlefield", "Clue")).toHaveLength(1);
       });
 
-      it("ou au-dessous de sa bibliothèque", () => {
+      it("or on the bottom of its library", () => {
         const { s } = run(true);
         expect(s.players.p2?.library.map((id) => nameOf(s, id))).toEqual(["Forest", "Forest", "Forest", "Bear Cub"]);
         expect(idsOf(s, "p1", "battlefield", "Clue")).toHaveLength(1);
       });
 
-      it("le choix revient au propriétaire, même quand vous contrôlez la créature", () => {
+      it("the choice goes to the owner, even when you control the creature", () => {
         const { s, asked } = run(true, true);
         expect(asked).toBe("p2");
         expect(s.players.p2?.library.map((id) => nameOf(s, id))).toEqual(["Forest", "Forest", "Forest", "Bear Cub"]);
       });
     });
 
-    it("Master Pakku : quand il devient engagé, le joueur ciblé meule autant de cartes que vous avez de Leçons au cimetière", () => {
+    it("Master Pakku: when it becomes tapped, the targeted player mills as many cards as you have Lessons in your graveyard", () => {
       let s = scenario({
         p1: { battlefield: ["Master Pakku"], graveyard: [...LESSONS.slice(0, 2), "Opt"] },
         p2: { library: lands("Forest", 5) },
@@ -1336,14 +1336,14 @@ describe("lot A, bleu", () => {
       expect(s.players.p2?.library).toHaveLength(3);
     });
 
-    it("The Mechanist : un Indice par sort non-créature ; {T} : un jeton artefact devient une Construction 3/1 volante", () => {
+    it("The Mechanist: a Clue for each noncreature spell; {T}: an artifact token becomes a 3/1 flying Construct", () => {
       let s = scenario({
         p1: { battlefield: ["The Mechanist, Aerial Artisan", "Island", "Forest", "Forest"], hand: ["Opt", "Bear Cub"] },
       });
       s = settle(cast(s, "p1", "Opt"));
       expect(idsOf(s, "p1", "battlefield", "Clue")).toHaveLength(1);
       s = settle(cast(s, "p1", "Bear Cub"));
-      // Un sort de créature ne crée pas d'Indice.
+      // A creature spell doesn't create a Clue.
       const clue = idOf(s, "p1", "battlefield", "Clue");
       expect(idsOf(s, "p1", "battlefield", "Clue")).toHaveLength(1);
       s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "The Mechanist, Aerial Artisan"), { t: [clue] }));
@@ -1356,7 +1356,7 @@ describe("lot A, bleu", () => {
       expect(chars(s, clue).types).not.toContain("Creature");
     });
 
-    it("North Pole Patrol : {T} dégage un autre de vos permanents ; maîtrise de l'eau {3}, {T} : engage une créature adverse", () => {
+    it("North Pole Patrol: {T} untaps another of your permanents; waterbending {3}, {T}: taps an opponent's creature", () => {
       const s = scenario({
         p1: { battlefield: ["North Pole Patrol", { name: "Island", tapped: true }, ...lands("Island", 3)] },
         p2: { battlefield: ["Bear Cub"] },
@@ -1374,7 +1374,7 @@ describe("lot A, bleu", () => {
       expect(tappedCount(u, "Island")).toBe(4);
     });
 
-    it("Octopus Form : +1/+1 et la défense talismanique jusqu'à la fin du tour, et dégage la créature", () => {
+    it("Octopus Form: +1/+1 and hexproof until end of turn, and untaps the creature", () => {
       let s = scenario({ p1: { battlefield: ["Island", { name: "Bear Cub", tapped: true }], hand: ["Octopus Form"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = settle(cast(s, "p1", "Octopus Form", { targets: { t: [bear] } }));
@@ -1383,7 +1383,7 @@ describe("lot A, bleu", () => {
       expect(chars(s, bear).keywords).toContain("hexproof");
     });
 
-    it("Otter-Penguin : à la deuxième carte piochée, +1/+2 et imblocable ce tour-ci", () => {
+    it("Otter-Penguin: on the second card drawn, +1/+2 and unblockable this turn", () => {
       let s = scenario({ p1: { battlefield: ["Otter-Penguin"], hand: [drawTwo] } });
       const otter = idOf(s, "p1", "battlefield", "Otter-Penguin");
       s = settle(cast(s, "p1", "Test Double Draw"));
@@ -1393,7 +1393,7 @@ describe("lot A, bleu", () => {
       expect(pt(s, otter)).toEqual([2, 1]);
     });
 
-    it("Rowdy Snowballers : engage une créature adverse et y met un marqueur d'étourdissement", () => {
+    it("Rowdy Snowballers: taps an opponent's creature and puts a stun counter on it", () => {
       let s = scenario({
         p1: { battlefield: lands("Island", 3), hand: ["Rowdy Snowballers"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -1402,14 +1402,14 @@ describe("lot A, bleu", () => {
       s = settle(cast(s, "p1", "Rowdy Snowballers"), picking([bear]));
       expect(s.objects[bear]?.tapped).toBe(true);
       expect(s.objects[bear]?.counters.stun).toBe(1);
-      // L'étourdissement remplace son dégagement suivant.
+      // The stun counter replaces its next untap.
       s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
       expect(s.objects[bear]?.tapped).toBe(true);
       expect(s.objects[bear]?.counters.stun ?? 0).toBe(0);
     });
 
     describe("Serpent of the Pass", () => {
-      it("coûte {1} de moins par carte non-créature non-terrain de votre cimetière", () => {
+      it("costs {1} less for each noncreature nonland card in your graveyard", () => {
         const run = (islands: number) => {
           const s = scenario({
             p1: {
@@ -1424,7 +1424,7 @@ describe("lot A, bleu", () => {
         expect(run(4)).toBe(true);
       });
 
-      it("se lance comme s'il avait le flash avec trois Leçons ou plus au cimetière", () => {
+      it("can be cast as though it had flash with three or more Lessons in the graveyard", () => {
         const run = (graveyard: string[]) => {
           let s = scenario({ active: "p2", p1: { battlefield: lands("Island", 7), hand: ["Serpent of the Pass"], graveyard } });
           s = act(s, "p2", { type: "pass" });
@@ -1435,7 +1435,7 @@ describe("lot A, bleu", () => {
       });
     });
 
-    it("Sokka's Haiku : contrecarre un sort, piochez, meulez trois cartes, dégagez un terrain", () => {
+    it("Sokka's Haiku: counters a spell, draw, mill three cards, untap a land", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: lands("Island", 5), hand: ["Sokka's Haiku"], library: lands("Forest", 6) },
@@ -1453,7 +1453,7 @@ describe("lot A, bleu", () => {
       expect(tappedCount(s, "Island")).toBe(4);
     });
 
-    it("The Spirit Oasis : piochez une carte par Sanctuaire en arrivant", () => {
+    it("The Spirit Oasis: draw a card per Sanctuary when it enters", () => {
       let s = scenario({ p1: { battlefield: lands("Island", 3), hand: ["The Spirit Oasis"] } });
       s = settle(cast(s, "p1", "The Spirit Oasis"));
       expect(s.players.p1?.hand).toHaveLength(1);
@@ -1470,37 +1470,37 @@ describe("lot A, bleu", () => {
         s = attack(s, [teo]);
         s = settle(s, (req) => {
           if (req.type !== "pick") return undefined;
-          // Défausse : l'Opt, ou l'autre carte (la Forêt piochée).
+          // Discard: the Opt, or the other card (the drawn Forest).
           if (req.options.includes(opt)) return discard === "Opt" ? [opt] : req.options.filter((o) => o !== opt).slice(0, 1);
           return req.options.includes(bear) ? [bear] : undefined;
         });
         return { s, bear };
       };
 
-      it("une créature volante attaque : piochez, défaussez ; une carte non-terrain donne un marqueur +1/+1", () => {
+      it("a flying creature attacks: draw, discard; a nonland card gives a +1/+1 counter", () => {
         const { s, bear } = run("Opt");
         expect(idsOf(s, "p1", "graveyard", "Opt")).toHaveLength(1);
         expect(s.objects[bear]?.counters["+1/+1"]).toBe(1);
       });
 
-      it("défausser un terrain ne donne rien", () => {
+      it("discarding a land gives nothing", () => {
         const { s, bear } = run("Forest");
         expect(s.players.p1?.graveyard.map((id) => nameOf(s, id))).toEqual(["Forest"]);
         expect(s.objects[bear]?.counters["+1/+1"] ?? 0).toBe(0);
       });
     });
 
-    it("Tiger-Seal : engagé au début de votre entretien, dégagé à la deuxième carte piochée", () => {
+    it("Tiger-Seal: tapped at the beginning of your upkeep, untapped on the second card drawn", () => {
       let s = scenario({ active: "p2", p1: { battlefield: ["Tiger-Seal"], hand: [drawTwo] } });
       const seal = idOf(s, "p1", "battlefield", "Tiger-Seal");
       s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.stack.length === 0);
       expect(s.objects[seal]?.tapped).toBe(true);
-      // La carte de l'étape de pioche est la première ; le sort en pioche deux autres.
+      // The draw step's card is the first; the spell draws two others.
       s = settle(cast(s, "p1", "Test Double Draw"));
       expect(s.objects[seal]?.tapped).toBe(false);
     });
 
-    it("Ty Lee : engage une créature, qui ne se dégage plus tant que Ty Lee reste", () => {
+    it("Ty Lee: taps a creature, which doesn't untap as long as Ty Lee remains", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: lands("Island", 3), hand: ["Ty Lee, Chi Blocker", "Into the Roil"] },
@@ -1516,7 +1516,7 @@ describe("lot A, bleu", () => {
       expect(chars(s, idOf(s, "p1", "battlefield", "Ty Lee, Chi Blocker")).keywords).toContain("prowess");
     });
 
-    it("Ty Lee : « tant que vous contrôlez Ty Lee » : un adversaire en prend le contrôle, la créature se dégage de nouveau (lot K7)", () => {
+    it('Ty Lee: "as long as you control Ty Lee": an opponent gains control of it, the creature untaps again (lot K7)', () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: lands("Island", 3), hand: ["Ty Lee, Chi Blocker"] },
@@ -1534,7 +1534,7 @@ describe("lot A, bleu", () => {
     });
 
     describe("Waterbender Ascension", () => {
-      it("chaque blessure de combat à un joueur : un marqueur de quête ; à quatre ou plus, piochez", () => {
+      it("each combat damage to a player: a quest counter; at four or more, draw", () => {
         let s = scenario({
           p1: {
             battlefield: [{ name: "Waterbender Ascension", counters: { quest: 2 } }, "Bear Cub", "Bear Cub"],
@@ -1544,11 +1544,11 @@ describe("lot A, bleu", () => {
         s = attack(s, idsOf(s, "p1", "battlefield", "Bear Cub"));
         s = advanceUntil(s, (x) => x.turn.step === "main2");
         expect(s.objects[asc]?.counters.quest).toBe(4);
-        // Le troisième marqueur ne fait pas piocher ; le quatrième, si.
+        // The third counter doesn't make you draw; the fourth does.
         expect(s.players.p1?.hand).toHaveLength(1);
       });
 
-      it("maîtrise de l'eau {4} : une créature ciblée est imblocable ce tour-ci", () => {
+      it("waterbending {4}: a targeted creature is unblockable this turn", () => {
         let s = scenario({ p1: { battlefield: ["Waterbender Ascension", ...lands("Island", 4), "Bear Cub"] } });
         const bear = idOf(s, "p1", "battlefield", "Bear Cub");
         s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Waterbender Ascension"), { t: [bear] }));
@@ -1556,7 +1556,7 @@ describe("lot A, bleu", () => {
       });
     });
 
-    it("Waterbending Scroll : {6}, {T} : piochez ; {1} de moins par Île", () => {
+    it("Waterbending Scroll: {6}, {T}: draw; {1} less per Island", () => {
       const run = (lands0: string[]) => {
         const s = scenario({ p1: { battlefield: ["Waterbending Scroll", ...lands0] } });
         return activations(s, "p1", idOf(s, "p1", "battlefield", "Waterbending Scroll")).length > 0;
@@ -1570,7 +1570,7 @@ describe("lot A, bleu", () => {
       expect(tappedCount(s, "Island")).toBe(3);
     });
 
-    it("Watery Grasp : la créature enchantée ne se dégage pas ; maîtrise de l'eau {5} : elle est mélangée dans la bibliothèque", () => {
+    it("Watery Grasp: the enchanted creature doesn't untap; waterbending {5}: it is shuffled into the library", () => {
       let s = scenario({
         p1: { battlefield: lands("Island", 6), hand: ["Watery Grasp"] },
         p2: { battlefield: [{ name: "Bear Cub", tapped: true }], library: lands("Forest", 3) },
@@ -1586,7 +1586,7 @@ describe("lot A, bleu", () => {
       expect(idsOf(s, "p1", "graveyard", "Watery Grasp")).toHaveLength(1);
     });
 
-    it("Yue : maîtrise de l'eau {5}, {T} : lancez un sort non-créature de votre main sans payer son coût", () => {
+    it("Yue: waterbending {5}, {T}: cast a noncreature spell from your hand without paying its cost", () => {
       let s = scenario({
         p1: { battlefield: ["Yue, the Moon Spirit", ...lands("Island", 5)], hand: ["Think Twice", "Bear Cub", "Forest"] },
       });
@@ -1607,9 +1607,9 @@ describe("lot A, noir", () => {
   const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
   const handNames = (s: S, p = "p1") => (s.players[p]?.hand ?? []).map((id) => nameOf(s, id));
 
-  /** Répond « non » à toutes les questions « vous pouvez ». */
+  /** Answers "no" to all the "you may" questions. */
   const refusing: Answer = (req) => (req.type === "yesNo" ? [0] : undefined);
-  /** Active la capacité de la source dont le libellé contient `label`. */
+  /** Activates the ability of the source whose label contains `label`. */
   const activate = (s: S, player: string, source: string, label: string, extra: object = {}) => {
     const abilities = s.defs[s.objects[source]?.defId ?? ""]?.abilities ?? [];
     const ability = abilities.findIndex((a) => "label" in a && !!a.label?.includes(label));
@@ -1618,7 +1618,7 @@ describe("lot A, noir", () => {
   };
   const canActivate = (s: S, player: string, source: string) =>
     legalActions(s, player).some((a) => a.type === "activate" && a.source === source);
-  /** Rituel à {0} : « piochez une carte ». */
+  /** {0} sorcery: "draw a card". */
   const DRAW_ONE = customCard({
     name: "Test Draw One",
     types: ["Sorcery"],
@@ -1632,7 +1632,7 @@ describe("lot A, noir", () => {
   };
 
   describe("Avatar: The Last Airbender, lot A — noir", () => {
-    it("Azula Always Lies : l'un ou les deux modes (−1/−1 jusqu'à la fin du tour, un marqueur +1/+1)", () => {
+    it("Azula Always Lies: one or both modes (-1/-1 until end of turn, a +1/+1 counter)", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Swamp", 2), "Bear Cub"], hand: ["Azula Always Lies"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -1647,7 +1647,7 @@ describe("lot A, noir", () => {
       expect(pt(s, theirs)).toEqual([2, 2]);
     });
 
-    it("Azula, On the Hunt : en attaquant, {R}{R} (maîtrise du feu 2), vous perdez 1 PV et créez un Indice", () => {
+    it("Azula, On the Hunt: when attacking, {R}{R} (firebending 2), you lose 1 life and create a Clue", () => {
       let s = scenario({ p1: { battlefield: ["Azula, On the Hunt"] } });
       const azula = idOf(s, "p1", "battlefield", "Azula, On the Hunt");
       s = settle(attack(s, [azula]));
@@ -1656,7 +1656,7 @@ describe("lot A, noir", () => {
       expect(s.players.p1?.manaPool.R).toBe(2);
     });
 
-    it("Beetle-Headed Merchants : en attaquant, sacrifier une autre créature fait piocher et donne un marqueur +1/+1", () => {
+    it("Beetle-Headed Merchants: when attacking, sacrificing another creature draws a card and gives a +1/+1 counter", () => {
       let s = scenario({ p1: { battlefield: ["Beetle-Headed Merchants", "Bear Cub"], library: ["Opt", "Forest"] } });
       const beetle = idOf(s, "p1", "battlefield", "Beetle-Headed Merchants");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -1669,7 +1669,7 @@ describe("lot A, noir", () => {
       expect(s.players.p1?.hand.length).toBe(hand + 1);
       expect(s.objects[beetle]?.counters["+1/+1"]).toBe(1);
     });
-    it("Boiling Rock Rioter : engager un autre Allié exile une carte d'un cimetière ; en attaquant, vous pouvez lancer un Allié ainsi exilé", () => {
+    it("Boiling Rock Rioter: tapping another Ally exiles a card from a graveyard; when attacking, you may cast an Ally exiled this way", () => {
       let s = scenario({
         p1: {
           battlefield: ["Boiling Rock Rioter", "Merchant of Many Hats", ...lands("Swamp", 2)],
@@ -1691,7 +1691,7 @@ describe("lot A, noir", () => {
       expect(idsOf(s, "p1", "battlefield", "Merchant of Many Hats")).toHaveLength(2);
     });
 
-    it("Boiling Rock Rioter : seul Allié, il s'engage lui-même pour le coût, même avec le mal d'invocation (302.6)", () => {
+    it("Boiling Rock Rioter: as the only Ally, it taps itself for the cost, even with summoning sickness (302.6)", () => {
       let s = scenario({
         p1: { battlefield: [{ name: "Boiling Rock Rioter", sick: true }] },
         p2: { graveyard: ["Bear Cub"] },
@@ -1702,7 +1702,7 @@ describe("lot A, noir", () => {
       expect(exiled(s, "Bear Cub")).toHaveLength(1);
     });
 
-    it("Boiling Rock Rioter : une carte exilée qui n'est pas un Allié, ou qui ne vous appartient pas, ne peut pas être lancée", () => {
+    it("Boiling Rock Rioter: an exiled card that isn't an Ally, or that you don't own, can't be cast", () => {
       let s = scenario({
         p1: { battlefield: ["Boiling Rock Rioter", "Merchant of Many Hats", ...lands("Swamp", 2)] },
         p2: { graveyard: ["Merchant of Many Hats"] },
@@ -1716,7 +1716,7 @@ describe("lot A, noir", () => {
       expect(idsOf(s, "p1", "battlefield", "Merchant of Many Hats")).toHaveLength(1);
     });
 
-    it("Buzzard-Wasp Colony : en arrivant, sacrifier un artefact ou une créature fait piocher", () => {
+    it("Buzzard-Wasp Colony: when it enters, sacrificing an artifact or a creature draws a card", () => {
       let s = scenario({ p1: { battlefield: [...lands("Swamp", 4), "Bear Cub"], hand: ["Buzzard-Wasp Colony"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = settle(cast(s, "p1", "Buzzard-Wasp Colony"), picking([bear]));
@@ -1724,7 +1724,7 @@ describe("lot A, noir", () => {
       expect(s.players.p1?.hand).toHaveLength(1);
     });
 
-    it("Buzzard-Wasp Colony : une autre de vos créatures meurt avec des marqueurs : ils vont sur la colonie", () => {
+    it("Buzzard-Wasp Colony: another of your creatures dies with counters: they go onto the colony", () => {
       let s = scenario({
         p1: {
           battlefield: [
@@ -1741,12 +1741,12 @@ describe("lot A, noir", () => {
       s = settle(act(s, "p1", { type: "cast", card: m1, targets: { t: [idOf(s, "p1", "battlefield", "Bear Cub")] } }));
       expect(s.objects[colony]?.counters["+1/+1"]).toBe(2);
       expect(pt(s, colony)).toEqual([4, 4]);
-      // Sans marqueur : rien.
+      // Without a counter: nothing.
       s = settle(act(s, "p1", { type: "cast", card: m2, targets: { t: [idOf(s, "p1", "battlefield", "Savannah Lions")] } }));
       expect(s.objects[colony]?.counters["+1/+1"]).toBe(2);
     });
 
-    it("Canyon Crawler : en arrivant, une Nourriture ; cycle de Marais {2}", () => {
+    it("Canyon Crawler: when it enters, a Food; Swamp cycling {2}", () => {
       let s = scenario({ p1: { battlefield: lands("Swamp", 6), hand: ["Canyon Crawler"] } });
       s = settle(cast(s, "p1", "Canyon Crawler"));
       expect(idsOf(s, "p1", "battlefield", "Food")).toHaveLength(1);
@@ -1763,21 +1763,21 @@ describe("lot A, noir", () => {
       expect(idsOf(t, "p1", "graveyard", "Canyon Crawler")).toHaveLength(1);
     });
 
-    it("Cat-Gator : en arrivant, inflige autant de blessures que vous contrôlez de Marais (lien de vie)", () => {
+    it("Cat-Gator: when it enters, deals damage equal to the number of Swamps you control (lifelink)", () => {
       let s = scenario({ p1: { battlefield: [...lands("Swamp", 5), ...lands("Plains", 2)], hand: ["Cat-Gator"], life: 10 } });
       s = settle(cast(s, "p1", "Cat-Gator"), picking(["p2"]));
       expect(s.players.p2?.life).toBe(15);
       expect(s.players.p1?.life).toBe(15);
     });
 
-    it("Corrupt Court Official : en arrivant, l'adversaire ciblé défausse une carte", () => {
+    it("Corrupt Court Official: when it enters, the targeted opponent discards a card", () => {
       let s = scenario({ p1: { battlefield: lands("Swamp", 2), hand: ["Corrupt Court Official"] }, p2: { hand: ["Opt"] } });
       s = settle(cast(s, "p1", "Corrupt Court Official"));
       expect(s.players.p2?.hand).toHaveLength(0);
       expect(idsOf(s, "p2", "graveyard", "Opt")).toHaveLength(1);
     });
 
-    it("Dai Li Indoctrination : vous choisissez une carte de permanent non-terrain de la main révélée ; ou maîtrise de la terre 2", () => {
+    it("Dai Li Indoctrination: you choose a nonland permanent card from the revealed hand; or earthbending 2", () => {
       let s = scenario({
         p1: { battlefield: lands("Swamp", 2), hand: ["Dai Li Indoctrination"] },
         p2: { hand: ["Opt", "Forest", "Bear Cub"] },
@@ -1803,7 +1803,7 @@ describe("lot A, noir", () => {
       expect(pt(t, land)).toEqual([2, 2]);
     });
 
-    it("Epic Downfall : exile une créature de valeur de mana 3 ou plus, pas moins", () => {
+    it("Epic Downfall: exiles a creature with mana value 3 or greater, not less", () => {
       const s = scenario({
         p1: { battlefield: lands("Swamp", 2), hand: ["Epic Downfall"] },
         p2: { battlefield: ["Bear Cub", "Serra Angel"] },
@@ -1813,7 +1813,7 @@ describe("lot A, noir", () => {
       expect(exiled(t, "Serra Angel")).toHaveLength(1);
     });
 
-    it("Fatal Fissure : quand la créature choisie meurt ce tour-ci, vous maîtrisez la terre 4", () => {
+    it("Fatal Fissure: when the chosen creature dies this turn, you earthbend 4", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Swamp", 5), "Forest"], hand: ["Fatal Fissure", "Murder"] },
         p2: { battlefield: ["Serra Angel"] },
@@ -1829,7 +1829,7 @@ describe("lot A, noir", () => {
     });
 
     describe("The Fire Nation Drill", () => {
-      it("en arrivant, vous pouvez l'engager : détruisez une créature de force 4 ou moins", () => {
+      it("when it enters, you may tap it: destroy a creature with power 4 or less", () => {
         let s = scenario({
           p1: { battlefield: lands("Swamp", 4), hand: ["The Fire Nation Drill"] },
           p2: { battlefield: ["Serra Angel", "Bear Cub", "Gigantosaurus"] },
@@ -1848,7 +1848,7 @@ describe("lot A, noir", () => {
         expect(s.objects[idOf(s, "p1", "battlefield", "The Fire Nation Drill")]?.tapped).toBe(true);
       });
 
-      it("sans l'engager, rien n'est détruit et il reste dégagé", () => {
+      it("without tapping it, nothing is destroyed and it stays untapped", () => {
         let s = scenario({
           p1: { battlefield: lands("Swamp", 4), hand: ["The Fire Nation Drill"] },
           p2: { battlefield: ["Serra Angel"] },
@@ -1858,7 +1858,7 @@ describe("lot A, noir", () => {
         expect(s.objects[idOf(s, "p1", "battlefield", "The Fire Nation Drill")]?.tapped).toBe(false);
       });
 
-      it("{1} : les permanents adverses perdent l'indestructibilité jusqu'à la fin du tour", () => {
+      it("{1}: opponents' permanents lose indestructible until end of turn", () => {
         let s = scenario({
           p1: { battlefield: ["The Fire Nation Drill", ...lands("Swamp", 4)], hand: ["Murder"] },
           p2: { battlefield: ["Darksteel Colossus"] },
@@ -1872,7 +1872,7 @@ describe("lot A, noir", () => {
       });
     });
 
-    it("Fire Nation Engineer : raid — à votre étape de fin, un marqueur +1/+1 sur une autre créature, seulement si vous avez attaqué", () => {
+    it("Fire Nation Engineer: raid — at your end step, a +1/+1 counter on another creature, only if you attacked", () => {
       const base = scenario({ p1: { battlefield: ["Fire Nation Engineer", "Bear Cub"] } });
       const bear = idOf(base, "p1", "battlefield", "Bear Cub");
       const engineer = idOf(base, "p1", "battlefield", "Fire Nation Engineer");
@@ -1884,7 +1884,7 @@ describe("lot A, noir", () => {
       expect(s.objects[engineer]?.counters["+1/+1"] ?? 0).toBe(0);
     });
 
-    it("Fire Navy Trebuchet : quand vous attaquez, un Ballistic Boulder 2/1 volant engagé et attaquant, sacrifié à l'étape de fin", () => {
+    it("Fire Navy Trebuchet: when you attack, a tapped and attacking 2/1 flying Ballistic Boulder, sacrificed at the end step", () => {
       let s = scenario({ p1: { battlefield: ["Fire Navy Trebuchet", "Bear Cub"] } });
       s = settle(attack(s, [idOf(s, "p1", "battlefield", "Bear Cub")]));
       const boulder = idOf(s, "p1", "battlefield", "Ballistic Boulder");
@@ -1899,7 +1899,7 @@ describe("lot A, noir", () => {
       expect(idsOf(s, "p1", "battlefield", "Ballistic Boulder")).toHaveLength(0);
     });
 
-    it("Foggy Swamp Hunters : lien de vie et menace dès la deuxième carte piochée du tour", () => {
+    it("Foggy Swamp Hunters: lifelink and menace from the second card drawn each turn", () => {
       let s = scenario({ p1: { battlefield: ["Foggy Swamp Hunters"], hand: [DRAW_ONE, DRAW_ONE] } });
       const hunters = idOf(s, "p1", "battlefield", "Foggy Swamp Hunters");
       s = settle(cast(s, "p1", "Test Draw One"));
@@ -1907,10 +1907,10 @@ describe("lot A, noir", () => {
       s = settle(cast(s, "p1", "Test Draw One"));
       expect(chars(s, hunters).keywords).toEqual(expect.arrayContaining(["lifelink", "menace"]));
       s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
-      // Au tour suivant, une seule carte piochée (par l'adversaire, pas par vous) : plus rien.
+      // Next turn, only one card drawn (by the opponent, not by you): nothing more.
       expect(chars(s, hunters).keywords).not.toContain("lifelink");
     });
-    it("Hog-Monkey : au début de votre combat, une de vos créatures avec un marqueur +1/+1 gagne la menace ; exhaust {5}", () => {
+    it("Hog-Monkey: at the beginning of your combat, one of your creatures with a +1/+1 counter gains menace; exhaust {5}", () => {
       let s = scenario({
         p1: {
           battlefield: ["Hog-Monkey", { name: "Bear Cub", counters: { "+1/+1": 1 } }, "Savannah Lions", ...lands("Swamp", 5)],
@@ -1935,7 +1935,7 @@ describe("lot A, noir", () => {
       expect(chars(s, idOf(s, "p1", "battlefield", "Savannah Lions")).keywords).not.toContain("menace");
     });
 
-    it("Joo Dee, One of Many : surveillance 1, un jeton copie, puis vous sacrifiez un artefact ou une créature ; en rituel", () => {
+    it("Joo Dee, One of Many: surveil 1, a copy token, then you sacrifice an artifact or a creature; as a sorcery", () => {
       let s = scenario({ p1: { battlefield: ["Joo Dee, One of Many", "Swamp", "Bear Cub"], library: ["Opt", "Forest"] } });
       const joo = idOf(s, "p1", "battlefield", "Joo Dee, One of Many");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -1952,7 +1952,7 @@ describe("lot A, noir", () => {
       expect(canActivate(t, "p1", idOf(t, "p1", "battlefield", "Joo Dee, One of Many"))).toBe(false);
     });
 
-    it("June, Bounty Hunter : imblocable dès deux cartes piochées ; sacrifier une autre créature crée un Indice, pendant votre tour", () => {
+    it("June, Bounty Hunter: unblockable from two cards drawn; sacrificing another creature creates a Clue, during your turn", () => {
       let s = scenario({
         p1: { battlefield: ["June, Bounty Hunter", "Bear Cub", "Swamp"], hand: [DRAW_ONE, DRAW_ONE] },
       });
@@ -1968,7 +1968,7 @@ describe("lot A, noir", () => {
       expect(canActivate(t, "p1", idOf(t, "p1", "battlefield", "June, Bounty Hunter"))).toBe(false);
     });
 
-    it("Mai, Scornful Striker : le joueur qui lance un sort non-créature perd 2 PV (vous compris), pas pour une créature", () => {
+    it("Mai, Scornful Striker: a player who casts a noncreature spell loses 2 life (you included), not for a creature", () => {
       let s = scenario({
         p1: { battlefield: ["Mai, Scornful Striker", "Island", "Forest"], hand: ["Opt", "Llanowar Elves"] },
       });
@@ -1987,13 +1987,13 @@ describe("lot A, noir", () => {
       expect(o.players.p1?.life).toBe(20);
     });
 
-    it("Merchant of Many Hats : {2}{B} : revient de votre cimetière dans votre main", () => {
+    it("Merchant of Many Hats: {2}{B}: returns from your graveyard to your hand", () => {
       let s = scenario({ p1: { battlefield: lands("Swamp", 3), graveyard: ["Merchant of Many Hats"] } });
       s = settle(activate(s, "p1", idOf(s, "p1", "graveyard", "Merchant of Many Hats"), "graveyard"));
       expect(handNames(s)).toEqual(["Merchant of Many Hats"]);
     });
 
-    it("Northern Air Temple : en arrivant, drain de X (vos Sanctuaires) ; chaque autre Sanctuaire qui arrive draine 1", () => {
+    it("Northern Air Temple: when it enters, drain X (your Sanctuaries); each other Sanctuary that enters drains 1", () => {
       const shrine = customCard({
         name: "Test Shrine",
         types: ["Enchantment"],
@@ -2009,7 +2009,7 @@ describe("lot A, noir", () => {
       expect(s.players.p1?.life).toBe(23);
     });
 
-    it("Ozai's Cruelty : 2 blessures au joueur ciblé, qui défausse deux cartes", () => {
+    it("Ozai's Cruelty: 2 damage to the targeted player, who discards two cards", () => {
       let s = scenario({
         p1: { battlefield: lands("Swamp", 3), hand: ["Ozai's Cruelty"] },
         p2: { hand: ["Opt", "Forest", "Bear Cub"] },
@@ -2021,7 +2021,7 @@ describe("lot A, noir", () => {
     });
 
     describe("Phoenix Fleet Airship", () => {
-      it("à votre étape de fin, si vous avez sacrifié un permanent ce tour-ci, un jeton copie", () => {
+      it("at your end step, if you sacrificed a permanent this turn, a copy token", () => {
         const quiet = advanceUntil(scenario({ p1: { battlefield: ["Phoenix Fleet Airship"] } }), (x) => x.turn.active === "p2");
         expect(idsOf(quiet, "p1", "battlefield", "Phoenix Fleet Airship")).toHaveLength(1);
         let s = scenario({ p1: { battlefield: ["Phoenix Fleet Airship", "June, Bounty Hunter", "Bear Cub", "Swamp"] } });
@@ -2032,7 +2032,7 @@ describe("lot A, noir", () => {
         expect(ships.some((id) => s.objects[id]?.isToken)).toBe(true);
       });
 
-      it("avec huit Phoenix Fleet Airship ou plus, c'est une créature-artefact", () => {
+      it("with eight or more Phoenix Fleet Airships, it's an artifact creature", () => {
         const seven = scenario({ p1: { battlefield: lands("Phoenix Fleet Airship", 7) } });
         expect(chars(seven, idOf(seven, "p1", "battlefield", "Phoenix Fleet Airship")).types).not.toContain("Creature");
         const eight = scenario({ p1: { battlefield: lands("Phoenix Fleet Airship", 8) } });
@@ -2042,7 +2042,7 @@ describe("lot A, noir", () => {
       });
     });
 
-    it("Pirate Peddlers : chaque fois que vous sacrifiez un autre permanent, un marqueur +1/+1", () => {
+    it("Pirate Peddlers: whenever you sacrifice another permanent, a +1/+1 counter", () => {
       let s = scenario({ p1: { battlefield: ["Pirate Peddlers", "Joo Dee, One of Many", "Swamp"] } });
       const peddlers = idOf(s, "p1", "battlefield", "Pirate Peddlers");
       const joo = idOf(s, "p1", "battlefield", "Joo Dee, One of Many");
@@ -2050,7 +2050,7 @@ describe("lot A, noir", () => {
       expect(s.objects[peddlers]?.counters["+1/+1"]).toBe(1);
     });
 
-    it("Sold Out : exile la créature ; un Indice seulement si elle a subi des blessures ce tour-ci", () => {
+    it("Sold Out: exiles the creature; a Clue only if it was dealt damage this turn", () => {
       const run = (damage: number) => {
         let s = scenario({
           p1: { battlefield: lands("Swamp", 4), hand: ["Sold Out"] },
@@ -2067,7 +2067,7 @@ describe("lot A, noir", () => {
       expect(idsOf(fresh, "p1", "battlefield", "Clue")).toHaveLength(0);
     });
 
-    it("Swampsnare Trap : {1} de moins s'il cible une créature volante ; la créature enchantée prend −5/−3", () => {
+    it("Swampsnare Trap: costs {1} less if it targets a flying creature; the enchanted creature gets -5/-3", () => {
       const s = scenario({
         p1: { battlefield: lands("Swamp", 2), hand: ["Swampsnare Trap"] },
         p2: { battlefield: ["Serra Angel", "Gigantosaurus"] },
@@ -2086,7 +2086,7 @@ describe("lot A, noir", () => {
       expect(pt(v, giant)).toEqual([5, 7]);
     });
 
-    it("Tundra Tank : en arrivant, une de vos créatures gagne l'indestructibilité jusqu'à la fin du tour", () => {
+    it("Tundra Tank: when it enters, one of your creatures gains indestructible until end of turn", () => {
       let s = scenario({ p1: { battlefield: [...lands("Swamp", 3), "Bear Cub"], hand: ["Tundra Tank"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = settle(cast(s, "p1", "Tundra Tank"));
@@ -2095,21 +2095,21 @@ describe("lot A, noir", () => {
       expect(chars(s, bear).keywords).not.toContain("indestructible");
     });
 
-    it("Wolfbat : à votre deuxième carte piochée, payer {B} le renvoie du cimetière avec un marqueur de finalité", () => {
+    it("Wolfbat: on your second card drawn, paying {B} returns it from the graveyard with a finality counter", () => {
       let s = scenario({ p1: { battlefield: ["Swamp"], graveyard: ["Wolfbat"], hand: [DRAW_ONE, DRAW_ONE] } });
       s = settle(cast(s, "p1", "Test Draw One"));
       expect(idsOf(s, "p1", "graveyard", "Wolfbat")).toHaveLength(1);
       s = settle(cast(s, "p1", "Test Draw One"));
       const bat = idOf(s, "p1", "battlefield", "Wolfbat");
       expect(s.objects[bat]?.counters.finality).toBe(1);
-      // Marqueur de finalité : s'il devait mourir, il est exilé à la place.
+      // Finality counter: if it would die, it is exiled instead.
       let t = scenario({ p1: { battlefield: ["Swamp"], graveyard: ["Wolfbat"], hand: [DRAW_ONE, DRAW_ONE] } });
       t = settle(cast(t, "p1", "Test Draw One"));
       t = settle(cast(t, "p1", "Test Draw One"), refusing);
       expect(idsOf(t, "p1", "graveyard", "Wolfbat")).toHaveLength(1);
     });
 
-    it("Zuko's Conviction : renvoie une carte de créature en main, ou sur le champ de bataille engagée si elle est kickée", () => {
+    it("Zuko's Conviction: returns a creature card to hand, or to the battlefield tapped if kicked", () => {
       const run = (kicked: boolean) => {
         let s = scenario({ p1: { battlefield: lands("Swamp", 5), hand: ["Zuko's Conviction"], graveyard: ["Serra Angel"] } });
         const angel = idOf(s, "p1", "graveyard", "Serra Angel");
@@ -2137,17 +2137,17 @@ describe("lot A, rouge", () => {
   };
   const canActivate = (s: S, player: string, source: string) =>
     legalActions(s, player).some((a) => a.type === "activate" && a.source === source);
-  /** Avance jusqu'à la déclaration des attaquants de p1, puis attaque p2 avec ces créatures. */
+  /** Advances to p1's declare attackers step, then attacks p2 with these creatures. */
   const attack = (s: S, ids: string[]) => {
     const t = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers" && x.pending.player === "p1");
     return act(t, "p1", { type: "declareAttackers", attackers: ids.map((id) => ({ id, defender: "p2" })) });
   };
-  /** Sanctuaire de test (enchantement à {0}). */
+  /** Test Sanctuary (enchantment with cost {0}). */
   const shrine = (name: string) =>
     customCard({ name, types: ["Enchantment"], typeLine: "Enchantment — Shrine", subtypes: ["Shrine"] });
 
   describe("Avatar: The Last Airbender, lot A — rouge", () => {
-    it("Boar-q-pine : un marqueur +1/+1 à chaque sort non-créature que vous lancez", () => {
+    it("Boar-q-pine: a +1/+1 counter for each noncreature spell you cast", () => {
       let s = scenario({ p1: { battlefield: ["Boar-q-pine", "Island", ...lands("Forest", 2)], hand: ["Opt", "Bear Cub"] } });
       const boar = idOf(s, "p1", "battlefield", "Boar-q-pine");
       s = settle(cast(s, "p1", "Opt"));
@@ -2157,7 +2157,7 @@ describe("lot A, rouge", () => {
     });
 
     describe("Bumi Bash", () => {
-      it("inflige autant de blessures que vous contrôlez de terrains", () => {
+      it("deals damage equal to the number of lands you control", () => {
         let s = scenario({
           p1: { battlefield: lands("Mountain", 4), hand: ["Bumi Bash"] },
           p2: { battlefield: ["Shivan Dragon"] },
@@ -2167,7 +2167,7 @@ describe("lot A, rouge", () => {
         expect(s.objects[dragon]?.damage).toBe(4);
       });
 
-      it("détruit un terrain non de base, mais pas un terrain de base qui n'est pas une créature", () => {
+      it("destroys a nonbasic land, but not a basic land that isn't a creature", () => {
         const s = scenario({
           p1: { battlefield: lands("Mountain", 4), hand: ["Bumi Bash"] },
           p2: { battlefield: ["Ba Sing Se", "Forest"] },
@@ -2179,7 +2179,7 @@ describe("lot A, rouge", () => {
       });
     });
 
-    it("The Cave of Two Lovers : deux Alliés, puis une Montagne en main, puis maîtrise de la terre 3", () => {
+    it("The Cave of Two Lovers: two Allies, then a Mountain in hand, then earthbending 3", () => {
       let s = scenario({
         p1: {
           battlefield: lands("Mountain", 4),
@@ -2225,21 +2225,21 @@ describe("lot A, rouge", () => {
         return { s, angel, asked };
       };
 
-      it("le contrôleur du permanent qui refuse les blessures le voit détruit", () => {
+      it("the controller of the permanent that refuses the damage sees it destroyed", () => {
         const { s, asked } = run(false);
         expect(asked).toBe("p2");
         expect(idsOf(s, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
         expect(s.players.p2?.life).toBe(20);
       });
 
-      it("s'il accepte, il subit des blessures égales à la force de Combustion Man et le permanent reste", () => {
+      it("if it accepts, it takes damage equal to Combustion Man's power and the permanent stays", () => {
         const { s, angel } = run(true);
         expect(s.battlefield).toContain(angel);
         expect(s.players.p2?.life).toBe(16);
       });
     });
 
-    it("Crescent Island Temple : un Moine par Sanctuaire en arrivant, puis un par autre Sanctuaire qui arrive", () => {
+    it("Crescent Island Temple: a Monk per Sanctuary when it enters, then one per other Sanctuary that enters", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Mountain", 4), shrine("Test Shrine A")],
@@ -2255,7 +2255,7 @@ describe("lot A, rouge", () => {
       expect(idsOf(s, "p1", "battlefield", "Monk")).toHaveLength(3);
     });
 
-    it("Cunning Maneuver : +3/+1 jusqu'à la fin du tour et un Indice", () => {
+    it("Cunning Maneuver: +3/+1 until end of turn and a Clue", () => {
       let s = scenario({ p1: { battlefield: [...lands("Mountain", 2), "Bear Cub"], hand: ["Cunning Maneuver"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = settle(cast(s, "p1", "Cunning Maneuver", { targets: { t: [bear] } }));
@@ -2265,7 +2265,7 @@ describe("lot A, rouge", () => {
       expect(pt(s, bear)).toEqual([2, 2]);
     });
 
-    it("Deserter's Disciple : une autre de vos créatures de force 2 ou moins ne peut pas être bloquée ce tour-ci", () => {
+    it("Deserter's Disciple: another of your creatures with power 2 or less can't be blocked this turn", () => {
       let s = scenario({ p1: { battlefield: ["Deserter's Disciple", "Bear Cub", "Serra Angel"] } });
       const disciple = idOf(s, "p1", "battlefield", "Deserter's Disciple");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -2277,7 +2277,7 @@ describe("lot A, rouge", () => {
       expect(chars(s, bear).keywords).not.toContain("unblockable");
     });
 
-    it("Fire Nation Attacks : deux Soldats 2/2 avec la maîtrise du feu 1 ; flashback {8}{R}", () => {
+    it("Fire Nation Attacks: two 2/2 Soldiers with firebending 1; flashback {8}{R}", () => {
       let s = scenario({ p1: { battlefield: lands("Mountain", 9), hand: ["Fire Nation Attacks"] } });
       s = settle(cast(s, "p1", "Fire Nation Attacks"));
       const soldiers = idsOf(s, "p1", "battlefield", "Soldier");
@@ -2286,7 +2286,7 @@ describe("lot A, rouge", () => {
       expect(
         chars(s, soldiers[0] as string).abilities.some((a) => "label" in a && plainText(a.label ?? "") === "Firebending 1"),
       ).toBe(true);
-      // Il reste quatre Montagnes : pas assez pour le flashback.
+      // Four Mountains remain: not enough for the flashback.
       const card = idOf(s, "p1", "graveyard", "Fire Nation Attacks");
       expect(castable(s, "p1", card)).toBe(false);
       let t = scenario({ p1: { battlefield: lands("Mountain", 9), graveyard: ["Fire Nation Attacks"] } });
@@ -2298,7 +2298,7 @@ describe("lot A, rouge", () => {
     });
 
     describe("Fire Nation Cadets", () => {
-      it("a la maîtrise du feu 2 seulement avec une Leçon dans votre cimetière", () => {
+      it("has firebending 2 only with a Lesson in your graveyard", () => {
         const without = scenario({ p1: { battlefield: ["Fire Nation Cadets"], graveyard: ["Opt"] } });
         const a = idOf(without, "p1", "battlefield", "Fire Nation Cadets");
         expect(chars(without, a).abilities.some((x) => "label" in x && plainText(x.label ?? "") === "Firebending 2")).toBe(false);
@@ -2309,7 +2309,7 @@ describe("lot A, rouge", () => {
         expect(s.players.p1?.manaPool.R).toBe(2);
       });
 
-      it("{2} : +1/+0 jusqu'à la fin du tour", () => {
+      it("{2}: +1/+0 until end of turn", () => {
         let s = scenario({ p1: { battlefield: ["Fire Nation Cadets", ...lands("Mountain", 2)] } });
         const cadets = idOf(s, "p1", "battlefield", "Fire Nation Cadets");
         s = settle(activate(s, "p1", cadets));
@@ -2317,7 +2317,7 @@ describe("lot A, rouge", () => {
       });
     });
 
-    it("Fire Nation Raider : un Indice seulement si vous avez attaqué ce tour-ci (raid)", () => {
+    it("Fire Nation Raider: a Clue only if you attacked this turn (raid)", () => {
       const calm = settle(
         cast(scenario({ p1: { battlefield: lands("Mountain", 4), hand: ["Fire Nation Raider"] } }), "p1", "Fire Nation Raider"),
       );
@@ -2329,14 +2329,14 @@ describe("lot A, rouge", () => {
       expect(idsOf(s, "p1", "battlefield", "Clue")).toHaveLength(1);
     });
 
-    it("Fire Sages : {1}{R}{R} met un marqueur +1/+1", () => {
+    it("Fire Sages: {1}{R}{R} puts a +1/+1 counter", () => {
       let s = scenario({ p1: { battlefield: ["Fire Sages", ...lands("Mountain", 3)] } });
       const sages = idOf(s, "p1", "battlefield", "Fire Sages");
       s = settle(activate(s, "p1", sages));
       expect(s.objects[sages]?.counters["+1/+1"]).toBe(1);
     });
 
-    it("Firebending Student : maîtrise du feu X, X étant sa force", () => {
+    it("Firebending Student: firebending X, X being its power", () => {
       let s = scenario({ p1: { battlefield: [{ name: "Firebending Student", counters: { "+1/+1": 2 } }] } });
       const student = idOf(s, "p1", "battlefield", "Firebending Student");
       expect(chars(s, student).keywords).toContain("prowess");
@@ -2345,7 +2345,7 @@ describe("lot A, rouge", () => {
       expect(s.players.p1?.manaPool.R).toBe(3);
     });
 
-    it("How to Start a Riot : la menace à une créature, +2/+0 aux créatures du joueur ciblé", () => {
+    it("How to Start a Riot: menace to a creature, +2/+0 to the targeted player's creatures", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Mountain", 3), "Bear Cub"], hand: ["How to Start a Riot"] },
         p2: { battlefield: ["Serra Angel", "Bear Cub"] },
@@ -2359,7 +2359,7 @@ describe("lot A, rouge", () => {
       expect(pt(s, theirs)).toEqual([4, 2]);
     });
 
-    it("Jeong Jeong : exhaust {3}, un marqueur +1/+1 et le prochain sort de Leçon de ce tour-ci est copié", () => {
+    it("Jeong Jeong: exhaust {3}, a +1/+1 counter and the next Lesson spell this turn is copied", () => {
       let s = scenario({
         p1: { battlefield: ["Jeong Jeong, the Deserter", ...lands("Mountain", 4)], hand: ["Firebending Lesson"] },
         p2: { battlefield: ["Serra Angel"] },
@@ -2370,12 +2370,12 @@ describe("lot A, rouge", () => {
       expect(canActivate(s, "p1", jeong)).toBe(false);
       const angel = idOf(s, "p2", "battlefield", "Serra Angel");
       s = settle(cast(s, "p1", "Firebending Lesson", { targets: { t: [angel] } }));
-      // 2 blessures par l'original, 2 par la copie : l'Ange 4/4 meurt.
+      // 2 damage from the original, 2 from the copy: the 4/4 Angel dies.
       expect(idsOf(s, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
     });
 
     describe("Jet's Brainwashing", () => {
-      it("sans kicker : la créature ne peut pas bloquer ce tour-ci, et un Indice", () => {
+      it("without kicker: the creature can't block this turn, and a Clue", () => {
         let s = scenario({ p1: { battlefield: ["Mountain"], hand: ["Jet's Brainwashing"] }, p2: { battlefield: ["Bear Cub"] } });
         const bear = idOf(s, "p2", "battlefield", "Bear Cub");
         s = settle(cast(s, "p1", "Jet's Brainwashing", { targets: { t: [bear] } }));
@@ -2384,7 +2384,7 @@ describe("lot A, rouge", () => {
         expect(idsOf(s, "p1", "battlefield", "Clue")).toHaveLength(1);
       });
 
-      it("kickée : vous en prenez le contrôle jusqu'à la fin du tour, dégagée et avec la célérité", () => {
+      it("kicked: you gain control of it until end of turn, untapped and with haste", () => {
         let s = scenario({
           p1: { battlefield: lands("Mountain", 4), hand: ["Jet's Brainwashing"] },
           p2: { battlefield: [{ name: "Bear Cub", tapped: true }] },
@@ -2399,7 +2399,7 @@ describe("lot A, rouge", () => {
       });
     });
 
-    it("Mai : exhaust {3}, un marqueur de double initiative (une seule fois)", () => {
+    it("Mai: exhaust {3}, a double strike counter (only once)", () => {
       let s = scenario({ p1: { battlefield: ["Mai, Jaded Edge", ...lands("Mountain", 6)] } });
       const mai = idOf(s, "p1", "battlefield", "Mai, Jaded Edge");
       s = settle(activate(s, "p1", mai));
@@ -2409,14 +2409,14 @@ describe("lot A, rouge", () => {
     });
 
     describe("Mongoose Lizard", () => {
-      it("en arrivant, 1 blessure à n'importe quelle cible", () => {
+      it("when it enters, 1 damage to any target", () => {
         let s = scenario({ p1: { battlefield: lands("Mountain", 6), hand: ["Mongoose Lizard"] } });
         s = settle(cast(s, "p1", "Mongoose Lizard"), picking(["p2"]));
         expect(s.players.p2?.life).toBe(19);
         expect(chars(s, idOf(s, "p1", "battlefield", "Mongoose Lizard")).keywords).toContain("menace");
       });
 
-      it("cycle de Montagne {2} : une Montagne de la bibliothèque en main", () => {
+      it("Mountain cycling {2}: a Mountain from the library to hand", () => {
         let s = scenario({
           p1: { battlefield: lands("Island", 2), hand: ["Mongoose Lizard"], library: ["Opt", "Mountain", "Forest"] },
         });
@@ -2433,7 +2433,7 @@ describe("lot A, rouge", () => {
         return settle(cast(s, "p1", "Ran and Shaw"));
       };
 
-      it("lancée avec trois cartes de Dragon ou de Leçon au cimetière : un jeton copie non légendaire", () => {
+      it("cast with three Dragon or Lesson cards in the graveyard: a nonlegendary copy token", () => {
         const s = run(["Shivan Dragon", "Firebending Lesson", "Combustion Technique"]);
         const both = idsOf(s, "p1", "battlefield", "Ran and Shaw");
         expect(both).toHaveLength(2);
@@ -2442,7 +2442,7 @@ describe("lot A, rouge", () => {
         expect(chars(s, token).supertypes).not.toContain("Legendary");
       });
 
-      it("avec deux seulement, pas de copie ; {3}{R} : vos Dragons gagnent +2/+0", () => {
+      it("with only two, no copy; {3}{R}: your Dragons get +2/+0", () => {
         expect(idsOf(run(["Shivan Dragon", "Firebending Lesson", "Opt"]), "p1", "battlefield", "Ran and Shaw")).toHaveLength(1);
         let s = scenario({ p1: { battlefield: ["Ran and Shaw", "Shivan Dragon", "Bear Cub", ...lands("Mountain", 4)] } });
         const [r, dragon, bear] = [
@@ -2457,7 +2457,7 @@ describe("lot A, rouge", () => {
       });
     });
 
-    it("Rough Rhino Cavalry : exhaust {8}, deux marqueurs +1/+1 et le piétinement jusqu'à la fin du tour", () => {
+    it("Rough Rhino Cavalry: exhaust {8}, two +1/+1 counters and trample until end of turn", () => {
       let s = scenario({ p1: { battlefield: ["Rough Rhino Cavalry", ...lands("Mountain", 8)] } });
       const rhino = idOf(s, "p1", "battlefield", "Rough Rhino Cavalry");
       s = settle(activate(s, "p1", rhino));
@@ -2469,7 +2469,7 @@ describe("lot A, rouge", () => {
     });
 
     describe("Solstice Revelations", () => {
-      it("lance gratuitement la carte non-terrain si sa VM est inférieure au nombre de vos Montagnes", () => {
+      it("casts the nonland card for free if its MV is less than the number of your Mountains", () => {
         let s = scenario({
           p1: { battlefield: lands("Mountain", 3), hand: ["Solstice Revelations"], library: ["Plains", "Bear Cub"] },
         });
@@ -2479,11 +2479,11 @@ describe("lot A, rouge", () => {
         expect(nameOf(s, bear)).toBe("Bear Cub");
         s = settle(act(s, "p1", { type: "cast", card: bear, free: true }));
         expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
-        // La carte de terrain exilée reste en exil.
+        // The exiled land card stays in exile.
         expect(exiled(s, "Plains")).toHaveLength(1);
       });
 
-      it("sinon, la carte va dans votre main", () => {
+      it("otherwise, the card goes to your hand", () => {
         let s = scenario({
           p1: { battlefield: lands("Mountain", 3), hand: ["Solstice Revelations"], library: ["Serra Angel", "Opt"] },
         });
@@ -2492,7 +2492,7 @@ describe("lot A, rouge", () => {
       });
     });
 
-    it("Tiger-Dillo : n'attaque ni ne bloque sans une autre créature de force 4 ou plus", () => {
+    it("Tiger-Dillo: doesn't attack or block without another creature with power 4 or greater", () => {
       const alone = scenario({ p1: { battlefield: ["Tiger-Dillo", "Bear Cub"] } });
       const t = idOf(alone, "p1", "battlefield", "Tiger-Dillo");
       expect(chars(alone, t).keywords).toEqual(expect.arrayContaining(["cantAttack", "cantBlock"]));
@@ -2502,14 +2502,14 @@ describe("lot A, rouge", () => {
       expect(chars(backed, u).keywords).not.toContain("cantBlock");
     });
 
-    it("Treetop Freedom Fighters : célérité, et un Allié 1/1 en arrivant", () => {
+    it("Treetop Freedom Fighters: haste, and a 1/1 Ally when it enters", () => {
       let s = scenario({ p1: { battlefield: lands("Mountain", 3), hand: ["Treetop Freedom Fighters"] } });
       s = settle(cast(s, "p1", "Treetop Freedom Fighters"));
       expect(idsOf(s, "p1", "battlefield", "Ally")).toHaveLength(1);
       expect(chars(s, idOf(s, "p1", "battlefield", "Treetop Freedom Fighters")).keywords).toContain("haste");
     });
 
-    it("Twin Blades : s'attache en arrivant ; double initiative jusqu'à la fin du tour, +1/+1 tant qu'équipée", () => {
+    it("Twin Blades: attaches when it enters; double strike until end of turn, +1/+1 while equipped", () => {
       let s = scenario({ p1: { battlefield: [...lands("Mountain", 3), "Bear Cub"], hand: ["Twin Blades"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = settle(cast(s, "p1", "Twin Blades"), picking([bear]));
@@ -2522,7 +2522,7 @@ describe("lot A, rouge", () => {
       expect(pt(s, bear)).toEqual([3, 3]);
     });
 
-    it("Ty Lee : en attaquant, payez {1} pour qu'une créature ne puisse pas bloquer ce tour-ci", () => {
+    it("Ty Lee: when attacking, pay {1} so a creature can't block this turn", () => {
       let s = scenario({ p1: { battlefield: ["Ty Lee, Artful Acrobat", "Mountain"] }, p2: { battlefield: ["Serra Angel"] } });
       const angel = idOf(s, "p2", "battlefield", "Serra Angel");
       s = attack(s, [idOf(s, "p1", "battlefield", "Ty Lee, Artful Acrobat")]);
@@ -2531,7 +2531,7 @@ describe("lot A, rouge", () => {
       expect(s.objects[idOf(s, "p1", "battlefield", "Mountain")]?.tapped).toBe(true);
     });
 
-    it("War Balloon : {1} met un marqueur de feu ; à trois, c'est une créature-artefact", () => {
+    it("War Balloon: {1} puts a fire counter; at three, it's an artifact creature", () => {
       let s = scenario({ p1: { battlefield: ["War Balloon", ...lands("Mountain", 3)] } });
       const balloon = idOf(s, "p1", "battlefield", "War Balloon");
       expect(chars(s, balloon).types).not.toContain("Creature");
@@ -2544,7 +2544,7 @@ describe("lot A, rouge", () => {
       expect(chars(s, balloon).keywords).toContain("flying");
     });
 
-    it("Wartime Protestors : chaque autre Allié qui arrive reçoit un marqueur +1/+1 et la célérité", () => {
+    it("Wartime Protestors: each other Ally that enters gets a +1/+1 counter and haste", () => {
       let s = scenario({
         p1: { battlefield: ["Wartime Protestors", ...lands("Mountain", 3)], hand: ["Treetop Freedom Fighters"] },
       });
@@ -2557,7 +2557,7 @@ describe("lot A, rouge", () => {
       expect(s.objects[idOf(s, "p1", "battlefield", "Wartime Protestors")]?.counters["+1/+1"]).toBeUndefined();
     });
 
-    it("Yuyan Archers : vous pouvez défausser une carte en arrivant ; si vous le faites, piochez", () => {
+    it("Yuyan Archers: you may discard a card when it enters; if you do, draw", () => {
       let s = scenario({ p1: { battlefield: lands("Mountain", 2), hand: ["Yuyan Archers", "Opt"], library: ["Bear Cub"] } });
       const opt = idOf(s, "p1", "hand", "Opt");
       s = settle(cast(s, "p1", "Yuyan Archers"), picking([opt]));
@@ -2573,7 +2573,7 @@ describe("lot A, rouge", () => {
         abilities: [dsl.manaAbility(["G", "U"])],
       });
 
-      it("les terrains non de base arrivent engagés, même ceux des adversaires", () => {
+      it("nonbasic lands enter tapped, even the opponents'", () => {
         let s = scenario({ active: "p2", p1: { battlefield: ["Zhao, the Moon Slayer"] }, p2: { hand: [vista, "Forest"] } });
         s = act(s, "p2", { type: "playLand", card: idOf(s, "p2", "hand", "Test Vista") });
         expect(s.objects[idOf(s, "p2", "battlefield", "Test Vista")]?.tapped).toBe(true);
@@ -2582,7 +2582,7 @@ describe("lot A, rouge", () => {
         expect(s.objects[idOf(s, "p2", "battlefield", "Forest")]?.tapped).toBe(false);
       });
 
-      it("avec un marqueur de conquérant, les terrains non de base sont des Montagnes sans autre capacité", () => {
+      it("with a conqueror counter, nonbasic lands are Mountains with no other abilities", () => {
         let s = scenario({
           p1: { battlefield: ["Zhao, the Moon Slayer", ...lands("Mountain", 7)] },
           p2: { battlefield: [vista] },
@@ -2594,12 +2594,12 @@ describe("lot A, rouge", () => {
         expect(s.objects[zhao]?.counters.conqueror).toBe(1);
         expect(chars(s, land).subtypes).toEqual(["Mountain"]);
         expect(manaAbilitiesOf(s, land).flatMap((a) => a.produce)).toEqual(["R"]);
-        // Les terrains de base ne changent pas.
+        // Basic lands don't change.
         expect(manaAbilitiesOf(s, idsOf(s, "p1", "battlefield", "Mountain")[0] as string).flatMap((a) => a.produce)).toEqual([
           "R",
         ]);
       });
-      it("avec un marqueur, une créature-terrain garde ses types de créature (305.7) et perd sa capacité statique", () => {
+      it("with a counter, a land creature keeps its creature types (305.7) and loses its static ability", () => {
         const grove = customCard({
           name: "Test Dryad Grove",
           typeLine: "Land Creature — Forest Dryad",
@@ -2619,12 +2619,12 @@ describe("lot A, rouge", () => {
         const land = idOf(s, "p2", "battlefield", "Test Dryad Grove");
         expect(chars(s, land).subtypes.sort()).toEqual(["Dryad", "Mountain"]);
         expect(chars(s, land).types).toContain("Creature");
-        // La statique de l'adversaire (« les autres créatures ont +1/+1 ») ne s'applique plus.
+        // The opponent's static ability ("other creatures get +1/+1") no longer applies.
         expect(chars(s, zhao).power).toBe(base - 1);
       });
     });
 
-    it("Zuko, Exiled Prince : {3} exile la carte du dessus, jouable ce tour-ci seulement", () => {
+    it("Zuko, Exiled Prince: {3} exiles the top card, playable this turn only", () => {
       let s = scenario({
         p1: { battlefield: ["Zuko, Exiled Prince", ...lands("Mountain", 5)], library: ["Lightning Strike", "Opt"] },
       });
@@ -2642,7 +2642,7 @@ describe("lot A, rouge", () => {
 describe("lot A, vert", () => {
   type S = GameState;
   type Answer = (req: ChoiceRequest, player: string, cur: S) => ChoiceValue[] | undefined;
-  /** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
+  /** Passes and answers choices (suggested answer by default) until an empty stack, with no pending trigger. */
   const settle = (s: S, answer: Answer = () => undefined): S => {
     let cur = s;
     for (let i = 0; i < 300; i++) {
@@ -2661,10 +2661,10 @@ describe("lot A, vert", () => {
   };
   const canActivate = (s: S, player: string, source: string) =>
     legalActions(s, player).some((x) => x.type === "activate" && x.source === source);
-  /** Engage une source pour du mana de cette couleur (la capacité de mana qui la produit). */
+  /** Taps a source for mana of this color (the mana ability that produces it). */
   const tapFor = (s: S, player: string, source: string, color: ManaType) => {
     const a = legalActions(s, player).find((x) => x.type === "tapForMana" && x.source === source && x.colors.includes(color));
-    if (a?.type !== "tapForMana") throw new Error(`${nameOf(s, source)} ne produit pas ${color}`);
+    if (a?.type !== "tapForMana") throw new Error(`${nameOf(s, source)} doesn't produce ${color}`);
     return act(s, player, { type: "tapForMana", source, ability: a.ability, color });
   };
   const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
@@ -2673,7 +2673,7 @@ describe("lot A, vert", () => {
     return act(cur, "p1", { type: "declareAttackers", attackers: ids.map((id) => ({ id, defender: "p2" })) });
   };
   const toBlockers = (s: S) => advanceUntil(s, (x) => x.pending?.kind === "declareBlockers");
-  /** Allié bicolore (blanc et bleu) de test. */
+  /** Two-color (white and blue) test Ally. */
   const wuAlly = customCard({
     name: "Test Ally",
     subtypes: ["Ally"],
@@ -2682,7 +2682,7 @@ describe("lot A, vert", () => {
     power: 1,
     toughness: 1,
   });
-  /** Sanctuaire de test (enchantement). */
+  /** Test Sanctuary (enchantment). */
   const shrine = customCard({
     name: "Test Shrine",
     types: ["Enchantment"],
@@ -2691,21 +2691,21 @@ describe("lot A, vert", () => {
   });
 
   describe("Avatar: The Last Airbender, lot A — vert", () => {
-    it("Allies at Last : {1} de moins par Allié ; jusqu'à deux de vos créatures blessent selon leur force", () => {
+    it("Allies at Last: {1} less per Ally; up to two of your creatures deal damage equal to their power", () => {
       let s = scenario({
         p1: { battlefield: ["Earth Kingdom General", "Earth Kingdom General", "Forest"], hand: ["Allies at Last"] },
         p2: { battlefield: ["Serra Angel"] },
       });
       const generals = idsOf(s, "p1", "battlefield", "Earth Kingdom General");
       const angel = idOf(s, "p2", "battlefield", "Serra Angel");
-      // {2}{G} moins deux Alliés : une seule Forêt suffit.
+      // {2}{G} minus two Allies: a single Forest is enough.
       expect(castable(s, "p1", idOf(s, "p1", "hand", "Allies at Last"))).toBe(true);
       s = settle(cast(s, "p1", "Allies at Last", { targets: { a: generals, t: [angel] } }));
       expect(idsOf(s, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
       expect(generals.every((id) => (s.objects[id]?.damage ?? 0) === 0)).toBe(true);
     });
 
-    it("Badgermole : maîtrise de la terre 2 ; vos créatures avec un marqueur +1/+1 ont le piétinement", () => {
+    it("Badgermole: earthbending 2; your creatures with a +1/+1 counter have trample", () => {
       let s = scenario({ p1: { battlefield: lands("Forest", 5), hand: ["Badgermole"] } });
       const land = idsOf(s, "p1", "battlefield", "Forest")[0] as string;
       s = settle(cast(s, "p1", "Badgermole"), picking([land]));
@@ -2715,7 +2715,7 @@ describe("lot A, vert", () => {
       expect(chars(s, mole).keywords).not.toContain("trample");
     });
 
-    it("Badgermole Cub : une créature engagée pour du mana ajoute {G} de plus, pas un terrain", () => {
+    it("Badgermole Cub: a creature tapped for mana adds an additional {G}, not a land", () => {
       let s = scenario({ p1: { battlefield: ["Badgermole Cub", "Llanowar Elves", "Forest"] } });
       s = tapFor(s, "p1", idOf(s, "p1", "battlefield", "Llanowar Elves"), "G");
       expect(s.players.p1?.manaPool.G).toBe(2);
@@ -2723,7 +2723,7 @@ describe("lot A, vert", () => {
       expect(s.players.p1?.manaPool.G).toBe(3);
     });
 
-    it("The Boulder : en attaquant, maîtrise de la terre X (créatures de force 4 ou plus)", () => {
+    it("The Boulder: when attacking, earthbending X (creatures with power 4 or greater)", () => {
       let s = scenario({ p1: { battlefield: ["The Boulder, Ready to Rumble", "Serra Angel", "Bear Cub", "Forest"] } });
       const land = idOf(s, "p1", "battlefield", "Forest");
       s = attack(s, [idOf(s, "p1", "battlefield", "The Boulder, Ready to Rumble")]);
@@ -2732,7 +2732,7 @@ describe("lot A, vert", () => {
       expect(chars(s, land).types).toContain("Creature");
     });
 
-    it("Cycle of Renewal : sacrifiez un terrain, jusqu'à deux terrains de base engagés", () => {
+    it("Cycle of Renewal: sacrifice a land, up to two tapped basic lands", () => {
       let s = scenario({
         p1: { battlefield: lands("Forest", 3), hand: ["Cycle of Renewal"], library: ["Bear Cub", "Island", "Plains"] },
       });
@@ -2743,7 +2743,7 @@ describe("lot A, vert", () => {
       expect(s.players.p1?.library.map((id) => nameOf(s, id))).toEqual(["Bear Cub"]);
     });
 
-    it("The Earth King : un Ours 4/4 ; des attaquants de force 4 ou plus : autant de terrains de base engagés", () => {
+    it("The Earth King: a 4/4 Bear; attackers with power 4 or greater: as many tapped basic lands", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Forest", 4), "Serra Angel", "Fire Elemental", "Bear Cub"],
@@ -2764,26 +2764,26 @@ describe("lot A, vert", () => {
       expect(basics.every((id) => s.objects[id]?.tapped)).toBe(true);
     });
 
-    it("Earth Kingdom General : maîtrise de la terre 2 ; vous gagnez autant de PV, une seule fois par tour", () => {
+    it("Earth Kingdom General: earthbending 2; you gain as much life, only once each turn", () => {
       let s = scenario({ p1: { battlefield: lands("Forest", 6), hand: ["Earth Kingdom General", "Origin of Metalbending"] } });
       const land = idsOf(s, "p1", "battlefield", "Forest")[0] as string;
       s = settle(cast(s, "p1", "Earth Kingdom General"), picking([land]));
       expect(s.objects[land]?.counters["+1/+1"]).toBe(2);
       expect(s.players.p1?.life).toBe(22);
-      // Un autre marqueur le même tour : plus de points de vie.
+      // Another counter the same turn: no more life.
       const general = idOf(s, "p1", "battlefield", "Earth Kingdom General");
       s = settle(cast(s, "p1", "Origin of Metalbending", { mode: 1, targets: { u: [general] } }));
       expect(s.objects[general]?.counters["+1/+1"]).toBe(1);
       expect(s.players.p1?.life).toBe(22);
     });
 
-    it("Earth Kingdom General : « ne le faites qu'une fois par tour » ; refuser le gain de PV ne consomme pas la limite", () => {
+    it('Earth Kingdom General: "do this only once each turn"; declining the life gain doesn\'t use up the limit', () => {
       let s = scenario({ p1: { battlefield: lands("Forest", 6), hand: ["Earth Kingdom General", "Origin of Metalbending"] } });
       const land = idsOf(s, "p1", "battlefield", "Forest")[0] as string;
       s = settle(cast(s, "p1", "Earth Kingdom General"), (req) => (req.type === "yesNo" ? [0] : picking([land])(req)));
       expect(s.objects[land]?.counters["+1/+1"]).toBe(2);
       expect(s.players.p1?.life).toBe(20);
-      // Un autre marqueur le même tour : la capacité se déclenche encore, et cette fois les PV sont gagnés.
+      // Another counter the same turn: the ability triggers again, and this time the life is gained.
       const general = idOf(s, "p1", "battlefield", "Earth Kingdom General");
       let asked = 0;
       s = settle(cast(s, "p1", "Origin of Metalbending", { mode: 1, targets: { u: [general] } }), (req) => {
@@ -2794,7 +2794,7 @@ describe("lot A, vert", () => {
       expect(s.players.p1?.life).toBe(21);
     });
 
-    it("Earth Rumble : maîtrise de la terre 2, puis une de vos créatures se bat contre une créature adverse", () => {
+    it("Earth Rumble: earthbending 2, then one of your creatures fights an opponent's creature", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Forest", 4), "Serra Angel"], hand: ["Earth Rumble"] },
         p2: { battlefield: ["Fire Elemental"] },
@@ -2804,12 +2804,12 @@ describe("lot A, vert", () => {
       const fire = idOf(s, "p2", "battlefield", "Fire Elemental");
       s = settle(cast(s, "p1", "Earth Rumble", { targets: { t: [land] } }), picking([angel, fire]));
       expect(s.objects[land]?.counters["+1/+1"]).toBe(2);
-      // L'Ange (4/4) et l'Élémental (5/4) s'infligent leurs blessures : les deux meurent.
+      // The Angel (4/4) and the Elemental (5/4) deal damage to each other: both die.
       expect(idsOf(s, "p1", "graveyard", "Serra Angel")).toHaveLength(1);
       expect(idsOf(s, "p2", "graveyard", "Fire Elemental")).toHaveLength(1);
     });
 
-    it("Elemental Teachings : jusqu'à quatre terrains de noms différents ; l'adversaire en envoie deux au cimetière", () => {
+    it("Elemental Teachings: up to four lands with different names; the opponent puts two into the graveyard", () => {
       let s = scenario({
         p1: {
           battlefield: lands("Forest", 5),
@@ -2823,7 +2823,7 @@ describe("lot A, vert", () => {
       s = settle(cast(s, "p1", "Elemental Teachings"), (req, player, cur) => {
         if (req.type !== "pick") return undefined;
         if (player === "p1") return want.filter((id) => req.options.includes(id));
-        // L'adversaire choisit l'Île, puis la Montagne (les cartes révélées ont changé de zone).
+        // The opponent chooses the Island, then the Mountain (the revealed cards changed zones).
         asked++;
         return req.options.filter((id) => ["Island", "Mountain"].includes(nameOf(cur, id) ?? "")).slice(0, 1);
       });
@@ -2833,7 +2833,7 @@ describe("lot A, vert", () => {
       const placed = [...idsOf(s, "p1", "battlefield", "Plains"), ...idsOf(s, "p1", "battlefield", "Forest")].filter(
         (id) => s.objects[id]?.tapped,
       );
-      // La Forêt et les Plaines trouvées arrivent engagées (les cinq Forêts du départ ont payé le sort).
+      // The Forest and Plains found enter tapped (the five starting Forests paid for the spell).
       expect(idsOf(s, "p1", "battlefield", "Plains")).toHaveLength(1);
       expect(idsOf(s, "p1", "battlefield", "Forest")).toHaveLength(6);
       expect(placed).toHaveLength(7);
@@ -2841,7 +2841,7 @@ describe("lot A, vert", () => {
       expect(s.players.p1?.library.map((id) => nameOf(s, id)).sort()).toEqual(["Forest", "Opt"]);
     });
 
-    it("Flopsie : un marqueur +1/+1 sur chacune de vos créatures ; force 4 ou plus : un seul bloqueur", () => {
+    it("Flopsie: a +1/+1 counter on each of your creatures; power 4 or greater: only one blocker", () => {
       let s = scenario({ p1: { battlefield: [...lands("Forest", 6), "Bear Cub"], hand: ["Flopsie, Bumi's Buddy"] } });
       s = settle(cast(s, "p1", "Flopsie, Bumi's Buddy"));
       expect(pt(s, idOf(s, "p1", "battlefield", "Bear Cub"))).toEqual([3, 3]);
@@ -2864,7 +2864,7 @@ describe("lot A, vert", () => {
           ],
         }),
       ).toThrow();
-      // La créature de force 2 peut être bloquée par deux créatures.
+      // The creature with power 2 can be blocked by two creatures.
       expect(() =>
         act(c, "p2", {
           type: "declareBlockers",
@@ -2876,7 +2876,7 @@ describe("lot A, vert", () => {
       ).not.toThrow();
     });
 
-    it("Foggy Swamp Vinebender : imblocable par la force 2 ou moins ; maîtrise de l'eau {5} pendant votre tour seulement", () => {
+    it("Foggy Swamp Vinebender: can't be blocked by power 2 or less; waterbending {5} during your turn only", () => {
       let s = scenario({
         p1: { battlefield: ["Foggy Swamp Vinebender", ...lands("Forest", 3), "Bear Cub", "Bear Cub"] },
         p2: { battlefield: ["Bear Cub", "Serra Angel"] },
@@ -2884,7 +2884,7 @@ describe("lot A, vert", () => {
       const vine = idOf(s, "p1", "battlefield", "Foggy Swamp Vinebender");
       s = settle(activate(s, "p1", vine));
       expect(s.objects[vine]?.counters["+1/+1"]).toBe(1);
-      // Trois Forêts et deux créatures engagées (chacune paie {1}) : {5}.
+      // Three Forests and two tapped creatures (each pays {1}): {5}.
       expect(idsOf(s, "p1", "battlefield", "Forest").every((id) => s.objects[id]?.tapped)).toBe(true);
       const creatures = [vine, ...idsOf(s, "p1", "battlefield", "Bear Cub")];
       expect(creatures.filter((id) => s.objects[id]?.tapped)).toHaveLength(2);
@@ -2908,20 +2908,20 @@ describe("lot A, vert", () => {
       expect(canActivate(theirs, "p1", idOf(theirs, "p1", "battlefield", "Foggy Swamp Vinebender"))).toBe(false);
     });
 
-    it("Great Divide Guide : vos terrains et vos Alliés produisent un mana de n'importe quelle couleur", () => {
+    it("Great Divide Guide: your lands and your Allies produce one mana of any color", () => {
       let s = scenario({ p1: { battlefield: ["Great Divide Guide", "Forest", { name: wuAlly, sick: true }, "Llanowar Elves"] } });
       s = tapFor(s, "p1", idOf(s, "p1", "battlefield", "Forest"), "U");
       expect(s.players.p1?.manaPool.U).toBe(1);
       s = tapFor(s, "p1", idOf(s, "p1", "battlefield", "Great Divide Guide"), "R");
       expect(s.players.p1?.manaPool.R).toBe(1);
-      // L'Elfe n'est pas un Allié : seulement {G}.
+      // The Elf is not an Ally: only {G}.
       expect(() => tapFor(s, "p1", idOf(s, "p1", "battlefield", "Llanowar Elves"), "B")).toThrow();
     });
 
-    it("Haru : chaque fois qu'un autre Allié arrive sous votre contrôle, maîtrise de la terre 1", () => {
+    it("Haru: whenever another Ally enters under your control, earthbending 1", () => {
       let s = scenario({ p1: { battlefield: ["Haru, Hidden Talent", ...lands("Forest", 4)], hand: ["Earth Kingdom General"] } });
       const [l1, l2] = idsOf(s, "p1", "battlefield", "Forest") as [string, string];
-      // Deux déclenchements (Haru et la maîtrise de la terre 2 du Général) : un terrain différent pour chacun.
+      // Two triggers (Haru and the General's earthbending 2): a different land for each.
       const order = [l1, l2];
       s = settle(cast(s, "p1", "Earth Kingdom General"), (req) =>
         req.type === "pick" && req.intent === "triggerTarget" ? [order.shift() as string] : undefined,
@@ -2930,7 +2930,7 @@ describe("lot A, vert", () => {
       expect(counters).toEqual([1, 2]);
     });
 
-    it("Invasion Tactics : vos créatures +2/+2 ; des Alliés blessent un joueur : piochez une carte", () => {
+    it("Invasion Tactics: your creatures +2/+2; Allies deal damage to a player: draw a card", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Forest", 5), "Earth Kingdom General", "Bear Cub"], hand: ["Invasion Tactics"] },
       });
@@ -2944,7 +2944,7 @@ describe("lot A, vert", () => {
       expect(s.players.p1?.hand.length).toBe(hand + 1);
     });
 
-    it("Kyoshi Island Plaza : X terrains de base (X : vos Sanctuaires) ; un autre Sanctuaire : un terrain de plus", () => {
+    it("Kyoshi Island Plaza: X basic lands (X: your Sanctuaries); another Sanctuary: one more land", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Forest", 4), shrine],
@@ -2959,7 +2959,7 @@ describe("lot A, vert", () => {
       );
     });
 
-    it("Leaves from the Vine : I meule trois cartes et crée une Nourriture ; II un marqueur sur deux de vos créatures", () => {
+    it("Leaves from the Vine: I mills three cards and creates a Food; II a counter on two of your creatures", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Forest", 2), "Bear Cub", "Llanowar Elves"],
@@ -2976,7 +2976,7 @@ describe("lot A, vert", () => {
       expect(pt(s, idOf(s, "p1", "battlefield", "Llanowar Elves"))).toEqual([2, 2]);
     });
 
-    it("Leaves from the Vine : III ne pioche que s'il y a une carte de créature ou de Leçon au cimetière", () => {
+    it("Leaves from the Vine: III draws only if there's a creature or Lesson card in the graveyard", () => {
       const run = (graveyard: string[]) => {
         let s = scenario({
           p1: { battlefield: [{ name: "Leaves from the Vine", counters: { lore: 2 } }], graveyard, library: lands("Island", 5) },
@@ -2987,7 +2987,7 @@ describe("lot A, vert", () => {
         );
         return settle(s).players.p1?.hand.length ?? 0;
       };
-      // La pioche du tour, plus une carte avec une Leçon.
+      // The turn's draw, plus a card with a Lesson.
       expect(run(["Opt"])).toBe(1);
       expect(run(["Shared Roots"])).toBe(2);
       expect(run(["Bear Cub"])).toBe(2);
@@ -3000,7 +3000,7 @@ describe("lot A, vert", () => {
           advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number > 3 && x.stack.length === 0),
         );
 
-      it("I : piochez autant que la plus grande force parmi vos créatures", () => {
+      it("I: draw as many as the greatest power among your creatures", () => {
         let s = scenario({
           p1: { battlefield: [...lands("Forest", 6), "Serra Angel"], hand: [KYOSHI], library: lands("Island", 8) },
         });
@@ -3008,7 +3008,7 @@ describe("lot A, vert", () => {
         expect(s.players.p1?.hand).toHaveLength(4);
       });
 
-      it("II : maîtrise de la terre X (cartes en main) ; le terrain devient aussi une Île", () => {
+      it("II: earthbending X (cards in hand); the land also becomes an Island", () => {
         let s = scenario({
           p1: {
             battlefield: [{ name: KYOSHI, counters: { lore: 1 } }, "Forest"],
@@ -3018,13 +3018,13 @@ describe("lot A, vert", () => {
         });
         const forest = idOf(s, "p1", "battlefield", "Forest");
         s = nextMain(s);
-        // Deux cartes, plus la pioche du tour.
+        // Two cards, plus the turn's draw.
         expect(s.objects[forest]?.counters["+1/+1"]).toBe(3);
         expect(chars(s, forest).subtypes).toEqual(expect.arrayContaining(["Forest", "Island"]));
         expect(chars(s, forest).types).toEqual(expect.arrayContaining(["Land", "Creature"]));
       });
 
-      it("III : Avatar Kyoshi 5/4 ; vos terrains ont le piétinement et la défense talismanique ; {T} : X mana d'une couleur", () => {
+      it("III: Avatar Kyoshi 5/4; your lands have trample and hexproof; {T}: X mana of one color", () => {
         let s = scenario({
           p1: { battlefield: [{ name: KYOSHI, counters: { lore: 2 } }, "Forest", "Bear Cub"], library: lands("Plains", 5) },
         });
@@ -3034,7 +3034,7 @@ describe("lot A, vert", () => {
         expect(pt(s, avatar)).toEqual([5, 4]);
         const forest = idOf(s, "p1", "battlefield", "Forest");
         expect(chars(s, forest).keywords).toEqual(expect.arrayContaining(["trample", "hexproof"]));
-        // Revenue ce tour-ci : mal d'invocation ; au tour suivant, {T} : cinq mana d'une couleur (sa force, 5).
+        // Returned this turn: summoning sickness; next turn, {T}: five mana of one color (its power, 5).
         s = advanceUntil(
           s,
           (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number > 6 && x.pending?.kind === "priority",
@@ -3044,7 +3044,7 @@ describe("lot A, vert", () => {
       });
     });
 
-    it("Origin of Metalbending : un marqueur +1/+1 et l'indestructible jusqu'à la fin du tour", () => {
+    it("Origin of Metalbending: a +1/+1 counter and indestructible until end of turn", () => {
       let s = scenario({ p1: { battlefield: ["Forest", "Forest", "Bear Cub"], hand: ["Origin of Metalbending"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = settle(cast(s, "p1", "Origin of Metalbending", { mode: 1, targets: { u: [bear] } }));
@@ -3055,7 +3055,7 @@ describe("lot A, vert", () => {
       expect(s.objects[bear]?.counters["+1/+1"]).toBe(1);
     });
 
-    it("Ostrich-Horse : meule trois cartes ; un terrain meulé en main, sinon un marqueur +1/+1", () => {
+    it("Ostrich-Horse: mills three cards; a milled land to hand, otherwise a +1/+1 counter", () => {
       const run = (library: string[]) => {
         const s = scenario({ p1: { battlefield: lands("Forest", 3), hand: ["Ostrich-Horse"], library } });
         return settle(cast(s, "p1", "Ostrich-Horse"));
@@ -3069,7 +3069,7 @@ describe("lot A, vert", () => {
       expect(pt(none, idOf(none, "p1", "battlefield", "Ostrich-Horse"))).toEqual([4, 2]);
     });
 
-    it("Pillar Launch : +2/+2 et portée jusqu'à la fin du tour, puis dégagez-la", () => {
+    it("Pillar Launch: +2/+2 and reach until end of turn, then untap it", () => {
       let s = scenario({ p1: { battlefield: ["Forest", { name: "Bear Cub", tapped: true }], hand: ["Pillar Launch"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = settle(cast(s, "p1", "Pillar Launch", { targets: { t: [bear] } }));
@@ -3078,7 +3078,7 @@ describe("lot A, vert", () => {
       expect(s.objects[bear]?.tapped).toBe(false);
     });
 
-    it("Raucous Audience : {G}, ou {G}{G} si vous contrôlez une créature de force 4 ou plus", () => {
+    it("Raucous Audience: {G}, or {G}{G} if you control a creature with power 4 or greater", () => {
       let s = scenario({ p1: { battlefield: ["Raucous Audience"] } });
       s = tapFor(s, "p1", idOf(s, "p1", "battlefield", "Raucous Audience"), "G");
       expect(s.players.p1?.manaPool.G).toBe(1);
@@ -3087,7 +3087,7 @@ describe("lot A, vert", () => {
       expect(big.players.p1?.manaPool.G).toBe(2);
     });
 
-    it("Rebellious Captives : exhaust {6} : deux marqueurs sur elle, puis maîtrise de la terre 2, une seule fois", () => {
+    it("Rebellious Captives: exhaust {6}: two counters on it, then earthbending 2, only once", () => {
       let s = scenario({ p1: { battlefield: ["Rebellious Captives", ...lands("Forest", 13)] } });
       const captives = idOf(s, "p1", "battlefield", "Rebellious Captives");
       const land = idsOf(s, "p1", "battlefield", "Forest")[12] as string;
@@ -3097,7 +3097,7 @@ describe("lot A, vert", () => {
       expect(canActivate(s, "p1", captives)).toBe(false);
     });
 
-    it("Rockalanche : maîtrise de la terre X (vos Forêts) ; flashback {5}{G}", () => {
+    it("Rockalanche: earthbending X (your Forests); flashback {5}{G}", () => {
       let s = scenario({ p1: { battlefield: [...lands("Forest", 3), ...lands("Plains", 3)], hand: ["Rockalanche"] } });
       const plains = idOf(s, "p1", "battlefield", "Plains");
       s = settle(cast(s, "p1", "Rockalanche", { targets: { t: [plains] } }));
@@ -3106,7 +3106,7 @@ describe("lot A, vert", () => {
       expect(castable(fb, "p1", idOf(fb, "p1", "graveyard", "Rockalanche"))).toBe(true);
     });
 
-    it("Rocky Rebuke : votre créature inflige des blessures égales à sa force à une créature adverse", () => {
+    it("Rocky Rebuke: your creature deals damage equal to its power to an opponent's creature", () => {
       let s = scenario({
         p1: { battlefield: ["Forest", "Forest", "Serra Angel"], hand: ["Rocky Rebuke"] },
         p2: { battlefield: ["Fire Elemental"] },
@@ -3118,7 +3118,7 @@ describe("lot A, vert", () => {
       expect(s.objects[angel]?.damage ?? 0).toBe(0);
     });
 
-    it("Seismic Sense : regardez X cartes (X : vos terrains), une créature ou un terrain en main, le reste dessous", () => {
+    it("Seismic Sense: look at X cards (X: your lands), a creature or a land to hand, the rest on the bottom", () => {
       let s = scenario({
         p1: { battlefield: lands("Forest", 3), hand: ["Seismic Sense"], library: ["Opt", "Opt", "Bear Cub", "Island"] },
       });
@@ -3127,7 +3127,7 @@ describe("lot A, vert", () => {
       expect(nameOf(s, s.players.p1?.library[0] ?? "")).toBe("Island");
     });
 
-    it("Sparring Dummy : meulez une carte ; un terrain revient en main ; 2 PV si c'est une Leçon", () => {
+    it("Sparring Dummy: mill a card; a land returns to hand; 2 life if it's a Lesson", () => {
       let s = scenario({ p1: { battlefield: ["Sparring Dummy"], library: ["Shared Roots", "Island", "Opt"] } });
       const dummy = idOf(s, "p1", "battlefield", "Sparring Dummy");
       s = settle(activate(s, "p1", dummy));
@@ -3139,7 +3139,7 @@ describe("lot A, vert", () => {
       expect(t.players.p1?.life).toBe(20);
     });
 
-    it("True Ancestry : une carte de permanent de votre cimetière en main, et un Indice", () => {
+    it("True Ancestry: a permanent card from your graveyard to hand, and a Clue", () => {
       let s = scenario({ p1: { battlefield: ["Forest", "Forest"], hand: ["True Ancestry"], graveyard: ["Bear Cub", "Opt"] } });
       const bear = idOf(s, "p1", "graveyard", "Bear Cub");
       const opt = idOf(s, "p1", "graveyard", "Opt");
@@ -3149,7 +3149,7 @@ describe("lot A, vert", () => {
       expect(idsOf(s, "p1", "battlefield", "Clue")).toHaveLength(1);
     });
 
-    it("Turtle-Duck : {3} : force de base 4 et piétinement jusqu'à la fin du tour", () => {
+    it("Turtle-Duck: {3}: base power 4 and trample until end of turn", () => {
       let s = scenario({ p1: { battlefield: ["Turtle-Duck", ...lands("Forest", 3)] } });
       const duck = idOf(s, "p1", "battlefield", "Turtle-Duck");
       s = settle(activate(s, "p1", duck));
@@ -3159,7 +3159,7 @@ describe("lot A, vert", () => {
       expect(pt(s, duck)).toEqual([0, 4]);
     });
 
-    it("Unlucky Cabbage Merchant : une Nourriture ; en sacrifiant une Nourriture, un terrain de base et le marchand part", () => {
+    it("Unlucky Cabbage Merchant: a Food; sacrificing a Food, a basic land and the merchant leaves", () => {
       let s = scenario({
         p1: { battlefield: lands("Forest", 4), hand: ["Unlucky Cabbage Merchant"], library: ["Opt", "Island"] },
       });
@@ -3172,7 +3172,7 @@ describe("lot A, vert", () => {
       expect(s.players.p1?.library.map((id) => nameOf(s, id)).sort()).toEqual(["Opt", "Unlucky Cabbage Merchant"]);
     });
 
-    it("Walltop Sentries : en mourant, 2 PV seulement s'il y a une Leçon dans votre cimetière", () => {
+    it("Walltop Sentries: when it dies, 2 life only if there's a Lesson in your graveyard", () => {
       const run = (graveyard: string[]) => {
         const s = scenario({
           p1: { battlefield: ["Walltop Sentries", "Mountain", "Mountain"], hand: ["Lightning Strike"], graveyard },
@@ -3196,13 +3196,13 @@ describe("lot A, multicolores", () => {
     const a = legalActions(s, player).find((x) => x.type === "activate" && x.source === source);
     return act(s, player, { type: "activate", source, ability: a?.type === "activate" ? a.ability : -1, ...extra });
   };
-  /** Va jusqu'à la déclaration des attaquants de p1 et déclare ces attaquants contre p2. */
+  /** Goes to p1's declare attackers step and declares these attackers against p2. */
   const attack = (s: S, ids: string[]): S => {
     const at = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers" && x.pending.player === "p1");
     return act(at, "p1", { type: "declareAttackers", attackers: ids.map((id) => ({ id, defender: "p2" })) });
   };
 
-  /** Éphémère de test : « Détruisez la créature ciblée. » */
+  /** Test instant: "Destroy target creature." */
   const murder = customCard({
     name: "Test Murder",
     types: ["Instant"],
@@ -3210,18 +3210,18 @@ describe("lot A, multicolores", () => {
     spell: dsl.spell([dsl.target.creature()], [dsl.fx.destroy(dsl.ref.target())]),
   });
 
-  /** Artefact de test : « Sacrifiez une créature : rien. » (un autre permanent sacrifié). */
+  /** Test artifact: "Sacrifice a creature: nothing." (another permanent sacrificed). */
   const altar = customCard({
     name: "Test Altar",
     types: ["Artifact"],
     typeLine: "Artifact",
     abilities: [
-      dsl.activated({ sacrificeOther: { filter: { types: ["Creature"] } }, effects: [], label: "Sacrifiez une créature" }),
+      dsl.activated({ sacrificeOther: { filter: { types: ["Creature"] } }, effects: [], label: "Sacrifice a creature" }),
     ],
   });
 
   describe("Avatar: The Last Airbender, lot A — multicolores", () => {
-    it("Air Nomad Legacy : un Indice en arrivant ; vos créatures volantes gagnent +1/+1", () => {
+    it("Air Nomad Legacy: a Clue when it enters; your flying creatures get +1/+1", () => {
       let s = scenario({
         p1: { battlefield: ["Plains", "Island", "Serra Angel", "Bear Cub"], hand: ["Air Nomad Legacy"] },
         p2: { battlefield: ["Serra Angel"] },
@@ -3233,7 +3233,7 @@ describe("lot A, multicolores", () => {
       expect(pt(s, idOf(s, "p2", "battlefield", "Serra Angel"))).toEqual([4, 4]);
     });
 
-    it("Azula, Cunning Usurper : l'adversaire exile une créature non-jeton et une carte non-terrain de son cimetière, lançables pendant votre tour", () => {
+    it("Azula, Cunning Usurper: the opponent exiles a nontoken creature and a nonland card from their graveyard, castable during your turn", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Swamp", 4), "Island", "Swamp"], hand: ["Azula, Cunning Usurper"] },
         p2: { battlefield: ["Bear Cub"], graveyard: ["Opt", "Forest"] },
@@ -3245,16 +3245,16 @@ describe("lot A, multicolores", () => {
       expect(bear).toBeDefined();
       expect(opt).toBeDefined();
       expect(s.players.p2?.graveyard.map((id) => nameOf(s, id))).toEqual(["Forest"]);
-      // Il reste un Marais dégagé : Opt ({U}) se lance avec du mana de n'importe quel type.
+      // One Swamp remains untapped: Opt ({U}) is cast with mana of any type.
       expect(castable(s, "p1", opt)).toBe(true);
       s = settle(act(s, "p1", { type: "cast", card: opt }));
       expect(exiled(s, "Opt")).toHaveLength(0);
-      // Pas pendant le tour adverse.
+      // Not during the opponent's turn.
       s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
       expect(castable(s, "p1", bear)).toBe(false);
     });
 
-    it("Beifong's Bounty Hunters : une de vos créatures non-terrains meurt, maîtrise de la terre X (sa force)", () => {
+    it("Beifong's Bounty Hunters: one of your nonland creatures dies, earthbending X (its power)", () => {
       let s = scenario({
         p1: {
           battlefield: ["Beifong's Bounty Hunters", "Bear Cub", "Forest", "Mountain"],
@@ -3270,7 +3270,7 @@ describe("lot A, multicolores", () => {
     });
 
     describe("Bitter Work", () => {
-      it("attaquer avec une créature de force 4 ou plus fait piocher ; pas avec une petite créature", () => {
+      it("attacking with a creature with power 4 or greater makes you draw; not with a small creature", () => {
         const run = (attacker: string) => {
           let s = scenario({ p1: { battlefield: ["Bitter Work", attacker] } });
           const hand = s.players.p1?.hand.length ?? 0;
@@ -3281,7 +3281,7 @@ describe("lot A, multicolores", () => {
         expect(run("Bear Cub")).toBe(0);
       });
 
-      it("exhaust — {4} : maîtrise de la terre 4, seulement pendant votre tour", () => {
+      it("exhaust — {4}: earthbending 4, only during your turn", () => {
         let s = scenario({ p1: { battlefield: ["Bitter Work", ...lands("Forest", 5)] } });
         const work = idOf(s, "p1", "battlefield", "Bitter Work");
         const land = idsOf(s, "p1", "battlefield", "Forest")[4] as string;
@@ -3296,7 +3296,7 @@ describe("lot A, multicolores", () => {
       });
     });
 
-    it("Bumi, Unleashed : blessures de combat à un joueur, vos terrains se dégagent et un combat supplémentaire suit, sans créatures non-terrains", () => {
+    it("Bumi, Unleashed: combat damage to a player, your lands untap and an additional combat follows, without nonland creatures", () => {
       let s = scenario({
         p1: {
           battlefield: ["Bumi, Unleashed", "Bear Cub", { name: "Forest", tapped: true }, { name: "Mountain", tapped: true }],
@@ -3308,20 +3308,20 @@ describe("lot A, multicolores", () => {
       s = advanceUntil(s, (x) => x.turn.step === "endCombat");
       expect(s.players.p2?.life).toBe(15);
       expect(s.battlefield.filter((id) => chars(s, id).types.includes("Land")).every((id) => !s.objects[id]?.tapped)).toBe(true);
-      // Le combat supplémentaire : l'Ours (non-terrain) ne peut pas y attaquer.
+      // The additional combat: the Bear (nonland) can't attack in it.
       s = advanceUntil(s, (x) => x.turn.step === "beginCombat" || x.turn.step === "main2");
       expect(s.turn.step).toBe("beginCombat");
       expect(chars(s, bear).keywords).toContain("cantAttack");
     });
 
-    it("Cat-Owl : en attaquant, dégage un artefact ou une créature ciblé", () => {
+    it("Cat-Owl: when attacking, untaps a targeted artifact or creature", () => {
       let s = scenario({ p1: { battlefield: ["Cat-Owl", { name: "Bear Cub", tapped: true }] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = settle(attack(s, [idOf(s, "p1", "battlefield", "Cat-Owl")]), picking([bear]));
       expect(s.objects[bear]?.tapped).toBe(false);
     });
 
-    it("Cruel Administrator : raid, un marqueur +1/+1 ; en attaquant, un Soldat 2/2 avec la maîtrise du feu 1", () => {
+    it("Cruel Administrator: raid, a +1/+1 counter; when attacking, a 2/2 Soldier with firebending 1", () => {
       const run = (attackFirst: boolean) => {
         let s = scenario({
           p1: { battlefield: [...lands("Swamp", 3), ...lands("Mountain", 2), "Bear Cub"], hand: ["Cruel Administrator"] },
@@ -3345,7 +3345,7 @@ describe("lot A, multicolores", () => {
       ).toBe(true);
     });
 
-    it("Dai Li Agents : deux maîtrises de la terre 1 en arrivant ; en attaquant, drain égal à vos créatures avec un marqueur +1/+1", () => {
+    it("Dai Li Agents: two earthbending 1 when it enters; when attacking, drain equal to your creatures with a +1/+1 counter", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Swamp", 2), ...lands("Forest", 4)], hand: ["Dai Li Agents"] },
       });
@@ -3357,14 +3357,14 @@ describe("lot A, multicolores", () => {
         return [asked === 1 ? a : b].filter((x) => req.options.includes(x));
       });
       expect([plus(s, a), plus(s, b)]).toEqual([1, 1]);
-      // Au tour suivant de p1, les Agents attaquent : deux créatures avec un marqueur.
+      // On p1's next turn, the Agents attack: two creatures with a counter.
       s = advanceUntil(s, (x) => x.turn.active === "p2");
       s = settle(attack(s, [idOf(s, "p1", "battlefield", "Dai Li Agents")]));
       expect(s.players.p2?.life).toBe(18);
       expect(s.players.p1?.life).toBe(22);
     });
 
-    it("Dragonfly Swarm : force égale aux cartes non-créatures non-terrains de votre cimetière", () => {
+    it("Dragonfly Swarm: power equal to the noncreature nonland cards in your graveyard", () => {
       let s = scenario({
         p1: {
           battlefield: ["Dragonfly Swarm", "Mountain"],
@@ -3375,12 +3375,12 @@ describe("lot A, multicolores", () => {
       const swarm = idOf(s, "p1", "battlefield", "Dragonfly Swarm");
       expect(pt(s, swarm)).toEqual([1, 3]);
       s = settle(cast(s, "p1", "Firebending Lesson", { kicked: false, targets: { t: [swarm] } }));
-      // La Leçon, une fois au cimetière, compte aussi ; ses 2 blessures ne la tuent pas.
+      // The Lesson, once in the graveyard, counts too; its 2 damage doesn't kill it.
       expect(idsOf(s, "p1", "battlefield", "Dragonfly Swarm")).toHaveLength(1);
       expect(pt(s, swarm)).toEqual([2, 3]);
     });
 
-    it("Dragonfly Swarm : meurt avec une Leçon au cimetière, piochez ; sans Leçon, rien", () => {
+    it("Dragonfly Swarm: dies with a Lesson in the graveyard, draw; without a Lesson, nothing", () => {
       const run = (graveyard: string[]) => {
         let s = scenario({
           p1: { battlefield: ["Dragonfly Swarm", ...lands("Mountain", 2)], hand: ["Lightning Strike"], graveyard },
@@ -3394,7 +3394,7 @@ describe("lot A, multicolores", () => {
       expect(run(["Bear Cub"])).toBe(0);
     });
 
-    it("Earth King's Lieutenant : un marqueur sur chacun de vos autres Alliés ; chaque autre Allié qui arrive lui en donne un", () => {
+    it("Earth King's Lieutenant: a counter on each of your other Allies; each other Ally that enters gives it one", () => {
       let s = scenario({
         p1: {
           battlefield: ["Forest", "Plains", ...lands("Plains", 2), "Pretending Poxbearers", "Bear Cub"],
@@ -3411,7 +3411,7 @@ describe("lot A, multicolores", () => {
       expect(plus(s, lieutenant)).toBe(1);
     });
 
-    it("Earth Rumble Wrestlers : +1/+0 et piétinement quand un terrain est arrivé sous votre contrôle ce tour-ci", () => {
+    it("Earth Rumble Wrestlers: +1/+0 and trample when a land entered under your control this turn", () => {
       let s = scenario({ p1: { battlefield: ["Earth Rumble Wrestlers"], hand: ["Forest"] } });
       const w = idOf(s, "p1", "battlefield", "Earth Rumble Wrestlers");
       expect(pt(s, w)).toEqual([3, 4]);
@@ -3422,24 +3422,24 @@ describe("lot A, multicolores", () => {
       expect(chars(s, w).keywords).toContain("reach");
     });
 
-    it("Fire Lord Azula : un sort lancé pendant qu'elle attaque est copié", () => {
+    it("Fire Lord Azula: a spell cast while she attacks is copied", () => {
       let s = scenario({ p1: { battlefield: ["Fire Lord Azula", "Mountain"], hand: ["Lightning Strike"] } });
       s = attack(s, [idOf(s, "p1", "battlefield", "Fire Lord Azula")]);
       s = advanceUntil(s, (x) => x.pending?.kind === "priority" && x.pending.player === "p1" && x.stack.length === 0);
-      // Maîtrise du feu 2 : {R}{R} pendant le combat, plus la Montagne.
+      // Firebending 2: {R}{R} during combat, plus the Mountain.
       expect(s.players.p1?.manaPool.R).toBe(2);
       s = settle(cast(s, "p1", "Lightning Strike", { targets: { t: ["p2"] } }));
       expect(s.players.p2?.life).toBe(14);
     });
 
-    it("Fire Lord Azula : pas de copie hors de l'attaque", () => {
+    it("Fire Lord Azula: no copy outside of the attack", () => {
       let s = scenario({ p1: { battlefield: ["Fire Lord Azula", ...lands("Mountain", 2)], hand: ["Lightning Strike"] } });
       s = settle(cast(s, "p1", "Lightning Strike", { targets: { t: ["p2"] } }));
       expect(s.players.p2?.life).toBe(17);
     });
 
-    it("Fire Lord Azula : « tant qu'elle attaque » n'est vérifié qu'au déclenchement ; retirée du combat ensuite, la copie est faite", () => {
-      /** Éphémère de test à {0} : « Acquérez le contrôle de la créature ciblée jusqu'à la fin du tour. » */
+    it('Fire Lord Azula: "as long as she attacks" is checked only on trigger; removed from combat afterward, the copy is still made', () => {
+      /** {0} test instant: "Gain control of target creature until end of turn." */
       const threaten = customCard({
         name: "Test Threaten",
         types: ["Instant"],
@@ -3454,22 +3454,22 @@ describe("lot A, multicolores", () => {
       s = attack(s, [azula]);
       s = advanceUntil(s, (x) => x.pending?.kind === "priority" && x.pending.player === "p1" && x.stack.length === 0);
       s = cast(s, "p1", "Lightning Strike", { targets: { t: ["p2"] } });
-      // La capacité d'Azula se déclenche (elle attaque) et va sur la pile au-dessus de l'Éclair.
+      // Azula's ability triggers (she attacks) and goes on the stack above the Lightning Bolt.
       expect(s.stack).toHaveLength(2);
       s = act(s, "p1", { type: "pass" });
       expect(s.pending?.kind === "priority" && s.pending.player).toBe("p2");
-      // En réponse, l'adversaire en prend le contrôle : elle est retirée du combat (506.4).
+      // In response, the opponent gains control of her: she is removed from combat (506.4).
       s = passBoth(cast(s, "p2", "Test Threaten", { targets: { t: [azula] } }));
       expect(s.objects[azula]?.controller).toBe("p2");
       expect(s.combat?.attackers.some((a) => a.id === azula)).toBe(false);
       expect(s.stack).toHaveLength(2);
-      // La capacité se résout quand même : l'Éclair est copié.
+      // The ability resolves anyway: the Lightning Bolt is copied.
       s = settle(s);
       expect(s.players.p2?.life).toBe(14);
     });
 
     describe("Fire Lord Zuko", () => {
-      /** Éphémère de test : « Exilez la créature ciblée, puis renvoyez-la sur le champ de bataille. » */
+      /** Test instant: "Exile target creature, then return it to the battlefield." */
       const flicker = customCard({
         name: "Test Flicker",
         types: ["Instant"],
@@ -3479,7 +3479,7 @@ describe("lot A, multicolores", () => {
           [dsl.fx.exileCard(dsl.ref.target(), { name: "f" }), dsl.fx.toBattlefield(dsl.ref.stored("f"))],
         ),
       });
-      /** Éphémère de test : « Maîtrise de l'air de la créature ciblée. » */
+      /** Test instant: "Airbend target creature." */
       const gust = customCard({
         name: "Test Gust",
         types: ["Instant"],
@@ -3487,14 +3487,14 @@ describe("lot A, multicolores", () => {
         spell: dsl.spell([dsl.target.creature()], [dsl.fx.airbend(dsl.ref.target())]),
       });
 
-      it("maîtrise du feu X, X étant sa force", () => {
+      it("firebending X, X being its power", () => {
         let s = scenario({ p1: { battlefield: [{ name: "Fire Lord Zuko", counters: { "+1/+1": 1 } }] } });
         s = attack(s, [idOf(s, "p1", "battlefield", "Fire Lord Zuko")]);
         s = advanceUntil(s, (x) => x.turn.step === "declareBlockers" && x.pending?.kind === "priority");
         expect(s.players.p1?.manaPool.R).toBe(3);
       });
 
-      it("un permanent que vous contrôlez arrive depuis l'exil : un marqueur +1/+1 sur chacune de vos créatures", () => {
+      it("a permanent you control enters from exile: a +1/+1 counter on each of your creatures", () => {
         let s = scenario({ p1: { battlefield: ["Fire Lord Zuko", "Bear Cub"], hand: [flicker] } });
         const zuko = idOf(s, "p1", "battlefield", "Fire Lord Zuko");
         s = settle(cast(s, "p1", "Test Flicker", { targets: { t: [idOf(s, "p1", "battlefield", "Bear Cub")] } }));
@@ -3502,19 +3502,19 @@ describe("lot A, multicolores", () => {
         expect(plus(s, idOf(s, "p1", "battlefield", "Bear Cub"))).toBe(1);
       });
 
-      it("un sort lancé depuis l'exil déclenche une seule fois (le permanent arrive depuis la pile)", () => {
+      it("a spell cast from exile triggers only once (the permanent enters from the stack)", () => {
         let s = scenario({ p1: { battlefield: ["Fire Lord Zuko", "Bear Cub", ...lands("Forest", 2)], hand: [gust] } });
         const zuko = idOf(s, "p1", "battlefield", "Fire Lord Zuko");
         s = settle(cast(s, "p1", "Test Gust", { targets: { t: [idOf(s, "p1", "battlefield", "Bear Cub")] } }));
         expect(plus(s, zuko)).toBe(0);
         s = settle(act(s, "p1", { type: "cast", card: exiled(s, "Bear Cub")[0] as string }));
         expect(plus(s, zuko)).toBe(1);
-        // La capacité se résout avant le sort : l'Ours, arrivé ensuite (depuis la pile), n'a rien.
+        // The ability resolves before the spell: the Bear, which entered afterward (from the stack), gets nothing.
         expect(plus(s, idOf(s, "p1", "battlefield", "Bear Cub"))).toBe(0);
       });
     });
 
-    it("Foggy Swamp Spirit Keeper : votre deuxième carte piochée du tour crée un Esprit 1/1", () => {
+    it("Foggy Swamp Spirit Keeper: your second card drawn each turn creates a 1/1 Spirit", () => {
       let s = scenario({ p1: { battlefield: ["Foggy Swamp Spirit Keeper", ...lands("Island", 2)], hand: ["Opt", "Opt"] } });
       const [a, b] = idsOf(s, "p1", "hand", "Opt") as [string, string];
       s = settle(act(s, "p1", { type: "cast", card: a }));
@@ -3524,7 +3524,7 @@ describe("lot A, multicolores", () => {
       expect([...pt(s, spirit), chars(s, spirit).colors]).toEqual([1, 1, []]);
     });
 
-    it("Guru Pathik : une Leçon parmi les cinq du dessus ; chaque sort de Leçon met un marqueur sur une autre de vos créatures", () => {
+    it("Guru Pathik: a Lesson among the top five; each Lesson spell puts a counter on another of your creatures", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Forest", 4), "Mountain", "Bear Cub"],
@@ -3544,7 +3544,7 @@ describe("lot A, multicolores", () => {
       expect(plus(s, guru)).toBe(0);
     });
 
-    it("Hei Bai : en arrivant, sacrifiez une autre créature pour deux marqueurs ; en partant, ses marqueurs vont sur une de vos créatures", () => {
+    it("Hei Bai: when it enters, sacrifice another creature for two counters; when it leaves, its counters go onto one of your creatures", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Plains", 4), "Bear Cub", "Serra Angel"], hand: ["Hei Bai, Spirit of Balance", murder] },
       });
@@ -3560,14 +3560,14 @@ describe("lot A, multicolores", () => {
       expect(plus(s, angel)).toBe(2);
     });
 
-    it("Hei Bai : le sacrifice est facultatif", () => {
+    it("Hei Bai: the sacrifice is optional", () => {
       let s = scenario({ p1: { battlefield: [...lands("Plains", 4), "Bear Cub"], hand: ["Hei Bai, Spirit of Balance"] } });
       s = settle(cast(s, "p1", "Hei Bai, Spirit of Balance"), (req) => (req.type === "pick" ? [] : undefined));
       expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
       expect(plus(s, idOf(s, "p1", "battlefield", "Hei Bai, Spirit of Balance"))).toBe(0);
     });
 
-    it("Iroh, Tea Master : au combat, donnez un permanent à un adversaire et créez un Allié avec un marqueur par permanent à vous chez eux", () => {
+    it("Iroh, Tea Master: at combat, give a permanent to an opponent and create an Ally with a counter for each permanent you own they control", () => {
       let s = scenario({ p1: { battlefield: ["Iroh, Tea Master", "Bear Cub"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = advanceUntil(s, (x) => x.turn.step === "beginCombat" && (x.pending?.kind === "choice" || x.stack.length > 0));
@@ -3578,7 +3578,7 @@ describe("lot A, multicolores", () => {
       expect(pt(s, ally)).toEqual([2, 2]);
     });
 
-    it("Iroh, Tea Master : seuls comptent les permanents que vous possédez chez vos adversaires (pas ceux qu'un adversaire a pris à un autre)", () => {
+    it("Iroh, Tea Master: only permanents you own that your opponents control count (not those an opponent took from another)", () => {
       let s = scenario({
         players: 3,
         p1: { battlefield: ["Iroh, Tea Master", "Bear Cub", "Llanowar Elves"] },
@@ -3592,11 +3592,11 @@ describe("lot A, multicolores", () => {
       s = advanceUntil(s, (x) => x.turn.step === "beginCombat" && (x.pending?.kind === "choice" || x.stack.length > 0));
       s = settle(s, picking([bear]));
       expect(s.objects[bear]?.controller).not.toBe("p1");
-      // Le Bear Cub donné et les Llanowar Elves pris par p3 : deux marqueurs ; la Serra Angel de p3 chez p2 ne compte pas.
+      // The Bear Cub given and the Llanowar Elves taken by p3: two counters; p3's Serra Angel under p2 doesn't count.
       expect(plus(s, idOf(s, "p1", "battlefield", "Ally"))).toBe(2);
     });
 
-    it("Jet, Freedom Fighter : en arrivant, blessures égales au nombre de vos créatures à une créature adverse", () => {
+    it("Jet, Freedom Fighter: when it enters, damage equal to the number of your creatures to an opponent's creature", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Mountain", 5), "Bear Cub", "Bear Cub"], hand: ["Jet, Freedom Fighter"] },
         p2: { battlefield: ["Serra Angel"] },
@@ -3606,7 +3606,7 @@ describe("lot A, multicolores", () => {
       expect(s.objects[angel]?.damage).toBe(3);
     });
 
-    it("Katara, the Fearless : les capacités déclenchées de vos Alliés se déclenchent une fois de plus", () => {
+    it("Katara, the Fearless: your Allies' triggered abilities trigger one additional time", () => {
       let s = scenario({
         p1: {
           battlefield: ["Katara, the Fearless", "Pretending Poxbearers", ...lands("Mountain", 2)],
@@ -3617,14 +3617,14 @@ describe("lot A, multicolores", () => {
       expect(idsOf(s, "p1", "battlefield", "Ally")).toHaveLength(2);
     });
 
-    it("Katara, Water Tribe's Hope : maîtrise de l'eau {X}, vos créatures ont une F/E de base X/X jusqu'à la fin du tour", () => {
+    it("Katara, Water Tribe's Hope: waterbending {X}, your creatures have base P/T X/X until end of turn", () => {
       let s = scenario({
         p1: { battlefield: ["Katara, Water Tribe's Hope", "Serra Angel", ...lands("Island", 3)] },
         p2: { battlefield: ["Bear Cub"] },
       });
       const katara = idOf(s, "p1", "battlefield", "Katara, Water Tribe's Hope");
       const angel = idOf(s, "p1", "battlefield", "Serra Angel");
-      // « X ne peut pas être 0 » : X va de 1 à 5 (trois Îles, Katara et l'Ange engagés pour la maîtrise de l'eau).
+      // "X can't be 0": X goes from 1 to 5 (three Islands, Katara and the Angel tapped for the waterbending).
       const option = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === katara);
       expect(option?.type === "activate" ? [option.xMin, option.xMax] : null).toEqual([1, 5]);
       expect(() => activate(s, "p1", katara, { x: 0 })).toThrow(/X must be at least/);
@@ -3637,7 +3637,7 @@ describe("lot A, multicolores", () => {
       expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === katara)).toBe(false);
     });
 
-    it("The Lion-Turtle : ne peut ni attaquer ni bloquer sans trois Leçons au cimetière", () => {
+    it("The Lion-Turtle: can't attack or block without three Lessons in the graveyard", () => {
       const run = (graveyard: string[]) => {
         const s = scenario({ p1: { battlefield: ["The Lion-Turtle"], graveyard } });
         return chars(s, idOf(s, "p1", "battlefield", "The Lion-Turtle")).keywords;
@@ -3646,7 +3646,7 @@ describe("lot A, multicolores", () => {
       expect(run(["Shared Roots", "Firebending Lesson", "Combustion Technique"])).not.toContain("cantAttack");
     });
 
-    it("Long Feng : une autre de vos créatures ou un de vos terrains mis au cimetière, un marqueur sur une de vos créatures", () => {
+    it("Long Feng: another of your creatures or one of your lands put into the graveyard, a counter on one of your creatures", () => {
       let s = scenario({
         p1: {
           battlefield: ["Long Feng, Grand Secretariat", "Bear Cub", "Serra Angel", ...lands("Mountain", 2)],
@@ -3661,7 +3661,7 @@ describe("lot A, multicolores", () => {
       expect(plus(s, angel)).toBe(1);
     });
 
-    it("Messenger Hawk : un Indice ; +2/+0 après deux cartes piochées ce tour-ci", () => {
+    it("Messenger Hawk: a Clue; +2/+0 after two cards drawn this turn", () => {
       let s = scenario({ p1: { battlefield: [...lands("Island", 6)], hand: ["Messenger Hawk", "Opt"] } });
       s = settle(cast(s, "p1", "Messenger Hawk"));
       const hawk = idOf(s, "p1", "battlefield", "Messenger Hawk");
@@ -3672,7 +3672,7 @@ describe("lot A, multicolores", () => {
       expect(pt(s, hawk)).toEqual([3, 2]);
     });
 
-    it("Platypus-Bear : meule deux cartes ; attaque malgré le défenseur avec une Leçon au cimetière", () => {
+    it("Platypus-Bear: mills two cards; attacks despite defender with a Lesson in the graveyard", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Forest", 2)], hand: ["Platypus-Bear"], library: ["Bear Cub", "Shared Roots", "Opt"] },
       });
@@ -3684,7 +3684,7 @@ describe("lot A, multicolores", () => {
       expect(chars(none, idOf(none, "p1", "battlefield", "Platypus-Bear")).keywords).not.toContain("attacksDespiteDefender");
     });
 
-    it("Professor Zei : {1}, {T}, sacrifice : un éphémère ou un rituel de votre cimetière revient en main, pendant votre tour", () => {
+    it("Professor Zei: {1}, {T}, sacrifice: an instant or sorcery from your graveyard returns to hand, during your turn", () => {
       let s = scenario({ p1: { battlefield: ["Professor Zei, Anthropologist", "Island"], graveyard: ["Opt", "Bear Cub"] } });
       const zei = idOf(s, "p1", "battlefield", "Professor Zei, Anthropologist");
       const opt = idOf(s, "p1", "graveyard", "Opt");
@@ -3695,7 +3695,7 @@ describe("lot A, multicolores", () => {
       expect(idsOf(s, "p1", "graveyard", "Professor Zei, Anthropologist")).toHaveLength(1);
     });
 
-    it("Sandbender Scavengers : un marqueur par autre permanent sacrifié ; en mourant, exilez-la pour ramener une créature de VM au plus sa force", () => {
+    it("Sandbender Scavengers: a counter per other permanent sacrificed; when it dies, exile it to return a creature with MV at most its power", () => {
       let s = scenario({
         p1: {
           battlefield: ["Sandbender Scavengers", "Bear Cub", altar, ...lands("Mountain", 4)],
@@ -3714,12 +3714,12 @@ describe("lot A, multicolores", () => {
         return undefined;
       });
       expect(exiled(s, "Sandbender Scavengers")).toHaveLength(1);
-      // Sa dernière force connue (2) : l'Ours (VM 2) revient, pas l'Ange (VM 5).
+      // Its last known power (2): the Bear (MV 2) returns, not the Angel (MV 5).
       expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
       expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(0);
     });
 
-    it("Sokka, Bold Boomeranger : défaussez jusqu'à deux cartes, piochez-en autant ; un sort d'artefact ou de Leçon lui donne un marqueur", () => {
+    it("Sokka, Bold Boomeranger: discard up to two cards, draw as many; an artifact or Lesson spell gives it a counter", () => {
       let s = scenario({
         p1: {
           battlefield: ["Island", "Mountain", "Mountain"],
@@ -3738,7 +3738,7 @@ describe("lot A, multicolores", () => {
       expect(plus(s, sokka)).toBe(1);
     });
 
-    it("Sokka, Lateral Strategist : pioche quand il attaque avec une autre créature, pas seul", () => {
+    it("Sokka, Lateral Strategist: draws when it attacks with another creature, not alone", () => {
       const run = (names: string[]) => {
         let s = scenario({ p1: { battlefield: ["Sokka, Lateral Strategist", "Bear Cub"] } });
         const hand = s.players.p1?.hand.length ?? 0;
@@ -3754,7 +3754,7 @@ describe("lot A, multicolores", () => {
       expect(run(["Sokka, Lateral Strategist"])).toBe(0);
     });
 
-    it("Sokka, Tenacious Tactician : vos autres Alliés ont la menace et la prouesse ; un sort non-créature crée un Allié", () => {
+    it("Sokka, Tenacious Tactician: your other Allies have menace and prowess; a noncreature spell creates an Ally", () => {
       let s = scenario({
         p1: { battlefield: ["Sokka, Tenacious Tactician", "Pretending Poxbearers", "Bear Cub", "Island"], hand: ["Opt"] },
       });
@@ -3767,7 +3767,7 @@ describe("lot A, multicolores", () => {
       expect(chars(s, ally).keywords).toEqual(expect.arrayContaining(["menace", "prowess"]));
     });
 
-    it("Suki, Kyoshi Warrior : force égale à vos créatures ; en attaquant, un Allié engagé et attaquant", () => {
+    it("Suki, Kyoshi Warrior: power equal to your creatures; when attacking, a tapped and attacking Ally", () => {
       let s = scenario({ p1: { battlefield: ["Suki, Kyoshi Warrior", "Bear Cub"] } });
       const suki = idOf(s, "p1", "battlefield", "Suki, Kyoshi Warrior");
       expect(pt(s, suki)).toEqual([2, 4]);
@@ -3780,7 +3780,7 @@ describe("lot A, multicolores", () => {
       expect(s.players.p2?.life).toBe(16);
     });
 
-    it("Sun Warriors : maîtrise du feu X, X étant le nombre de vos créatures ; {5} : un Allié", () => {
+    it("Sun Warriors: firebending X, X being the number of your creatures; {5}: an Ally", () => {
       let s = scenario({ p1: { battlefield: ["Sun Warriors", "Bear Cub", "Bear Cub", ...lands("Mountain", 5)] } });
       const sun = idOf(s, "p1", "battlefield", "Sun Warriors");
       s = settle(activate(s, "p1", sun));
@@ -3790,7 +3790,7 @@ describe("lot A, multicolores", () => {
       expect(s.players.p1?.manaPool.R).toBe(4);
     });
 
-    it("Tolls of War : un Indice ; sacrifier un permanent pendant votre tour crée un Allié, une fois par tour", () => {
+    it("Tolls of War: a Clue; sacrificing a permanent during your turn creates an Ally, once each turn", () => {
       let s = scenario({ p1: { battlefield: [...lands("Plains", 6), "Swamp"], hand: ["Tolls of War"] } });
       s = settle(cast(s, "p1", "Tolls of War"));
       const clue = idOf(s, "p1", "battlefield", "Clue");
@@ -3800,7 +3800,7 @@ describe("lot A, multicolores", () => {
       expect(idsOf(s, "p1", "battlefield", "Ally")).toHaveLength(1);
     });
 
-    it("Toph, Hardheaded Teacher : chaque sort lancé fait une maîtrise de la terre 1, avec un marqueur de plus pour une Leçon", () => {
+    it("Toph, Hardheaded Teacher: each spell cast makes an earthbending 1, with one more counter for a Lesson", () => {
       let s = scenario({
         p1: { battlefield: ["Toph, Hardheaded Teacher", ...lands("Mountain", 2), "Island"], hand: ["Firebending Lesson", "Opt"] },
         p2: { battlefield: ["Fire Elemental"] },
@@ -3815,7 +3815,7 @@ describe("lot A, multicolores", () => {
       expect(m2).toBeDefined();
     });
 
-    it("Toph, Hardheaded Teacher : en arrivant, défaussez une carte pour reprendre un éphémère ou un rituel", () => {
+    it("Toph, Hardheaded Teacher: when it enters, discard a card to return an instant or sorcery", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Mountain", 2), ...lands("Forest", 2)],
@@ -3835,7 +3835,7 @@ describe("lot A, multicolores", () => {
       expect(idsOf(s, "p1", "graveyard", "Bear Cub")).toHaveLength(1);
     });
 
-    it("Toph, the First Metalbender : vos artefacts non-jetons sont aussi des terrains ; maîtrise de la terre 2 à votre étape de fin", () => {
+    it("Toph, the First Metalbender: your nontoken artifacts are also lands; earthbending 2 at your end step", () => {
       const artifact = customCard({
         name: "Test Relic",
         types: ["Artifact"],
@@ -3843,7 +3843,7 @@ describe("lot A, multicolores", () => {
         abilities: [
           dsl.activated({
             effects: [dsl.fx.createTokens({ name: "Clue", colors: [], types: ["Artifact"], subtypes: ["Clue"] })],
-            label: "Un Indice",
+            label: "A Clue",
           }),
         ],
       });
@@ -3858,13 +3858,13 @@ describe("lot A, multicolores", () => {
       expect(chars(s, relic).types).toEqual(expect.arrayContaining(["Artifact", "Land", "Creature"]));
     });
 
-    it("Uncle Iroh : les sorts de Leçon coûtent {1} de moins", () => {
+    it("Uncle Iroh: Lesson spells cost {1} less", () => {
       const s = scenario({ p1: { battlefield: ["Uncle Iroh", "Forest"], hand: ["Shared Roots", "Bear Cub"] } });
       expect(castable(s, "p1", idOf(s, "p1", "hand", "Shared Roots"))).toBe(true);
       expect(castable(s, "p1", idOf(s, "p1", "hand", "Bear Cub"))).toBe(false);
     });
 
-    it("Zuko, Conflicted : au début de votre première phase principale, un mode pas encore choisi, et vous perdez 2 PV", () => {
+    it("Zuko, Conflicted: at the beginning of your first main phase, a mode not yet chosen, and you lose 2 life", () => {
       let s = scenario({ step: "upkeep", p1: { battlefield: ["Zuko, Conflicted"] } });
       let zuko = idOf(s, "p1", "battlefield", "Zuko, Conflicted");
       let offered: string[] = [];
@@ -3880,7 +3880,7 @@ describe("lot A, multicolores", () => {
       expect(offered).toEqual(["0", "1", "2", "3"]);
       expect(plus(s, zuko)).toBe(1);
       expect(s.players.p1?.life).toBe(18);
-      // Au tour suivant de p1, le marqueur n'est plus proposé ; il passe chez l'adversaire.
+      // On p1's next turn, the counter is no longer offered; it goes to the opponent.
       s = advanceUntil(s, (x) => x.turn.active === "p2");
       s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.pending?.kind === "choice");
       s = settle(s, pickMode("3"));
@@ -3893,14 +3893,14 @@ describe("lot A, multicolores", () => {
   });
 });
 
-describe("lot A, incolores et terrains", () => {
+describe("lot A, colorless cards and lands", () => {
   type S = GameState;
   const BASIC_TYPES = ["Plains", "Island", "Swamp", "Mountain", "Forest"];
 
-  /** Index de la capacité de l'objet portant ce libellé. */
+  /** Index of the ability of the object bearing this label. */
   const abilityIndex = (s: S, id: string, label: string) => {
     const i = chars(s, id).abilities.findIndex((ab) => "label" in ab && ab.label === label);
-    if (i < 0) throw new Error(`Capacité « ${label} » introuvable`);
+    if (i < 0) throw new Error(`Ability "${label}" not found`);
     return i;
   };
   const activate = (s: S, player: string, source: string, label: string, extra: object = {}) =>
@@ -3909,27 +3909,27 @@ describe("lot A, incolores et terrains", () => {
     legalActions(s, player).some(
       (a) => a.type === "activate" && a.source === source && a.ability === abilityIndex(s, source, label),
     );
-  /** Choisit le bleu quand on demande une couleur de mana. */
+  /** Chooses blue when asked for a mana color. */
   const blueMana: Answer = (req) => (req.type === "pick" && req.options.includes("U") ? ["U"] : undefined);
   const handSize = (s: S, p = "p1") => s.players[p]?.hand.length ?? 0;
   const graveyardNames = (s: S, p: string) => (s.players[p]?.graveyard ?? []).map((id) => nameOf(s, id));
   const playLand = (s: S, name: string) => act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", name) });
 
-  /** Sanctuaire de test (« Enchantment — Shrine »). */
+  /** Test Sanctuary ("Enchantment — Shrine"). */
   const shrine = customCard({
     name: "Test Shrine",
     types: ["Enchantment"],
     typeLine: "Enchantment — Shrine",
     subtypes: ["Shrine"],
   });
-  /** « Détruisez l'artefact ciblé » pour {0}. */
+  /** "Destroy target artifact" for {0}. */
   const shatter = customCard({
     name: "Test Shatter",
     types: ["Sorcery"],
     typeLine: "Sorcery",
     spell: dsl.spell([dsl.target.permanent("t", ["Artifact"], {}, "artefact")], [dsl.fx.destroy(dsl.ref.target())]),
   });
-  /** Créature à {W}, Alliée ou non. */
+  /** {W} creature, Ally or not. */
   const whiteCreature = (name: string, subtypes: string[]) =>
     customCard({
       name,
@@ -3941,7 +3941,7 @@ describe("lot A, incolores et terrains", () => {
       power: 1,
       toughness: 1,
     });
-  /** Rituel à {U}, Leçon ou non. */
+  /** {U} sorcery, Lesson or not. */
   const blueSorcery = (name: string, subtypes: string[]) =>
     customCard({
       name,
@@ -3954,7 +3954,7 @@ describe("lot A, incolores et terrains", () => {
       spell: dsl.spell([], [dsl.fx.gainLife(1)]),
     });
 
-  describe("Avatar: The Last Airbender, lot A — incolores et terrains", () => {
+  describe("Avatar: The Last Airbender, lot A — colorless cards and lands", () => {
     describe("Aang's Journey", () => {
       const run = (kicked: boolean) => {
         let s = scenario({
@@ -3964,14 +3964,14 @@ describe("lot A, incolores et terrains", () => {
         return s;
       };
 
-      it("sans kicker : un terrain de base dans la main, et 2 PV", () => {
+      it("without kicker: a basic land in hand, and 2 life", () => {
         const s = run(false);
         expect(idsOf(s, "p1", "hand", "Island")).toHaveLength(1);
         expect(idsOf(s, "p1", "hand", "Test Shrine")).toHaveLength(0);
         expect(s.players.p1?.life).toBe(22);
       });
 
-      it("kické : un terrain de base et une carte de Sanctuaire", () => {
+      it("kicked: a basic land and a Sanctuary card", () => {
         const s = run(true);
         expect(idsOf(s, "p1", "hand", "Island")).toHaveLength(1);
         expect(idsOf(s, "p1", "hand", "Test Shrine")).toHaveLength(1);
@@ -3980,7 +3980,7 @@ describe("lot A, incolores et terrains", () => {
       });
     });
 
-    it("Energybending : vos terrains ont tous les types de terrain de base jusqu'à la fin du tour ; piochez une carte", () => {
+    it("Energybending: your lands have all basic land types until end of turn; draw a card", () => {
       let s = scenario({
         p1: { battlefield: ["Cryptic Caves", ...lands("Island", 2)], hand: ["Energybending"] },
         p2: { battlefield: ["Forest"] },
@@ -3990,17 +3990,17 @@ describe("lot A, incolores et terrains", () => {
       s = settle(cast(s, "p1", "Energybending"));
       expect(handSize(s)).toBe(hand);
       expect(chars(s, caves).subtypes).toEqual(expect.arrayContaining(BASIC_TYPES));
-      // 305.6 : un terrain de chaque type de terrain de base a la capacité de mana correspondante.
+      // 305.6: a land of each basic land type has the corresponding mana ability.
       expect(manaAbilitiesOf(s, caves).flatMap((ab) => ab.produce)).toEqual(
         expect.arrayContaining(["W", "U", "B", "R", "G", "C"]),
       );
-      // Les terrains adverses ne sont pas concernés.
+      // Opponents' lands are not affected.
       expect(chars(s, idOf(s, "p2", "battlefield", "Forest")).subtypes).toEqual(["Forest"]);
       s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
       expect(chars(s, caves).subtypes).toEqual([]);
     });
 
-    it("Zuko's Exile : exile un artefact, une créature ou un enchantement ; son contrôleur crée un Indice", () => {
+    it("Zuko's Exile: exiles an artifact, a creature or an enchantment; its controller creates a Clue", () => {
       let s = scenario({ p1: { battlefield: lands("Island", 5), hand: ["Zuko's Exile"] }, p2: { battlefield: ["Bear Cub"] } });
       const bear = idOf(s, "p2", "battlefield", "Bear Cub");
       s = settle(cast(s, "p1", "Zuko's Exile", { targets: { t: [bear] } }));
@@ -4010,7 +4010,7 @@ describe("lot A, incolores et terrains", () => {
     });
 
     describe("Barrels of Blasting Jelly", () => {
-      it("{1} : un mana de n'importe quelle couleur, une seule fois par tour", () => {
+      it("{1}: one mana of any color, only once each turn", () => {
         let s = scenario({ p1: { battlefield: ["Barrels of Blasting Jelly", ...lands("Mountain", 2)] } });
         const barrels = idOf(s, "p1", "battlefield", "Barrels of Blasting Jelly");
         const label = "One mana of any color";
@@ -4022,7 +4022,7 @@ describe("lot A, incolores et terrains", () => {
         expect(canActivate(s, "p1", barrels, label)).toBe(false);
       });
 
-      it("{5}, {T}, sacrifiez-le : 5 blessures à une créature", () => {
+      it("{5}, {T}, sacrifice it: 5 damage to a creature", () => {
         let s = scenario({
           p1: { battlefield: ["Barrels of Blasting Jelly", ...lands("Mountain", 5)] },
           p2: { battlefield: ["Serra Angel"] },
@@ -4035,7 +4035,7 @@ describe("lot A, incolores et terrains", () => {
       });
     });
 
-    it("Bender's Waterskin : se dégage pendant le tour de l'adversaire et produit un mana de n'importe quelle couleur", () => {
+    it("Bender's Waterskin: untaps during the opponent's turn and produces one mana of any color", () => {
       let s = scenario({ p1: { battlefield: [{ name: "Bender's Waterskin", tapped: true }] } });
       const skin = idOf(s, "p1", "battlefield", "Bender's Waterskin");
       expect(manaAbilitiesOf(s, skin).flatMap((ab) => ab.produce)).toEqual(["W", "U", "B", "R", "G"]);
@@ -4043,7 +4043,7 @@ describe("lot A, incolores et terrains", () => {
       expect(s.objects[skin]?.tapped).toBe(false);
     });
 
-    it("Fire Nation Warship : un Indice quand il meurt, même sans avoir été équipé (pas une créature)", () => {
+    it("Fire Nation Warship: a Clue when it dies, even if it was never equipped (not a creature)", () => {
       let s = scenario({ p1: { battlefield: ["Fire Nation Warship"] }, p2: { hand: [shatter] }, active: "p2" });
       const ship = idOf(s, "p1", "battlefield", "Fire Nation Warship");
       expect(chars(s, ship).keywords).toContain("reach");
@@ -4052,7 +4052,7 @@ describe("lot A, incolores et terrains", () => {
       expect(idsOf(s, "p1", "battlefield", "Clue")).toHaveLength(1);
     });
 
-    it("Kyoshi Battle Fan : crée un Allié 1/1 et s'y attache (+1/+0)", () => {
+    it("Kyoshi Battle Fan: creates a 1/1 Ally and attaches to it (+1/+0)", () => {
       const s = settle(
         cast(scenario({ p1: { battlefield: lands("Plains", 2), hand: ["Kyoshi Battle Fan"] } }), "p1", "Kyoshi Battle Fan"),
       );
@@ -4062,7 +4062,7 @@ describe("lot A, incolores et terrains", () => {
       expect([chars(s, ally).power, chars(s, ally).toughness, chars(s, ally).colors]).toEqual([2, 1, ["W"]]);
     });
 
-    it("Meteor Sword : détruit un permanent en arrivant ; la créature équipée gagne +3/+3", () => {
+    it("Meteor Sword: destroys a permanent when it enters; the equipped creature gets +3/+3", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Mountain", 10), "Bear Cub"], hand: ["Meteor Sword"] },
         p2: { battlefield: ["Forest"] },
@@ -4087,7 +4087,7 @@ describe("lot A, incolores et terrains", () => {
       expect([chars(s, bear).power, chars(s, bear).toughness]).toEqual([5, 5]);
     });
 
-    it("Trusty Boomerang : la créature équipée s'engage pour engager une créature, puis le Boomerang revient en main", () => {
+    it("Trusty Boomerang: the equipped creature taps to tap a creature, then the Boomerang returns to hand", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Plains", 2), "Bear Cub", "Trusty Boomerang"] },
         p2: { battlefield: ["Serra Angel"] },
@@ -4096,7 +4096,7 @@ describe("lot A, incolores et terrains", () => {
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       const angel = idOf(s, "p2", "battlefield", "Serra Angel");
       const label = "Tap a creature, then return Trusty Boomerang to hand";
-      // Non équipé : l'Ourson n'a pas la capacité.
+      // Not equipped: the Cub doesn't have the ability.
       expect(chars(s, bear).abilities.some((ab) => "label" in ab && ab.label === label)).toBe(false);
       const equip = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === boomerang);
       const targetId = equip?.type === "activate" ? (equip.targets?.[0]?.id ?? "t") : "t";
@@ -4109,7 +4109,7 @@ describe("lot A, incolores et terrains", () => {
         }),
       );
       expect(s.objects[boomerang]?.attachedTo).toBe(bear);
-      // « Equipped creature has "{1}, {T}: …" » : la capacité est celle de l'Ourson, qui s'engage.
+      // "Equipped creature has "{1}, {T}: …"": the ability is the Cub's, which taps.
       expect(chars(s, boomerang).abilities.some((ab) => "label" in ab && ab.label === label)).toBe(false);
       s = settle(activate(s, "p1", bear, label, { targets: { t: [angel] } }));
       expect(s.objects[angel]?.tapped).toBe(true);
@@ -4117,7 +4117,7 @@ describe("lot A, incolores et terrains", () => {
       expect(idsOf(s, "p1", "hand", "Trusty Boomerang")).toHaveLength(1);
     });
 
-    it("The Walls of Ba Sing Se : vos autres permanents sont indestructibles, pas ceux des adversaires", () => {
+    it("The Walls of Ba Sing Se: your other permanents are indestructible, not the opponents'", () => {
       const s = scenario({
         p1: { battlefield: ["The Walls of Ba Sing Se", "Bear Cub", "Island"] },
         p2: { battlefield: ["Serra Angel"] },
@@ -4131,7 +4131,7 @@ describe("lot A, incolores et terrains", () => {
     });
 
     describe("Terrains", () => {
-      it("Agna Qel'a : engagé sans terrain de base, dégagé avec ; {2}{U}, {T} : piochez, puis défaussez", () => {
+      it("Agna Qel'a: tapped without a basic land, untapped with one; {2}{U}, {T}: draw, then discard", () => {
         let s = scenario({ p1: { hand: ["Agna Qel'a"] } });
         s = playLand(s, "Agna Qel'a");
         expect(s.objects[idOf(s, "p1", "battlefield", "Agna Qel'a")]?.tapped).toBe(true);
@@ -4146,7 +4146,7 @@ describe("lot A, incolores et terrains", () => {
         expect(s.objects[agna]?.tapped).toBe(true);
       });
 
-      it("terrains bicolores : arrivent engagés ; {4}, {T}, sacrifiez-les : piochez une carte", () => {
+      it("two-color lands: enter tapped; {4}, {T}, sacrifice them: draw a card", () => {
         let s = scenario({ p1: { battlefield: lands("Island", 4), hand: ["Airship Engine Room"] } });
         s = playLand(s, "Airship Engine Room");
         const room = idOf(s, "p1", "battlefield", "Airship Engine Room");
@@ -4160,7 +4160,7 @@ describe("lot A, incolores et terrains", () => {
         expect(graveyardNames(s, "p1")).toContain("Airship Engine Room");
       });
 
-      it("Fire Nation Palace : une créature gagne la maîtrise du feu 4 jusqu'à la fin du tour", () => {
+      it("Fire Nation Palace: a creature gains firebending 4 until end of turn", () => {
         let s = scenario({ p1: { battlefield: ["Fire Nation Palace", "Mountain", "Mountain", "Bear Cub"] } });
         const palace = idOf(s, "p1", "battlefield", "Fire Nation Palace");
         const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -4173,7 +4173,7 @@ describe("lot A, incolores et terrains", () => {
         expect(chars(s, bear).abilities.some((ab) => "label" in ab && plainText(ab.label ?? "") === "Firebending 4")).toBe(false);
       });
 
-      it("Jasmine Dragon Tea Shop : son mana coloré ne sert qu'aux Alliés ; {5}, {T} : un Allié 1/1", () => {
+      it("Jasmine Dragon Tea Shop: its colored mana can be spent only on Allies; {5}, {T}: a 1/1 Ally", () => {
         const ally = whiteCreature("Test Ally", ["Human", "Ally"]);
         const other = whiteCreature("Test Squire", ["Human"]);
         let s = scenario({ p1: { battlefield: ["Jasmine Dragon Tea Shop"], hand: [ally, other] } });
@@ -4185,13 +4185,13 @@ describe("lot A, incolores et terrains", () => {
         expect([chars(s, token).power, chars(s, token).toughness, chars(s, token).colors]).toEqual([1, 1, ["W"]]);
       });
 
-      it("White Lotus Hideout : son mana coloré ne sert qu'aux Leçons et Sanctuaires ; {1}, {T} : n'importe quelle couleur", () => {
+      it("White Lotus Hideout: its colored mana can be spent only on Lessons and Sanctuaries; {1}, {T}: any color", () => {
         const lesson = blueSorcery("Test Lesson", ["Lesson"]);
         const plain = blueSorcery("Test Ponder", []);
         let s = scenario({ p1: { battlefield: ["White Lotus Hideout"], hand: [lesson, plain] } });
         expect(castable(s, "p1", idOf(s, "p1", "hand", "Test Lesson"))).toBe(true);
         expect(castable(s, "p1", idOf(s, "p1", "hand", "Test Ponder"))).toBe(false);
-        // {1}, {T} : la Forêt paie {1} ; ce mana bleu-là sert à n'importe quel sort.
+        // {1}, {T}: the Forest pays {1}; that blue mana is used for any spell.
         s = scenario({ p1: { battlefield: ["White Lotus Hideout", "Forest"], hand: [plain] } });
         const hideout = idOf(s, "p1", "battlefield", "White Lotus Hideout");
         s = settle(activate(s, "p1", hideout, "One mana of any color"), blueMana);
@@ -4199,7 +4199,7 @@ describe("lot A, incolores et terrains", () => {
         expect(castable(s, "p1", idOf(s, "p1", "hand", "Test Ponder"))).toBe(true);
       });
 
-      it("Rumble Arena : regard 1 en arrivant ; {1}, {T} : un mana de n'importe quelle couleur", () => {
+      it("Rumble Arena: scry 1 when it enters; {1}, {T}: one mana of any color", () => {
         let s = scenario({
           p1: { battlefield: ["Forest"], hand: ["Rumble Arena", blueSorcery("Test Ponder", [])], library: lands("Forest", 3) },
         });
@@ -4215,13 +4215,13 @@ describe("lot A, incolores et terrains", () => {
         expect(chars(s, arena).keywords).toContain("vigilance");
         expect(manaAbilitiesOf(s, arena).flatMap((ab) => ab.produce)).toEqual(["C"]);
         expect(castable(s, "p1", idOf(s, "p1", "hand", "Test Ponder"))).toBe(false);
-        // La Forêt paie {1}, l'Arène donne {U}.
+        // The Forest pays {1}, the Arena gives {U}.
         s = settle(activate(s, "p1", arena, "One mana of any color"), blueMana);
         expect(s.players.p1?.manaPool.U).toBe(1);
         expect(castable(s, "p1", idOf(s, "p1", "hand", "Test Ponder"))).toBe(true);
       });
 
-      it("Secret Tunnel : imblocable ; deux de vos créatures qui partagent un type deviennent imblocables ce tour-ci", () => {
+      it("Secret Tunnel: unblockable; two of your creatures that share a type become unblockable this turn", () => {
         let s = scenario({
           p1: { battlefield: ["Secret Tunnel", ...lands("Forest", 4), "Bear Cub", "Bear Cub", "Serra Angel"] },
         });
@@ -4230,7 +4230,7 @@ describe("lot A, incolores et terrains", () => {
         const [b1, b2] = idsOf(s, "p1", "battlefield", "Bear Cub") as [string, string];
         const angel = idOf(s, "p1", "battlefield", "Serra Angel");
         const label = "Two creatures can't be blocked this turn";
-        // Un Ours et un Ange ne partagent aucun type : cibles refusées.
+        // A Bear and an Angel share no type: targets refused.
         expect(() => activate(s, "p1", tunnel, label, { targets: { t: [b1, angel] } })).toThrow();
         s = settle(activate(s, "p1", tunnel, label, { targets: { t: [b1, b2] } }));
         expect(chars(s, b1).keywords).toContain("unblockable");
@@ -4241,13 +4241,13 @@ describe("lot A, incolores et terrains", () => {
   });
 });
 
-describe("lot B1 : maîtrise de l'eau en coût de sort", () => {
+describe("lot B1: waterbending as a spell cost", () => {
   const yesTo =
     (intent: string, value = 1): Answer =>
     (req) =>
       req.type === "yesNo" && req.intent === intent ? [value] : undefined;
 
-  it("Benevolent River Spirit : maîtrise de l'eau {5} en plus de {U}{U}, payable en engageant ses créatures", () => {
+  it("Benevolent River Spirit: waterbending {5} in addition to {U}{U}, payable by tapping its creatures", () => {
     const run = (bears: number) =>
       scenario({
         p1: {
@@ -4264,7 +4264,7 @@ describe("lot B1 : maîtrise de l'eau en coût de sort", () => {
     expect(idsOf(s, "p1", "battlefield", "Bear Cub").every((id) => s.objects[id]?.tapped)).toBe(true);
   });
 
-  it("Crashing Wave : maîtrise de l'eau {X}, engage X créatures ciblées, puis trois marqueurs d'étourdissement répartis", () => {
+  it("Crashing Wave: waterbending {X}, taps X targeted creatures, then three stun counters distributed", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Island", 2), "Bear Cub", "Bear Cub"], hand: ["Crashing Wave"] },
       p2: { battlefield: ["Serra Angel", "Fire Elemental"] },
@@ -4275,7 +4275,7 @@ describe("lot B1 : maîtrise de l'eau en coût de sort", () => {
     expect(foes.reduce((n, id) => n + (s.objects[id]?.counters.stun ?? 0), 0)).toBe(3);
   });
 
-  it("Spirit Water Revival : sans maîtrise, piochez deux cartes ; avec maîtrise de l'eau {6}, cimetière mélangé, sept cartes, pas de main maximale", () => {
+  it("Spirit Water Revival: without waterbending, draw two cards; with waterbending {6}, graveyard shuffled, seven cards, no maximum hand size", () => {
     const setup = () =>
       scenario({
         p1: {
@@ -4295,7 +4295,7 @@ describe("lot B1 : maîtrise de l'eau en coût de sort", () => {
     expect(s.players.p1?.command.some((id) => nameOf(s, id) === "Spirit Water Revival")).toBe(true);
   });
 
-  it("Secret of Bloodbending : vous contrôlez l'adversaire seulement pendant sa prochaine phase de combat", () => {
+  it("Secret of Bloodbending: you control the opponent only during their next combat phase", () => {
     let s = scenario({
       p1: { battlefield: lands("Island", 4), hand: ["Secret of Bloodbending"] },
       p2: { battlefield: ["Bear Cub"] },
@@ -4311,7 +4311,7 @@ describe("lot B1 : maîtrise de l'eau en coût de sort", () => {
     expect(s.turnControl).toBeUndefined();
   });
 
-  it("The Unagi of Kyoshi Island : la garde se paie en maîtrisant l'eau {4} (artefacts et créatures de l'adversaire engagés)", () => {
+  it("The Unagi of Kyoshi Island: ward is paid by waterbending {4} (the opponent's artifacts and creatures tapped)", () => {
     let s = scenario({
       p1: { battlefield: ["The Unagi of Kyoshi Island"], library: lands("Island", 4) },
       p2: { battlefield: ["Mountain", "Mountain", ...Array(4).fill("Bear Cub")], hand: ["Lightning Strike"] },
@@ -4323,7 +4323,7 @@ describe("lot B1 : maîtrise de l'eau en coût de sort", () => {
     expect(s.objects[unagi]?.damage).toBe(3);
   });
 
-  it("Waterbending Lesson : piochez trois cartes, puis défaussez-en une à moins de maîtriser l'eau {2}", () => {
+  it("Waterbending Lesson: draw three cards, then discard one unless you waterbend {2}", () => {
     const setup = () =>
       scenario({
         p1: {
@@ -4339,7 +4339,7 @@ describe("lot B1 : maîtrise de l'eau en coût de sort", () => {
     expect(s.players.p1?.hand).toHaveLength(2);
   });
 
-  it("Foggy Swamp Visions : exilez X cartes de créature des cimetières, un jeton copie de chacune, sacrifié à votre prochaine étape de fin", () => {
+  it("Foggy Swamp Visions: exile X creature cards from graveyards, a copy token of each, sacrificed at your next end step", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Swamp", 3), "Bear Cub"], hand: ["Foggy Swamp Visions"] },
       p2: { graveyard: ["Serra Angel"] },
@@ -4352,7 +4352,7 @@ describe("lot B1 : maîtrise de l'eau en coût de sort", () => {
     expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(0);
   });
 
-  it("Ruinous Waterbending : toutes les créatures -2/-2 ; maîtrise de l'eau {4} payée : 1 PV par créature qui meurt ce tour-ci", () => {
+  it("Ruinous Waterbending: all creatures -2/-2; waterbending {4} paid: 1 life per creature that dies this turn", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Swamp", 3), ...Array(4).fill("Bear Cub")], hand: ["Ruinous Waterbending"] },
       p2: { battlefield: ["Bear Cub", "Serra Angel"] },
@@ -4364,7 +4364,7 @@ describe("lot B1 : maîtrise de l'eau en coût de sort", () => {
     expect(s.players.p1?.life).toBe(25);
   });
 
-  it("Hama, the Bloodbender : l'adversaire meule trois cartes ; la carte non-créature exilée se lance pendant votre tour en maîtrisant l'eau {X}", () => {
+  it("Hama, the Bloodbender: the opponent mills three cards; the exiled noncreature card is cast during your turn by waterbending {X}", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Island", 5), "Bear Cub", "Bear Cub"], hand: ["Hama, the Bloodbender"] },
       p2: { library: ["Lightning Strike", "Bear Cub", "Mountain", "Island"] },
@@ -4373,7 +4373,7 @@ describe("lot B1 : maîtrise de l'eau en coût de sort", () => {
     expect(s.players.p2?.library).toHaveLength(1);
     const strike = exiled(s, "Lightning Strike")[0] as string;
     expect(strike).toBeDefined();
-    // Lightning Strike (valeur de mana 2) : maîtrise de l'eau {2}, payée en engageant les deux Ours.
+    // Lightning Strike (mana value 2): waterbending {2}, paid by tapping the two Bears.
     expect(castable(s, "p1", strike)).toBe(true);
     s = settle(act(s, "p1", { type: "cast", card: strike, targets: { t: ["p2"] } }));
     expect(s.players.p2?.life).toBe(17);
@@ -4381,24 +4381,24 @@ describe("lot B1 : maîtrise de l'eau en coût de sort", () => {
   });
 });
 
-describe("lot B2 : « chaque fois que vous maîtrisez » (Avatar Aang)", () => {
+describe('lot B2: "whenever you bend" (Avatar Aang)', () => {
   const AANG = "Avatar Aang // Aang, Master of Elements";
-  /** Une capacité par élément : maîtrise de l'eau {1}, de la terre 1 et de l'air (sur un permanent ciblé). */
+  /** One ability per element: waterbending {1}, earthbending 1 and airbending (on a targeted permanent). */
   const benders = customCard({
     name: "Test Benders",
     types: ["Enchantment"],
     typeLine: "Enchantment",
     abilities: [
-      dsl.activated({ mana: "{1}", waterbend: true, effects: [], label: "eau" }),
+      dsl.activated({ mana: "{1}", waterbend: true, effects: [], label: "water" }),
       dsl.activated({
-        targets: [dsl.target.permanent("t", ["Land"], { controller: "you" }, "terrain")],
+        targets: [dsl.target.permanent("t", ["Land"], { controller: "you" }, "land")],
         effects: [...dsl.fx.earthbend(dsl.ref.target(), 1)],
-        label: "terre",
+        label: "earth",
       }),
       dsl.activated({ targets: [dsl.target.nonland("t")], effects: [dsl.fx.airbend(dsl.ref.target())], label: "air" }),
     ],
   });
-  /** Face visible : le verso a sa propre définition (`faceDefId`). */
+  /** Face up: the back face has its own definition (`faceDefId`). */
   const back = (s: S, id: string) => s.defs[s.objects[id]?.faceDefId ?? ""]?.name === "Aang, Master of Elements";
   const use = (s: S, label: string, targets?: Record<string, string[]>) => {
     const src = idOf(s, "p1", "battlefield", "Test Benders");
@@ -4406,7 +4406,7 @@ describe("lot B2 : « chaque fois que vous maîtrisez » (Avatar Aang)", () => {
     return settle(act(s, "p1", { type: "activate", source: src, ability: a?.type === "activate" ? a.ability : -1, targets }));
   };
 
-  it("chaque maîtrise (eau, terre, air, puis feu en attaquant) fait piocher ; les quatre ce tour-ci transforment Aang", () => {
+  it("each bending (water, earth, air, then fire when attacking) draws; all four this turn transform Aang", () => {
     let s = scenario({
       p1: { battlefield: [AANG, benders, "Island", "Forest", "Bear Cub"], library: lands("Island", 8) },
       p2: { battlefield: ["Bear Cub"] },
@@ -4414,8 +4414,8 @@ describe("lot B2 : « chaque fois que vous maîtrisez » (Avatar Aang)", () => {
     const aang = idOf(s, "p1", "battlefield", AANG);
     const hand = () => s.players.p1?.hand.length ?? 0;
     const h0 = hand();
-    s = use(s, "eau");
-    s = use(s, "terre", { t: [idOf(s, "p1", "battlefield", "Forest")] });
+    s = use(s, "water");
+    s = use(s, "earth", { t: [idOf(s, "p1", "battlefield", "Forest")] });
     s = use(s, "air", { t: [idOf(s, "p2", "battlefield", "Bear Cub")] });
     expect(hand()).toBe(h0 + 3);
     expect(back(s, aang)).toBe(false);
@@ -4426,18 +4426,18 @@ describe("lot B2 : « chaque fois que vous maîtrisez » (Avatar Aang)", () => {
     expect(back(s, aang)).toBe(true);
   });
 
-  it("Aang, Master of Elements : vos sorts coûtent {W}{U}{B}{R}{G} de moins (le reste réduit le générique)", async () => {
+  it("Aang, Master of Elements: your spells cost {W}{U}{B}{R}{G} less (the rest reduces the generic)", async () => {
     const { moveWithSpec } = await import("../src/effects");
     let s = scenario({ p1: { battlefield: ["Mountain"], hand: [AANG, "Shivan Dragon"] } });
     moveWithSpec(s, "p1", idOf(s, "p1", "hand", AANG), { to: "battlefield", transformed: true });
-    // Shivan Dragon {4}{R}{R} : {R} retiré par le {R}, {4} par {W}{U}{B}{G} : reste {R}.
+    // Shivan Dragon {4}{R}{R}: {R} removed by the {R}, {4} by {W}{U}{B}{G}: {R} remains.
     const dragon = idOf(s, "p1", "hand", "Shivan Dragon");
     expect(castable(s, "p1", dragon)).toBe(true);
     s = settle(act(s, "p1", { type: "cast", card: dragon }));
     expect(idsOf(s, "p1", "battlefield", "Shivan Dragon")).toHaveLength(1);
   });
 
-  it("Aang, Master of Elements : à l'entretien, transformé, 4 PV, quatre cartes, quatre marqueurs, 4 blessures à chaque adversaire", async () => {
+  it("Aang, Master of Elements: at upkeep, transformed, 4 life, four cards, four counters, 4 damage to each opponent", async () => {
     const { moveWithSpec } = await import("../src/effects");
     let s = scenario({ p1: { hand: [AANG], library: lands("Island", 8) }, active: "p2", step: "untap" });
     const aang = moveWithSpec(s, "p1", idOf(s, "p1", "hand", AANG), { to: "battlefield", transformed: true }) as string;
@@ -4451,8 +4451,8 @@ describe("lot B2 : « chaque fois que vous maîtrisez » (Avatar Aang)", () => {
   });
 });
 
-describe("lot C1 : caractéristiques et montants", () => {
-  it("Toph, the Blind Bandit : maîtrise de la terre 2 en arrivant ; sa force vaut les marqueurs +1/+1 de vos terrains", () => {
+describe("lot C1: characteristics and amounts", () => {
+  it("Toph, the Blind Bandit: earthbending 2 when it enters; its power equals the +1/+1 counters on your lands", () => {
     let s = scenario({
       p1: {
         battlefield: [...lands("Forest", 3), { name: "Plains", counters: { "+1/+1": 1 } }],
@@ -4466,22 +4466,22 @@ describe("lot C1 : caractéristiques et montants", () => {
     expect(chars(s, toph).power).toBe(3);
   });
 
-  it("Earthen Ally : +1/+0 pour chaque couleur parmi les Alliés que vous contrôlez", () => {
+  it("Earthen Ally: +1/+0 for each color among the Allies you control", () => {
     const s = scenario({ p1: { battlefield: ["Earthen Ally", "Kyoshi Warriors", "Llanowar Elves", "Shivan Dragon"] } });
-    // Alliés : Earthen Ally (vert) et Kyoshi Warriors (blanc) ; ni l'Elfe ni le Dragon ne comptent.
+    // Allies: Earthen Ally (green) and Kyoshi Warriors (white); neither the Elf nor the Dragon counts.
     expect(chars(s, idOf(s, "p1", "battlefield", "Earthen Ally")).power).toBe(2);
   });
 
-  it("Diligent Zookeeper : vos créatures non-Humains ont +1/+1 par type de créature (un changelin est Humain)", () => {
+  it("Diligent Zookeeper: your non-Human creatures get +1/+1 per creature type (a changeling is Human)", () => {
     const s = scenario({ p1: { battlefield: ["Diligent Zookeeper", "Bear Cub", "Llanowar Elves", "Changeling Wayfinder"] } });
     expect(chars(s, idOf(s, "p1", "battlefield", "Bear Cub")).power).toBe(3);
     expect(chars(s, idOf(s, "p1", "battlefield", "Llanowar Elves")).power).toBe(3);
-    // Un changelin a tous les types de créature, Humain compris : il n'est pas concerné.
+    // A changeling has all creature types, Human included: it is not affected.
     expect(chars(s, idOf(s, "p1", "battlefield", "Changeling Wayfinder")).power).toBe(1);
     expect(chars(s, idOf(s, "p1", "battlefield", "Diligent Zookeeper")).power).toBe(4);
   });
 
-  it("Avatar Destiny : +1/+1 par carte de créature au cimetière ; morte, meulez sa force, l'Aura revient, une créature meulée arrive", () => {
+  it("Avatar Destiny: +1/+1 per creature card in the graveyard; when it dies, mill its power, the Aura returns, a milled creature enters", () => {
     let s = scenario({
       p1: {
         battlefield: [...lands("Forest", 4), "Bear Cub"],
@@ -4496,13 +4496,13 @@ describe("lot C1 : caractéristiques et montants", () => {
     expect(chars(s, bear).subtypes).toContain("Avatar");
     destroy(s, bear);
     s = settle(s);
-    // Force 4 au moment de mourir : quatre cartes meulées, dont Shivan Dragon, qui arrive sous votre contrôle.
+    // Power 4 when it died: four cards milled, including Shivan Dragon, which enters under your control.
     expect(s.players.p1?.library).toHaveLength(2);
     expect(idsOf(s, "p1", "hand", "Avatar Destiny")).toHaveLength(1);
     expect(idsOf(s, "p1", "battlefield", "Shivan Dragon")).toHaveLength(1);
   });
 
-  it("White Lotus Tile : arrive engagé ; {T} : X mana d'une couleur, X le plus de créatures partageant un type", () => {
+  it("White Lotus Tile: enters tapped; {T}: X mana of one color, X the most creatures sharing a type", () => {
     let s = scenario({
       p1: { hand: ["White Lotus Tile"], battlefield: [...lands("Plains", 4), "Kyoshi Warriors", "Kyoshi Warriors", "Bear Cub"] },
     });
@@ -4511,11 +4511,11 @@ describe("lot C1 : caractéristiques et montants", () => {
     expect(s.objects[tile]?.tapped).toBe(true);
     s.objects[tile]!.tapped = false;
     s = settle(activate(s, "p1", tile), (req) => (req.type === "pick" && req.options.includes("G") ? ["G"] : undefined));
-    // Deux Kyoshi Warriors (Humains Guerriers Alliés) partagent un type : deux mana vert.
+    // Two Kyoshi Warriors (Human Warrior Allies) share a type: two green mana.
     expect(s.players.p1?.manaPool.G).toBe(2);
   });
 
-  it("Bumi, King of Three Trials : jusqu'à X modes, X étant le nombre de Leçons dans votre cimetière", () => {
+  it("Bumi, King of Three Trials: up to X modes, X being the number of Lessons in your graveyard", () => {
     const modes = (graveyard: string[]) => {
       const s = scenario({ p1: { battlefield: lands("Forest", 6), hand: ["Bumi, King of Three Trials"], graveyard } });
       const after = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Bumi, King of Three Trials") });
@@ -4523,17 +4523,17 @@ describe("lot C1 : caractéristiques et montants", () => {
       const p = resolved.pending;
       return p?.kind === "choice" && p.request.type === "pick" ? p.request.options.length : 0;
     };
-    // Sans Leçon : le seul mode « Aucun » (pas de question).
+    // Without a Lesson: the only mode is "None" (no question).
     expect(modes([])).toBe(0);
-    // Une Leçon : chaque mode seul, ou aucun.
+    // One Lesson: each mode alone, or none.
     expect(modes(["Shared Roots"])).toBe(4);
-    // Trois Leçons : toutes les combinaisons.
+    // Three Lessons: all combinations.
     expect(modes(["Shared Roots", "Firebending Lesson", "Combustion Technique"])).toBe(8);
   });
 });
 
-describe("lot C2 : lancement et mana", () => {
-  it("Redirect Lightning : payez 5 PV (ou {2}) et changez la cible d'un sort à cible unique", () => {
+describe("lot C2: casting and mana", () => {
+  it("Redirect Lightning: pay 5 life (or {2}) and change the target of a single-target spell", () => {
     let s = scenario({
       p1: { battlefield: ["Mountain"], hand: ["Redirect Lightning"] },
       p2: { battlefield: ["Mountain", "Mountain"], hand: ["Lightning Strike"] },
@@ -4542,14 +4542,14 @@ describe("lot C2 : lancement et mana", () => {
     s = cast(s, "p2", "Lightning Strike", { targets: { t: ["p1"] } });
     s = act(s, "p2", { type: "pass" });
     const strike = s.stack[0]?.id as string;
-    // Une seule Montagne : {2} est impossible, il faut payer 5 PV (le « kicker »).
+    // A single Mountain: {2} is impossible, 5 life must be paid (the "kicker").
     expect(() => cast(s, "p1", "Redirect Lightning", { targets: { t: [strike] } })).toThrow();
     s = settle(cast(s, "p1", "Redirect Lightning", { kicked: true, targets: { t: [strike] } }), picking(["p2"]));
     expect(s.players.p1?.life).toBe(15);
     expect(s.players.p2?.life).toBe(17);
   });
 
-  it("Sozin's Comet : présage {2} pendant votre tour, puis lancé à un tour ultérieur pour {2}{R} ; vos créatures ont la maîtrise du feu 5", () => {
+  it("Sozin's Comet: foretell {2} during your turn, then cast on a later turn for {2}{R}; your creatures have firebending 5", () => {
     let s = scenario({ p1: { battlefield: [...lands("Mountain", 3), "Bear Cub"], hand: ["Sozin's Comet"] } });
     const comet = idOf(s, "p1", "hand", "Sozin's Comet");
     const foretell = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === comet && a.label === "Foretell");
@@ -4571,7 +4571,7 @@ describe("lot C2 : lancement et mana", () => {
     expect(s.players.p1?.manaPool.R).toBe(5);
   });
 
-  it("The Last Agni Kai : combat ; l'excès de blessures donne autant de {R}, et le mana rouge ne se vide pas ce tour-ci", () => {
+  it("The Last Agni Kai: fight; excess damage gives as much {R}, and the red mana doesn't empty this turn", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Mountain", 2), "Serra Angel"], hand: ["The Last Agni Kai"] },
       p2: { battlefield: ["Bear Cub"] },
@@ -4587,7 +4587,7 @@ describe("lot C2 : lancement et mana", () => {
     expect(s.players.p1?.manaPool.R).toBe(0);
   });
 
-  it("Lo and Li, Twin Tutors : cherchez une Leçon ; vos sorts de Leçon ont le lien de vie", () => {
+  it("Lo and Li, Twin Tutors: search for a Lesson; your Lesson spells have lifelink", () => {
     let s = scenario({
       p1: {
         battlefield: lands("Swamp", 5).concat(lands("Mountain", 1)),
@@ -4603,7 +4603,7 @@ describe("lot C2 : lancement et mana", () => {
     expect(s.players.p1?.life).toBe(12);
   });
 
-  it("Iroh, Grand Lotus : pendant votre tour, vos éphémères et rituels ont le flashback (les Leçons pour {1})", () => {
+  it("Iroh, Grand Lotus: during your turn, your instants and sorceries have flashback (Lessons for {1})", () => {
     let s = scenario({
       p1: { battlefield: ["Iroh, Grand Lotus", ...lands("Mountain", 3)], graveyard: ["Lightning Strike", "Firebending Lesson"] },
       p2: { battlefield: ["Bear Cub", "Serra Angel"] },
@@ -4612,14 +4612,14 @@ describe("lot C2 : lancement et mana", () => {
     s = settle(act(s, "p1", { type: "cast", card: strike, targets: { t: ["p2"] } }));
     expect(s.players.p2?.life).toBe(17);
     expect(exiled(s, "Lightning Strike")).toHaveLength(1);
-    // Il reste une Montagne : Firebending Lesson pour {1} (son flashback de Leçon).
+    // One Mountain remains: Firebending Lesson for {1} (its Lesson flashback).
     const lesson = idOf(s, "p1", "graveyard", "Firebending Lesson");
     s = settle(act(s, "p1", { type: "cast", card: lesson, targets: { t: [idOf(s, "p2", "battlefield", "Bear Cub")] } }));
     expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(0);
     expect(exiled(s, "Firebending Lesson")).toHaveLength(1);
   });
 
-  it("Iroh, Grand Lotus : pas de flashback pendant le tour adverse", () => {
+  it("Iroh, Grand Lotus: no flashback during the opponent's turn", () => {
     const s = scenario({
       p1: { battlefield: ["Iroh, Grand Lotus", ...lands("Mountain", 3)], graveyard: ["Lightning Strike"] },
       active: "p2",
@@ -4627,7 +4627,7 @@ describe("lot C2 : lancement et mana", () => {
     expect(castable(s, "p1", idOf(s, "p1", "graveyard", "Lightning Strike"))).toBe(false);
   });
 
-  it("Ozai, the Phoenix King : le mana non dépensé devient rouge ; six ou plus : vol et indestructible", () => {
+  it("Ozai, the Phoenix King: unspent mana becomes red; six or more: flying and indestructible", () => {
     let s = scenario({ p1: { battlefield: ["Ozai, the Phoenix King", ...lands("Island", 6)] } });
     const ozai = idOf(s, "p1", "battlefield", "Ozai, the Phoenix King");
     for (const id of idsOf(s, "p1", "battlefield", "Island")) {
@@ -4640,7 +4640,7 @@ describe("lot C2 : lancement et mana", () => {
     expect(s.players.p1?.manaPool.U).toBe(0);
   });
 
-  it("Planetarium of Wan Shi Tong : après un regard, lancez gratuitement la carte du dessus (une fois par tour)", () => {
+  it("Planetarium of Wan Shi Tong: after a scry, cast the top card for free (once each turn)", () => {
     let s = scenario({
       p1: { battlefield: ["Planetarium of Wan Shi Tong", "Island"], library: ["Lightning Strike", "Opt", "Island"] },
     });
@@ -4658,8 +4658,8 @@ describe("lot C2 : lancement et mana", () => {
     expect(s.players.p2?.life).toBe(17);
   });
 
-  it("Planetarium of Wan Shi Tong : « ne le faites qu'une fois par tour » ne compte que la carte lancée par le Planetarium", () => {
-    // Un sort lancé depuis la bibliothèque par un autre effet ne consomme pas la limite.
+  it('Planetarium of Wan Shi Tong: "do this only once each turn" counts only the card cast by the Planetarium', () => {
+    // A spell cast from the library by another effect doesn't use up the limit.
     const TOP = customCard({
       name: "Sort du dessus",
       typeLine: "Sorcery",
@@ -4675,7 +4675,7 @@ describe("lot C2 : lancement et mana", () => {
     });
     s = untilCastNow(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Sort du dessus") }));
     s = act(s, "p1", { type: "cast", card: castNowOf(s)?.cards[0] as string });
-    // Opt (lancé depuis la bibliothèque) : regard 1, l'Île reste au-dessus et est piochée ; le Planetarium se déclenche.
+    // Opt (cast from the library): scry 1, the Island stays on top and is drawn; the Planetarium triggers.
     for (let i = 0; i < 40 && !castNowOf(s); i++) {
       const p = s.pending;
       if (p?.kind === "choice")
@@ -4686,7 +4686,7 @@ describe("lot C2 : lancement et mana", () => {
     expect(namesIn(s, now?.cards)).toEqual(["Lightning Strike"]);
     s = settle(act(s, "p1", { type: "cast", card: now?.cards[0] as string, targets: { t: ["p2"] } }));
     expect(s.players.p2?.life).toBe(17);
-    // La carte a été lancée par le Planetarium : un autre regard ce tour-ci ne déclenche plus rien.
+    // The card was cast by the Planetarium: another scry this turn no longer triggers anything.
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Opt") });
     s = settle(s);
     expect(castNowOf(s)).toBeUndefined();
@@ -4694,8 +4694,8 @@ describe("lot C2 : lancement et mana", () => {
   });
 });
 
-describe("lot C3 : cartes uniques", () => {
-  it("Destined Confrontation : chaque joueur garde des créatures de force totale 4 ou moins et sacrifie les autres", () => {
+describe("lot C3: unique cards", () => {
+  it("Destined Confrontation: each player keeps creatures with total power 4 or less and sacrifices the rest", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Plains", 4), "Serra Angel", "Bear Cub", "Llanowar Elves"], hand: ["Destined Confrontation"] },
       p2: { battlefield: ["Shivan Dragon", "Bear Cub"] },
@@ -4708,12 +4708,12 @@ describe("lot C3 : cartes uniques", () => {
     expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(0);
     expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
     expect(idsOf(s, "p1", "battlefield", "Llanowar Elves")).toHaveLength(1);
-    // Suggestion de l'adversaire : le Dragon (force 5) ne tient pas dans la limite.
+    // The opponent's suggestion: the Dragon (power 5) doesn't fit in the limit.
     expect(idsOf(s, "p2", "battlefield", "Shivan Dragon")).toHaveLength(0);
     expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
   });
 
-  it("Destined Confrontation à trois : chaque joueur choisit à son tour (APNAP), puis tous sacrifient en même temps", () => {
+  it("Destined Confrontation with three players: each player chooses in turn (APNAP), then all sacrifice at the same time", () => {
     let s = scenario({
       players: 3,
       active: "p2",
@@ -4726,10 +4726,10 @@ describe("lot C3 : cartes uniques", () => {
     const asked: string[] = [];
     s = settle(s, (req, p, cur) => {
       if (req.type !== "pick" || !cur) return undefined;
-      // Chaque joueur choisit parmi ses propres créatures ; rien n'est sacrifié avant la fin des choix.
+      // Each player chooses among their own creatures; nothing is sacrificed before the choices are over.
       expect(cur.battlefield.length).toBe(field);
       asked.push(`${p}:${cur.objects[String(req.options[0])]?.controller}`);
-      // p1 garde son Ange (force 4) ; p3 ne garde rien.
+      // p1 keeps their Angel (power 4); p3 keeps nothing.
       return p === "p3" ? [] : undefined;
     });
     expect(asked).toEqual(["p2:p2", "p3:p3", "p1:p1"]);
@@ -4740,7 +4740,7 @@ describe("lot C3 : cartes uniques", () => {
     expect(idsOf(s, "p3", "graveyard", "Savannah Lions")).toHaveLength(1);
   });
 
-  it("Fated Firepower : X marqueurs de feu ; vos sources infligent autant de blessures en plus aux adversaires et à leurs permanents", () => {
+  it("Fated Firepower: X fire counters; your sources deal that much additional damage to opponents and their permanents", () => {
     let s = scenario({
       p1: { battlefield: lands("Mountain", 7), hand: ["Fated Firepower", "Lightning Strike", "Lightning Strike"] },
       p2: { battlefield: ["Serra Angel"] },
@@ -4751,14 +4751,14 @@ describe("lot C3 : cartes uniques", () => {
     expect(s.players.p2?.life).toBe(15);
   });
 
-  it("Firebender Ascension : la capacité d'une créature qui attaque ajoute un marqueur de quête ; à quatre, elle est copiée", () => {
+  it("Firebender Ascension: the ability of a creature that attacks adds a quest counter; at four, it is copied", () => {
     const firebender = customCard({ name: "Test Firebender", power: 2, toughness: 2, abilities: [dsl.firebending(1)] });
     let s = scenario({ p1: { battlefield: [{ name: "Firebender Ascension", counters: { quest: 3 } }, firebender] } });
     const asc = idOf(s, "p1", "battlefield", "Firebender Ascension");
     const attacker = idOf(s, "p1", "battlefield", "Test Firebender");
     s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
     s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: attacker, defender: "p2" }] });
-    // L'Ascension se résout d'abord (au-dessus de la maîtrise du feu) : la capacité est copiée.
+    // The Ascension resolves first (above the firebending): the ability is copied.
     s = settle(s, (req) => {
       if (req.type === "order") {
         const first = (id: string) => (/quest/.test(req.labels?.[id] ?? "") ? 0 : 1);
@@ -4770,7 +4770,7 @@ describe("lot C3 : cartes uniques", () => {
     expect(s.players.p1?.manaPool.R).toBe(2);
   });
 
-  it("Koh, the Face Stealer : exile une créature ; payez 1 PV, choisissez-la : Koh a ses capacités activées", () => {
+  it("Koh, the Face Stealer: exiles a creature; pay 1 life, choose it: Koh has its activated abilities", () => {
     let s = scenario({
       p1: { battlefield: lands("Swamp", 6), hand: ["Koh, the Face Stealer"] },
       p2: { battlefield: ["Llanowar Elves"] },
@@ -4786,7 +4786,7 @@ describe("lot C3 : cartes uniques", () => {
     expect(manaAbilitiesOf(s, koh)).toHaveLength(1);
   });
 
-  it("The Rise of Sozin : I détruit toutes les créatures ; II exile jusqu'à quatre cartes du nom choisi chez l'adversaire", () => {
+  it("The Rise of Sozin: I destroys all creatures; II exiles up to four cards with the chosen name from the opponent", () => {
     let s = scenario({
       p1: { battlefield: lands("Swamp", 6), hand: ["The Rise of Sozin // Fire Lord Sozin"] },
       p2: {
@@ -4803,7 +4803,7 @@ describe("lot C3 : cartes uniques", () => {
     expect(exiled(s, "Lightning Strike")).toHaveLength(3);
   });
 
-  it("Fire Lord Sozin : blessures de combat à un joueur, payez X : des créatures de son cimetière, de valeur de mana totale X ou moins", async () => {
+  it("Fire Lord Sozin: combat damage to a player, pay X: creatures from their graveyard, with total mana value X or less", async () => {
     const { moveWithSpec } = await import("../src/effects");
     let s = scenario({
       p1: { battlefield: lands("Swamp", 3), hand: ["The Rise of Sozin // Fire Lord Sozin"] },
@@ -4817,7 +4817,7 @@ describe("lot C3 : cartes uniques", () => {
     const bear = idOf(s, "p2", "graveyard", "Bear Cub");
     s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
     s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: sozin, defender: "p2" }] });
-    // Jusqu'à la seconde phase principale : X = 2, l'Ours (valeur de mana 2) revient ; l'Ange (5) non.
+    // Until the second main phase: X = 2, the Bear (mana value 2) returns; the Angel (5) doesn't.
     for (let i = 0; i < 60 && s.turn.step !== "main2"; i++) {
       const p = s.pending;
       if (p?.kind === "choice") {
@@ -4832,7 +4832,7 @@ describe("lot C3 : cartes uniques", () => {
     expect(s.players.p2?.graveyard.some((id) => nameOf(s, id) === "Serra Angel")).toBe(true);
   });
 
-  it("Fire Lord Sozin : à plusieurs, les cartes viennent du cimetière du joueur blessé (PLAN-A A4a)", async () => {
+  it("Fire Lord Sozin: in multiplayer, the cards come from the damaged player's graveyard (PLAN-A A4a)", async () => {
     const { moveWithSpec } = await import("../src/effects");
     let s = scenario({
       players: 3,
@@ -4859,18 +4859,18 @@ describe("lot C3 : cartes uniques", () => {
       } else if (p?.kind === "declareBlockers") s = act(s, p.player, { type: "declareBlockers", blocks: [] });
       else if (p) s = act(s, p.player, { type: "pass" });
     }
-    // Seules les cartes du cimetière de p3 (le joueur blessé) sont proposées.
+    // Only the cards from p3's graveyard (the damaged player) are offered.
     expect(offered).toEqual(["p3", "p3"]);
     expect(s.players.p2?.graveyard).toHaveLength(1);
     expect(s.players.p3?.graveyard).toHaveLength(0);
   });
 });
 
-describe("Avatar: The Last Airbender : cartes du méta (PLAN-C, lot C13)", () => {
-  /** Active la capacité de `source` dont le libellé contient `label`. */
+describe("Avatar: The Last Airbender: meta cards (PLAN-C, lot C13)", () => {
+  /** Activates the ability of `source` whose label contains `label`. */
   const activateLabel = (s: S, player: string, source: string, label: string) => {
     const a = legalActions(s, player).find((x) => x.type === "activate" && x.source === source && x.label?.includes(label));
-    if (a?.type !== "activate") throw new Error(`capacité introuvable : ${label}`);
+    if (a?.type !== "activate") throw new Error(`ability not found: ${label}`);
     return act(s, player, { type: "activate", source, ability: a.ability });
   };
   const playLand = (s: S, name: string) => act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", name) });
@@ -4878,7 +4878,7 @@ describe("Avatar: The Last Airbender : cartes du méta (PLAN-C, lot C13)", () =>
   const spirit = customCard({ name: "Test Spirit", typeLine: "Creature — Spirit", subtypes: ["Spirit"], power: 1, toughness: 1 });
 
   describe("Abandon Attachments", () => {
-    it("vous pouvez défausser une carte ; si vous le faites, piochez deux cartes", () => {
+    it("you may discard a card; if you do, draw two cards", () => {
       let s = scenario({
         p1: { battlefield: lands("Island", 2), hand: ["Abandon Attachments", "Forest"], library: ["Opt", "Plains", "Swamp"] },
       });
@@ -4890,7 +4890,7 @@ describe("Avatar: The Last Airbender : cartes du méta (PLAN-C, lot C13)", () =>
       expect(idsOf(s, "p1", "graveyard", "Abandon Attachments")).toHaveLength(1);
     });
 
-    it("sans défausse, pas de pioche", () => {
+    it("without discarding, no draw", () => {
       let s = scenario({
         p1: { battlefield: lands("Mountain", 2), hand: ["Abandon Attachments", "Forest"], library: ["Opt", "Plains"] },
       });
@@ -4901,7 +4901,7 @@ describe("Avatar: The Last Airbender : cartes du méta (PLAN-C, lot C13)", () =>
       expect(s.players.p1?.library).toHaveLength(2);
     });
 
-    it("main vide : rien à défausser, donc pas de pioche", () => {
+    it("empty hand: nothing to discard, so no draw", () => {
       let s = scenario({ p1: { battlefield: lands("Island", 2), hand: ["Abandon Attachments"], library: ["Opt", "Plains"] } });
       s = settle(cast(s, "p1", "Abandon Attachments"));
       expect(s.players.p1?.hand).toHaveLength(0);
@@ -4910,7 +4910,7 @@ describe("Avatar: The Last Airbender : cartes du méta (PLAN-C, lot C13)", () =>
   });
 
   describe("Abandoned Air Temple", () => {
-    it("arrive engagé sauf si vous contrôlez un terrain de base ; {T} : {W}", () => {
+    it("enters tapped unless you control a basic land; {T}: {W}", () => {
       const run = (battlefield: string[]) => {
         const s = playLand(scenario({ p1: { battlefield, hand: ["Abandoned Air Temple"] } }), "Abandoned Air Temple");
         return s.objects[idOf(s, "p1", "battlefield", "Abandoned Air Temple")]?.tapped;
@@ -4923,7 +4923,7 @@ describe("Avatar: The Last Airbender : cartes du méta (PLAN-C, lot C13)", () =>
       expect(idsOf(s, "p1", "battlefield", "Healer's Hawk")).toHaveLength(1);
     });
 
-    it("{3}{W}, {T} : un marqueur +1/+1 sur chaque créature que vous contrôlez (pas celles de l'adversaire)", () => {
+    it("{3}{W}, {T}: a +1/+1 counter on each creature you control (not the opponent's)", () => {
       let s = scenario({
         p1: { battlefield: ["Abandoned Air Temple", ...lands("Plains", 4), "Bear Cub", "Llanowar Elves"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -4937,7 +4937,7 @@ describe("Avatar: The Last Airbender : cartes du méta (PLAN-C, lot C13)", () =>
   });
 
   describe("Realm of Koh", () => {
-    /** Crée l'Esprit de p1 au tour 3, puis va à la déclaration des attaquants du tour 5 de p1. */
+    /** Creates p1's Spirit on turn 3, then goes to the declare attackers step of p1's turn 5. */
     const spiritAttacks = (p2: (string | CardDef)[]) => {
       let s = scenario({ p1: { battlefield: ["Realm of Koh", ...lands("Swamp", 4)] }, p2: { battlefield: p2 } });
       s = settle(activateLabel(s, "p1", idOf(s, "p1", "battlefield", "Realm of Koh"), "Spirit"));
@@ -4947,7 +4947,7 @@ describe("Avatar: The Last Airbender : cartes du méta (PLAN-C, lot C13)", () =>
       return { s, token };
     };
 
-    it("arrive engagé sauf si vous contrôlez un terrain de base ; {T} : {B}", () => {
+    it("enters tapped unless you control a basic land; {T}: {B}", () => {
       const run = (battlefield: string[]) => {
         const s = playLand(scenario({ p1: { battlefield, hand: ["Realm of Koh"] } }), "Realm of Koh");
         return s.objects[idOf(s, "p1", "battlefield", "Realm of Koh")]?.tapped;
@@ -4959,7 +4959,7 @@ describe("Avatar: The Last Airbender : cartes du méta (PLAN-C, lot C13)", () =>
       expect(idsOf(s, "p1", "battlefield", "Vampiric Rites")).toHaveLength(1);
     });
 
-    it("{3}{B}, {T} : un jeton Esprit 1/1 incolore", () => {
+    it("{3}{B}, {T}: a colorless 1/1 Spirit token", () => {
       let s = scenario({ p1: { battlefield: ["Realm of Koh", ...lands("Swamp", 4)] } });
       s = settle(activateLabel(s, "p1", idOf(s, "p1", "battlefield", "Realm of Koh"), "Spirit"));
       const tokens = s.battlefield.filter((id) => chars(s, id).name === "Spirit");
@@ -4971,13 +4971,13 @@ describe("Avatar: The Last Airbender : cartes du méta (PLAN-C, lot C13)", () =>
       expect(pt(s, token)).toEqual([1, 1]);
     });
 
-    it("le jeton ne peut pas être bloqué par une créature non-Esprit, mais un Esprit peut le bloquer", () => {
+    it("the token can't be blocked by a non-Spirit creature, but a Spirit can block it", () => {
       const { s, token } = spiritAttacks(["Bear Cub", spirit]);
       expect(canBlock(s, idOf(s, "p2", "battlefield", "Bear Cub"), token)).toBe(false);
       expect(canBlock(s, idOf(s, "p2", "battlefield", "Test Spirit"), token)).toBe(true);
     });
 
-    it("le jeton ne peut pas bloquer une créature non-Esprit", () => {
+    it("the token can't block a non-Spirit creature", () => {
       let s = scenario({ p1: { battlefield: ["Realm of Koh", ...lands("Swamp", 4)] }, p2: { battlefield: ["Bear Cub"] } });
       s = settle(activateLabel(s, "p1", idOf(s, "p1", "battlefield", "Realm of Koh"), "Spirit"));
       const token = s.battlefield.find((id) => chars(s, id).name === "Spirit") as string;
@@ -4987,7 +4987,7 @@ describe("Avatar: The Last Airbender : cartes du méta (PLAN-C, lot C13)", () =>
       expect(canBlock(s, token, bear)).toBe(false);
     });
 
-    it("le jeton peut bloquer une créature Esprit", () => {
+    it("the token can block a Spirit creature", () => {
       let s = scenario({ p1: { battlefield: ["Realm of Koh", ...lands("Swamp", 4)] }, p2: { battlefield: [spirit] } });
       s = settle(activateLabel(s, "p1", idOf(s, "p1", "battlefield", "Realm of Koh"), "Spirit"));
       const token = s.battlefield.find((id) => chars(s, id).name === "Spirit") as string;
@@ -5002,7 +5002,7 @@ describe("Avatar: The Last Airbender : cartes du méta (PLAN-C, lot C13)", () =>
     const AANG = "Aang, at the Crossroads // Aang, Destined Savior";
     const back = (s: S, id: string) => s.defs[s.objects[id]?.faceDefId ?? ""]?.name === "Aang, Destined Savior";
 
-    it("vol ; en arrivant, parmi les cinq du dessus, une créature de VM 4 ou moins peut arriver ; le reste va dessous", () => {
+    it("flying; when it enters, among the top five, a creature with MV 4 or less may enter; the rest go to the bottom", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Forest", 3), "Plains", "Island"],
@@ -5024,7 +5024,7 @@ describe("Avatar: The Last Airbender : cartes du méta (PLAN-C, lot C13)", () =>
       expect(namesIn(s, lib.slice(1)).sort()).toEqual(["Forest", "Llanowar Elves", "Serra Angel", "Shivan Dragon"]);
     });
 
-    it("« vous pouvez » : aucune créature n'est obligée d'arriver", () => {
+    it('"you may": no creature is forced to enter', () => {
       let s = scenario({
         p1: { battlefield: [...lands("Forest", 3), "Plains", "Island"], hand: [AANG], library: ["Bear Cub", "Forest"] },
       });
@@ -5033,17 +5033,17 @@ describe("Avatar: The Last Airbender : cartes du méta (PLAN-C, lot C13)", () =>
       expect(s.players.p1?.library).toHaveLength(2);
     });
 
-    it("quand une autre de vos créatures quitte le champ de bataille, Aang se transforme au début du prochain entretien", () => {
+    it("when another of your creatures leaves the battlefield, Aang transforms at the beginning of the next upkeep", () => {
       let s = scenario({ p1: { battlefield: [AANG, "Bear Cub"] }, p2: { battlefield: ["Llanowar Elves"] } });
       const aang = idOf(s, "p1", "battlefield", AANG);
-      // Une créature adverse qui meurt ne compte pas.
+      // An opponent's creature that dies doesn't count.
       destroy(s, idOf(s, "p2", "battlefield", "Llanowar Elves"));
       s = settle(s);
       s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
       expect(back(s, aang)).toBe(false);
       destroy(s, idOf(s, "p1", "battlefield", "Bear Cub"));
       s = settle(s);
-      // Pas tout de suite : au début du prochain entretien (celui de p1).
+      // Not right away: at the beginning of the next upkeep (p1's).
       expect(back(s, aang)).toBe(false);
       s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "draw");
       expect(back(s, aang)).toBe(true);
@@ -5051,7 +5051,7 @@ describe("Avatar: The Last Airbender : cartes du méta (PLAN-C, lot C13)", () =>
       expect(chars(s, aang).keywords).toContain("flying");
     });
 
-    it("Aang, Destined Savior : au début du combat, maîtrise de la terre 2 ; vos créatures-terrains ont la vigilance", async () => {
+    it("Aang, Destined Savior: at the beginning of combat, earthbending 2; your land creatures have vigilance", async () => {
       const { moveWithSpec } = await import("../src/effects");
       let s = scenario({ p1: { battlefield: ["Forest"], hand: [AANG] }, p2: { battlefield: ["Forest"] } });
       moveWithSpec(s, "p1", idOf(s, "p1", "hand", AANG), { to: "battlefield", transformed: true });
@@ -5060,7 +5060,7 @@ describe("Avatar: The Last Airbender : cartes du méta (PLAN-C, lot C13)", () =>
       expect(chars(s, forest).types).toEqual(expect.arrayContaining(["Land", "Creature"]));
       expect(pt(s, forest)).toEqual([2, 2]);
       expect(chars(s, forest).keywords).toEqual(expect.arrayContaining(["haste", "vigilance"]));
-      // Un terrain non-créature ou adverse n'a pas la vigilance.
+      // A noncreature or opponent's land doesn't have vigilance.
       expect(chars(s, idOf(s, "p2", "battlefield", "Forest")).keywords).not.toContain("vigilance");
       s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: forest, defender: "p2" }] });
       expect(s.objects[forest]?.tapped).toBe(false);
@@ -5068,14 +5068,14 @@ describe("Avatar: The Last Airbender : cartes du méta (PLAN-C, lot C13)", () =>
   });
 
   describe("Earthbender Ascension", () => {
-    /** Éphémère de test à {0} : « Retirez un marqueur de quête de l'enchantement ciblé. » */
+    /** {0} test instant: "Remove a quest counter from target enchantment." */
     const unquest = customCard({
       name: "Test Unquest",
       types: ["Instant"],
       typeLine: "Instant",
       spell: dsl.spell([dsl.target.permanent("t", ["Enchantment"])], [dsl.fx.removeCounters(dsl.ref.target(), 1, "quest")]),
     });
-    /** Joue une Forêt avec l'Ascension à `quest` marqueurs, jusqu'à la priorité suivant la résolution du landfall. */
+    /** Plays a Forest with the Ascension at `quest` counters, until the priority after the landfall resolves. */
     const landfall = (quest: number) => {
       let s = scenario({
         p1: { battlefield: [{ name: "Earthbender Ascension", counters: { quest } }, "Bear Cub"], hand: ["Forest", unquest] },
@@ -5084,12 +5084,12 @@ describe("Avatar: The Last Airbender : cartes du méta (PLAN-C, lot C13)", () =>
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Forest") });
       expect(s.stack).toHaveLength(1);
-      // Le landfall se résout : un marqueur de quête.
+      // The landfall resolves: a quest counter.
       s = passAccepting(s, (x) => x.pending?.kind === "priority" && x.stack.every((i) => i.kind === "ability" && !!i.inline));
       return { s, asc, bear };
     };
 
-    it("au quatrième marqueur, la capacité réflexive va sur la pile à part, puis +1/+1 et piétinement", () => {
+    it("at the fourth counter, the reflexive ability goes on the stack separately, then +1/+1 and trample", () => {
       const r = landfall(3);
       expect(r.s.objects[r.asc]?.counters.quest).toBe(4);
       expect(r.s.stack).toHaveLength(1);
@@ -5099,7 +5099,7 @@ describe("Avatar: The Last Airbender : cartes du méta (PLAN-C, lot C13)", () =>
       expect(chars(s, r.bear).keywords).toContain("trample");
     });
 
-    it("la condition est revérifiée à la résolution de la capacité réflexive (603.4) : un marqueur retiré en réponse, rien", () => {
+    it("the condition is rechecked on resolution of the reflexive ability (603.4): a counter removed in response, nothing", () => {
       const r = landfall(3);
       expect(r.s.stack).toHaveLength(1);
       const s = settle(cast(r.s, "p1", "Test Unquest", { targets: { t: [r.asc] } }));
@@ -5108,7 +5108,7 @@ describe("Avatar: The Last Airbender : cartes du méta (PLAN-C, lot C13)", () =>
       expect(chars(s, r.bear).keywords).not.toContain("trample");
     });
 
-    it("au troisième marqueur, la capacité réflexive ne se déclenche pas", () => {
+    it("at the third counter, the reflexive ability doesn't trigger", () => {
       const r = landfall(2);
       expect(r.s.objects[r.asc]?.counters.quest).toBe(3);
       expect(r.s.stack).toHaveLength(0);
@@ -5116,7 +5116,7 @@ describe("Avatar: The Last Airbender : cartes du méta (PLAN-C, lot C13)", () =>
   });
 
   describe("Airbender Ascension", () => {
-    it("en arrivant, maîtrise de l'air sur jusqu'à une créature ciblée : exilée, son propriétaire peut la relancer pour {2}", () => {
+    it("when it enters, airbending of up to one targeted creature: exiled, its owner can recast it for {2}", () => {
       let s = scenario({
         p1: { battlefield: lands("Plains", 2), hand: ["Airbender Ascension"] },
         p2: { battlefield: ["Serra Angel", ...lands("Plains", 2)] },
@@ -5129,7 +5129,7 @@ describe("Avatar: The Last Airbender : cartes du méta (PLAN-C, lot C13)", () =>
       expect(castable(s, "p2", card)).toBe(true);
     });
 
-    it("chaque créature qui arrive sous votre contrôle ajoute un marqueur de quête (pas celles de l'adversaire)", () => {
+    it("each creature that enters under your control adds a quest counter (not the opponent's)", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Forest", 2), "Airbender Ascension"], hand: ["Llanowar Elves", "Llanowar Elves"] },
       });
@@ -5141,7 +5141,7 @@ describe("Avatar: The Last Airbender : cartes du méta (PLAN-C, lot C13)", () =>
       expect(s.objects[asc]?.counters.quest).toBe(2);
     });
 
-    it("à votre étape de fin, avec quatre marqueurs de quête ou plus : exile une de vos créatures puis la renvoie", () => {
+    it("at your end step, with four or more quest counters: exiles one of your creatures then returns it", () => {
       let s = scenario({
         p1: {
           battlefield: [
@@ -5158,11 +5158,11 @@ describe("Avatar: The Last Airbender : cartes du méta (PLAN-C, lot C13)", () =>
       expect(back).not.toBe(bear);
       expect(s.objects[back]?.damage).toBe(0);
       expect(s.objects[back]?.controller).toBe("p1");
-      // La créature revenue arrive sous votre contrôle : un marqueur de plus.
+      // The returned creature enters under your control: one more counter.
       expect(s.objects[asc]?.counters.quest).toBe(5);
     });
 
-    it("avec trois marqueurs de quête, rien ne se passe à l'étape de fin", () => {
+    it("with three quest counters, nothing happens at the end step", () => {
       let s = scenario({ p1: { battlefield: [{ name: "Airbender Ascension", counters: { quest: 3 } }, "Bear Cub"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = advanceUntil(s, (x) => x.turn.active === "p2");
@@ -5171,7 +5171,7 @@ describe("Avatar: The Last Airbender : cartes du méta (PLAN-C, lot C13)", () =>
   });
 
   describe("Raven Eagle", () => {
-    it("vol ; en arrivant, exile une carte d'un cimetière : une carte de créature donne un Indice", () => {
+    it("flying; when it enters, exiles a card from a graveyard: a creature card gives a Clue", () => {
       let s = scenario({ p1: { battlefield: lands("Swamp", 3), hand: ["Raven Eagle"] }, p2: { graveyard: ["Bear Cub", "Opt"] } });
       const bear = idOf(s, "p2", "graveyard", "Bear Cub");
       s = settle(cast(s, "p1", "Raven Eagle"), picking([bear]));
@@ -5182,7 +5182,7 @@ describe("Avatar: The Last Airbender : cartes du méta (PLAN-C, lot C13)", () =>
       expect(s.battlefield.filter((id) => chars(s, id).name === "Clue" && s.objects[id]?.controller === "p1")).toHaveLength(1);
     });
 
-    it("une carte non-créature exilée ne donne pas d'Indice ; « jusqu'à une » : la cible est facultative", () => {
+    it('an exiled noncreature card doesn\'t give a Clue; "up to one": the target is optional', () => {
       let s = scenario({ p1: { battlefield: lands("Swamp", 3), hand: ["Raven Eagle"], graveyard: ["Opt"] } });
       const opt = idOf(s, "p1", "graveyard", "Opt");
       s = settle(cast(s, "p1", "Raven Eagle"), picking([opt]));
@@ -5193,7 +5193,7 @@ describe("Avatar: The Last Airbender : cartes du méta (PLAN-C, lot C13)", () =>
       expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
     });
 
-    it("en attaquant, exile aussi une carte d'un cimetière (Indice pour une créature)", () => {
+    it("when attacking, also exiles a card from a graveyard (Clue for a creature)", () => {
       let s = scenario({ p1: { battlefield: ["Raven Eagle"] }, p2: { graveyard: ["Bear Cub"] } });
       const bear = idOf(s, "p2", "graveyard", "Bear Cub");
       s = attack(s, [idOf(s, "p1", "battlefield", "Raven Eagle")]);
@@ -5202,7 +5202,7 @@ describe("Avatar: The Last Airbender : cartes du méta (PLAN-C, lot C13)", () =>
       expect(s.battlefield.filter((id) => chars(s, id).name === "Clue")).toHaveLength(1);
     });
 
-    it("quand vous piochez votre deuxième carte du tour, chaque adversaire perd 1 PV et vous en gagnez 1 (une fois)", () => {
+    it("when you draw your second card each turn, each opponent loses 1 life and you gain 1 (once)", () => {
       let s = scenario({
         players: 3,
         p1: { battlefield: ["Raven Eagle", ...lands("Island", 4)], hand: ["Quick Study", "Opt"], library: lands("Island", 6) },
@@ -5211,7 +5211,7 @@ describe("Avatar: The Last Airbender : cartes du méta (PLAN-C, lot C13)", () =>
       expect(s.players.p1?.life).toBe(21);
       expect(s.players.p2?.life).toBe(19);
       expect(s.players.p3?.life).toBe(19);
-      // La troisième carte ne déclenche rien.
+      // The third card triggers nothing.
       s = settle(cast(s, "p1", "Opt"));
       expect(s.players.p1?.life).toBe(21);
       expect(s.players.p2?.life).toBe(19);
@@ -5219,7 +5219,7 @@ describe("Avatar: The Last Airbender : cartes du méta (PLAN-C, lot C13)", () =>
   });
 
   describe("Iroh's Demonstration", () => {
-    it("premier mode : 1 blessure à chaque créature de vos adversaires (pas aux vôtres)", () => {
+    it("first mode: 1 damage to each creature of your opponents (not yours)", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Mountain", 2), "Llanowar Elves"], hand: ["Iroh's Demonstration"] },
         p2: { battlefield: ["Llanowar Elves", "Bear Cub"] },
@@ -5231,7 +5231,7 @@ describe("Avatar: The Last Airbender : cartes du méta (PLAN-C, lot C13)", () =>
       expect(idsOf(s, "p1", "graveyard", "Iroh's Demonstration")).toHaveLength(1);
     });
 
-    it("second mode : 4 blessures à une créature ciblée (y compris une des vôtres)", () => {
+    it("second mode: 4 damage to a targeted creature (including one of yours)", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Mountain", 2), "Serra Angel"], hand: ["Iroh's Demonstration"] },
         p2: { battlefield: ["Shivan Dragon"] },
@@ -5249,8 +5249,8 @@ describe("Avatar: The Last Airbender : cartes du méta (PLAN-C, lot C13)", () =>
   });
 });
 
-describe("« Vous mettez des marqueurs » (lot K2)", () => {
-  it("Earth Kingdom General : « vous mettez des marqueurs sur une créature » : même celle d'un adversaire, jamais ceux d'un adversaire", () => {
+describe('"You put counters" (lot K2)', () => {
+  it("Earth Kingdom General: \"you put counters on a creature\": even an opponent's, never an opponent's counters", () => {
     const setup = (active: PlayerId) =>
       scenario({
         active,
@@ -5264,7 +5264,7 @@ describe("« Vous mettez des marqueurs » (lot K2)", () => {
   });
 });
 
-describe("« Jusqu'à une » rendu au joueur (lot K6)", () => {
+describe('"Up to one" handed to the player (lot K6)', () => {
   const prompts =
     (asked: string[]): Answer =>
     (req) => {
@@ -5272,7 +5272,7 @@ describe("« Jusqu'à une » rendu au joueur (lot K6)", () => {
       return req.type === "yesNo" ? [0] : undefined;
     };
 
-  it("Hama, the Bloodbender : exiler la carte non-créature, non-terrain meulée est facultatif", () => {
+  it("Hama, the Bloodbender: exiling the milled noncreature, nonland card is optional", () => {
     const setup = () =>
       scenario({
         p1: { battlefield: lands("Island", 5), hand: ["Hama, the Bloodbender"] },
@@ -5283,7 +5283,7 @@ describe("« Jusqu'à une » rendu au joueur (lot K6)", () => {
     expect(asked).toEqual(["yesNo"]);
     expect(exiled(s, "Lightning Strike")).toHaveLength(0);
     expect(namesIn(s, s.players.p2?.graveyard)).toContain("Lightning Strike");
-    // Sans carte non-créature, non-terrain meulée, aucune question.
+    // Without a milled noncreature, nonland card, no question.
     const none: string[] = [];
     s = scenario({
       p1: { battlefield: lands("Island", 5), hand: ["Hama, the Bloodbender"] },
@@ -5294,7 +5294,7 @@ describe("« Jusqu'à une » rendu au joueur (lot K6)", () => {
     expect(s.exile).toHaveLength(0);
   });
 
-  it("Avatar Destiny : la carte de créature meulée qui revient est facultative, et choisie parmi celles meulées", () => {
+  it("Avatar Destiny: the milled creature card that returns is optional, and chosen among those milled", () => {
     const setup = () => {
       const s = scenario({
         p1: {
@@ -5308,14 +5308,14 @@ describe("« Jusqu'à une » rendu au joueur (lot K6)", () => {
       destroy(out, bear);
       return out;
     };
-    // Refus : l'Aura revient en main, aucune créature meulée n'arrive.
+    // Refusal: the Aura returns to hand, no milled creature enters.
     const asked: string[] = [];
     let s = settle(setup(), prompts(asked));
     expect(asked).toEqual(["yesNo"]);
     expect(idsOf(s, "p1", "hand", "Avatar Destiny")).toHaveLength(1);
     expect(idsOf(s, "p1", "battlefield", "Shivan Dragon")).toHaveLength(0);
     expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(0);
-    // Accepté : le joueur choisit Serra Angel parmi les deux cartes de créature meulées.
+    // Accepted: the player chooses Serra Angel among the two milled creature cards.
     s = settle(setup(), (req, _p, cur) =>
       req.type === "pick" ? req.options.filter((id) => nameOf(cur, String(id)) === "Serra Angel") : undefined,
     );
@@ -5324,9 +5324,9 @@ describe("« Jusqu'à une » rendu au joueur (lot K6)", () => {
   });
 });
 
-describe("Avatar: The Last Airbender, PLAN-D D9 : dernières cartes", () => {
+describe("Avatar: The Last Airbender, PLAN-D D9: last cards", () => {
   const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
-  /** Rituel de Leçon de test à {U}{R}. */
+  /** Test Lesson sorcery with cost {U}{R}. */
   const lesson = customCard({
     name: "Test Lesson",
     types: ["Sorcery"],
@@ -5336,7 +5336,7 @@ describe("Avatar: The Last Airbender, PLAN-D D9 : dernières cartes", () => {
     manaCostText: "{U}{R}",
     colors: ["U", "R"],
   });
-  /** Rituel de test à {U}{R}, sans sous-type. */
+  /** Test sorcery with cost {U}{R}, no subtype. */
   const sorcery = customCard({
     name: "Test Sorcery",
     types: ["Sorcery"],
@@ -5345,7 +5345,7 @@ describe("Avatar: The Last Airbender, PLAN-D D9 : dernières cartes", () => {
     manaCostText: "{U}{R}",
     colors: ["U", "R"],
   });
-  /** Rituel de test à {B}. */
+  /** Test sorcery with cost {B}. */
   const blackOne = customCard({
     name: "Test Black One",
     types: ["Sorcery"],
@@ -5354,12 +5354,12 @@ describe("Avatar: The Last Airbender, PLAN-D D9 : dernières cartes", () => {
     manaCostText: "{B}",
     colors: ["B"],
   });
-  /** Artefact de test : « Sacrifiez un permanent : rien. » */
+  /** Test artifact: "Sacrifice a permanent: nothing." */
   const altar = customCard({
     name: "Test Altar",
     types: ["Artifact"],
     typeLine: "Artifact",
-    abilities: [dsl.activated({ sacrificeOther: { filter: {} }, effects: [], label: "Sacrifiez un permanent" })],
+    abilities: [dsl.activated({ sacrificeOther: { filter: {} }, effects: [], label: "Sacrifice a permanent" })],
   });
   const sacrificeWith = (s: S, player: PlayerId, altarId: string, victim: string) => {
     const a = legalActions(s, player).find((x) => x.type === "activate" && x.source === altarId);
@@ -5371,11 +5371,11 @@ describe("Avatar: The Last Airbender, PLAN-D D9 : dernières cartes", () => {
     });
   };
 
-  it("Hermitic Herbalist : un mana de n'importe quelle couleur, ou deux mana de couleurs au choix seulement pour une Leçon", () => {
+  it("Hermitic Herbalist: one mana of any color, or two mana of chosen colors only for a Lesson", () => {
     const s = scenario({ p1: { battlefield: ["Hermitic Herbalist"], hand: [lesson, sorcery, blackOne] } });
-    // {T} : un mana de n'importe quelle couleur, pour n'importe quel sort.
+    // {T}: one mana of any color, for any spell.
     expect(castable(s, "p1", idOf(s, "p1", "hand", "Test Black One"))).toBe(true);
-    // {T} : deux mana, seulement pour un sort de Leçon.
+    // {T}: two mana, only for a Lesson spell.
     expect(castable(s, "p1", idOf(s, "p1", "hand", "Test Sorcery"))).toBe(false);
     expect(castable(s, "p1", idOf(s, "p1", "hand", "Test Lesson"))).toBe(true);
     const after = settle(cast(s, "p1", "Test Lesson"));
@@ -5383,10 +5383,10 @@ describe("Avatar: The Last Airbender, PLAN-D D9 : dernières cartes", () => {
     expect(after.objects[idOf(after, "p1", "battlefield", "Hermitic Herbalist")]?.tapped).toBe(true);
   });
 
-  it("Invasion Reinforcements : flash ; en arrivant, un jeton Allié blanc 1/1", () => {
+  it("Invasion Reinforcements: flash; when it enters, a 1/1 white Ally token", () => {
     let s = scenario({ active: "p2", p1: { battlefield: lands("Plains", 2), hand: ["Invasion Reinforcements"] } });
     s = act(s, "p2", { type: "pass" });
-    // Flash : lancée pendant le tour de l'adversaire.
+    // Flash: cast during the opponent's turn.
     expect(castable(s, "p1", idOf(s, "p1", "hand", "Invasion Reinforcements"))).toBe(true);
     s = settle(cast(s, "p1", "Invasion Reinforcements"));
     expect(pt(s, idOf(s, "p1", "battlefield", "Invasion Reinforcements"))).toEqual([1, 1]);
@@ -5397,23 +5397,23 @@ describe("Avatar: The Last Airbender, PLAN-D D9 : dernières cartes", () => {
     expect(chars(s, token).subtypes).toEqual(["Ally"]);
   });
 
-  it("White Lotus Reinforcements : vigilance ; vos autres Alliés gagnent +1/+1", () => {
+  it("White Lotus Reinforcements: vigilance; your other Allies get +1/+1", () => {
     const s = scenario({
       p1: { battlefield: ["White Lotus Reinforcements", "Invasion Reinforcements", "Bear Cub"] },
       p2: { battlefield: ["Invasion Reinforcements"] },
     });
     const lotus = idOf(s, "p1", "battlefield", "White Lotus Reinforcements");
     expect(chars(s, lotus).keywords).toContain("vigilance");
-    // Pas elle-même.
+    // Not itself.
     expect(pt(s, lotus)).toEqual([2, 3]);
     expect(pt(s, idOf(s, "p1", "battlefield", "Invasion Reinforcements"))).toEqual([2, 2]);
-    // Ni une créature qui n'est pas un Allié, ni un Allié adverse.
+    // Neither a creature that isn't an Ally, nor an opponent's Ally.
     expect(pt(s, idOf(s, "p1", "battlefield", "Bear Cub"))).toEqual([2, 2]);
     expect(pt(s, idOf(s, "p2", "battlefield", "Invasion Reinforcements"))).toEqual([1, 1]);
   });
 
   describe("Zhao, Ruthless Admiral", () => {
-    it("maîtrise du feu 2 : en attaquant, {R}{R} qui restent jusqu'à la fin du combat", () => {
+    it("firebending 2: when attacking, {R}{R} that remain until end of combat", () => {
       let s = scenario({ p1: { battlefield: ["Zhao, Ruthless Admiral"] } });
       const zhao = idOf(s, "p1", "battlefield", "Zhao, Ruthless Admiral");
       s = attack(s, [zhao]);
@@ -5423,7 +5423,7 @@ describe("Avatar: The Last Airbender, PLAN-D D9 : dernières cartes", () => {
       expect(s.players.p1?.manaPool.R ?? 0).toBe(0);
     });
 
-    it("chaque fois que vous sacrifiez un autre permanent, vos créatures gagnent +1/+0 jusqu'à la fin du tour", () => {
+    it("whenever you sacrifice another permanent, your creatures get +1/+0 until end of turn", () => {
       let s = scenario({
         p1: { battlefield: ["Zhao, Ruthless Admiral", "Serra Angel", "Bear Cub", "Plains", altar] },
         p2: { battlefield: ["Bear Cub"] },
@@ -5431,21 +5431,21 @@ describe("Avatar: The Last Airbender, PLAN-D D9 : dernières cartes", () => {
       const zhao = idOf(s, "p1", "battlefield", "Zhao, Ruthless Admiral");
       const angel = idOf(s, "p1", "battlefield", "Serra Angel");
       const altarId = idOf(s, "p1", "battlefield", "Test Altar");
-      // Un terrain sacrifié compte : « un autre permanent ».
+      // A sacrificed land counts: "another permanent".
       s = settle(sacrificeWith(s, "p1", altarId, idOf(s, "p1", "battlefield", "Plains")));
       expect(pt(s, zhao)).toEqual([4, 4]);
       expect(pt(s, angel)).toEqual([5, 4]);
       s = settle(sacrificeWith(s, "p1", altarId, idOf(s, "p1", "battlefield", "Bear Cub")));
       expect(pt(s, zhao)).toEqual([5, 4]);
       expect(pt(s, angel)).toEqual([6, 4]);
-      // Les créatures de l'adversaire ne gagnent rien.
+      // The opponent's creatures gain nothing.
       expect(pt(s, idOf(s, "p2", "battlefield", "Bear Cub"))).toEqual([2, 2]);
-      // Jusqu'à la fin du tour.
+      // Until end of turn.
       s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
       expect(pt(s, zhao)).toEqual([3, 4]);
     });
 
-    it("un permanent sacrifié par l'adversaire ne le déclenche pas", () => {
+    it("a permanent sacrificed by the opponent doesn't trigger it", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: ["Zhao, Ruthless Admiral"] },
@@ -5458,8 +5458,8 @@ describe("Avatar: The Last Airbender, PLAN-D D9 : dernières cartes", () => {
   });
 });
 
-describe("Avatar: The Last Airbender : un adversaire choisi (PLAN-H H4)", () => {
-  it("Zuko, Conflicted : quatrième mode, Zuko passe sous le contrôle de l'adversaire choisi ; vous perdez 2 PV", () => {
+describe("Avatar: The Last Airbender: a chosen opponent (PLAN-H H4)", () => {
+  it("Zuko, Conflicted: fourth mode, Zuko comes under the control of the chosen opponent; you lose 2 life", () => {
     let s = scenario({ players: 3, step: "upkeep", p1: { battlefield: ["Zuko, Conflicted"] } });
     s = advanceUntil(s, (x) => x.pending?.kind === "choice" && x.pending.request.intent === "triggerMode");
     s = act(s, "p1", { type: "choose", values: ["3"] });

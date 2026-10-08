@@ -1,6 +1,6 @@
 /**
- * Impressions (PLAN-G, G1) : l'illustration d'une réédition, ou d'une impression de la table (`printings.ts`), choisie
- * par le deck, sans rien changer aux règles.
+ * Printings (PLAN-G, G1): the artwork of a reprint, or of a printing from the table (`printings.ts`), chosen
+ * by the deck, without changing anything about the rules.
  */
 import { CUSTOM_PRINTING, createRecordedGame, isGameRecord, keyedPrinting, projectView, replayGame } from "@mtgx/engine";
 import { describe, expect, it } from "vitest";
@@ -22,19 +22,19 @@ const GHALTA = "Ghalta, Primal Hunger";
 const ghalta = card(GHALTA);
 const spg = ghalta.printings?.find((p) => p.set === "SPG");
 
-describe("impressions des rééditions", () => {
-  it("une carte déjà connue reçoit l'impression de la réédition, avec son illustration", () => {
+describe("reprint printings", () => {
+  it("an already-known card gets the reprint's printing, with its artwork", () => {
     expect(ghalta.set).not.toBe("SPG");
     expect(spg).toMatchObject({ key: `SPG-${spg?.number}`, set: "SPG" });
     expect(spg?.image).toBeTruthy();
     expect(spg?.image).not.toBe(ghalta.image);
-    // Plusieurs rééditions : une impression par ensemble (Doubling Season : Enchanting Tales et Source Material).
+    // Several reprints: one printing per set (Doubling Season: Enchanting Tales and Source Material).
     expect(card("Doubling Season").printings?.map((p) => p.set)).toEqual(["WOT", "PZA"]);
-    // Une carte d'un ensemble de rééditions seulement n'a pas d'impression en plus d'elle-même.
+    // A card from a reprint-only set has no printing besides its own.
     expect(Object.values(CARDS).filter((c) => c.printings?.some((p) => p.set === c.set))).toEqual([]);
   });
 
-  it("MTGA : « (SPG) 11 » choisit l'impression, retrouvée à l'export ; la légalité reste celle de la carte", () => {
+  it('MTGA: "(SPG) 11" chooses the printing, found again on export; legality stays the card\'s', () => {
     const text = `Deck\n2 ${GHALTA} (SPG) ${spg?.number}\n2 ${GHALTA} (RIX) 130\n56 Forest (FDN) 279\n`;
     const parsed = parseDeckList(text, new CardIndex(CARDS));
     expect(parsed.main).toEqual([
@@ -47,11 +47,11 @@ describe("impressions des rééditions", () => {
       [56, "Forest"],
     ];
     expect(validateDeck({ main: parsed.main }, CARDS)).toEqual(validateDeck({ main: plain }, CARDS));
-    // Un numéro qui n'est pas une impression de la carte : ignoré.
+    // A number that is not a printing of the card: ignored.
     expect(parseDeckList(`4 ${GHALTA} (SPG) 999\n`, new CardIndex(CARDS)).main).toEqual([[4, GHALTA]]);
   });
 
-  it("en partie, l'objet montre l'illustration choisie ; le replay la retrouve ; l'adversaire ne voit pas la main", () => {
+  it("in game, the object shows the chosen artwork; the replay finds it again; the opponent does not see the hand", () => {
     const main: DeckEntries = [
       [30, GHALTA, spg?.key],
       [30, "Forest"],
@@ -82,9 +82,9 @@ describe("impressions des rééditions", () => {
     expect(hand1.length).toBeGreaterThan(0);
     expect(new Set(hand1.flat())).toEqual(new Set([spg?.image, spg?.frImage ?? spg?.image]));
     for (const [img] of hand2) expect(img).toBe(ghalta.image);
-    // Rien de la main de p1 dans la vue de p2.
+    // Nothing of p1's hand in p2's view.
     expect(JSON.stringify(projectView(state, "p2"))).not.toContain(spg?.image);
-    // L'enregistrement garde les impressions ; le rejeu les rétablit.
+    // The record keeps the printings; the replay restores them.
     const saved = JSON.parse(JSON.stringify(record));
     expect(isGameRecord(saved)).toBe(true);
     expect(saved.players[0].printings).toHaveLength(60);
@@ -93,7 +93,7 @@ describe("impressions des rééditions", () => {
     expect(replayed.printings).toEqual(state.printings);
   });
 
-  it("une impression que la carte n'a pas est ignorée par le moteur", () => {
+  it("a printing the card does not have is ignored by the engine", () => {
     const main: DeckEntries = [
       [4, "Forest", "SPG-13"],
       [56, "Plains"],
@@ -115,22 +115,22 @@ describe("table des impressions", () => {
   const sta = findPrinting(bolt, "STA", "42") as string;
   const staJa = printingOptions(bolt).find((p) => p.set === "STA" && p.lang === "ja");
 
-  it("toutes les apparences d'une carte : la sienne, ses rééditions, puis la table, sans doublon", () => {
+  it("all appearances of a card: its own, its reprints, then the table, without duplicates", () => {
     const options = printingOptions(bolt);
     expect(options[0]).toEqual({ set: bolt.set, number: bolt.number });
     expect(options.length).toBeGreaterThan(10);
     expect(new Set(options.map((p) => `${p.set}-${p.number}`)).size).toBe(options.length);
     expect(keyedPrinting(sta)).toMatchObject({ set: "STA", number: "42" });
     expect(options.find((p) => p.key === sta)).toMatchObject({ setName: "Strixhaven Mystical Archive", year: 2021 });
-    // Archives mystiques japonaises : imprimées en japonais seulement.
+    // Mystical Archive Japanese versions: printed in Japanese only.
     expect(staJa?.key).toBeTruthy();
     expect(hasPrinting(bolt, staJa?.key as string)).toBe(true);
-    // Une réédition du catalogue garde sa clé (et son image française) ; la table ne la reprend pas.
+    // A catalog reprint keeps its key (and its French image); the table does not take it again.
     const doubling = printingOptions(card("Doubling Season"));
     expect(doubling.filter((p) => p.set === "PZA").map((p) => p.key)).toEqual(["PZA-11"]);
   });
 
-  it("chaque clé de la table se lit (ensemble, numéro, image) et tient dans une ligne de deck du serveur", () => {
+  it("each table key can be read (set, number, image) and fits in a server deck line", () => {
     for (const c of Object.values(CARDS))
       for (const p of printingOptions(c).filter((x) => x.key?.includes("@"))) {
         const key = p.key as string;
@@ -139,20 +139,20 @@ describe("table des impressions", () => {
       }
   });
 
-  it("terrains de base : les versions pleine carte seulement", () => {
+  it("basic lands: full-art versions only", () => {
     const sets = new Set(printingOptions(card("Forest")).map((p) => p.set));
-    // Zendikar, Unstable : forêts pleine carte ; Alpha, Magic 2010 : forêts à cadre ordinaire.
+    // Zendikar, Unstable: full-art forests; Alpha, Magic 2010: forests with an ordinary frame.
     for (const set of ["ZEN", "UST"]) expect(sets.has(set)).toBe(true);
     for (const set of ["LEA", "M10"]) expect(sets.has(set)).toBe(false);
   });
 
-  it("une clé qui n'est pas une impression de la carte est refusée", () => {
+  it("a key that is not a printing of the card is refused", () => {
     expect(hasPrinting(card("Shock"), sta)).toBe(false);
     expect(hasPrinting(bolt, sta.replace(/@.*/, "@0123456789abcdef0123456789abcdef"))).toBe(false);
     expect(hasPrinting(bolt, "STA-42")).toBe(false);
   });
 
-  it("MTGA : « (STA) 42 » choisit l'impression de la table si elle est chargée, et revient à l'export", () => {
+  it('MTGA: "(STA) 42" chooses the table\'s printing if it is loaded, and comes back on export', () => {
     const text = `Deck\n4 ${BOLT} (STA) 42\n56 Mountain\n`;
     const index = new CardIndex(CARDS);
     expect(parseDeckList(text, index, findPrinting).main).toEqual([
@@ -163,7 +163,7 @@ describe("table des impressions", () => {
     expect(serializeDeckList({ main: [[4, BOLT, sta]] }, CARDS)).toContain(`4 ${BOLT} (STA) 42`);
   });
 
-  it("en partie, l'objet montre l'image de l'impression ; le replay la retrouve ; l'adversaire ne voit pas la main", () => {
+  it("in game, the object shows the printing's image; the replay finds it again; the opponent does not see the hand", () => {
     const main: DeckEntries = [
       [30, BOLT, staJa?.key],
       [30, "Mountain"],
@@ -187,11 +187,11 @@ describe("table des impressions", () => {
 });
 
 describe("impression personnelle (illustrations locales du serveur)", () => {
-  it("le préconstruit The Vision la prend pour chaque carte ; la vue marque ses faces, ses jetons et son joueur", () => {
+  it("The Vision precon takes it for each card; the view marks its faces, its tokens and its player", () => {
     const vision = DECKS.find((d) => d.id === "cmd-vision");
     expect(vision?.art).toBe("custom");
     expect([...(vision?.commander ?? []), ...(vision?.main ?? [])].every((e) => e[2] === CUSTOM_PRINTING)).toBe(true);
-    // Les autres préconstruits gardent les impressions de Scryfall.
+    // The other precons keep the Scryfall printings.
     expect(DECKS.filter((d) => d.main.some((e) => e[2] === CUSTOM_PRINTING)).map((d) => d.id)).toEqual(["cmd-vision"]);
     expect(hasPrinting(card("Sol Ring"), CUSTOM_PRINTING)).toBe(true);
     const main: DeckEntries = [

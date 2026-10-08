@@ -1,8 +1,8 @@
 /**
- * Questions « nom » (nom de carte, de carte de terrain, type de créature) : elles ne listent plus les cartes de la partie
- * (la decklist adverse) ; des noms publics sont mis en avant, et tout nom du catalogue (types de créature : la liste
- * officielle, 205.3m) est accepté. Un nom inconnu est refusé (RulesError) ; un nom de la partie l'est toujours (parties
- * enregistrées avant le catalogue).
+ * "Name" questions (card name, land card name, creature type): they no longer list the cards of the game
+ * (the opposing decklist); public names are featured first, and any catalog name (creature types: the
+ * official list, 205.3m) is accepted. An unknown name is refused (RulesError); a name from the game still is (games
+ * saved before the catalog).
  */
 import { nameCatalog } from "@mtgx/cards";
 import { afterEach, describe, expect, it } from "vitest";
@@ -14,16 +14,16 @@ import { act, cast, customCard, idOf, lands, passUntil, scenario, settle } from 
 
 type NameRequest = Extract<ChoiceRequest, { type: "name" }>;
 
-/** La question « nom » en attente (lève sinon). */
+/** The pending "name" question (throws otherwise). */
 function nameRequest(s: GameState): NameRequest {
   const p = s.pending;
-  if (p?.kind !== "choice" || p.request.type !== "name") throw new Error(`pas de question « nom » : ${JSON.stringify(p)}`);
+  if (p?.kind !== "choice" || p.request.type !== "name") throw new Error(`no "name" question: ${JSON.stringify(p)}`);
   return p.request;
 }
 
 const untilChoice = (s: GameState) => passUntil(s, (x) => x.pending?.kind === "choice");
 
-/** Cartes cachées de p2 (main, bibliothèque), à ne jamais voir dans la question de p1. */
+/** p2's hidden cards (hand, library), never to be seen in p1's question. */
 const HIDDEN = { hand: ["Shock"], library: ["Sheoldred, the Apocalypse", "Hallowed Fountain", "Opt"] };
 
 afterEach(() => registerNameCatalog(null));
@@ -41,7 +41,7 @@ describe("nom de carte (Skyseer's Chariot)", () => {
       ),
     );
 
-  it("noms publics seulement : permanents adverses, puis les vôtres, puis les cimetières ; rien de la main ni de la bibliothèque adverses", () => {
+  it("public names only: opposing permanents, then yours, then graveyards; nothing from the opposing hand or library", () => {
     const req = nameRequest(start());
     expect(req.of).toBe("card");
     expect(req.featured.slice(0, 3)).toEqual(["Engine Rat", "Plains", "Bear Cub"]);
@@ -51,13 +51,13 @@ describe("nom de carte (Skyseer's Chariot)", () => {
     for (const hidden of ["Shock", "Sheoldred, the Apocalypse", "Hallowed Fountain"]) expect(seen).not.toContain(hidden);
   });
 
-  it("la question ne dépend pas du catalogue (même partie, même question)", () => {
+  it("the question does not depend on the catalog (same game, same question)", () => {
     const without = nameRequest(start());
     registerNameCatalog(nameCatalog());
     expect(nameRequest(start())).toEqual(without);
   });
 
-  it("un nom du catalogue absent de la partie est accepté (avec le catalogue), un nom inconnu est refusé", () => {
+  it("a catalog name absent from the game is accepted (with the catalog), an unknown name is refused", () => {
     let s = start();
     expect(() => act(s, "p1", { type: "choose", values: ["Lightning Bolt Imaginaire"] })).toThrow(RulesError);
     expect(() => act(s, "p1", { type: "choose", values: ["Steam Vents"] })).toThrow(RulesError);
@@ -67,14 +67,14 @@ describe("nom de carte (Skyseer's Chariot)", () => {
     expect(s.objects[idOf(s, "p1", "battlefield", "Skyseer's Chariot")]?.chosen?.cardName).toBe("Steam Vents");
   });
 
-  it("un nom d'une carte de la partie, même cachée, reste accepté sans catalogue (parties enregistrées avant lui)", () => {
+  it("a name from a card in the game, even hidden, is still accepted without a catalog (games saved before it)", () => {
     const s = settle(act(start(), "p1", { type: "choose", values: ["Shock"] }));
     expect(s.objects[idOf(s, "p1", "battlefield", "Skyseer's Chariot")]?.chosen?.cardName).toBe("Shock");
   });
 });
 
 describe("nom de carte (Ancient Vendetta)", () => {
-  it("les cimetières adverses en tête ; tout nom du catalogue est accepté", () => {
+  it("opposing graveyards first; any catalog name is accepted", () => {
     let s = scenario({
       p1: { battlefield: lands("Swamp", 4), hand: ["Ancient Vendetta"] },
       p2: { battlefield: ["Engine Rat"], graveyard: ["Llanowar Elves"], ...HIDDEN },
@@ -84,8 +84,8 @@ describe("nom de carte (Ancient Vendetta)", () => {
     expect(req.featured.slice(0, 2)).toEqual(["Llanowar Elves", "Engine Rat"]);
     expect(req.suggested).toEqual(["Llanowar Elves"]);
     expect(req.featured).not.toContain("Sheoldred, the Apocalypse");
-    expect(() => act(s, "p1", { type: "choose", values: ["Nom inventé"] })).toThrow(RulesError);
-    // Nommer une carte de la bibliothèque adverse (par le catalogue) : elle est exilée.
+    expect(() => act(s, "p1", { type: "choose", values: ["Invented name"] })).toThrow(RulesError);
+    // Naming a card from the opposing library (through the catalog): it is exiled.
     registerNameCatalog(nameCatalog());
     s = settle(act(s, "p1", { type: "choose", values: ["Sheoldred, the Apocalypse"] }));
     expect(s.players.p2?.library.some((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === "Sheoldred, the Apocalypse")).toBe(
@@ -103,7 +103,7 @@ describe("nom de carte de terrain (Petrified Hamlet)", () => {
     return untilChoice(act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Petrified Hamlet") }));
   };
 
-  it("terrains publics, non de base d'abord ; jamais un terrain caché", () => {
+  it("public lands, nonbasic first; never a hidden land", () => {
     const req = nameRequest(start());
     expect(req.of).toBe("land");
     expect(req.featured.slice(0, 2)).toEqual(["Steam Vents", "Mountain"]);
@@ -113,17 +113,17 @@ describe("nom de carte de terrain (Petrified Hamlet)", () => {
     expect(req.suggested).toEqual(["Steam Vents"]);
   });
 
-  it("un terrain du catalogue est accepté ; une carte qui n'est pas un terrain est refusée", () => {
+  it("a catalog land is accepted; a card that is not a land is refused", () => {
     const s = start();
     registerNameCatalog(nameCatalog());
     expect(() => act(s, "p1", { type: "choose", values: ["Shock"] })).toThrow(RulesError);
-    expect(() => act(s, "p1", { type: "choose", values: ["Nom inventé"] })).toThrow(RulesError);
+    expect(() => act(s, "p1", { type: "choose", values: ["Invented name"] })).toThrow(RulesError);
     const t = settle(act(s, "p1", { type: "choose", values: ["Watery Grave"] }));
     expect(t.objects[idOf(t, "p1", "battlefield", "Petrified Hamlet")]?.chosen?.cardName).toBe("Watery Grave");
   });
 });
 
-describe("type de créature (205.3m)", () => {
+describe("creature type (205.3m)", () => {
   const start = () =>
     untilChoice(
       cast(
@@ -136,7 +136,7 @@ describe("type de créature (205.3m)", () => {
           p2: {
             battlefield: ["Serra Angel"],
             library: ["Sheoldred, the Apocalypse"],
-            hand: [customCard({ name: "Gobelin caché", subtypes: ["Goblin"], power: 1, toughness: 1 })],
+            hand: [customCard({ name: "Hidden Goblin", subtypes: ["Goblin"], power: 1, toughness: 1 })],
           },
         }),
         "p1",
@@ -144,23 +144,23 @@ describe("type de créature (205.3m)", () => {
       ),
     );
 
-  it("toute la liste officielle, sans la lister ; vos types d'abord, puis ceux des créatures en jeu", () => {
+  it("the whole official list, without listing it; your types first, then those of creatures in play", () => {
     expect(CREATURE_TYPES).toHaveLength(324);
     expect(CREATURE_TYPES).toContain("Time Lord");
     const req = nameRequest(start());
     expect(req.of).toBe("creatureType");
     expect(req.featured).toEqual(expect.arrayContaining(["Bear", "Elf", "Druid", "Angel"]));
     expect(req.featured.indexOf("Angel")).toBeGreaterThan(req.featured.indexOf("Elf"));
-    // Ni la Phyrexienne de la bibliothèque adverse ni le Gobelin de sa main.
+    // Neither the Phyrexian in the opposing library nor the Goblin in its hand.
     expect(req.featured).not.toContain("Phyrexian");
     expect(req.featured).not.toContain("Goblin");
     expect(JSON.stringify(projectView(start(), "p1").pending)).not.toContain("Phyrexian");
   });
 
-  it("un type de la liste absent de la partie est accepté ; un type inconnu est refusé", () => {
+  it("a type from the list absent from the game is accepted; an unknown type is refused", () => {
     const s = start();
     expect(() => act(s, "p1", { type: "choose", values: ["Plains"] })).toThrow(RulesError);
-    expect(() => act(s, "p1", { type: "choose", values: ["Pas un type"] })).toThrow(RulesError);
+    expect(() => act(s, "p1", { type: "choose", values: ["Not a type"] })).toThrow(RulesError);
     const t = settle(act(s, "p1", { type: "choose", values: ["Phelddagrif"] }));
     expect(t.objects[idOf(t, "p1", "battlefield", "Leyline of Transformation")]?.chosen?.creatureType).toBe("Phelddagrif");
   });

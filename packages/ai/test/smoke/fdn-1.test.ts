@@ -1,4 +1,4 @@
-/** Test de fumée : Foundations, premier tiers. */
+/** Smoke test: Foundations, first third. */
 import { smokeTest } from "./harness";
 
 smokeTest(["FDN"], [0, 3]);

@@ -1,6 +1,6 @@
 /**
- * Commander (pseudo-ensemble EDH) : tests de règles du deck The Ur-Dragon (Dragons, cinq couleurs). Éminence, Dragons
- * qui arrivent ou attaquent, mana (créatures, artefacts, terrains), contresorts et sorts de masse.
+ * Commander (EDH pseudo-set): rules tests for The Ur-Dragon deck (Dragons, five colors). Eminence, Dragons
+ * that enter or attack, mana (creatures, artifacts, lands), counterspells and board wipes.
  */
 import { describe, expect, it } from "vitest";
 import { fx, triggered, when } from "../src/dsl";
@@ -34,32 +34,32 @@ const tokens = (s: GameState, player: PlayerId, name?: string) =>
 const onField = (s: GameState, p: PlayerId, name: string) => idsOf(s, p, "battlefield", name).length;
 const castIt = (s: GameState, p: PlayerId, name: string, targets?: Record<string, string[]>) =>
   act(s, p, { type: "cast", card: idOf(s, p, "hand", name), ...(targets ? { targets } : {}) });
-/** Engage une source de mana du champ de bataille de p1. */
+/** Taps a mana source on p1's battlefield. */
 const tap = (s: GameState, name: string, ability = 0, color?: string) =>
   act(s, "p1", { type: "tapForMana", source: idOf(s, "p1", "battlefield", name), ability, ...(color ? { color } : {}) } as never);
-/** Active la première capacité activée proposée pour la source nommée de p1. */
+/** Activates the first activated ability offered for the named source of p1. */
 const activate = (s: GameState, name: string, targets?: Record<string, string[]>) => {
   const source = idOf(s, "p1", "battlefield", name);
   const o = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === source);
-  if (o?.type !== "activate") throw new Error(`pas de capacité pour ${name}`);
+  if (o?.type !== "activate") throw new Error(`no ability for ${name}`);
   return act(s, "p1", { type: "activate", source, ability: o.ability, ...(targets ? { targets } : {}) });
 };
-/** Toujours « oui » aux questions « vous pouvez ». */
+/** Always "yes" to "you may" questions. */
 const yes = (req: { type: string; intent?: string }) => (req.type === "yesNo" ? [1] : undefined);
 
 describe("The Ur-Dragon (EDH)", () => {
   describe("commandant", () => {
-    it("éminence : depuis la zone de commandement, vos autres sorts de Dragon coûtent {1} de moins", () => {
+    it("eminence: from the command zone, your other Dragon spells cost {1} less", () => {
       const s = scenario({ p1: { command: ["The Ur-Dragon"], battlefield: lands("Mountain", 5), hand: ["Shivan Dragon"] } });
       expect(castable(s, "p1", idOf(s, "p1", "hand", "Shivan Dragon"))).toBe(true);
       const without = scenario({ p1: { battlefield: lands("Mountain", 5), hand: ["Shivan Dragon"] } });
       expect(castable(without, "p1", idOf(without, "p1", "hand", "Shivan Dragon"))).toBe(false);
-      // Un sort qui n'est pas un Dragon ne profite pas de la réduction.
+      // A non-Dragon spell doesn't benefit from the reduction.
       const bear = scenario({ p1: { command: ["The Ur-Dragon"], battlefield: lands("Forest", 1), hand: ["Bear Cub"] } });
       expect(castable(bear, "p1", idOf(bear, "p1", "hand", "Bear Cub"))).toBe(false);
     });
 
-    it("des Dragons attaquent : piochez autant de cartes, puis un permanent de votre main sur le champ de bataille", () => {
+    it("Dragons attack: draw that many cards, then a permanent from your hand onto the battlefield", () => {
       let s = scenario({
         p1: {
           battlefield: ["The Ur-Dragon", "Shivan Dragon"],
@@ -71,23 +71,23 @@ describe("The Ur-Dragon (EDH)", () => {
       s = attack(s, [idOf(s, "p1", "battlefield", "The Ur-Dragon"), idOf(s, "p1", "battlefield", "Shivan Dragon")]);
       s = settle(s, (req, _p, cur) => picking(idsOf(cur, "p1", "hand", "Gigantosaurus"))(req));
       expect(onField(s, "p1", "Gigantosaurus")).toBe(1);
-      // Deux cartes piochées, une mise sur le champ de bataille.
+      // Two cards drawn, one put onto the battlefield.
       expect(hand(s, "p1")).toBe(before + 2 - 1);
     });
   });
 
   describe("mana", () => {
-    it("Selvala : X mana de la plus grande force ; une créature plus forte que toutes les autres fait piocher son contrôleur", () => {
+    it("Selvala: X mana of the greatest power; a creature stronger than all the others makes its controller draw", () => {
       let s = scenario({
         p1: { battlefield: ["Selvala, Heart of the Wilds", "Forest", "Gigantosaurus"], library: ["Opt"] },
         p2: { battlefield: lands("Forest", 2), hand: ["Bear Cub"], library: ["Opt"] },
       });
       s = activate(s, "Selvala, Heart of the Wilds");
-      // Répartition des couleurs (suggestion) ; la priorité reste à p1.
+      // Color split (suggestion); priority stays with p1.
       while (s.pending?.kind === "choice") s = act(s, s.pending.player, { type: "choose", values: s.pending.request.suggested });
       const pool = Object.values(s.players.p1?.manaPool ?? {}) as number[];
       expect(pool.reduce((n, v) => n + v, 0)).toBe(10);
-      // Bear Cub (2) n'est pas plus forte que Gigantosaurus : pas de pioche.
+      // Bear Cub (2) isn't stronger than Gigantosaurus: no draw.
       const opp = scenario({
         active: "p2",
         p1: { battlefield: ["Selvala, Heart of the Wilds", "Gigantosaurus"] },
@@ -96,7 +96,7 @@ describe("The Ur-Dragon (EDH)", () => {
       const h = hand(opp, "p2");
       const after = settle(castIt(opp, "p2", "Bear Cub"), yes);
       expect(hand(after, "p2")).toBe(h - 1);
-      // Gigantosaurus arrive alors que la plus forte est Selvala (2) : son contrôleur peut piocher.
+      // Gigantosaurus enters while the strongest is Selvala (2): its controller may draw.
       let big = scenario({
         p1: { battlefield: ["Selvala, Heart of the Wilds", ...lands("Forest", 5)], hand: ["Gigantosaurus"], library: ["Opt"] },
       });
@@ -105,19 +105,19 @@ describe("The Ur-Dragon (EDH)", () => {
       expect(hand(big, "p1")).toBe(h1 - 1 + 1);
     });
 
-    it("Mana Vault : ne se dégage pas ; à l'entretien, {4} pour le dégager ; engagé à l'étape de pioche, 1 blessure", () => {
+    it("Mana Vault: doesn't untap; at upkeep, {4} to untap it; tapped at the draw step, 1 damage", () => {
       let s = scenario({ active: "p2", p1: { battlefield: ["Mana Vault"] } });
       const vault = idOf(s, "p1", "battlefield", "Mana Vault");
       const v = s.objects[vault];
       if (v) v.tapped = true;
       const before = life(s, "p1");
-      // Tour de p1 : pas de dégagement ; « payer {4} ? » : non ; la pioche inflige 1 blessure.
+      // p1's turn: no untap; "pay {4}?": no; the draw step deals 1 damage.
       s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.pending?.kind === "priority", 600);
       expect(s.objects[vault]?.tapped).toBe(true);
       expect(life(s, "p1")).toBe(before - 1);
     });
 
-    it("Mana Vault : payer {4} à l'entretien le dégage", () => {
+    it("Mana Vault: paying {4} at upkeep untaps it", () => {
       let s = scenario({ active: "p2", p1: { battlefield: ["Mana Vault", ...lands("Island", 4)] } });
       const vault = idOf(s, "p1", "battlefield", "Mana Vault");
       const v = s.objects[vault];
@@ -130,7 +130,7 @@ describe("The Ur-Dragon (EDH)", () => {
       expect(life(s, "p1")).toBe(before);
     });
 
-    it("Mox Diamond : défausser une carte de terrain le garde ; sans terrain, il est sacrifié", () => {
+    it("Mox Diamond: discarding a land card keeps it; without a land, it is sacrificed", () => {
       let s = scenario({ p1: { hand: ["Mox Diamond", "Forest"] } });
       s = settle(castIt(s, "p1", "Mox Diamond"), (req, _p, cur) => picking(idsOf(cur, "p1", "hand", "Forest"))(req));
       expect(onField(s, "p1", "Mox Diamond")).toBe(1);
@@ -141,13 +141,13 @@ describe("The Ur-Dragon (EDH)", () => {
       expect(idsOf(none, "p1", "graveyard", "Mox Diamond")).toHaveLength(1);
     });
 
-    it("Mox Diamond (PLAN-H H9) : sans terrain défaussé, il n'arrive jamais (« quand un artefact arrive » ne se déclenche pas)", () => {
+    it('Mox Diamond (PLAN-H H9): with no land discarded, it never enters ("when an artifact enters" doesn\'t trigger)', () => {
       const WATCH = customCard({
-        name: "Guetteur d'artefacts",
+        name: "Artifact Watcher",
         types: ["Enchantment"],
         typeLine: "Enchantment",
         abilities: [
-          triggered(when.enters({ types: ["Artifact"], controller: "you" }), [fx.gainLife(1)], { label: "Vous gagnez 1 PV" }),
+          triggered(when.enters({ types: ["Artifact"], controller: "you" }), [fx.gainLife(1)], { label: "You gain 1 life" }),
         ],
       });
       let none = scenario({ p1: { battlefield: [WATCH], hand: ["Mox Diamond", "Opt"] } });
@@ -158,7 +158,7 @@ describe("The Ur-Dragon (EDH)", () => {
       expect([onField(kept, "p1", "Mox Diamond"), life(kept, "p1")]).toEqual([1, 21]);
     });
 
-    it("Arena of Glory : engagée sans Montagne ; épuisée, {R}{R} qui donne la célérité à une créature", () => {
+    it("Arena of Glory: enters tapped without a Mountain; exert, {R}{R} that gives haste to a creature", () => {
       let s = scenario({ p1: { hand: ["Arena of Glory"] } });
       s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Arena of Glory") });
       expect(s.objects[idOf(s, "p1", "battlefield", "Arena of Glory")]?.tapped).toBe(true);
@@ -168,7 +168,7 @@ describe("The Ur-Dragon (EDH)", () => {
       h = activate(h, "Arena of Glory");
       expect(h.objects[arena]?.exerted).toBe(true);
       expect(h.players.p1?.restrictedMana?.map((m) => m.type)).toEqual(["R", "R"]);
-      // Le mana de l'Arène lance Axgard Cavalry ({1}{R}) : elle a la célérité.
+      // The Arena's mana casts Axgard Cavalry ({1}{R}): it has haste.
       let c = scenario({ p1: { battlefield: ["Arena of Glory", "Mountain"], hand: ["Axgard Cavalry"] } });
       c = act(c, "p1", { type: "tapForMana", source: idOf(c, "p1", "battlefield", "Mountain"), ability: 0 } as never);
       c = activate(c, "Arena of Glory");
@@ -177,28 +177,28 @@ describe("The Ur-Dragon (EDH)", () => {
       expect(chars(c, cavalry).keywords).toContain("haste");
     });
 
-    it("Klauth : X mana (force totale des attaquants), seulement pour des sorts, gardé jusqu'à la fin du tour", () => {
+    it("Klauth: X mana (total power of the attackers), only for spells, kept until end of turn", () => {
       let s = scenario({ p1: { battlefield: ["Klauth, Unrivaled Ancient", "Shivan Dragon"] } });
       s = attack(s, [idOf(s, "p1", "battlefield", "Klauth, Unrivaled Ancient"), idOf(s, "p1", "battlefield", "Shivan Dragon")]);
       s = throughCombat(s);
-      // 4 + 5 = 9 mana, encore là à la seconde phase principale.
+      // 4 + 5 = 9 mana, still there in the second main phase.
       expect(s.turn.step).toBe("main2");
       expect(s.players.p1?.restrictedMana).toHaveLength(9);
       expect(s.players.p1?.restrictedMana?.every((m) => m.keep && m.restriction)).toBe(true);
-      // Il disparaît au tour suivant.
+      // It disappears next turn.
       s = advanceUntil(s, (x) => x.turn.active === "p2" && x.pending?.kind === "priority", 600);
       expect(s.players.p1?.restrictedMana ?? []).toEqual([]);
     });
 
-    it("Chromatic Orrery : {C}{C}{C}{C}{C}, et ce mana paie des coûts colorés", () => {
+    it("Chromatic Orrery: {C}{C}{C}{C}{C}, and that mana pays colored costs", () => {
       const s = scenario({ p1: { battlefield: ["Chromatic Orrery"], hand: ["Savannah Lions", "Shivan Dragon"] } });
       expect(manaAbilitiesOf(s, idOf(s, "p1", "battlefield", "Chromatic Orrery")).some((m) => m.amount === 5)).toBe(true);
       expect(castable(s, "p1", idOf(s, "p1", "hand", "Savannah Lions"))).toBe(true);
-      // Shivan Dragon coûte 6 : l'Orrery seul n'en donne que 5.
+      // Shivan Dragon costs 6: the Orrery alone gives only 5.
       expect(castable(s, "p1", idOf(s, "p1", "hand", "Shivan Dragon"))).toBe(false);
     });
 
-    it("City of Brass : engagée pour du mana, elle vous inflige 1 blessure ; Forbidden Orchard : un Esprit pour un adversaire", () => {
+    it("City of Brass: tapped for mana, it deals 1 damage to you; Forbidden Orchard: a Spirit for an opponent", () => {
       let s = scenario({ p1: { battlefield: ["City of Brass", "Forbidden Orchard"] } });
       const before = life(s, "p1");
       s = settle(tap(tap(s, "City of Brass", 0, "G"), "Forbidden Orchard", 0, "U"));
@@ -206,7 +206,7 @@ describe("The Ur-Dragon (EDH)", () => {
       expect(tokens(s, "p2", "Spirit")).toHaveLength(1);
     });
 
-    it("Horizon of Progress : 1 PV pour un mana qu'un de vos terrains pourrait produire", () => {
+    it("Horizon of Progress: 1 life for a mana one of your lands could produce", () => {
       const s = scenario({ p1: { battlefield: ["Horizon of Progress", "Island", "Swamp"] } });
       const produced = manaAbilitiesOf(s, idOf(s, "p1", "battlefield", "Horizon of Progress")).flatMap((m) => m.produce);
       expect([...new Set(produced)].sort()).toEqual(["B", "U"]);
@@ -216,8 +216,8 @@ describe("The Ur-Dragon (EDH)", () => {
     });
   });
 
-  describe("sorts", () => {
-    it("Stubborn Denial : contrecarre sauf si {1} est payé ; férocité : contrecarre sans condition", () => {
+  describe("spells", () => {
+    it("Stubborn Denial: counters unless {1} is paid; ferocious: counters unconditionally", () => {
       const setup = (withBig: boolean) => {
         let s = scenario({
           active: "p2",
@@ -229,12 +229,12 @@ describe("The Ur-Dragon (EDH)", () => {
         s = castIt(s, "p1", "Stubborn Denial", { t: [s.stack[0]?.id as string] });
         return settle(s, (req) => (req.type === "yesNo" ? [1] : undefined));
       };
-      // p2 paie {1} avec sa seconde Montagne : Shock se résout.
+      // p2 pays {1} with its second Mountain: Shock resolves.
       expect(life(setup(false), "p1")).toBe(18);
       expect(life(setup(true), "p1")).toBe(20);
     });
 
-    it("Swan Song : contrecarre un éphémère ; son contrôleur crée un Oiseau 2/2 volant", () => {
+    it("Swan Song: counters an instant; its controller creates a 2/2 flying Bird", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: ["Island"], hand: ["Swan Song"] },
@@ -248,7 +248,7 @@ describe("The Ur-Dragon (EDH)", () => {
       expect(s.objects[bird]?.defId).toBeDefined();
     });
 
-    it("Crux of Fate : détruit les Dragons, ou toutes les créatures non-Dragon", () => {
+    it("Crux of Fate: destroys the Dragons, or all non-Dragon creatures", () => {
       const field = { p1: { battlefield: ["Shivan Dragon", "Bear Cub", ...lands("Swamp", 5)], hand: ["Crux of Fate"] } };
       let a = scenario(field);
       a = settle(act(a, "p1", { type: "cast", card: idOf(a, "p1", "hand", "Crux of Fate"), mode: 0 } as never));
@@ -258,7 +258,7 @@ describe("The Ur-Dragon (EDH)", () => {
       expect([onField(b, "p1", "Shivan Dragon"), onField(b, "p1", "Bear Cub")]).toEqual([1, 0]);
     });
 
-    it("Majestic Genesis : X cartes du dessus (X : la valeur de mana de votre commandant), les permanents choisis arrivent", () => {
+    it("Majestic Genesis: top X cards (X: your commander's mana value), the chosen permanents enter", () => {
       let s = scenario({
         p1: {
           command: ["Sol Ring"],
@@ -267,21 +267,21 @@ describe("The Ur-Dragon (EDH)", () => {
           library: ["Bear Cub", "Opt", "Savannah Lions"],
         },
       });
-      // Commandant de test : Sol Ring (valeur de mana 1) : une seule carte révélée.
+      // Test commander: Sol Ring (mana value 1): only one card revealed.
       s = settle(castIt(s, "p1", "Majestic Genesis"), (req) => (req.type === "pick" ? req.options : undefined));
       expect(onField(s, "p1", "Bear Cub") + onField(s, "p1", "Savannah Lions")).toBe(1);
     });
   });
 
   describe("Dragons", () => {
-    it("Scourge of Valkas : un Dragon arrive, il inflige X blessures (X : vos Dragons)", () => {
+    it("Scourge of Valkas: a Dragon enters, it deals X damage (X: your Dragons)", () => {
       let s = scenario({ p1: { battlefield: ["Scourge of Valkas", ...lands("Mountain", 6)], hand: ["Shivan Dragon"] } });
       s = settle(castIt(s, "p1", "Shivan Dragon"), (req) => picking(["p2"])(req));
-      // Deux Dragons : 2 blessures à p2 (de Shivan Dragon, qui arrive).
+      // Two Dragons: 2 damage to p2 (from Shivan Dragon, which enters).
       expect(life(s, "p2")).toBe(18);
     });
 
-    it("Dragon Tempest : une créature volante arrive avec la célérité", () => {
+    it("Dragon Tempest: a creature with flying enters with haste", () => {
       let s = scenario({ p1: { battlefield: ["Dragon Tempest", ...lands("Mountain", 6)], hand: ["Shivan Dragon"] } });
       s = settle(castIt(s, "p1", "Shivan Dragon"), (req) => picking(["p2"])(req));
       const shivan = idOf(s, "p1", "battlefield", "Shivan Dragon");
@@ -289,7 +289,7 @@ describe("The Ur-Dragon (EDH)", () => {
       expect(life(s, "p2")).toBe(19);
     });
 
-    it("Goldspan Dragon : un Trésor quand il attaque ; vos Trésors donnent deux mana d'une même couleur", () => {
+    it("Goldspan Dragon: a Treasure when it attacks; your Treasures give two mana of the same color", () => {
       let s = scenario({ p1: { battlefield: ["Goldspan Dragon"] } });
       s = attack(s, [idOf(s, "p1", "battlefield", "Goldspan Dragon")]);
       s = settle(s);
@@ -298,7 +298,7 @@ describe("The Ur-Dragon (EDH)", () => {
       expect(manaAbilitiesOf(s, treasure).some((m) => m.amount === 2)).toBe(true);
     });
 
-    it("Hellkite Courser : votre commandant arrive de la zone de commandement avec la célérité, puis y retourne", () => {
+    it("Hellkite Courser: your commander enters from the command zone with haste, then returns there", () => {
       let s = scenario({ p1: { command: ["Bear Cub"], battlefield: lands("Mountain", 6), hand: ["Hellkite Courser"] } });
       s = settle(castIt(s, "p1", "Hellkite Courser"), yes);
       expect(onField(s, "p1", "Bear Cub")).toBe(1);
@@ -309,7 +309,7 @@ describe("The Ur-Dragon (EDH)", () => {
       expect(s.players.p1?.command.map((id) => nameOf(s, id))).toEqual(["Bear Cub"]);
     });
 
-    it("Miirym : un autre Dragon non-jeton arrive, un jeton copie non légendaire", () => {
+    it("Miirym: another nontoken Dragon enters, a nonlegendary token copy", () => {
       let s = scenario({
         p1: { battlefield: ["Miirym, Sentinel Wyrm", ...lands("Mountain", 7)], hand: ["Ganax, Astral Hunter"] },
       });
@@ -317,11 +317,11 @@ describe("The Ur-Dragon (EDH)", () => {
       expect(onField(s, "p1", "Ganax, Astral Hunter")).toBe(2);
       const copy = idsOf(s, "p1", "battlefield", "Ganax, Astral Hunter").find((id) => s.objects[id]?.isToken) ?? "";
       expect(s.objects[copy]).toBeDefined();
-      // Ganax : chaque Dragon qui arrive crée un Trésor (lui, puis la copie : deux Ganax voient la copie arriver).
+      // Ganax: each Dragon that enters creates a Treasure (it, then the copy: two Ganaxes see the copy enter).
       expect(tokens(s, "p1", "Treasure").length).toBeGreaterThanOrEqual(2);
     });
 
-    it("Korvold : en arrivant, sacrifiez un autre permanent ; chaque sacrifice : marqueur +1/+1 et pioche", () => {
+    it("Korvold: when it enters, sacrifice another permanent; each sacrifice: +1/+1 counter and draw", () => {
       let s = scenario({
         p1: {
           battlefield: ["Bear Cub", "Swamp", "Mountain", "Forest", "Forest", "Forest"],
@@ -339,7 +339,7 @@ describe("The Ur-Dragon (EDH)", () => {
       expect(hand(s, "p1")).toBe(h - 1 + 1);
     });
 
-    it("Cavern-Hoard Dragon : coûte {X} de moins, X étant le plus grand nombre d'artefacts d'un adversaire", () => {
+    it("Cavern-Hoard Dragon: costs {X} less, X being the greatest number of artifacts an opponent controls", () => {
       const s = scenario({
         players: 3,
         p1: { battlefield: lands("Mountain", 5), hand: ["Cavern-Hoard Dragon"] },
@@ -357,7 +357,7 @@ describe("The Ur-Dragon (EDH)", () => {
       expect(castable(two, "p1", idOf(two, "p1", "hand", "Cavern-Hoard Dragon"))).toBe(false);
     });
 
-    it("Dragonlord Kolaghan : un adversaire lance une créature du nom d'une carte de son cimetière, il perd 10 PV", () => {
+    it("Dragonlord Kolaghan: an opponent casts a creature with the name of a card in their graveyard, they lose 10 life", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: ["Dragonlord Kolaghan"] },
@@ -369,7 +369,7 @@ describe("The Ur-Dragon (EDH)", () => {
       expect(life(s, "p2")).toBe(10);
     });
 
-    it("Dragonlord Dromoka : vos adversaires ne lancent pas de sorts pendant votre tour", () => {
+    it("Dragonlord Dromoka: your opponents can't cast spells during your turn", () => {
       const s = scenario({
         p1: { battlefield: ["Dragonlord Dromoka"] },
         p2: { battlefield: lands("Mountain", 1), hand: ["Shock"] },
@@ -377,7 +377,7 @@ describe("The Ur-Dragon (EDH)", () => {
       expect(castable(s, "p2", idOf(s, "p2", "hand", "Shock"))).toBe(false);
     });
 
-    it("Tiamat : lancée, jusqu'à cinq cartes de Dragon de noms différents, pas Tiamat", () => {
+    it("Tiamat: cast, up to five Dragon cards with different names, not Tiamat", () => {
       let s = scenario({
         p1: {
           battlefield: [
@@ -396,7 +396,7 @@ describe("The Ur-Dragon (EDH)", () => {
       expect(names).toEqual(["Goldspan Dragon", "Shivan Dragon"]);
     });
 
-    it("Goldlust Triad : myriade, une copie attaque chacun des autres adversaires puis est exilée à la fin du combat", () => {
+    it("Goldlust Triad: myriad, a copy attacks each of the other opponents then is exiled at end of combat", () => {
       let s = scenario({ players: 3, p1: { battlefield: ["Goldlust Triad"] } });
       const triad = idOf(s, "p1", "battlefield", "Goldlust Triad");
       s = attackPlayer(s, [triad], "p2");
@@ -411,11 +411,11 @@ describe("The Ur-Dragon (EDH)", () => {
       }
       expect([...attacked].sort()).toEqual(["p2", "p3"]);
       expect(tokens(s, "p1", "Goldlust Triad")).toEqual([]);
-      // Chacune a blessé son joueur : deux Trésors.
+      // Each one damaged its player: two Treasures.
       expect(tokens(s, "p1", "Treasure")).toHaveLength(2);
     });
 
-    it("Zurgo and Ojutai : défense talismanique le tour de son arrivée seulement", () => {
+    it("Zurgo and Ojutai: hexproof the turn it enters only", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Island", 1), ...lands("Mountain", 1), ...lands("Plains", 3)], hand: ["Zurgo and Ojutai"] },
       });
@@ -426,18 +426,18 @@ describe("The Ur-Dragon (EDH)", () => {
       expect(chars(s, z).keywords).not.toContain("hexproof");
     });
 
-    it("Ganax et Draconic Visitor : boucle obligatoire qui accumule des Dragons, la partie est nulle (104.4b)", () => {
+    it("Ganax and Draconic Visitor: mandatory loop that accumulates Dragons, the game is a draw (104.4b)", () => {
       let s = scenario({
         p1: { battlefield: ["Ganax, Astral Hunter", "Draconic Visitor", ...lands("Mountain", 6)], hand: ["Shivan Dragon"] },
       });
       s = settle(castIt(s, "p1", "Shivan Dragon"));
       expect(s.over).toBe(true);
       expect(s.winner ?? null).toBe(null);
-      // Arrêtée tôt : quelques Dragons seulement.
+      // Stopped early: only a few Dragons.
       expect(tokens(s, "p1", "Dragon").length).toBeLessThan(40);
     });
 
-    it("chaîne finie (des Faerie Dragons qui déclenchent Ganax un par un) : pas de partie nulle", () => {
+    it("finite chain (Faerie Dragons triggering Ganax one by one): no draw", () => {
       let s = scenario({ p1: { battlefield: ["Ganax, Astral Hunter", "Ancient Gold Dragon"] } });
       s = throughCombat(attack(s, [idOf(s, "p1", "battlefield", "Ancient Gold Dragon")]));
       expect(s.over).toBe(false);
@@ -446,13 +446,13 @@ describe("The Ur-Dragon (EDH)", () => {
       expect(tokens(s, "p1", "Treasure")).toHaveLength(faeries);
     });
 
-    it("Old Gnawbone : une créature vous fait des blessures de combat, autant de Trésors", () => {
+    it("Old Gnawbone: a creature deals combat damage to you, that many Treasures", () => {
       let s = scenario({ p1: { battlefield: ["Old Gnawbone", "Bear Cub"] } });
       s = throughCombat(attack(s, [idOf(s, "p1", "battlefield", "Bear Cub")]));
       expect(tokens(s, "p1", "Treasure")).toHaveLength(2);
     });
 
-    it("Ureni : en arrivant, huit cartes du dessus ; une carte de créature Dragon sur le champ de bataille", () => {
+    it("Ureni: when it enters, top eight cards; a Dragon creature card onto the battlefield", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Forest", 5), "Island", "Mountain"],
@@ -466,7 +466,7 @@ describe("The Ur-Dragon (EDH)", () => {
       expect(onField(s, "p1", "Shivan Dragon")).toBe(1);
     });
 
-    it("Steely Resolve : les créatures du type choisi ont la défense totale, celles des adversaires aussi", () => {
+    it("Steely Resolve: creatures of the chosen type have shroud, the opponents' too", () => {
       let s = scenario({
         p1: { battlefield: ["Forest", "Forest", "Bear Cub"], hand: ["Steely Resolve"] },
         p2: { battlefield: ["Bear Cub", "Mountain"], hand: ["Shock"] },
@@ -478,7 +478,7 @@ describe("The Ur-Dragon (EDH)", () => {
       for (const id of cubs) expect(chars(s, id).keywords).toContain("shroud");
     });
 
-    it("Kiora : une créature de force 4 ou plus arrive, piochez ; −1 : dégagez un permanent", () => {
+    it("Kiora: a creature with power 4 or greater enters, draw; -1: untap a permanent", () => {
       let s = scenario({
         p1: { battlefield: ["Kiora, Behemoth Beckoner", ...lands("Forest", 5)], hand: ["Gigantosaurus"], library: ["Opt"] },
       });
@@ -493,8 +493,8 @@ describe("The Ur-Dragon (EDH)", () => {
   });
 });
 
-describe("myriade en multijoueur (PLAN-H, lot H5)", () => {
-  it("Goldlust Triad : pour chaque autre adversaire, vous pouvez créer une copie qui attaque ce joueur ou un de ses planeswalkers", () => {
+describe("myriad in multiplayer (PLAN-H, lot H5)", () => {
+  it("Goldlust Triad: for each other opponent, you may create a copy that attacks that player or one of their planeswalkers", () => {
     let s = scenario({
       players: 4,
       p1: { battlefield: ["Goldlust Triad"] },
@@ -506,10 +506,10 @@ describe("myriade en multijoueur (PLAN-H, lot H5)", () => {
     s = settle(s, (req) => {
       if (req.type !== "pick" || req.intent !== "other") return undefined;
       asked.push({ options: [...req.options].sort(), min: req.min });
-      // Pour p3 : son planeswalker ; pour p4 : pas de copie.
+      // For p3: its planeswalker; for p4: no copy.
       return req.options.includes(walker) ? [walker] : [];
     });
-    // Une question par adversaire autre que le joueur défenseur, chacune facultative.
+    // One question per opponent other than the defending player, each optional.
     expect(asked).toEqual([
       { options: ["p3", walker].sort(), min: 0 },
       { options: ["p4"], min: 0 },

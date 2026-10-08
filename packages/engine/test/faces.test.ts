@@ -1,5 +1,5 @@
 /**
- * Cartes à plusieurs faces (branche Standard, lots 0.3 à 0.6) : aventures et présages.
+ * Multi-face cards (Standard branch, lots 0.3 to 0.6): adventures and omens.
  */
 import { type RawCard, type RawFace, toCardDef } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
@@ -12,9 +12,9 @@ import { msg } from "../src/text";
 import type { CardDef, GameState } from "../src/types";
 import { act, customCard, idOf, passBoth, scenario } from "./helpers";
 
-/** Aventure de test : « Ourson rêveur » 2/2 {1}{G} // « Pique-nique » rituel {G} : piochez une carte. */
+/** Test adventure: "Dreamy Cub" 2/2 {1}{G} // "Picnic" sorcery {G}: draw a card. */
 const creatureFace = customCard({
-  name: "Ourson rêveur",
+  name: "Dreamy Cub",
   manaCost: parseManaCost("{1}{G}"),
   manaCostText: "{1}{G}",
   colors: ["G"],
@@ -22,7 +22,7 @@ const creatureFace = customCard({
   toughness: 2,
 });
 const adventureFace = customCard({
-  name: "Pique-nique",
+  name: "Picnic",
   typeLine: "Sorcery — Adventure",
   types: ["Sorcery"],
   subtypes: ["Adventure"],
@@ -34,7 +34,7 @@ const adventureFace = customCard({
 const ADVENTURER: CardDef = {
   ...creatureFace,
   id: "test-ourson-reveur-pique-nique",
-  name: "Ourson rêveur // Pique-nique",
+  name: "Dreamy Cub // Picnic",
   layout: "adventure",
   faceDefs: [
     { ...creatureFace, id: "test-ourson__0" },
@@ -42,9 +42,9 @@ const ADVENTURER: CardDef = {
   ],
 };
 
-/** Présage de test : « Augure » rituel {1} : 1 blessure à n'importe quelle cible, puis mélangé dans la bibliothèque. */
+/** Test omen: "Omen" sorcery {1}: 1 damage to any target, then shuffled into the library. */
 const OMEN = customCard({
-  name: "Augure",
+  name: "Omen",
   typeLine: "Sorcery — Omen",
   types: ["Sorcery"],
   subtypes: ["Omen"],
@@ -56,23 +56,23 @@ const OMEN = customCard({
 const castOptions = (s: GameState, card: string) => legalActions(s, "p1").filter((a) => a.type === "cast" && a.card === card);
 
 describe("aventures (715)", () => {
-  it("deux options : la créature et l'aventure ; l'aventure a ses propres caractéristiques sur la pile", () => {
+  it("two options: the creature and the adventure; the adventure has its own characteristics on the stack", () => {
     let s = scenario({ p1: { battlefield: ["Forest", "Forest"], hand: [ADVENTURER] } });
     const card = idOf(s, "p1", "hand", ADVENTURER.name);
     const opts = castOptions(s, card);
-    expect(opts.map((o) => (o.type === "cast" ? (o.faceName ?? "recto") : ""))).toEqual(["recto", "Pique-nique"]);
+    expect(opts.map((o) => (o.type === "cast" ? (o.faceName ?? "front") : ""))).toEqual(["front", "Picnic"]);
     s = act(s, "p1", { type: "cast", card, face: 1 });
     const onStack = s.stack[0]?.sourceId as string;
     expect(chars(s, onStack).types).toEqual(["Sorcery"]);
-    expect(chars(s, onStack).name).toBe("Pique-nique");
+    expect(chars(s, onStack).name).toBe("Picnic");
   });
 
-  it("l'aventure résolue part en exil « en aventure » ; seule la créature se lance ensuite depuis l'exil", () => {
+  it('the resolved adventure goes to exile "on an adventure"; only the creature can then be cast from exile', () => {
     let s = scenario({ p1: { battlefield: ["Forest", "Forest", "Forest"], hand: [ADVENTURER] } });
     const hand = s.players.p1?.hand.length ?? 0;
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", ADVENTURER.name), face: 1 });
     s = passBoth(s);
-    expect(s.players.p1?.hand.length).toBe(hand); // la carte est partie, une carte piochée
+    expect(s.players.p1?.hand.length).toBe(hand); // the card left, one card drawn
     const exiled = s.exile.find((id) => s.objects[id]?.defId === ADVENTURER.id) as string;
     expect(s.objects[exiled]?.onAdventure).toBe(true);
     const opts = castOptions(s, exiled);
@@ -84,7 +84,7 @@ describe("aventures (715)", () => {
     expect(() => act(s, "p1", { type: "cast", card: exiled, face: 1 })).toThrow();
   });
 
-  it("une aventure contrecarrée va au cimetière (et non en exil)", () => {
+  it("a countered adventure goes to the graveyard (not exile)", () => {
     let s = scenario({
       p1: { battlefield: ["Forest"], hand: [ADVENTURER] },
       p2: { battlefield: ["Island", "Island", "Island"], hand: ["Cancel"] },
@@ -99,11 +99,11 @@ describe("aventures (715)", () => {
   });
 });
 
-describe("présages (Tarkir: Dragonstorm)", () => {
-  it("un présage résolu est mélangé dans la bibliothèque de son propriétaire", () => {
+describe("omens (Tarkir: Dragonstorm)", () => {
+  it("a resolved omen is shuffled into its owner's library", () => {
     let s = scenario({ p1: { battlefield: ["Forest"], hand: [OMEN] } });
     const library = s.players.p1?.library.length ?? 0;
-    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Augure"), targets: { t: ["p2"] } });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Omen"), targets: { t: ["p2"] } });
     s = passBoth(s);
     expect(s.players.p2?.life).toBe(19);
     expect(s.players.p1?.library.length).toBe(library + 1);
@@ -111,13 +111,13 @@ describe("présages (Tarkir: Dragonstorm)", () => {
   });
 });
 
-describe("présage à deux faces (disposition « adventure » chez Scryfall)", () => {
-  it("la face présage lancée est mélangée dans la bibliothèque, pas exilée en aventure", () => {
-    const omenFace = { ...OMEN, id: "test-dragon__1", name: "Augure du dragon" };
+describe('two-faced omen ("adventure" layout on Scryfall)', () => {
+  it("the omen face cast is shuffled into the library, not exiled on an adventure", () => {
+    const omenFace = { ...OMEN, id: "test-dragon__1", name: "Dragon Omen" };
     const dragon: CardDef = {
       ...creatureFace,
       id: "test-dragon",
-      name: "Dragon // Augure du dragon",
+      name: "Dragon // Dragon Omen",
       layout: "adventure",
       faceDefs: [{ ...creatureFace, id: "test-dragon__0" }, omenFace],
     };
@@ -130,16 +130,16 @@ describe("présage à deux faces (disposition « adventure » chez Scryfall)", (
   });
 });
 
-/** Carte transformable de test : « Loup-garou timide » 1/1 {1}{R} // « Loup-garou furieux » 4/4 piétinement. */
+/** Test transforming card: "Shy Werewolf" 1/1 {1}{R} // "Furious Werewolf" 4/4 trample. */
 const shy = customCard({
-  name: "Loup-garou timide",
+  name: "Shy Werewolf",
   manaCost: parseManaCost("{1}{R}"),
   manaCostText: "{1}{R}",
   power: 1,
   toughness: 1,
 });
 const fierce = customCard({
-  name: "Loup-garou furieux",
+  name: "Furious Werewolf",
   manaCost: parseManaCost("{1}{R}"), // 712.8e : valeur de mana du recto
   manaCostText: "",
   power: 4,
@@ -149,7 +149,7 @@ const fierce = customCard({
 const WEREWOLF: CardDef = {
   ...shy,
   id: "test-loup-garou",
-  name: "Loup-garou timide // Loup-garou furieux",
+  name: "Shy Werewolf // Furious Werewolf",
   layout: "transform",
   faceDefs: [
     { ...shy, id: "test-loup-garou__0" },
@@ -157,8 +157,8 @@ const WEREWOLF: CardDef = {
   ],
 };
 
-describe("cartes transformables (712)", () => {
-  it("effet transform et arrivée transformée", async () => {
+describe("transforming cards (712)", () => {
+  it("transform effect and entering transformed", async () => {
     const { runEffect } = await import("../src/effects");
     const { moveWithSpec } = await import("../src/effects");
     const s = scenario({ p1: { battlefield: [WEREWOLF], graveyard: [WEREWOLF] } });
@@ -176,54 +176,54 @@ describe("cartes transformables (712)", () => {
     expect(chars(s, id).power).toBe(1);
     const inYard = idOf(s, "p1", "graveyard", WEREWOLF.name);
     const back = moveWithSpec(s, "p1", inYard, { to: "battlefield", transformed: true }) as string;
-    expect(chars(s, back).name).toBe("Loup-garou furieux");
+    expect(chars(s, back).name).toBe("Furious Werewolf");
   });
 });
 
-/** Carte modale de test : « Savant » 1/1 {U} // « Héros » 3/3 {2}{U}. */
-const savant = customCard({ name: "Savant", manaCost: parseManaCost("{U}"), manaCostText: "{U}", power: 1, toughness: 1 });
-const hero = customCard({ name: "Héros", manaCost: parseManaCost("{2}{U}"), manaCostText: "{2}{U}", power: 3, toughness: 3 });
+/** Test modal card: "Scholar" 1/1 {U} // "Hero" 3/3 {2}{U}. */
+const scholar = customCard({ name: "Scholar", manaCost: parseManaCost("{U}"), manaCostText: "{U}", power: 1, toughness: 1 });
+const hero = customCard({ name: "Hero", manaCost: parseManaCost("{2}{U}"), manaCostText: "{2}{U}", power: 3, toughness: 3 });
 const MDFC: CardDef = {
-  ...savant,
-  id: "test-savant",
-  name: "Savant // Héros",
+  ...scholar,
+  id: "test-scholar",
+  name: "Scholar // Hero",
   layout: "modal_dfc",
   faceDefs: [
-    { ...savant, id: "test-savant__0" },
-    { ...hero, id: "test-savant__1" },
+    { ...scholar, id: "test-scholar__0" },
+    { ...hero, id: "test-scholar__1" },
   ],
 };
 
-describe("cartes recto-verso modales (712.12)", () => {
-  it("le verso se lance avec son propre coût et arrive avec cette face", () => {
+describe("modal double-faced cards (712.12)", () => {
+  it("the back face is cast with its own cost and enters with that face", () => {
     let s = scenario({ p1: { battlefield: ["Island", "Island", "Island"], hand: [MDFC] } });
     const card = idOf(s, "p1", "hand", MDFC.name);
     expect(castOptions(s, card)).toHaveLength(2);
     s = act(s, "p1", { type: "cast", card, face: 1 });
     s = passBoth(s);
     const id = idOf(s, "p1", "battlefield", MDFC.name);
-    expect(chars(s, id).name).toBe("Héros");
+    expect(chars(s, id).name).toBe("Hero");
     expect(chars(s, id).power).toBe(3);
   });
 });
 
-/** Assemblage de test : « Gauche » et « Droite » s'assemblent en « Colosse » 9/9 ; « Gauche » porte l'effet. */
-const colossus = customCard({ name: "Colosse", power: 9, toughness: 9, meldResult: true, manaCost: null, manaCostText: "" });
-const right = customCard({ name: "Droite", power: 1, toughness: 1, meld: { parts: ["Gauche", "Droite"], result: "Colosse" } });
+/** Test meld: "Left" and "Right" meld into "Colossus" 9/9; "Left" carries the effect. */
+const colossus = customCard({ name: "Colossus", power: 9, toughness: 9, meldResult: true, manaCost: null, manaCostText: "" });
+const right = customCard({ name: "Right", power: 1, toughness: 1, meld: { parts: ["Left", "Right"], result: "Colossus" } });
 const left: CardDef = customCard({
-  name: "Gauche",
+  name: "Left",
   power: 1,
   toughness: 1,
-  meld: { parts: ["Gauche", "Droite"], result: "Colosse" },
+  meld: { parts: ["Left", "Right"], result: "Colossus" },
   meldResultDef: colossus,
 });
 
 describe("assemblage (701.42)", () => {
-  it("les deux cartes deviennent un seul permanent, qui redevient deux cartes en mourant", async () => {
+  it("the two cards become a single permanent, which becomes two cards again when it dies", async () => {
     const { runEffect } = await import("../src/effects");
     const { destroy } = await import("../src/actions");
     const s = scenario({ p1: { battlefield: [left, right] } });
-    const id = idOf(s, "p1", "battlefield", "Gauche");
+    const id = idOf(s, "p1", "battlefield", "Left");
     const res = {
       item: { id: "x", controller: "p1", sourceId: id, sourceDefId: left.id, targets: {} },
       controller: "p1",
@@ -231,8 +231,8 @@ describe("assemblage (701.42)", () => {
       vars: {},
       pc: 0,
     };
-    runEffect(s, res as never, { op: "meld", with: "Droite" });
-    const melded = idOf(s, "p1", "battlefield", "Colosse");
+    runEffect(s, res as never, { op: "meld", with: "Right" });
+    const melded = idOf(s, "p1", "battlefield", "Colossus");
     expect(s.battlefield).toHaveLength(1);
     expect(chars(s, melded).power).toBe(9);
     expect(s.exile).toHaveLength(0);
@@ -242,7 +242,7 @@ describe("assemblage (701.42)", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Cartes scindées et Salles (709) : construites comme à l'import (toCardDef).
+// Split cards and Rooms (709): built as at import (toCardDef).
 // ---------------------------------------------------------------------------
 
 const rawSplit = (name: string, faces: RawFace[], typeLine: string): RawCard => ({
@@ -264,38 +264,38 @@ const rawSplit = (name: string, faces: RawFace[], typeLine: string): RawCard => 
 const face = (name: string, manaCost: string, typeLine: string): RawFace => ({ name, manaCost, typeLine, oracleText: "" });
 
 const FIRE_ICE = toCardDef(
-  rawSplit("Chaud // Froid", [face("Chaud", "{R}", "Instant"), face("Froid", "{1}{U}", "Instant")], "Instant // Instant"),
+  rawSplit("Hot // Cold", [face("Hot", "{R}", "Instant"), face("Cold", "{1}{U}", "Instant")], "Instant // Instant"),
   undefined,
   "TST",
   {
-    Chaud: { spell: spell([target.any()], [fx.damage(2, ref.target())]) },
-    Froid: { spell: spell([], [fx.draw(1)]) },
+    Hot: { spell: spell([target.any()], [fx.damage(2, ref.target())]) },
+    Cold: { spell: spell([], [fx.draw(1)]) },
   },
 );
 
 const ROOM = toCardDef(
   rawSplit(
-    "Salle rouge // Salle bleue",
-    [face("Salle rouge", "{R}", "Enchantment — Room"), face("Salle bleue", "{2}{U}", "Enchantment — Room")],
+    "Red Room // Blue Room",
+    [face("Red Room", "{R}", "Enchantment — Room"), face("Blue Room", "{2}{U}", "Enchantment — Room")],
     "Enchantment — Room // Enchantment — Room",
   ),
   undefined,
   "TST",
   {
-    "Salle rouge": { abilities: [triggered(when.unlockThisDoor, [fx.damage(1, ref.eachOpponent)], { label: "1 blessure" })] },
-    "Salle bleue": { abilities: [triggered(when.unlockThisDoor, [fx.draw(1)], { label: "piochez" })] },
+    "Red Room": { abilities: [triggered(when.unlockThisDoor, [fx.damage(1, ref.eachOpponent)], { label: "1 damage" })] },
+    "Blue Room": { abilities: [triggered(when.unlockThisDoor, [fx.draw(1)], { label: "draw" })] },
   },
 );
 
-describe("cartes scindées (709)", () => {
-  it("chaque moitié se lance à part ; hors de la pile, la carte a les deux moitiés", () => {
+describe("split cards (709)", () => {
+  it("each half is cast separately; off the stack, the card has both halves", () => {
     expect(FIRE_ICE.implemented).toBe(true);
     expect(manaValue(FIRE_ICE.manaCost)).toBe(3);
     let s = scenario({ p1: { battlefield: ["Mountain"], hand: [FIRE_ICE] } });
     const card = idOf(s, "p1", "hand", FIRE_ICE.name);
-    expect(castOptions(s, card).map((o) => (o.type === "cast" ? o.faceName : ""))).toEqual(["Chaud"]); // Froid : pas assez de mana
+    expect(castOptions(s, card).map((o) => (o.type === "cast" ? o.faceName : ""))).toEqual(["Hot"]); // Cold: not enough mana
     s = act(s, "p1", { type: "cast", card, face: 0, targets: { t: ["p2"] } });
-    expect(chars(s, s.stack[0]?.sourceId as string).name).toBe("Chaud");
+    expect(chars(s, s.stack[0]?.sourceId as string).name).toBe("Hot");
     s = passBoth(s);
     expect(s.players.p2?.life).toBe(18);
     expect(idOf(s, "p1", "graveyard", FIRE_ICE.name)).toBeDefined();
@@ -303,25 +303,25 @@ describe("cartes scindées (709)", () => {
 });
 
 describe("Salles (709.5)", () => {
-  it("la porte lancée est déverrouillée à l'arrivée et se déclenche ; l'autre se déverrouille en rituel, sans la pile", () => {
+  it("the door cast is unlocked on entering and triggers; the other unlocks as a sorcery, without the stack", () => {
     let s = scenario({ p1: { battlefield: ["Mountain", "Island", "Island", "Island"], hand: [ROOM] } });
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", ROOM.name), face: 0 });
-    s = passBoth(s); // la Salle arrive, porte rouge déverrouillée
-    s = passBoth(s); // « quand vous déverrouillez cette porte » : 1 blessure
+    s = passBoth(s); // the Room enters, red door unlocked
+    s = passBoth(s); // "when you unlock this door": 1 damage
     expect(s.players.p2?.life).toBe(19);
     const room = idOf(s, "p1", "battlefield", ROOM.name);
-    expect(chars(s, room).name).toBe("Salle rouge");
+    expect(chars(s, room).name).toBe("Red Room");
     expect(chars(s, room).colors).toEqual(["R"]);
-    // Déverrouiller la porte bleue : action spéciale (rien sur la pile), puis son déclencheur.
+    // Unlock the blue door: special action (nothing on the stack), then its trigger.
     const unlock = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === room);
     const door = cardRef(ROOM.faceDefs?.[1]?.id ?? "");
     expect(unlock?.type === "activate" && unlock.label).toBe(msg("Unlock {door}", { door }));
     const hand = s.players.p1?.hand.length ?? 0;
     s = act(s, "p1", { type: "activate", source: room, ability: unlock?.type === "activate" ? unlock.ability : -1 });
-    expect(s.stack.map((x) => x.kind)).toEqual(["ability"]); // le déclencheur, pas l'action
+    expect(s.stack.map((x) => x.kind)).toEqual(["ability"]); // the trigger, not the action
     s = passBoth(s);
     expect(s.players.p1?.hand.length).toBe(hand + 1);
-    expect(chars(s, room).name).toBe("Salle rouge // Salle bleue");
+    expect(chars(s, room).name).toBe("Red Room // Blue Room");
     expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === room)).toBe(false);
   });
 });

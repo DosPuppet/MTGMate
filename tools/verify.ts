@@ -239,6 +239,7 @@ if (!ci && !flag("no-ui") && (full || flag("ui") || uiTouched)) {
         { name: "proxy-smoke", cmd: "npx tsx tools/proxy-smoke.ts", show: /^ok: no page error$/ },
         { name: "replay-smoke", cmd: "npx tsx tools/replay-smoke.ts", show: /^ok: replay .*$/ },
         { name: "bo3-smoke", cmd: "npx tsx tools/bo3-smoke.ts", show: /^ok: BO3 .*$/ },
+        { name: "lang-smoke", cmd: "npx tsx tools/lang-smoke.ts", show: /^ok: both languages.*$/ },
       ]),
     ]);
     ok = results.every(Boolean) && ok;

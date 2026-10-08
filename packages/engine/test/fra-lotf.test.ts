@@ -1,6 +1,6 @@
 /**
- * Reality Fracture, lot F : cartes uniques (F/E variables, taxes, remplacements, durées « jusqu'à votre
- * prochain tour », hybride monocolore, loyauté −X, combat selon l'endurance…).
+ * Reality Fracture, batch F: unique cards (variable P/T, taxes, replacements, "until your next turn"
+ * durations, mono-color hybrid, loyalty −X, combat based on toughness…).
  */
 
 import { card } from "@mtgx/cards";
@@ -25,8 +25,8 @@ const castOption = (s: S, name: string) =>
 const walkerAbility = (s: S, id: string, label: string) =>
   chars(s, id).abilities.findIndex((ab) => ab.kind === "activated" && !!ab.label?.includes(label));
 
-describe("Reality Fracture, lot F", () => {
-  it("Tarmogoyf : types de cartes dans tous les cimetières (+1 en endurance)", () => {
+describe("Reality Fracture, batch F", () => {
+  it("Tarmogoyf: card types in all graveyards (+1 toughness)", () => {
     const s = scenario({
       p1: { battlefield: ["Tarmogoyf"], graveyard: ["Forest", "Bear Cub"] },
       p2: { graveyard: ["Giant Growth"] },
@@ -36,14 +36,14 @@ describe("Reality Fracture, lot F", () => {
     expect(chars(s, goyf).toughness).toBe(4);
   });
 
-  it("Thalia, the Survivor : les sorts non-créature adverses coûtent {1} de plus", () => {
+  it("Thalia, the Survivor: opposing noncreature spells cost {1} more", () => {
     const s = scenario({ p1: { battlefield: ["Thalia, the Survivor"] } });
     expect(spellCost(s, "p2", card("Giant Growth"), {}).generic).toBe(1);
-    expect(spellCost(s, "p2", card("Bear Cub"), {}).generic).toBe(1); // {1}{G} : inchangé
+    expect(spellCost(s, "p2", card("Bear Cub"), {}).generic).toBe(1); // {1}{G}: unchanged
     expect(spellCost(s, "p1", card("Giant Growth"), {}).generic).toBe(0);
   });
 
-  it("Ghalta the Immovable : réduction, attaque malgré le défenseur, blessures selon l'endurance", () => {
+  it("Ghalta the Immovable: cost reduction, attacks despite defender, damage based on toughness", () => {
     const s = scenario({
       p1: { battlefield: ["Surveillance Phantasm", "Ghalta the Immovable"], hand: [] },
     });
@@ -52,19 +52,19 @@ describe("Reality Fracture, lot F", () => {
     expect(chars(s, phantasm).keywords).toContain("defender");
     expect(combatPower(s, ghalta)).toBe(7); // 0/7
     expect(combatPower(s, phantasm)).toBe(Math.max(chars(s, phantasm).power, chars(s, phantasm).toughness));
-    // Coût : {8}{W} moins la plus grande endurance (7).
+    // Cost: {8}{W} minus the greatest toughness (7).
     const t = scenario({ p1: { battlefield: ["Ghalta the Immovable"], hand: ["Ghalta the Immovable"] } });
     expect(spellCost(t, "p1", card("Ghalta the Immovable"), {}).generic).toBe(1);
   });
 
-  it("Loot, the Anomaly : une force négative blesse comme si elle était positive", () => {
+  it("Loot, the Anomaly: negative power deals damage as if it were positive", () => {
     const s = scenario({ p1: { battlefield: ["Loot, the Anomaly"] } });
     const loot = idOf(s, "p1", "battlefield", "Loot, the Anomaly");
     expect(chars(s, loot).power).toBe(-2);
     expect(combatPower(s, loot)).toBe(2);
   });
 
-  it("Yoshimaru : un marqueur +1/+1 de plus ; Draconic Visitor : Trésors → Dragons", () => {
+  it("Yoshimaru: one more +1/+1 counter; Draconic Visitor: Treasures → Dragons", () => {
     let s = scenario({ p1: { battlefield: ["Yoshimaru, Beloved Companion", "Bear Cub", ...lands("Plains", 6)] } });
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     s = act(s, "p1", {
@@ -82,7 +82,7 @@ describe("Reality Fracture, lot F", () => {
     expect(chars(t, token as string).power).toBe(5);
   });
 
-  it("Tomik, Izzet Sparkmage : +1 aux blessures non de combat infligées à un adversaire", () => {
+  it("Tomik, Izzet Sparkmage: +1 to noncombat damage dealt to an opponent", () => {
     const s = scenario({ p1: { battlefield: ["Tomik, Izzet Sparkmage", "Fanatical Firebrand"] } });
     const src = sourceFromObject(s, idOf(s, "p1", "battlefield", "Fanatical Firebrand"));
     dealDamage(s, src, "p2", 1, false);
@@ -91,7 +91,7 @@ describe("Reality Fracture, lot F", () => {
     expect(s.players.p2?.life).toBe(17);
   });
 
-  it("Garruk, Veiled Butcher : les créatures adverses sont exilées au lieu de mourir", () => {
+  it("Garruk, Veiled Butcher: opposing creatures are exiled instead of dying", () => {
     const s = scenario({ p1: { battlefield: ["Garruk, Veiled Butcher", "Bear Cub"] }, p2: { battlefield: ["Bear Cub"] } });
     destroy(s, idOf(s, "p2", "battlefield", "Bear Cub"));
     destroy(s, idOf(s, "p1", "battlefield", "Bear Cub"));
@@ -100,21 +100,21 @@ describe("Reality Fracture, lot F", () => {
     expect(s.players.p1?.graveyard).toHaveLength(1);
   });
 
-  it("Garruk, Veiled Butcher +2 : -4/-1 jusqu'au prochain tour de son contrôleur", () => {
+  it("Garruk, Veiled Butcher +2: -4/-1 until its controller's next turn", () => {
     let s = scenario({ p1: { battlefield: ["Garruk, Veiled Butcher"] }, p2: { battlefield: ["Serra Angel"] } });
     const garruk = idOf(s, "p1", "battlefield", "Garruk, Veiled Butcher");
     const angel = idOf(s, "p2", "battlefield", "Serra Angel");
     s = act(s, "p1", { type: "activate", source: garruk, ability: walkerAbility(s, garruk, "-4/-1"), targets: { t: [angel] } });
     s = passBoth(s);
     expect(chars(s, angel).power).toBe(0);
-    // Tour de l'adversaire : l'effet dure encore ; il cesse au début du tour suivant de p1.
+    // Opponent's turn: the effect still lasts; it ends at the beginning of p1's next turn.
     s = passUntilTurn(s, "p2");
     expect(chars(s, angel).power).toBe(0);
     s = passUntilTurn(s, "p1");
     expect(chars(s, angel).power).toBe(4);
   });
 
-  it("Jace, Reality Sculptor −3 : emblème temporaire, disparu au prochain tour de son contrôleur", () => {
+  it("Jace, Reality Sculptor −3: temporary emblem, gone at its controller's next turn", () => {
     let s = scenario({ p1: { battlefield: ["Jace, Reality Sculptor"] } });
     const jace = idOf(s, "p1", "battlefield", "Jace, Reality Sculptor");
     s = act(s, "p1", { type: "activate", source: jace, ability: walkerAbility(s, jace, "-5/-0") });
@@ -126,7 +126,7 @@ describe("Reality Fracture, lot F", () => {
     expect(s.players.p1?.command).toHaveLength(0);
   });
 
-  it("Karn, Argent Defender : l'arrivée des créatures ne déclenche rien", () => {
+  it("Karn, Argent Defender: creatures entering trigger nothing", () => {
     let s = scenario({ p1: { battlefield: ["Karn, Argent Defender", ...lands("Mountain", 4)], hand: ["Viashino Pyromancer"] } });
     s = cast(s, "p1", "Viashino Pyromancer");
     s = passBoth(s);
@@ -136,7 +136,7 @@ describe("Reality Fracture, lot F", () => {
     expect(s.players.p2?.life).toBe(20);
   });
 
-  it("hybride monocolore : Karn, Gilded Guardian vaut 10 et se paie en génériques", () => {
+  it("mono-color hybrid: Karn, Gilded Guardian has value 10 and is paid with generic mana", () => {
     const cost = parseManaCost("{2/W}{2/U}{2/B}{2/R}{2/G}");
     expect(manaValue(cost)).toBe(10);
     const s = scenario({ p1: { battlefield: lands("Mountain", 7) } });
@@ -145,7 +145,7 @@ describe("Reality Fracture, lot F", () => {
     expect(canPay(t, "p1", cost)).toBe(true); // {W} + 4 × {2}
   });
 
-  it("Omnipresence : gratuit si la valeur de mana ne dépasse pas le nombre de créatures", () => {
+  it("Omnipresence: free if the mana value doesn't exceed the number of creatures", () => {
     const s = scenario({
       p1: { battlefield: ["Omnipresence", "Bear Cub", "Llanowar Elves"], hand: ["Serra Angel", "Bear Cub"] },
     });
@@ -154,7 +154,7 @@ describe("Reality Fracture, lot F", () => {
     expect(castOption(s, "Serra Angel")).toBeUndefined(); // valeur de mana 5, pas de terrain
   });
 
-  it("Break Under Pressure : l'adversaire sacrifie sa créature de plus grande valeur de mana", () => {
+  it("Break Under Pressure: the opponent sacrifices their creature with the greatest mana value", () => {
     let s = scenario({
       p1: { battlefield: lands("Swamp", 3), hand: ["Break Under Pressure"] },
       p2: { battlefield: ["Serra Angel", "Bear Cub"] },
@@ -166,7 +166,7 @@ describe("Reality Fracture, lot F", () => {
     expect(s.players.p1?.life).toBe(22);
   });
 
-  it("Kindred Judgment : détruit les créatures qui ne sont pas du type choisi", () => {
+  it("Kindred Judgment: destroys creatures that aren't of the chosen type", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Plains", 7), "Llanowar Elves"], hand: ["Kindred Judgment"] },
       p2: { battlefield: ["Serra Angel", "Bear Cub"] },
@@ -180,7 +180,7 @@ describe("Reality Fracture, lot F", () => {
     expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(0);
   });
 
-  it("Kindred Judgment : tout type de créature peut être choisi ; un changelin est de chaque type", () => {
+  it("Kindred Judgment: any creature type can be chosen; a changeling is every type", () => {
     const shifter = customCard({
       name: "Changelin d'essai",
       subtypes: ["Shapeshifter"],
@@ -195,17 +195,17 @@ describe("Reality Fracture, lot F", () => {
       });
       s = passBoth(cast(s, "p1", "Kindred Judgment"));
       const req = s.pending?.kind === "choice" ? s.pending.request : undefined;
-      // Les types proposés ne se limitent pas à ceux des créatures en jeu.
+      // The offered types aren't limited to those of the creatures in play.
       expect(req?.type === "name" && req.of === "creatureType").toBe(true);
       s = act(s, "p1", { type: "choose", values: [type] });
       return s.battlefield.filter((id) => chars(s, id).types.includes("Creature")).length;
     };
-    // Dragon : seul le changelin reste ; Ange : l'Ange et le changelin.
+    // Dragon: only the changeling remains; Angel: the Angel and the changeling.
     expect(run("Dragon")).toBe(1);
     expect(run("Angel")).toBe(2);
   });
 
-  it("Fatehold Charm : renvoie un sort dans la main de son propriétaire", () => {
+  it("Fatehold Charm: returns a spell to its owner's hand", () => {
     let s = scenario({
       p1: { battlefield: ["Forest", "Forest"], hand: ["Bear Cub"] },
       p2: { battlefield: ["Plains", "Island"], hand: ["Fatehold Charm"] },
@@ -219,7 +219,7 @@ describe("Reality Fracture, lot F", () => {
     expect(idsOf(s, "p1", "hand", "Bear Cub")).toHaveLength(1);
   });
 
-  it("Chandra, Chill of Compliance −X : X marqueurs d'étourdissement", () => {
+  it("Chandra, Chill of Compliance −X: X stun counters", () => {
     let s = scenario({ p1: { battlefield: ["Chandra, Chill of Compliance"] }, p2: { battlefield: ["Serra Angel"] } });
     const chandra = idOf(s, "p1", "battlefield", "Chandra, Chill of Compliance");
     const index = walkerAbility(s, chandra, "stun");
@@ -233,7 +233,7 @@ describe("Reality Fracture, lot F", () => {
     expect(s.objects[angel]?.tapped).toBe(true);
   });
 
-  it("Molten Tide : chaque Montagne produit un {R} de plus ce tour-ci", () => {
+  it("Molten Tide: each Mountain produces an additional {R} this turn", () => {
     let s = scenario({ p1: { battlefield: ["Mountain"] } });
     addPlayerEffect(
       s,
@@ -245,7 +245,7 @@ describe("Reality Fracture, lot F", () => {
     expect(s.players.p1?.manaPool.R).toBe(2);
   });
 
-  it("Yuriko : pas de sorts pendant le combat ; Tomik, Orzhov Lawmage : un seul attaquant par planeswalker", () => {
+  it("Yuriko: no spells during combat; Tomik, Orzhov Lawmage: only one attacker per planeswalker", () => {
     const s = scenario({
       p1: { battlefield: ["Bear Cub", "Llanowar Elves", "Yuriko, Blade of the Mighty"], hand: ["Giant Growth"] },
       p2: { battlefield: ["Tomik, Orzhov Lawmage", "Garruk, Curse Breaker"] },
@@ -262,7 +262,7 @@ describe("Reality Fracture, lot F", () => {
   });
 });
 
-/** Passe la priorité (et accepte les choix suggérés, sans attaquer) jusqu'au début du tour de `p`. */
+/** Passes priority (and accepts the suggested choices, without attacking) until the beginning of `p`'s turn. */
 function passUntilTurn(s: S, p: string): S {
   let cur = s;
   const start = cur.turn.number;
@@ -281,22 +281,22 @@ function passUntilTurn(s: S, p: string): S {
   return cur;
 }
 
-describe("Reality Fracture, lot 0.1 (Standard) : Emrakul, Uldaros Theorix, Hall of Echoes", () => {
-  it("Emrakul : « quand vous lancez ce sort, dégagez tous vos terrains »", () => {
+describe("Reality Fracture, batch 0.1 (Standard): Emrakul, Uldaros Theorix, Hall of Echoes", () => {
+  it('Emrakul: "when you cast this spell, untap all your lands"', () => {
     let s = scenario({ p1: { battlefield: lands("Forest", 10), hand: ["Emrakul, the Exigent Doom"] } });
     s = cast(s, "p1", "Emrakul, the Exigent Doom");
     expect(idsOf(s, "p1", "battlefield", "Forest").every((id) => s.objects[id]?.tapped)).toBe(true);
     s = act(s, "p1", { type: "pass" });
-    s = act(s, "p2", { type: "pass" }); // le déclencheur se résout
+    s = act(s, "p2", { type: "pass" }); // the trigger resolves
     expect(idsOf(s, "p1", "battlefield", "Forest").every((id) => !s.objects[id]?.tapped)).toBe(true);
     expect(s.stack).toHaveLength(1);
   });
 
-  it("Emrakul : garde « sacrifiez trois permanents » lue dans le texte", () => {
+  it('Emrakul: ward "sacrifice three permanents" read from the text', () => {
     expect(card("Emrakul, the Exigent Doom").ward).toEqual({ sacrifice: 3 });
   });
 
-  it("Emrakul depuis la main : le terrain gagne {C}{C} tant que la carte reste exilée, lançable depuis l'exil", () => {
+  it("Emrakul from hand: the land gains {C}{C} as long as the card stays exiled, castable from exile", () => {
     let s = scenario({ p1: { battlefield: lands("Forest", 3), hand: ["Emrakul, the Exigent Doom"] } });
     const emrakul = idOf(s, "p1", "hand", "Emrakul, the Exigent Doom");
     const land = idsOf(s, "p1", "battlefield", "Forest")[0] as string;
@@ -307,14 +307,14 @@ describe("Reality Fracture, lot 0.1 (Standard) : Emrakul, Uldaros Theorix, Hall 
     expect(exiled).toBeDefined();
     expect(chars(s, land).abilities.some((a) => a.kind === "mana" && a.amount === 2)).toBe(true);
     expect(s.playPermissions?.some((p) => p.card === exiled && p.until > 1000)).toBe(true);
-    // Quand la carte quitte l'exil sans être lancée, le terrain perd la capacité.
+    // When the card leaves exile without being cast, the land loses the ability.
     const moved = structuredClone(s);
     moveObject(moved, exiled, "graveyard");
     expect(chars(moved, land).abilities.some((a) => a.kind === "mana" && a.amount === 2)).toBe(false);
   });
 
-  it("Emrakul lancée depuis l'exil : la capacité du terrain sert à payer, puis cesse une fois le sort lancé (601.2i)", () => {
-    // {10} : 8 Forêts plus le {C}{C} du terrain désigné (12 Forêts, dont 3 engagées pour la capacité).
+  it("Emrakul cast from exile: the land's ability helps pay, then ceases once the spell is cast (601.2i)", () => {
+    // {10}: 8 Forests plus the {C}{C} of the designated land (12 Forests, 3 of them tapped for the ability).
     let s = scenario({ p1: { battlefield: lands("Forest", 12), hand: ["Emrakul, the Exigent Doom"] } });
     const emrakul = idOf(s, "p1", "hand", "Emrakul, the Exigent Doom");
     const land = idsOf(s, "p1", "battlefield", "Forest").at(-1) as string;
@@ -328,7 +328,7 @@ describe("Reality Fracture, lot 0.1 (Standard) : Emrakul, Uldaros Theorix, Hall 
     expect(chars(s, land).abilities.some((a) => a.kind === "mana" && a.amount === 2)).toBe(false);
   });
 
-  it("Uldaros Theorix : exile et copie, les copies se lancent gratuitement et deviennent des jetons", () => {
+  it("Uldaros Theorix: exiles and copies, the copies are cast for free and become tokens", () => {
     let s = scenario({
       p1: {
         battlefield: [...lands("Island", 3), ...lands("Swamp", 4)],
@@ -337,7 +337,7 @@ describe("Reality Fracture, lot 0.1 (Standard) : Emrakul, Uldaros Theorix, Hall 
       },
     });
     s = cast(s, "p1", "Uldaros Theorix");
-    s = passBoth(s); // Uldaros arrive ; son déclencheur demande ses cibles
+    s = passBoth(s); // Uldaros enters; its trigger asks for its targets
     const bear = idOf(s, "p1", "graveyard", "Bear Cub");
     const growth = idOf(s, "p1", "graveyard", "Giant Growth");
     while (s.pending?.kind === "choice") {
@@ -347,14 +347,14 @@ describe("Reality Fracture, lot 0.1 (Standard) : Emrakul, Uldaros Theorix, Hall 
         s = act(s, "p1", { type: "choose", values: want ? [want] : [] });
       } else break;
     }
-    // Valeur de mana totale 3 (≤ 6) : pas de question, les deux cartes sont copiées et proposées pendant la résolution.
+    // Total mana value 3 (≤ 6): no question, both cards are copied and offered during resolution.
     s = untilCastNow(s);
     const copies = s.exile.filter((id) => s.objects[id]?.cardCopy);
     expect(copies).toHaveLength(2);
     expect([...(castNowOf(s)?.cards ?? [])].sort()).toEqual([...copies].sort());
     const bearCopy = copies.find((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === "Bear Cub") as string;
     s = act(s, "p1", { type: "cast", card: bearCopy, free: true });
-    // La copie de Giant Growth est encore proposée ; refusée, elle cesse d'exister (707.12).
+    // The Giant Growth copy is still offered; declined, it ceases to exist (707.12).
     expect(castNowOf(s)?.cards).toHaveLength(1);
     s = act(s, "p1", { type: "pass" });
     expect(s.exile.filter((id) => s.objects[id]?.cardCopy)).toHaveLength(0);
@@ -364,7 +364,7 @@ describe("Reality Fracture, lot 0.1 (Standard) : Emrakul, Uldaros Theorix, Hall 
     expect(s.objects[tokens[0] as string]?.isToken).toBe(true);
   });
 
-  it("Hall of Echoes : devient une copie jusqu'à la fin du tour ; pas de règle des légendes", () => {
+  it("Hall of Echoes: becomes a copy until end of turn; no legend rule", () => {
     let s = scenario({ p1: { battlefield: ["Hall of Echoes", ...lands("Plains", 5), "Thalia, the Survivor"] } });
     const hall = idOf(s, "p1", "battlefield", "Hall of Echoes");
     const thalia = idOf(s, "p1", "battlefield", "Thalia, the Survivor");
@@ -374,14 +374,14 @@ describe("Reality Fracture, lot 0.1 (Standard) : Emrakul, Uldaros Theorix, Hall 
     expect(chars(s, hall).types).toEqual(["Creature"]);
     expect(chars(s, hall).power).toBe(3);
     expect(chars(s, hall).keywords).toContain("lifelink");
-    // Deux Thalia : la règle des légendes ne s'applique pas ce tour-ci.
+    // Two Thalia: the legend rule doesn't apply this turn.
     expect(s.pending?.kind).toBe("priority");
     expect(idsOf(s, "p1", "battlefield", "Hall of Echoes")).toHaveLength(1);
-    // L'interface affiche la face copiée.
+    // The interface shows the copied face.
     expect(objectView(s, hall).defId).toBe(card("Thalia, the Survivor").id);
   });
 
-  describe("Chandra, Torch of Defiance +1 : lancer la carte exilée pendant la résolution (608.2g)", () => {
+  describe("Chandra, Torch of Defiance +1: cast the exiled card during resolution (608.2g)", () => {
     const plusOne = (top: string, castIt: boolean) => {
       let s = scenario({
         p1: { battlefield: ["Chandra, Torch of Defiance", ...lands("Mountain", 1)], library: [top, "Forest"] },
@@ -395,22 +395,22 @@ describe("Reality Fracture, lot 0.1 (Standard) : Emrakul, Uldaros Theorix, Hall 
       return { s: passAccepting(s, (x) => x.stack.length === 0 && x.pending?.kind === "priority"), asked: !!now };
     };
 
-    it("un sort lancé en payant son coût : pas de blessures de Chandra", () => {
+    it("a spell cast by paying its cost: no damage from Chandra", () => {
       const { s, asked } = plusOne("Burst Lightning", true);
       expect(asked).toBe(true);
-      // Burst Lightning (payé avec la Montagne) : 2 blessures ; Chandra n'en inflige pas.
+      // Burst Lightning (paid with the Mountain): 2 damage; Chandra deals none.
       expect(s.players.p2?.life).toBe(18);
       expect(s.battlefield.filter((id) => s.objects[id]?.tapped)).toHaveLength(1);
     });
 
-    it("sort refusé : 2 blessures à chaque adversaire, la carte reste en exil", () => {
+    it("spell declined: 2 damage to each opponent, the card stays in exile", () => {
       const { s } = plusOne("Burst Lightning", false);
       expect(s.players.p2?.life).toBe(18);
       expect(s.exile.some((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === "Burst Lightning")).toBe(true);
       expect(s.playPermissions ?? []).toHaveLength(0);
     });
 
-    it("un terrain ne peut pas être lancé : pas de question, 2 blessures", () => {
+    it("a land can't be cast: no question, 2 damage", () => {
       const { s, asked } = plusOne("Forest", true);
       expect(asked).toBe(false);
       expect(s.players.p2?.life).toBe(18);

@@ -201,7 +201,7 @@ Lot F3 (PLAN-R, see docs/history.md: server security):
 - tests: `server/test/online.test.ts` (address, Origin, room cap), `static.test.ts` (badly encoded URL, headers), `images.test.ts`; `npm run online-smoke` through Vite's relay.
 
 Lot R0.1 (PLAN-R; `RULES_VERSION` = 2):
-- shared second (702.61b): special actions remain possible (turning a card face up), in `activateAbility` as in `legalActions`;
+- split second (702.61b): special actions remain possible (turning a card face up), in `activateAbility` as in `legalActions`;
 - protection from everything: it no longer prevents damage that can't be prevented (Sunspine Lynx);
 - 704.5b: the flag for an impossible draw is reset at each check; the poison defeat is announced as such (`reason: "poison"`, journal "10 poison counters");
 - "you win / lose the game" by an effect respects "you can't lose the game and your opponents can't win the game" (existing `cantLose` key, no new flag);

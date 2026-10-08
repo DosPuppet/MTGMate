@@ -23,7 +23,7 @@ async function pair(port: number, bots = true) {
   return d;
 }
 
-/** Identifiants de définitions cités dans un message. */
+/** Definition ids cited in a message. */
 function defIds(value: unknown, out = new Set<string>()): Set<string> {
   if (Array.isArray(value)) for (const v of value) defIds(v, out);
   else if (value && typeof value === "object") {
@@ -36,7 +36,7 @@ function defIds(value: unknown, out = new Set<string>()): Set<string> {
 }
 
 describe("salons", () => {
-  it("création, code, arrivée du second joueur et début de partie", async () => {
+  it("creation, code, second player joining and game start", async () => {
     const port = await start();
     const { a, b, code } = await pair(port, false);
     expect(code).toMatch(/^[A-HJ-NP-Z2-9]{6}$/);
@@ -49,7 +49,7 @@ describe("salons", () => {
     expect(room && room.type === "room" && room.room.status).toBe("playing");
   });
 
-  it("refuse un deck illégal, un code inconnu et un troisième joueur", async () => {
+  it("rejects an illegal deck, an unknown code and a third player", async () => {
     const port = await start();
     const c = await Client.connect(port);
     clients.push(c);
@@ -66,7 +66,7 @@ describe("salons", () => {
     expect((await c.next("error")).code).toBe("full");
   });
 
-  it("refuse un client d'une autre version (protocole ou règles) : il doit recharger la page", async () => {
+  it("rejects a client of another version (protocol or rules): it must reload the page", async () => {
     const port = await start();
     const c = await Client.connect(port);
     clients.push(c);
@@ -78,13 +78,13 @@ describe("salons", () => {
     expect((await c.next("error")).code).toBe("version");
   });
 
-  it("accepte un deck de bienvenue de 40 cartes tel quel, pas un deck quelconque de 40 cartes", () => {
+  it("accepts a 40-card welcome deck as is, not an arbitrary 40-card deck", () => {
     const welcome = DECKS.find((d) => d.id === "welcome-green")!.main;
     expect(checkDeck(welcome)).toEqual(welcome);
     expect(() => checkDeck([[40, "Forest"]])).toThrow(/minimum ⟨min\|60⟩/);
   });
 
-  it("une décision hors tour ou illégale est refusée sans casser la partie", async () => {
+  it("an out-of-turn or illegal decision is rejected without breaking the game", async () => {
     const port = await start();
     const { a, b } = await pair(port, false);
     const va = a.lastView;
@@ -98,7 +98,7 @@ describe("salons", () => {
     await turn.next("update");
   });
 
-  it("une décision mal formée est refusée proprement", async () => {
+  it("a malformed decision is rejected cleanly", async () => {
     const port = await start();
     const { a } = await pair(port, false);
     for (const decision of [null, "keep", [], { type: "inconnu" }]) {
@@ -107,7 +107,7 @@ describe("salons", () => {
     }
   });
 
-  it("des réglages mal formés ne figent pas la partie", async () => {
+  it("malformed settings do not freeze the game", async () => {
     const port = await start();
     const { a, b } = await pair(port, false);
     for (const c of [a, b]) c.send({ type: "settings", settings: { stops: null, passUntilTurn: "x" } } as never);
@@ -119,26 +119,26 @@ describe("salons", () => {
   }, 40_000);
 });
 
-describe("partie complète", () => {
-  it("deux bots qui ne voient que leur vue jouent jusqu'à la fin", async () => {
+describe("complete game", () => {
+  it("two bots that see only their own view play to the end", async () => {
     const port = await start();
     const { a, b } = await pair(port);
     const end = await a.next("update", (m) => m.view.over, 90_000);
     expect(end.view.winner).toMatch(/^p[12]$/);
     await b.next("update", (m) => m.view.over);
-    // Informations cachées : la main de départ de l'un n'apparaît jamais chez l'autre (decks disjoints).
+    // Hidden information: one player's opening hand never shows up on the other side (disjoint decks).
     const firstA = a.received.find((m) => m.type === "update");
     const handA = new Set(firstA && firstA.type === "update" ? firstA.view.hand.map((c) => c.defId) : []);
     const firstB = b.received.find((m) => m.type === "update");
     const seenByB = defIds(firstB);
     for (const d of handA) expect(seenByB.has(d)).toBe(false);
-    // Faces : aucune carte de la decklist adverse avant qu'elle ne soit vue.
+    // Faces: no card of the opposing decklist before it has been seen.
     const facesB = firstB?.type === "update" ? Object.keys(firstB.faces) : [];
     const green = new Set(GREEN.map(([, name]) => CARDS[name]?.id));
     expect(facesB.filter((d) => green.has(d))).toEqual([]);
   }, 120_000);
 
-  it("quitter une partie en cours vaut abandon", async () => {
+  it("leaving a game in progress counts as a forfeit", async () => {
     const port = await start();
     const { a, b } = await pair(port, false);
     a.send({ type: "leave" });
@@ -146,7 +146,7 @@ describe("partie complète", () => {
     expect(end.view.winner).toBe("p2");
   });
 
-  it("revanche : une nouvelle partie dans le même salon quand les deux joueurs la demandent", async () => {
+  it("rematch: a new game in the same room when both players ask for it", async () => {
     const port = await start();
     const { a, b } = await pair(port, false);
     a.send({ type: "decision", decision: { type: "concede" } });
@@ -162,11 +162,11 @@ describe("partie complète", () => {
   });
 });
 
-describe("minuteur et déconnexions", () => {
-  it("temps écoulé : décision par défaut, puis défaite après 3 expirations", async () => {
+describe("timer and disconnections", () => {
+  it("time out: default decision, then loss after 3 expirations", async () => {
     const port = await start({ decisionMs: 120, maxTimeouts: 3 });
     const { a, b } = await pair(port, false);
-    b.bot = true; // seul Bob joue ; Alice ne répond jamais
+    b.bot = true; // only Bob plays; Alice never answers
     b.play(b.lastView as NonNullable<typeof b.lastView>);
     const end = await a.next("update", (m) => m.view.over, 30_000);
     expect(end.view.winner).toBe("p2");
@@ -175,7 +175,7 @@ describe("minuteur et déconnexions", () => {
     expect(clocked.length).toBeGreaterThan(0);
   });
 
-  it("reconnexion avec le jeton : vue restaurée, la partie continue", async () => {
+  it("reconnection with the token: view restored, the game goes on", async () => {
     const port = await start({ graceMs: 5_000 });
     const { a, b } = await pair(port, false);
     const bRoom = b.received.find((m) => m.type === "room");
@@ -191,14 +191,14 @@ describe("minuteur et déconnexions", () => {
     const up = await b2.next("update");
     expect(up.view.hand.length).toBeGreaterThan(0);
     expect((await a.next("opponent", (m) => m.connected)).connected).toBe(true);
-    // Un jeton inconnu est refusé.
+    // An unknown token is refused.
     const c = await Client.connect(port);
     clients.push(c);
     c.send({ type: "rejoin", token: "faux" });
     expect((await c.next("error")).code).toBe("token");
   });
 
-  it("sans retour dans le délai, le joueur déconnecté perd", async () => {
+  it("with no return within the delay, the disconnected player loses", async () => {
     const port = await start({ graceMs: 150 });
     const { a, b } = await pair(port, false);
     await b.close();
@@ -207,8 +207,8 @@ describe("minuteur et déconnexions", () => {
   });
 });
 
-describe("exposition à Internet", () => {
-  it("/healthz : détail en JSON pour une requête locale directe, « ok » seulement à travers nginx", async () => {
+describe("Internet exposure", () => {
+  it('/healthz: details in JSON for a direct local request, "ok" only through nginx', async () => {
     const port = await start();
     await pair(port, false);
     const res = await fetch(`http://127.0.0.1:${port}/healthz`);
@@ -220,7 +220,7 @@ describe("exposition à Internet", () => {
     expect(await proxied.text()).toBe("ok\n");
   });
 
-  it("clé d'adresse des plafonds : IPv4, ou préfixe /64 en IPv6", () => {
+  it("address key of the ceilings: IPv4, or /64 prefix in IPv6", () => {
     expect(ipKey("203.0.113.9")).toBe("203.0.113.9");
     expect(ipKey("::ffff:203.0.113.9")).toBe("203.0.113.9");
     expect(ipKey("2001:db8:1:2:aaaa::1")).toBe("2001:db8:1:2::/64");
@@ -228,7 +228,7 @@ describe("exposition à Internet", () => {
     expect(ipKey("2001:db8::1")).toBe("2001:db8:0:0::/64");
   });
 
-  it("refuse de nouveaux salons au-delà de la limite", async () => {
+  it("refuses new rooms beyond the limit", async () => {
     const port = await start({ maxRooms: 1 });
     const a = await Client.connect(port);
     const b = await Client.connect(port);
@@ -239,7 +239,7 @@ describe("exposition à Internet", () => {
     expect((await b.next("error")).code).toBe("busy");
   });
 
-  it("refuse de nouveaux salons quand le tas dépasse maxHeapMb (avant que pm2 ne redémarre le serveur)", async () => {
+  it("refuses new rooms when the heap exceeds maxHeapMb (before pm2 restarts the server)", async () => {
     const port = await start({ maxHeapMb: 1 });
     const a = await Client.connect(port);
     clients.push(a);
@@ -247,9 +247,9 @@ describe("exposition à Internet", () => {
     expect((await a.next("error")).code).toBe("busy");
   });
 
-  it("limite les connexions simultanées par adresse (nginx : X-Real-IP, sinon la dernière de X-Forwarded-For)", async () => {
+  it("limits simultaneous connections per address (nginx: X-Real-IP, otherwise the last of X-Forwarded-For)", async () => {
     const port = await start({}, { maxPerIp: 2 });
-    // Le client remplit le début de X-Forwarded-For comme il veut ; nginx ajoute la vraie adresse à la fin.
+    // The client fills the start of X-Forwarded-For as it likes; nginx appends the real address at the end.
     let spoof = 0;
     const open = (ip: string) =>
       new Promise<{ ws: WebSocket; code: number | null }>((ok) => {
@@ -273,7 +273,7 @@ describe("exposition à Internet", () => {
     for (const c of conns) c.ws.terminate();
   });
 
-  it("n'accepte le WebSocket que du même hôte ou d'une origine autorisée", async () => {
+  it("accepts the WebSocket only from the same host or an allowed origin", async () => {
     const port = await start({});
     const tryOrigin = (origin: string) =>
       new Promise<boolean>((ok) => {
@@ -299,7 +299,7 @@ describe("exposition à Internet", () => {
     expect(ok).toBe(true);
   });
 
-  it("plafonne les salons ouverts par adresse (salons abandonnés en boucle)", async () => {
+  it("caps open rooms per address (rooms abandoned in a loop)", async () => {
     const port = await start({ maxRoomsPerIp: 2 });
     for (let i = 0; i < 2; i++) {
       const c = await Client.connect(port);
@@ -314,13 +314,13 @@ describe("exposition à Internet", () => {
     expect((await c.next("error")).code).toBe("busy");
   });
 
-  it("une connexion qui ne répond plus aux pings est fermée (délai de retour normal)", async () => {
+  it("a connection that no longer answers pings is closed (normal return delay)", async () => {
     const port = await start({ graceMs: 10_000 }, { pingMs: 100 });
     const a = await Client.connect(port);
     clients.push(a);
     a.send({ type: "create", name: "Alice", deck: GREEN });
     const { room } = await a.next("room");
-    // Client « mort » : il ne répond pas aux pings.
+    // "Dead" client: it does not answer pings.
     const dead = new WebSocket(`ws://127.0.0.1:${port}/ws`, { autoPong: false });
     await new Promise((ok) => dead.once("open", ok));
     dead.send(JSON.stringify({ type: "join", code: room.code, name: "Bob", deck: GREEN, version: VERSION }));
@@ -329,7 +329,7 @@ describe("exposition à Internet", () => {
     dead.terminate();
   });
 
-  it("limite le débit des messages, puis ferme une connexion qui insiste", async () => {
+  it("rate-limits messages, then closes a connection that persists", async () => {
     const port = await start({}, { rate: { perSecond: 1, burst: 5 } });
     const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
     await new Promise((ok) => ws.once("open", ok));
@@ -338,12 +338,12 @@ describe("exposition à Internet", () => {
     const closed = new Promise<number>((ok) => ws.once("close", ok));
     for (let i = 0; i < 400; i++) ws.send(JSON.stringify({ type: "decision", decision: { type: "pass" } }));
     expect(await closed).toBe(1008);
-    // 5 messages traités (« aucune partie »), puis un seul avertissement de débit.
+    // 5 messages handled ("no game"), then a single rate warning.
     expect(errors.filter((c) => c === "state")).toHaveLength(5);
     expect(errors.filter((c) => c === "busy")).toHaveLength(1);
   });
 
-  it("un salon resté sans adversaire est fermé", async () => {
+  it("a room left without an opponent is closed", async () => {
     const port = await start({ waitingMs: 150 });
     const a = await Client.connect(port);
     clients.push(a);

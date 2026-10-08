@@ -1,7 +1,7 @@
 /**
- * Commander (pseudo-ensemble EDH, PLAN-E) : tests de règles des cartes des decks Commander. E6 : cartes qui citent le
- * commandant (mana de son identité, « si vous contrôlez un commandant », éminence) ou les adversaires (mana de leurs
- * terrains, « deux adversaires ou plus »).
+ * Commander (EDH pseudo-set, PLAN-E): rules tests for the cards of the Commander decks. E6: cards that reference the
+ * commander (mana of its identity, "if you control a commander", eminence) or the opponents (mana of their
+ * lands, "two or more opponents").
  */
 import { card } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
@@ -11,7 +11,7 @@ import { manaAbilitiesOf } from "../src/mana";
 import type { GameState, ObjectId, PlayerId } from "../src/types";
 import { act, attack, idOf, idsOf, lands, nameOf, passAccepting, scenario, settle, throughCombat } from "./helpers";
 
-/** Fait d'un objet un commandant (déjà sur le champ de bataille). */
+/** Makes an object a commander (already on the battlefield). */
 function makeCommander(s: GameState, id: ObjectId): GameState {
   const o = s.objects[id];
   if (!o) throw new Error("objet introuvable");
@@ -27,21 +27,21 @@ const tokens = (s: GameState, player: PlayerId, name: string) =>
   s.battlefield.filter((id) => s.objects[id]?.isToken && s.objects[id]?.controller === player && nameOf(s, id) === name);
 
 describe("Commander (EDH)", () => {
-  describe("mana de l'identité du commandant (903.4)", () => {
-    it("Command Tower et Arcane Signet : les couleurs de l'identité du commandant", () => {
+  describe("mana of the commander's identity (903.4)", () => {
+    it("Command Tower and Arcane Signet: the colors of the commander's identity", () => {
       const s = scenario({ p1: { command: ["Edgar Markov"], battlefield: ["Command Tower", "Arcane Signet"] } });
       expect(produced(s, idOf(s, "p1", "battlefield", "Command Tower"))).toEqual(["W", "B", "R"]);
       expect(produced(s, idOf(s, "p1", "battlefield", "Arcane Signet"))).toEqual(["W", "B", "R"]);
     });
 
-    it("sans commandant, aucun mana (903.4f) ; le commandant d'un adversaire ne compte pas", () => {
+    it("without a commander, no mana (903.4f); an opponent's commander does not count", () => {
       const s = scenario({ p1: { battlefield: ["Command Tower"] }, p2: { command: ["Edgar Markov"] } });
       expect(produced(s, idOf(s, "p1", "battlefield", "Command Tower"))).toEqual([]);
-      // Rien à engager pour du mana.
+      // Nothing to tap for mana.
       expect(legalActions(s, "p1").some((a) => a.type === "tapForMana")).toBe(false);
     });
 
-    it("Path of Ancestry arrive engagé et produit l'identité du commandant", () => {
+    it("Path of Ancestry enters tapped and produces the commander's identity", () => {
       let s = scenario({ p1: { command: ["Arahbo, the First Fang"], hand: ["Path of Ancestry"] } });
       s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Path of Ancestry") });
       const path = idOf(s, "p1", "battlefield", "Path of Ancestry");
@@ -49,7 +49,7 @@ describe("Commander (EDH)", () => {
       expect(produced(s, path)).toEqual(["W"]);
     });
 
-    /** Lance la carte de la main de p1 et résout tout ; dit si un regard a eu lieu. */
+    /** Casts the card from p1's hand and resolves everything; tells whether a scry happened. */
     const castScrying = (s: GameState, name: string, tapFirst?: string): { s: GameState; scried: boolean } => {
       if (tapFirst)
         s = act(s, "p1", { type: "tapForMana", source: idOf(s, "p1", "battlefield", tapFirst), ability: 0, color: "B" });
@@ -62,7 +62,7 @@ describe("Commander (EDH)", () => {
       return { s, scried };
     };
 
-    it("Path of Ancestry : regard 1 si son mana lance une créature qui partage un type avec le commandant", () => {
+    it("Path of Ancestry: scry 1 if its mana casts a creature that shares a type with the commander", () => {
       const s = scenario({
         p1: { command: ["Edgar Markov"], battlefield: ["Path of Ancestry"], hand: ["Vampire of the Dire Moon"] },
       });
@@ -71,14 +71,14 @@ describe("Commander (EDH)", () => {
       expect(idsOf(r.s, "p1", "battlefield", "Vampire of the Dire Moon")).toHaveLength(1);
     });
 
-    it("Path of Ancestry : mana engagé à la main d'abord (réserve marquée), le regard a lieu aussi", () => {
+    it("Path of Ancestry: mana tapped by hand first (pool marked), the scry happens too", () => {
       const s = scenario({
         p1: { command: ["Edgar Markov"], battlefield: ["Path of Ancestry"], hand: ["Vampire of the Dire Moon"] },
       });
       expect(castScrying(s, "Vampire of the Dire Moon", "Path of Ancestry").scried).toBe(true);
     });
 
-    it("Path of Ancestry : pas de regard pour une créature sans type commun, ni avec le mana d'un autre terrain", () => {
+    it("Path of Ancestry: no scry for a creature with no shared type, nor with another land's mana", () => {
       const lions = scenario({ p1: { command: ["Edgar Markov"], battlefield: ["Path of Ancestry"], hand: ["Savannah Lions"] } });
       expect(castScrying(lions, "Savannah Lions").scried).toBe(false);
       const swamp = scenario({
@@ -87,19 +87,19 @@ describe("Commander (EDH)", () => {
       expect(castScrying(swamp, "Vampire of the Dire Moon", "Swamp").scried).toBe(false);
     });
 
-    it("Path of Ancestry : le commandant compte où qu'il soit (sur le champ de bataille aussi) ; sans commandant, rien", () => {
+    it("Path of Ancestry: the commander counts wherever it is (on the battlefield too); without a commander, nothing", () => {
       const s = scenario({
         p1: { battlefield: ["Edgar Markov", "Path of Ancestry", "Swamp"], hand: ["Vampire of the Dire Moon"] },
       });
-      // Sans commandant, Path of Ancestry ne produit rien (903.4f) : le Marais paie, pas de regard.
+      // Without a commander, Path of Ancestry produces nothing (903.4f): the Swamp pays, no scry.
       expect(castScrying(structuredClone(s), "Vampire of the Dire Moon").scried).toBe(false);
       makeCommander(s, idOf(s, "p1", "battlefield", "Edgar Markov"));
       expect(castScrying(s, "Vampire of the Dire Moon", "Path of Ancestry").scried).toBe(true);
     });
   });
 
-  describe("mana des terrains adverses : Exotic Orchard, Fellwar Stone", () => {
-    it("les couleurs que pourraient produire les terrains des adversaires, pas les siens ni l'incolore", () => {
+  describe("mana of opposing lands: Exotic Orchard, Fellwar Stone", () => {
+    it("the colors that opponents' lands could produce, not one's own nor colorless", () => {
       const s = scenario({
         players: 3,
         p1: { battlefield: ["Exotic Orchard", "Fellwar Stone", "Forest"] },
@@ -111,8 +111,8 @@ describe("Commander (EDH)", () => {
     });
   });
 
-  describe("« deux adversaires ou plus » : Luxury Suite, Vault of Champions", () => {
-    it("en duel, arrive engagé ; à trois joueurs, dégagé", () => {
+  describe('"two or more opponents": Luxury Suite, Vault of Champions', () => {
+    it("in a duel, enters tapped; with three players, untapped", () => {
       let duel = scenario({ p1: { hand: ["Luxury Suite"] } });
       duel = act(duel, "p1", { type: "playLand", card: idOf(duel, "p1", "hand", "Luxury Suite") });
       expect(duel.objects[idOf(duel, "p1", "battlefield", "Luxury Suite")]?.tapped).toBe(true);
@@ -122,8 +122,8 @@ describe("Commander (EDH)", () => {
     });
   });
 
-  describe("« si vous contrôlez un commandant, vous pouvez lancer ce sort sans payer son coût de mana »", () => {
-    it("Fierce Guardianship : gratuit en contrôlant son commandant, sinon {2}{U} ; contrecarre un sort non-créature", () => {
+  describe('"if you control a commander, you may cast this spell without paying its mana cost"', () => {
+    it("Fierce Guardianship: free while controlling one's commander, otherwise {2}{U}; counters a noncreature spell", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: ["Arahbo, the First Fang"], hand: ["Fierce Guardianship"] },
@@ -132,7 +132,7 @@ describe("Commander (EDH)", () => {
       const fg = idOf(s, "p1", "hand", "Fierce Guardianship");
       s = act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Shock"), targets: { t: ["p1"] } });
       s = act(s, "p2", { type: "pass" });
-      // Pas de commandant, pas d'île : rien à lancer.
+      // No commander, no Island: nothing to cast.
       expect(s.pending).toMatchObject({ kind: "priority", player: "p1" });
       expect(castOption(s, "p1", fg)).toEqual([]);
       makeCommander(s, idOf(s, "p1", "battlefield", "Arahbo, the First Fang"));
@@ -143,7 +143,7 @@ describe("Commander (EDH)", () => {
       expect(idsOf(s, "p2", "graveyard", "Shock")).toHaveLength(1);
     });
 
-    it("le commandant d'un adversaire ne compte pas ; un commandant dans la zone de commandement non plus", () => {
+    it("an opponent's commander does not count; neither does a commander in the command zone", () => {
       const s = scenario({
         p1: { command: ["Arahbo, the First Fang"], hand: ["Deadly Rollick"] },
         p2: { battlefield: ["Edgar Markov"] },
@@ -152,7 +152,7 @@ describe("Commander (EDH)", () => {
       expect(castOption(s, "p1", idOf(s, "p1", "hand", "Deadly Rollick"))).toEqual([]);
     });
 
-    it("Deadly Rollick exile ; Flawless Maneuver rend vos créatures indestructibles jusqu'à la fin du tour", () => {
+    it("Deadly Rollick exiles; Flawless Maneuver makes your creatures indestructible until end of turn", () => {
       let s = scenario({
         p1: { battlefield: ["Arahbo, the First Fang", "Savannah Lions"], hand: ["Deadly Rollick", "Flawless Maneuver"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -173,8 +173,8 @@ describe("Commander (EDH)", () => {
     });
   });
 
-  describe("éminence (113.6) : Edgar Markov", () => {
-    it("depuis la zone de commandement, chaque autre sort de Vampire lancé crée un Vampire 1/1 noir", () => {
+  describe("eminence (113.6): Edgar Markov", () => {
+    it("from the command zone, each other Vampire spell cast creates a 1/1 black Vampire", () => {
       let s = scenario({ p1: { command: ["Edgar Markov"], battlefield: ["Swamp"], hand: ["Vampire of the Dire Moon"] } });
       s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Vampire of the Dire Moon") });
       s = settle(s);
@@ -182,14 +182,14 @@ describe("Commander (EDH)", () => {
       expect(s.objects[tokens(s, "p1", "Vampire")[0] ?? ""]?.defId).toBeDefined();
     });
 
-    it("pas depuis la main (la capacité ne fonctionne que dans la zone de commandement ou sur le champ de bataille)", () => {
+    it("not from the hand (the ability only works in the command zone or on the battlefield)", () => {
       let s = scenario({ p1: { battlefield: ["Swamp"], hand: ["Edgar Markov", "Vampire of the Dire Moon"] } });
       s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Vampire of the Dire Moon") });
       s = settle(s);
       expect(tokens(s, "p1", "Vampire")).toEqual([]);
     });
 
-    it("sur le champ de bataille : éminence, et en attaquant, un marqueur +1/+1 sur chaque Vampire", () => {
+    it("on the battlefield: eminence, and when attacking, a +1/+1 counter on each Vampire", () => {
       let s = scenario({ p1: { battlefield: ["Edgar Markov", "Vampire of the Dire Moon"] } });
       const edgar = idOf(s, "p1", "battlefield", "Edgar Markov");
       s = throughCombat(attack(s, [edgar]));
@@ -200,8 +200,8 @@ describe("Commander (EDH)", () => {
   });
 });
 
-describe("Exotic Orchard chez deux joueurs", () => {
-  it("deux sources « comme les terrains adverses » ne se consultent pas l'une l'autre (pas de récursion infinie)", () => {
+describe("Exotic Orchard with two players", () => {
+  it('two "like opposing lands" sources do not consult each other (no infinite recursion)', () => {
     const s = scenario({
       players: 3,
       p1: { battlefield: ["Exotic Orchard"] },

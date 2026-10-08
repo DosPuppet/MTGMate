@@ -1,6 +1,6 @@
 /**
- * Format Commander (PLAN-E, E1) : identité de couleur (903.4) comparée à Scryfall, règles de construction (903.5 :
- * 100 cartes dont le commandant, singleton, identité, bannissements), Game Changers et tranche estimée, deck de partie.
+ * Commander format (PLAN-E, E1): color identity (903.4) compared to Scryfall, deck construction rules (903.5:
+ * 100 cards including the commander, singleton, identity, bans), Game Changers and estimated bracket, game deck.
  */
 import { colorIdentity, plainText } from "@mtgx/engine";
 import { describe, expect, it } from "vitest";
@@ -9,35 +9,35 @@ import { buildGameDeck, CARDS, canBeCommander, DECKS, type DeckEntries, legality
 
 const id = (name: string) => colorIdentity(CARDS[name]!).join("");
 
-describe("identité de couleur (903.4)", () => {
-  it("égale celle de Scryfall pour chaque carte du pseudo-ensemble EDH (le catalogue entier : npm run import-printings)", () => {
+describe("color identity (903.4)", () => {
+  it("matches Scryfall's for each card of the EDH pseudo-set (the whole catalog: npm run import-printings)", () => {
     for (const raw of edhData) {
       const want = ["W", "U", "B", "R", "G"].filter((c) => (raw.colorIdentity as string[]).includes(c)).join("");
       expect(id(raw.name), raw.name).toBe(want);
     }
   });
 
-  it("coût, texte de règles, hybride, phyrexian, faces ; texte de rappel exclu ; types de terrain de base", () => {
+  it("cost, rules text, hybrid, Phyrexian, faces; reminder text excluded; basic land types", () => {
     expect(id("Edgar Markov")).toBe("WBR");
     expect(id("Sol Ring")).toBe("");
     expect(id("Command Tower")).toBe("");
-    // {3}{U/B} : hybride.
+    // {3}{U/B} : hybrid.
     expect(id("Helm of the Ghastlord")).toBe("UB");
-    // {1}{B/P}{B/P} : phyrexian.
+    // {1}{B/P}{B/P} : Phyrexian.
     expect(id("Dismember")).toBe("B");
-    // Texte de règles : « {T}: Add {W} or {B}. ».
+    // Rules text: "{T}: Add {W} or {B}.".
     expect(id("Caves of Koilos")).toBe("WB");
-    // Rappel « ({T}: Add {R}, {W}, or {B}.) » exclu, mais types Mountain Plains Swamp.
+    // Reminder "({T}: Add {R}, {W}, or {B}.)" excluded, but Mountain Plains Swamp types.
     expect(id("Savai Triome")).toBe("WBR");
-    // Carte modale : le verso (terrain {U}) compte aussi.
+    // Modal card: the back face ({U} land) counts too.
     expect(id("Sink into Stupor // Soporific Springs")).toBe("U");
-    // Rappel de convocation et de folie sans symbole coloré hors du coût.
+    // Convoke and madness reminder with no colored symbol outside the cost.
     expect(id("Markov Baron")).toBe("B");
     expect(id("Forest")).toBe("G");
   });
 });
 
-describe("règles de construction du Commander (903.5)", () => {
+describe("Commander deck construction rules (903.5)", () => {
   const edgar = DECKS.find((d) => d.id === "cmd-edgar-markov")!;
   const yshtola = DECKS.find((d) => d.id === "cmd-yshtola")!;
   const urDragon = DECKS.find((d) => d.id === "cmd-ur-dragon")!;
@@ -48,7 +48,7 @@ describe("règles de construction du Commander (903.5)", () => {
   const fantastic = DECKS.find((d) => d.id === "cmd-fantastic-four")!;
   const mutant = DECKS.find((d) => d.id === "cmd-mutant-menace")!;
 
-  it("les préconstruits sont légaux ; Game Changers et tranche estimée", () => {
+  it("the preconstructed decks are legal; Game Changers and estimated bracket", () => {
     for (const d of [edgar, yshtola, urDragon, rakdos, multiverse, turtles, blitz, fantastic, mutant]) {
       const v = validateDeck(d, CARDS, "commander");
       expect(v.errors, d.id).toEqual([]);
@@ -88,7 +88,7 @@ describe("règles de construction du Commander (903.5)", () => {
     expect(r.identity).toEqual(["B", "R"]);
     expect(r.gameChangers?.sort()).toEqual(["Demonic Tutor", "Vampiric Tutor"]);
     expect(r.bracket).toBe("3");
-    // Préconstruits officiels : aucun Game Changer.
+    // Official preconstructed decks: no Game Changer.
     const m = validateDeck(multiverse, CARDS, "commander");
     expect(m.commanders).toEqual(["Jace, Multiverse Architect"]);
     expect(m.identity).toEqual(["W", "U", "B", "R"]);
@@ -113,7 +113,7 @@ describe("règles de construction du Commander (903.5)", () => {
   const replace = (main: DeckEntries, from: string, to: string): DeckEntries =>
     main.map(([n, name]) => [n, name === from ? to : name]);
 
-  it("commandant manquant, deux commandants, commandant non légendaire", () => {
+  it("missing commander, two commanders, non-legendary commander", () => {
     expect(validateDeck({ main: base().main }, CARDS, "commander").errors).toContain("Choose a commander");
     const two = {
       ...base(),
@@ -131,7 +131,7 @@ describe("règles de construction du Commander (903.5)", () => {
     expect(canBeCommander(CARDS["Sorin, Imperious Bloodlord"]!)).toBe(false);
   });
 
-  it("exactement 100 cartes ; un seul exemplaire sauf les terrains de base ; pas de réserve", () => {
+  it("exactly 100 cards; a single copy except basic lands; no sideboard", () => {
     const short = { ...base(), main: base().main.filter(([, n]) => n !== "Blood Artist") };
     expect(validateDeck(short, CARDS, "commander").errors.map(plainText)).toContain(
       "The deck has 99 cards, commander included (exactly 100 are needed)",
@@ -140,18 +140,18 @@ describe("règles de construction du Commander (903.5)", () => {
     expect(validateDeck(twice, CARDS, "commander").errors.map(plainText)).toContain(
       "Blood Artist: 2 copies (only one in Commander)",
     );
-    // Six Marais : des terrains de base, permis.
+    // Six Swamps: basic lands, allowed.
     expect(validateDeck(base(), CARDS, "commander").errors).toEqual([]);
     const side = { ...base(), sideboard: [[1, "Shivan Dragon"]] as DeckEntries };
     expect(validateDeck(side, CARDS, "commander").errors).toContain("No sideboard in Commander");
   });
 
-  it("identité de couleur du commandant ; bannissements de commander.json", () => {
+  it("commander's color identity; bans from commander.json", () => {
     const blue = { ...base(), main: replace(base().main, "Blood Artist", "Counterspell") };
     expect(validateDeck(blue, CARDS, "commander").errors.map(plainText)).toContain(
       "Counterspell is outside the commander's color identity",
     );
-    // Un terrain de base hors identité aussi (Island).
+    // A basic land outside the identity too (Island).
     const island = { ...base(), main: replace(base().main, "Blood Artist", "Island") };
     expect(validateDeck(island, CARDS, "commander").errors.map(plainText)).toContain(
       "Island is outside the commander's color identity",
@@ -162,7 +162,7 @@ describe("règles de construction du Commander (903.5)", () => {
     expect(validateDeck(banned, CARDS, "commander").errors.map(plainText)).toContain("Mana Crypt is banned in Commander");
   });
 
-  it("deck de partie : le commandant d'abord, son indice, puis les 99 autres cartes", () => {
+  it("game deck: the commander first, its index, then the other 99 cards", () => {
     const g = buildGameDeck(edgar);
     expect(g.deck).toHaveLength(100);
     expect(g.commanders).toEqual([0]);

@@ -1,6 +1,6 @@
 /**
- * Murders at Karlov Manor (extension partielle : cartes des decks du méta) : chaque carte gérée est confrontée à son
- * texte Oracle (plan R, lot R7).
+ * Murders at Karlov Manor (partial set: cards from the meta decks): each implemented card is checked against its
+ * Oracle text (plan R, lot R7).
  */
 
 import type { RawCard } from "@mtgx/cards";
@@ -42,8 +42,8 @@ import {
 
 type S = GameState;
 describe("Murders at Karlov Manor", () => {
-  describe("terrains à surveillance (Thundering Falls, Meticulous Archive, Underground Mortuary)", () => {
-    it("arrivent engagés, puis surveillance 1 : la carte du dessus peut aller au cimetière", () => {
+  describe("surveil lands (Thundering Falls, Meticulous Archive, Underground Mortuary)", () => {
+    it("enter tapped, then surveil 1: the top card may go to the graveyard", () => {
       let s = scenario({ p1: { hand: ["Thundering Falls"], library: ["Opt", "Forest", "Forest"] } });
       s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Thundering Falls") });
       const falls = idOf(s, "p1", "battlefield", "Thundering Falls");
@@ -59,7 +59,7 @@ describe("Murders at Karlov Manor", () => {
       expect(s.players.p1?.library).toHaveLength(2);
     });
 
-    it("on peut garder la carte sur le dessus", () => {
+    it("the card can be kept on top", () => {
       let s = scenario({ p1: { hand: ["Meticulous Archive"], library: ["Opt", "Forest"] } });
       s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Meticulous Archive") });
       s = settle(s, (req) => (req.intent === "surveilGraveyard" ? [] : undefined));
@@ -67,7 +67,7 @@ describe("Murders at Karlov Manor", () => {
       expect(nameOf(s, s.players.p1?.library[0] ?? "")).toBe("Opt");
     });
 
-    it("leurs types de terrain de base donnent leurs deux couleurs de mana", () => {
+    it("their basic land types give their two mana colors", () => {
       const s = scenario({ p1: { battlefield: ["Thundering Falls", "Meticulous Archive", "Underground Mortuary"] } });
       const colors = (name: string) => {
         const id = idOf(s, "p1", "battlefield", name);
@@ -83,7 +83,7 @@ describe("Murders at Karlov Manor", () => {
   });
 
   describe("Vengeful Tracker", () => {
-    it("un adversaire qui sacrifie un artefact subit 2 blessures", () => {
+    it("an opponent who sacrifices an artifact takes 2 damage", () => {
       let s = scenario({
         p1: { battlefield: ["Vengeful Tracker"] },
         p2: { battlefield: ["Esoteric Duplicator", ...lands("Island", 2)] },
@@ -97,7 +97,7 @@ describe("Murders at Karlov Manor", () => {
       expect(s.players.p1?.life).toBe(20);
     });
 
-    it("sacrifier son propre artefact ne déclenche rien", () => {
+    it("sacrificing your own artifact triggers nothing", () => {
       let s = scenario({ p1: { battlefield: ["Vengeful Tracker", "Esoteric Duplicator", ...lands("Island", 2)] } });
       const dup = idOf(s, "p1", "battlefield", "Esoteric Duplicator");
       const a = legalActions(s, "p1").find((x) => x.type === "activate" && x.source === dup);
@@ -115,7 +115,7 @@ describe("Murders at Karlov Manor", () => {
         p2: { battlefield: ["Plains", "Island"], hand: ["No More Lies"] },
       });
 
-    it("si le contrôleur ne peut pas payer {3}, le sort est contrecarré et exilé", () => {
+    it("if the controller can't pay {3}, the spell is countered and exiled", () => {
       let s = setup(2);
       s = cast(s, "p1", "Lightning Strike", { t: ["p2"] });
       const strike = s.stack[0]?.id as string;
@@ -127,7 +127,7 @@ describe("Murders at Karlov Manor", () => {
       expect(s.exile.some((id) => nameOf(s, id) === "Lightning Strike")).toBe(true);
     });
 
-    it("s'il paie {3}, le sort se résout", () => {
+    it("if they pay {3}, the spell resolves", () => {
       let s = setup(5);
       s = cast(s, "p1", "Lightning Strike", { t: ["p2"] });
       const strike = s.stack[0]?.id as string;
@@ -147,7 +147,7 @@ describe("Murders at Karlov Manor", () => {
   });
 
   describe("Deadly Cover-Up", () => {
-    it("sans réunir de preuves : toutes les créatures sont détruites, aucun cimetière n'est touché", () => {
+    it("without collecting evidence: all creatures are destroyed, no graveyard is touched", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Swamp", 5), "Bear Cub"], hand: ["Deadly Cover-Up"] },
         p2: { battlefield: ["Fire Elemental"], graveyard: ["Opt"] },
@@ -159,7 +159,7 @@ describe("Murders at Karlov Manor", () => {
       expect(idsOf(s, "p2", "graveyard", "Fire Elemental")).toHaveLength(1);
     });
 
-    it("réunir des preuves 6 exige une valeur de mana totale d'au moins 6 dans son cimetière", () => {
+    it("collect evidence 6 requires a total mana value of at least 6 in your graveyard", () => {
       const s = scenario({
         p1: { battlefield: lands("Swamp", 5), hand: ["Deadly Cover-Up"], graveyard: ["Bear Cub", "Opt"] },
       });
@@ -168,7 +168,7 @@ describe("Murders at Karlov Manor", () => {
   });
 
   describe("Case of the Uneaten Feast", () => {
-    it("chaque créature qui arrive sous votre contrôle rapporte 1 PV, pas celles de l'adversaire", () => {
+    it("each creature that enters under your control gains you 1 life, not the opponent's", () => {
       let s = scenario({
         p1: { battlefield: ["Case of the Uneaten Feast", ...lands("Forest", 2)], hand: ["Bear Cub"] },
       });
@@ -183,7 +183,7 @@ describe("Murders at Karlov Manor", () => {
       expect(t.players.p1?.life).toBe(20);
     });
 
-    it("résolue au début de votre étape de fin si vous avez gagné au moins 5 PV ce tour-ci", () => {
+    it("solved at the beginning of your end step if you gained at least 5 life this turn", () => {
       const run = (hand: string) => {
         let s = scenario({ p1: { battlefield: ["Case of the Uneaten Feast", ...lands("Forest", 7)], hand: [hand] } });
         s = settle(cast(s, "p1", hand));
@@ -191,14 +191,14 @@ describe("Murders at Karlov Manor", () => {
         s = advanceUntil(s, (x) => x.turn.step === "cleanup" || x.turn.active !== "p1");
         return (s.objects[caseId] as { solved?: boolean }).solved ?? false;
       };
-      // Pelakka Wurm : 7 PV, plus 1 par l'Affaire.
+      // Pelakka Wurm: 7 life, plus 1 for the Case.
       expect(run("Pelakka Wurm")).toBe(true);
       expect(run("Bear Cub")).toBe(false);
     });
   });
 
   describe("Warleader's Call", () => {
-    it("vos créatures ont +1/+1, pas celles des adversaires", () => {
+    it("your creatures get +1/+1, not the opponents'", () => {
       const s = scenario({ p1: { battlefield: ["Warleader's Call", "Bear Cub"] }, p2: { battlefield: ["Bear Cub"] } });
       const mine = chars(s, idOf(s, "p1", "battlefield", "Bear Cub"));
       const theirs = chars(s, idOf(s, "p2", "battlefield", "Bear Cub"));
@@ -206,7 +206,7 @@ describe("Murders at Karlov Manor", () => {
       expect([theirs.power, theirs.toughness]).toEqual([2, 2]);
     });
 
-    it("une créature qui arrive sous votre contrôle inflige 1 blessure à chaque adversaire", () => {
+    it("a creature that enters under your control deals 1 damage to each opponent", () => {
       let s = scenario({
         players: 3,
         p1: { battlefield: ["Warleader's Call", ...lands("Forest", 2)], hand: ["Bear Cub"] },
@@ -217,14 +217,14 @@ describe("Murders at Karlov Manor", () => {
   });
 
   describe("Steamcore Scholar", () => {
-    it("vol et vigilance", () => {
+    it("flying and vigilance", () => {
       const s = scenario({ p1: { battlefield: ["Steamcore Scholar"] } });
       expect(chars(s, idOf(s, "p1", "battlefield", "Steamcore Scholar")).keywords).toEqual(
         expect.arrayContaining(["flying", "vigilance"]),
       );
     });
 
-    it("piochez deux cartes, puis défaussez-en deux, ou un seul éphémère", () => {
+    it("draw two cards, then discard two, or just one instant", () => {
       const run = (library: string[], pickInstant: boolean) => {
         let s = scenario({ p1: { battlefield: lands("Island", 3), hand: ["Steamcore Scholar"], library } });
         s = settle(cast(s, "p1", "Steamcore Scholar"), (req) => {
@@ -249,16 +249,16 @@ describe("Murders at Karlov Manor", () => {
   });
 });
 
-describe("Murders at Karlov Manor, socle : suspect (701.60)", () => {
-  /** Créature de test : « en arrivant, suspectez jusqu'à une créature ciblée » ; {1} : « elle n'est plus suspecte ». */
+describe("Murders at Karlov Manor, core: suspect (701.60)", () => {
+  /** Test creature: "when it enters, suspect up to one target creature"; {1}: "it's no longer suspected". */
   const SUSPECTER = customCard({
-    name: "Enquêteur d'essai",
+    name: "Test Investigator",
     power: 1,
     toughness: 1,
     abilities: [
       dsl.triggered(dsl.when.entersSelf, [dsl.fx.suspect(dsl.ref.target())], {
         targets: [dsl.target.upTo(1, dsl.target.creature())],
-        label: "Suspectez une créature",
+        label: "Suspect a creature",
       }),
       dsl.activated({
         mana: "{1}",
@@ -269,7 +269,7 @@ describe("Murders at Karlov Manor, socle : suspect (701.60)", () => {
     ],
   });
 
-  it("une créature suspecte a la menace et ne peut pas bloquer ; la vue le montre ; plus suspecte, elle peut bloquer", () => {
+  it("a suspected creature has menace and can't block; the view shows it; no longer suspected, it can block", () => {
     let s = scenario({
       p1: { battlefield: ["Bear Cub", "Island"], hand: [SUSPECTER] },
       p2: { battlefield: ["Bear Cub"] },
@@ -281,12 +281,12 @@ describe("Murders at Karlov Manor, socle : suspect (701.60)", () => {
     expect(s.objects[theirs]?.suspected).toBe(true);
     expect(chars(s, theirs).keywords).toEqual(expect.arrayContaining(["menace", "cantBlock"]));
     expect(projectView(s, "p1").battlefield.find((o) => o.id === theirs)?.suspected).toBe(true);
-    // Elle ne peut pas bloquer notre Ours qui attaque.
+    // It can't block our attacking Bear.
     const mine = idOf(s, "p1", "battlefield", "Bear Cub");
     let c = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
     c = act(c, "p1", { type: "declareAttackers", attackers: [{ id: mine, defender: "p2" }] });
     expect(canBlock(c, theirs, mine)).toBe(false);
-    // « Elle n'est plus suspecte » : elle bloque de nouveau, sans la menace.
+    // "It's no longer suspected": it blocks again, without menace.
     const source = idOf(s, "p1", "battlefield", SUSPECTER.name);
     const ab = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === source);
     s = settle(
@@ -299,7 +299,7 @@ describe("Murders at Karlov Manor, socle : suspect (701.60)", () => {
     expect(canBlock(c, theirs, mine)).toBe(true);
   });
 
-  it("le filtre « créature suspecte » ; la désignation se perd en quittant le champ de bataille", () => {
+  it('the "suspected creature" filter; the designation is lost on leaving the battlefield', () => {
     const s = scenario({ p1: { battlefield: ["Bear Cub", "Llanowar Elves"] } });
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
@@ -313,23 +313,23 @@ describe("Murders at Karlov Manor, socle : suspect (701.60)", () => {
   });
 });
 
-describe("Murders at Karlov Manor, lot A — blanc", () => {
+describe("Murders at Karlov Manor, lot A — white", () => {
   /**
-   * Murders at Karlov Manor, lot A — cartes blanches : chaque carte au comportement non trivial est confrontée à son texte
-   * Oracle (plan R, lot R7).
+   * Murders at Karlov Manor, lot A — white cards: each card with non-trivial behavior is checked against its Oracle
+   * text (plan R, lot R7).
    */
   type S = GameState;
-  /** Répond aux choix de cibles en désignant ces objets. */
+  /** Answers target choices by designating these objects. */
   const picking =
     (...ids: string[]): Answer =>
     (req) =>
       req.type === "pick" && ids.every((id) => req.options.includes(id)) ? ids : undefined;
-  /** Active la capacité de la source dont le libellé contient `label` (la première sinon). */
+  /** Activates the ability of the source whose label contains `label` (the first otherwise). */
   const activate = (s: S, player: string, source: string, label?: string, targets?: Record<string, string[]>) => {
     const a = legalActions(s, player).find(
       (x) => x.type === "activate" && x.source === source && (!label || (x.label ?? "").includes(label)),
     );
-    if (a?.type !== "activate") throw new Error(`Aucune capacité « ${label ?? ""} » pour ${nameOf(s, source)}`);
+    if (a?.type !== "activate") throw new Error(`No ability "${label ?? ""}" for ${nameOf(s, source)}`);
     return act(s, player, { type: "activate", source, ability: a.ability, targets });
   };
   const pt = (s: S, id: string) => {
@@ -338,7 +338,7 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
   };
   const count = (s: S, player: string, name: string) => idsOf(s, player, "battlefield", name).length;
   const faceDownIds = (s: S) => s.battlefield.filter((x) => s.objects[x]?.defId === FACE_DOWN_ID);
-  /** Lance la carte face cachée pour {3}, puis la retourne face visible (action spéciale). */
+  /** Casts the card face down for {3}, then turns it face up (special action). */
   const castDisguisedThenTurnUp = (s: S, name: string): { s: S; id: string } => {
     let cur = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", name), faceDown: true }));
     const id = faceDownIds(cur)[0] as string;
@@ -346,10 +346,10 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
     expect(nameOf(cur, id)).toBe(name);
     return { s: cur, id };
   };
-  /** Détective d'essai avec le déguisement (« quand un Détective est retourné face visible »). */
+  /** Test Detective with disguise ("when a Detective is turned face up"). */
   const DISGUISED_DETECTIVE = toCardDef(
     {
-      name: "Détective déguisé",
+      name: "Disguised Detective",
       number: "1",
       rarity: "common",
       manaCost: "{3}{W}",
@@ -367,14 +367,14 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
     {},
     "TST",
   );
-  /** Avance jusqu'à la déclaration des attaquants de p1 et attaque p2 avec ces créatures. */
+  /** Advances to p1's declare attackers and attacks p2 with these creatures. */
   const attackWith = (s: S, ids: string[]) => {
     const c = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
     return act(c, "p1", { type: "declareAttackers", attackers: ids.map((id) => ({ id, defender: "p2" })) });
   };
 
   describe("Absolving Lammasu", () => {
-    it("en arrivant, plus aucune créature n'est suspecte ; en mourant, 3 PV et une créature adverse suspectée", () => {
+    it("when it enters, no creature is suspected anymore; when it dies, 3 life and an opposing creature suspected", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Plains", 5), ...lands("Mountain", 2), "Bear Cub"],
@@ -399,7 +399,7 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
   });
 
   describe("Assemble the Players", () => {
-    it("une fois par tour, une créature de force 2 ou moins se lance du dessus de la bibliothèque", () => {
+    it("once per turn, a creature with power 2 or less can be cast from the top of the library", () => {
       let s = scenario({
         p1: { battlefield: ["Assemble the Players", ...lands("Forest", 4)], library: ["Bear Cub", "Llanowar Elves", "Forest"] },
       });
@@ -407,13 +407,13 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
       expect(legalActions(s, "p1").some((a) => a.type === "cast" && a.card === top)).toBe(true);
       s = settle(act(s, "p1", { type: "cast", card: top }));
       expect(count(s, "p1", "Bear Cub")).toBe(1);
-      // Les Elfes sont maintenant sur le dessus, mais la permission a servi ce tour-ci.
+      // The Elves are now on top, but the permission was used this turn.
       const next = s.players.p1?.library[0] as string;
       expect(nameOf(s, next)).toBe("Llanowar Elves");
       expect(legalActions(s, "p1").some((a) => a.type === "cast" && a.card === next)).toBe(false);
     });
 
-    it("pas une créature de force 3 ou plus", () => {
+    it("not a creature with power 3 or more", () => {
       const s = scenario({
         p1: { battlefield: ["Assemble the Players", ...lands("Mountain", 5)], library: ["Fire Elemental", "Forest"] },
       });
@@ -423,7 +423,7 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
   });
 
   describe("Auspicious Arrival", () => {
-    it("+2/+2 jusqu'à la fin du tour et un Indice", () => {
+    it("+2/+2 until end of turn and a Clue", () => {
       let s = scenario({ p1: { battlefield: [...lands("Plains", 2), "Bear Cub"], hand: ["Auspicious Arrival"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = settle(cast(s, "p1", "Auspicious Arrival", { t: [bear] }));
@@ -433,7 +433,7 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
   });
 
   describe("Call a Surprise Witness", () => {
-    it("renvoie une créature de valeur de mana 3 ou moins avec un marqueur de vol ; c'est aussi un Esprit", () => {
+    it("returns a creature with mana value 3 or less with a flying counter; it's also a Spirit", () => {
       let s = scenario({
         p1: { battlefield: lands("Plains", 2), hand: ["Call a Surprise Witness"], graveyard: ["Bear Cub", "Fire Elemental"] },
       });
@@ -448,13 +448,13 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
   });
 
   describe("Case of the Pilfered Proof", () => {
-    it("un Détective qui arrive sous votre contrôle reçoit un marqueur +1/+1", () => {
+    it("a Detective that enters under your control gets a +1/+1 counter", () => {
       let s = scenario({ p1: { battlefield: ["Case of the Pilfered Proof", "Plains"], hand: ["Novice Inspector"] } });
       s = settle(cast(s, "p1", "Novice Inspector"));
       expect(s.objects[idOf(s, "p1", "battlefield", "Novice Inspector")]?.counters["+1/+1"]).toBe(1);
     });
 
-    it("un Détective retourné face visible reçoit un marqueur +1/+1 (face cachée, il n'en recevait pas)", () => {
+    it("a Detective turned face up gets a +1/+1 counter (face down, it didn't get one)", () => {
       let s = scenario({
         p1: { battlefield: ["Case of the Pilfered Proof", ...lands("Plains", 4)], hand: [DISGUISED_DETECTIVE] },
       });
@@ -466,7 +466,7 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
       expect(pt(s, id)).toEqual([4, 4]);
     });
 
-    it("résolue avec trois Détectives ; vos jetons sont alors créés avec un Indice en plus", () => {
+    it("solved with three Detectives; your tokens are then created with an extra Clue", () => {
       let s = scenario({
         p1: {
           battlefield: [
@@ -484,12 +484,12 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
       s = advanceUntil(s, (x) => solved(x) && x.stack.length === 0 && x.triggers.length === 0 && x.pending?.kind === "priority");
       expect(solved(s)).toBe(true);
       expect(s.turn.step).toBe("end");
-      // Enquêter : l'Indice, plus un Indice.
+      // Investigate: the Clue, plus a Clue.
       s = settle(cast(s, "p1", "Auspicious Arrival", { t: [idOf(s, "p1", "battlefield", "Novice Inspector")] }));
       expect(count(s, "p1", "Clue")).toBe(2);
     });
 
-    it("non résolue avec deux Détectives", () => {
+    it("not solved with two Detectives", () => {
       let s = scenario({ p1: { battlefield: ["Case of the Pilfered Proof", "Novice Inspector", "Novice Inspector"] } });
       const caseId = idOf(s, "p1", "battlefield", "Case of the Pilfered Proof");
       s = advanceUntil(s, (x) => x.turn.step === "cleanup" || x.turn.active !== "p1");
@@ -498,7 +498,7 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
   });
 
   describe("Delney, Streetwise Lookout", () => {
-    it("vos créatures de force 2 ou moins ne peuvent pas être bloquées par des créatures de force 3 ou plus", () => {
+    it("your creatures with power 2 or less can't be blocked by creatures with power 3 or more", () => {
       let s = scenario({
         p1: { battlefield: ["Delney, Streetwise Lookout", "Bear Cub", "Fire Elemental"] },
         p2: { battlefield: ["Fire Elemental", "Llanowar Elves"] },
@@ -513,7 +513,7 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
       expect(canBlock(s, theirFire, myFire)).toBe(true);
     });
 
-    it("les capacités déclenchées de vos créatures de force 2 ou moins se déclenchent une fois de plus", () => {
+    it("the triggered abilities of your creatures with power 2 or less trigger one more time", () => {
       let s = scenario({
         p1: {
           battlefield: ["Delney, Streetwise Lookout", ...lands("Plains", 6)],
@@ -522,7 +522,7 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
       });
       s = settle(cast(s, "p1", "Novice Inspector"));
       expect(count(s, "p1", "Clue")).toBe(2);
-      // Haazda Vigilante (force 4) : un seul déclenchement, donc un seul marqueur.
+      // Haazda Vigilante (power 4): a single trigger, so a single counter.
       const inspector = idOf(s, "p1", "battlefield", "Novice Inspector");
       s = settle(cast(s, "p1", "Haazda Vigilante"), picking(inspector));
       expect(s.objects[inspector]?.counters["+1/+1"]).toBe(1);
@@ -530,7 +530,7 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
   });
 
   describe("Doorkeeper Thrull", () => {
-    it("l'arrivée d'une créature ne déclenche rien, de part et d'autre", () => {
+    it("a creature entering triggers nothing, on either side", () => {
       let s = scenario({
         p1: { battlefield: ["Plains"], hand: ["Novice Inspector"] },
         p2: { battlefield: ["Doorkeeper Thrull"] },
@@ -542,7 +542,7 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
   });
 
   describe("Due Diligence", () => {
-    it("la créature enchantée a +2/+2 et la vigilance ; une autre de vos créatures aussi jusqu'à la fin du tour", () => {
+    it("the enchanted creature gets +2/+2 and vigilance; another of your creatures too until end of turn", () => {
       let s = scenario({ p1: { battlefield: [...lands("Plains", 3), "Bear Cub", "Llanowar Elves"], hand: ["Due Diligence"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
@@ -564,7 +564,7 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
   });
 
   describe("Essence of Antiquity", () => {
-    it("retournée face visible : vos créatures gagnent la défense talismanique et se dégagent", () => {
+    it("turned face up: your creatures gain hexproof and untap", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Plains", 6), { name: "Bear Cub", tapped: true }],
@@ -586,7 +586,7 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
   });
 
   describe("Forum Familiar", () => {
-    it("retournée face visible : un autre de vos permanents revient en main, et elle reçoit un marqueur +1/+1", () => {
+    it("turned face up: another of your permanents returns to hand, and it gets a +1/+1 counter", () => {
       let s = scenario({ p1: { battlefield: [...lands("Plains", 5), "Bear Cub"], hand: ["Forum Familiar"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       const turned = castDisguisedThenTurnUp(s, "Forum Familiar");
@@ -598,7 +598,7 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
   });
 
   describe("Griffnaut Tracker", () => {
-    it("exile jusqu'à deux cartes d'un même cimetière", () => {
+    it("exiles up to two cards from a single graveyard", () => {
       let s = scenario({
         p1: { battlefield: lands("Plains", 4), hand: ["Griffnaut Tracker"], graveyard: ["Opt"] },
         p2: { graveyard: ["Bear Cub", "Lightning Strike"] },
@@ -607,7 +607,7 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
       const [a, b] = s.players.p2?.graveyard ?? [];
       s = settle(cast(s, "p1", "Griffnaut Tracker"), (req) => {
         if (req.type !== "pick" || !req.options.includes(a as string)) return undefined;
-        // Deux cimetières différents : refusé par le moteur ; on désigne donc deux cartes du même.
+        // Two different graveyards: refused by the engine; so two cards from the same one are designated.
         expect(req.options).toContain(opt);
         return [a as string, b as string];
       });
@@ -616,7 +616,7 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
       expect(s.exile).toHaveLength(2);
     });
 
-    it("refuse des cartes de deux cimetières différents", () => {
+    it("refuses cards from two different graveyards", () => {
       let s = scenario({
         p1: { battlefield: lands("Plains", 4), hand: ["Griffnaut Tracker"], graveyard: ["Opt"] },
         p2: { graveyard: ["Bear Cub"] },
@@ -642,7 +642,7 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
   });
 
   describe("Haazda Vigilante", () => {
-    it("en arrivant et en attaquant, un marqueur +1/+1 sur une de vos créatures de force 2 ou moins", () => {
+    it("when it enters and attacks, a +1/+1 counter on one of your creatures with power 2 or less", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Plains", 5), "Bear Cub", "Fire Elemental"], hand: ["Haazda Vigilante"] },
       });
@@ -656,7 +656,7 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
       });
       expect(options).not.toContain(fire);
       expect(s.objects[bear]?.counters["+1/+1"]).toBe(1);
-      // En attaquant (scénario où elle est déjà en jeu) : de nouveau un marqueur.
+      // When attacking (scenario where it's already in play): a counter again.
       let t = scenario({ p1: { battlefield: ["Haazda Vigilante", "Llanowar Elves"] } });
       const elves = idOf(t, "p1", "battlefield", "Llanowar Elves");
       t = settle(attackWith(t, [idOf(t, "p1", "battlefield", "Haazda Vigilante")]), picking(elves));
@@ -665,13 +665,13 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
   });
 
   describe("Inside Source", () => {
-    it("crée un Détective 2/2 ; {3}, {T} : un Détective gagne +2/+0 et la vigilance, en rituel", () => {
+    it("creates a 2/2 Detective; {3}, {T}: a Detective gets +2/+0 and vigilance, at sorcery speed", () => {
       let s = scenario({ p1: { battlefield: lands("Plains", 6), hand: ["Inside Source"] } });
       s = settle(cast(s, "p1", "Inside Source"));
       const detective = idOf(s, "p1", "battlefield", "Detective");
       expect(chars(s, detective).subtypes).toEqual(["Detective"]);
       expect(chars(s, detective).colors).toEqual(["W", "U"]);
-      // L'Informatrice vient d'arriver (mal d'invocation) : on l'essaie au tour suivant.
+      // The Informant just arrived (summoning sick): it's tried on the next turn.
       let t = scenario({ p1: { battlefield: [...lands("Plains", 3), "Inside Source", "Novice Inspector"] } });
       const source = idOf(t, "p1", "battlefield", "Inside Source");
       const inspector = idOf(t, "p1", "battlefield", "Novice Inspector");
@@ -682,7 +682,7 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
   });
 
   describe("Krovod Haunch", () => {
-    it("équipée : +2/+0 ; {2}, {T}, sacrifiez-le : 3 PV", () => {
+    it("equipped: +2/+0; {2}, {T}, sacrifice it: 3 life", () => {
       let s = scenario({ p1: { battlefield: ["Krovod Haunch", "Bear Cub", ...lands("Plains", 4)] } });
       const haunch = idOf(s, "p1", "battlefield", "Krovod Haunch");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -693,7 +693,7 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
       expect(pt(s, bear)).toEqual([2, 2]);
     });
 
-    it("mis au cimetière depuis le champ de bataille : payez {1}{W} pour deux Chiens 1/1 blancs", () => {
+    it("put into the graveyard from the battlefield: pay {1}{W} for two 1/1 white Dogs", () => {
       let s = scenario({ p1: { battlefield: ["Krovod Haunch", ...lands("Plains", 4)], hand: ["Disenchant"] } });
       s = settle(cast(s, "p1", "Disenchant", { t: [idOf(s, "p1", "battlefield", "Krovod Haunch")] }), (req) =>
         req.type === "yesNo" ? [1] : undefined,
@@ -707,7 +707,7 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
   });
 
   describe("Makeshift Binding", () => {
-    it("exile une créature adverse tant qu'il reste en jeu, et 2 PV", () => {
+    it("exiles an opposing creature while it stays on the battlefield, and 2 life", () => {
       let s = scenario({
         p1: { battlefield: lands("Plains", 3), hand: ["Makeshift Binding"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -723,7 +723,7 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
   });
 
   describe("Marketwatch Phantom", () => {
-    it("gagne le vol quand une autre de vos créatures de force 2 ou moins arrive", () => {
+    it("gains flying when another of your creatures with power 2 or less enters", () => {
       let s = scenario({
         p1: {
           battlefield: ["Marketwatch Phantom", ...lands("Forest", 4), ...lands("Mountain", 5)],
@@ -739,7 +739,7 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
   });
 
   describe("Museum Nightwatch", () => {
-    it("en mourant, crée un Détective 2/2", () => {
+    it("when it dies, creates a 2/2 Detective", () => {
       let s = scenario({ p1: { battlefield: ["Museum Nightwatch", ...lands("Mountain", 2)], hand: ["Lightning Strike"] } });
       s = settle(cast(s, "p1", "Lightning Strike", { t: [idOf(s, "p1", "battlefield", "Museum Nightwatch")] }));
       expect(count(s, "p1", "Detective")).toBe(1);
@@ -747,7 +747,7 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
   });
 
   describe("Neighborhood Guardian", () => {
-    it("une autre de vos créatures de force 2 ou moins arrive : une créature ciblée gagne +1/+1", () => {
+    it("another of your creatures with power 2 or less enters: a target creature gets +1/+1", () => {
       let s = scenario({ p1: { battlefield: ["Neighborhood Guardian", ...lands("Forest", 2)], hand: ["Bear Cub"] } });
       const guardian = idOf(s, "p1", "battlefield", "Neighborhood Guardian");
       s = settle(cast(s, "p1", "Bear Cub"), picking(guardian));
@@ -756,7 +756,7 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
   });
 
   describe("Not on My Watch", () => {
-    it("exile une créature attaquante", () => {
+    it("exiles an attacking creature", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: lands("Plains", 2), hand: ["Not on My Watch"] },
@@ -773,14 +773,14 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
     });
   });
 
-  describe("Novice Inspector et On the Job", () => {
-    it("Novice Inspector enquête en arrivant", () => {
+  describe("Novice Inspector and On the Job", () => {
+    it("Novice Inspector investigates when it enters", () => {
       let s = scenario({ p1: { battlefield: ["Plains"], hand: ["Novice Inspector"] } });
       s = settle(cast(s, "p1", "Novice Inspector"));
       expect(count(s, "p1", "Clue")).toBe(1);
     });
 
-    it("On the Job : vos créatures gagnent +2/+1, puis enquêtez", () => {
+    it("On the Job: your creatures get +2/+1, then investigate", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Plains", 4), "Bear Cub"], hand: ["On the Job"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -793,7 +793,7 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
   });
 
   describe("Perimeter Enforcer", () => {
-    it("un autre Détective arrive sous votre contrôle : +1/+1 jusqu'à la fin du tour", () => {
+    it("another Detective enters under your control: +1/+1 until end of turn", () => {
       let s = scenario({
         p1: { battlefield: ["Perimeter Enforcer", "Plains", ...lands("Forest", 2)], hand: ["Novice Inspector", "Bear Cub"] },
       });
@@ -805,11 +805,11 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
       expect(pt(s, enforcer)).toEqual([2, 2]);
     });
 
-    it("un Détective que vous contrôlez est retourné face visible : +1/+1 jusqu'à la fin du tour", () => {
+    it("a Detective you control is turned face up: +1/+1 until end of turn", () => {
       let s = scenario({ p1: { battlefield: ["Perimeter Enforcer", ...lands("Plains", 4)], hand: [DISGUISED_DETECTIVE] } });
       const enforcer = idOf(s, "p1", "battlefield", "Perimeter Enforcer");
       s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", DISGUISED_DETECTIVE.name), faceDown: true }));
-      // Face cachée, ce n'est pas un Détective : rien.
+      // Face down, it's not a Detective: nothing.
       expect(pt(s, enforcer)).toEqual([1, 1]);
       s = settle(activate(s, "p1", faceDownIds(s)[0] as string, "Turn face up"));
       expect(pt(s, enforcer)).toEqual([2, 2]);
@@ -817,7 +817,7 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
   });
 
   describe("Sanctuary Wall", () => {
-    it("engage une créature ; marqueurs d'étourdissement sur elle et sur le Mur si vous le voulez", () => {
+    it("taps a creature; stun counters on it and on the Wall if you wish", () => {
       const run = (yes: boolean) => {
         let s = scenario({ p1: { battlefield: ["Sanctuary Wall", ...lands("Plains", 3)] }, p2: { battlefield: ["Bear Cub"] } });
         const wall = idOf(s, "p1", "battlefield", "Sanctuary Wall");
@@ -839,7 +839,7 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
   });
 
   describe("Seasoned Consultant", () => {
-    it("+2/+0 quand vous attaquez avec trois créatures ou plus", () => {
+    it("+2/+0 when you attack with three or more creatures", () => {
       const run = (n: number) => {
         let s = scenario({ p1: { battlefield: ["Seasoned Consultant", "Bear Cub", "Llanowar Elves"] } });
         const consultant = idOf(s, "p1", "battlefield", "Seasoned Consultant");
@@ -853,7 +853,7 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
   });
 
   describe("Unyielding Gatekeeper", () => {
-    it("retourné : un permanent adverse est exilé et son contrôleur crée un Détective", () => {
+    it("turned face up: an opposing permanent is exiled and its controller creates a Detective", () => {
       let s = scenario({
         p1: { battlefield: lands("Plains", 5), hand: ["Unyielding Gatekeeper"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -867,7 +867,7 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
       expect(count(s, "p1", "Detective")).toBe(0);
     });
 
-    it("retourné : un de vos permanents revient engagé, sans Détective", () => {
+    it("turned face up: one of your permanents returns tapped, with no Detective", () => {
       let s = scenario({ p1: { battlefield: [...lands("Plains", 5), "Bear Cub"], hand: ["Unyielding Gatekeeper"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       const turned = castDisguisedThenTurnUp(s, "Unyielding Gatekeeper");
@@ -881,7 +881,7 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
   });
 
   describe("Wrench", () => {
-    it("équipée : +1/+1, vigilance et « {3}, {T} : engagez une créature » ; {2}, sacrifiez-la : piochez", () => {
+    it('equipped: +1/+1, vigilance and "{3}, {T}: tap a creature"; {2}, sacrifice it: draw', () => {
       let s = scenario({
         p1: { battlefield: ["Wrench", "Bear Cub", ...lands("Plains", 7)], library: ["Opt", "Forest"] },
         p2: { battlefield: ["Llanowar Elves"] },
@@ -903,14 +903,14 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
   });
 });
 
-describe("Murders at Karlov Manor, lot A — bleu", () => {
+describe("Murders at Karlov Manor, lot A — blue", () => {
   /**
-   * Murders at Karlov Manor, lot A : cartes bleues, confrontées à leur texte Oracle (plan R, lot R7).
+   * Murders at Karlov Manor, lot A: blue cards, checked against their Oracle text (plan R, lot R7).
    */
   type S = GameState;
   /**
-   * Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente ; une
-   * défausse demandée défausse les dernières cartes de la main (les dernières piochées).
+   * Passes and answers choices (suggested answer by default) until an empty stack, with no pending trigger; a
+   * requested discard discards the last cards in hand (the last drawn).
    */
   const settle = (s: S, answer: Answer = () => undefined): S => {
     let cur = s;
@@ -926,25 +926,25 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
     }
     return cur;
   };
-  /** Capacité activée de la source dont le libellé contient `label`. */
+  /** Activated ability of the source whose label contains `label`. */
   const activate = (s: S, player: string, source: string, label: string, extra: Partial<Decision> = {}) => {
     const a = legalActions(s, player).find(
       (x) => x.type === "activate" && x.source === source && (x.label ?? "").includes(label),
     );
-    if (a?.type !== "activate") throw new Error(`Capacité « ${label} » introuvable`);
+    if (a?.type !== "activate") throw new Error(`Ability "${label}" not found`);
     return act(s, player, { type: "activate", source, ability: a.ability, ...extra } as Decision);
   };
 
   const clues = (s: S, player: string) => idsOf(s, player, "battlefield", "Clue").length;
   const faceDownOf = (s: S) => s.battlefield.find((id) => s.objects[id]?.defId === FACE_DOWN_ID) as string;
-  /** Lance la carte face cachée pour {3}, puis la retourne pour son coût de déguisement. */
+  /** Casts the card face down for {3}, then turns it face up for its disguise cost. */
   const castDisguisedThenFlip = (s: S, name: string, answer: Answer = () => undefined): S => {
     let cur = settle(cast(s, "p1", name, undefined, { faceDown: true }));
     const id = faceDownOf(cur);
     cur = activate(cur, "p1", id, "Turn face up");
     return settle(cur, answer);
   };
-  /** Avance jusqu'à la déclaration des attaquants de p1, puis attaque p2 avec ces créatures. */
+  /** Advances to p1's declare attackers, then attacks p2 with these creatures. */
   const attackWith = (s: S, ...ids: string[]): S => {
     const c = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers" && x.turn.active === "p1");
     return act(c, "p1", { type: "declareAttackers", attackers: ids.map((id) => ({ id, defender: "p2" })) });
@@ -954,7 +954,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
     (req) =>
       req.type === "pick" && wanted.every((id) => req.options.includes(id)) ? wanted : undefined;
 
-  /** L'Affaire est résolue, la pile est vide et p1 a la priorité. */
+  /** The Case is solved, the stack is empty and p1 has priority. */
   const solved = (s: S, id: string) =>
     !!(s.objects[id] as { solved?: boolean } | undefined)?.solved &&
     s.stack.length === 0 &&
@@ -964,7 +964,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
   const DETECTIVE_CARD = customCard({ name: "Test Detective", subtypes: ["Detective"], power: 2, toughness: 2 });
 
   describe("Agency Outfitter", () => {
-    it("met sur le champ de bataille la Magnifying Glass du cimetière et le Thinking Cap de la bibliothèque", () => {
+    it("puts the Magnifying Glass from the graveyard and the Thinking Cap from the library onto the battlefield", () => {
       let s = scenario({
         p1: {
           battlefield: lands("Island", 6),
@@ -982,7 +982,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
   });
 
   describe("Behind the Mask", () => {
-    it("la cible devient une créature-artefact 4/3 de base jusqu'à la fin du tour", () => {
+    it("the target becomes a base 4/3 artifact creature until end of turn", () => {
       let s = scenario({ p1: { battlefield: ["Island"], hand: ["Behind the Mask"] }, p2: { battlefield: ["Bear Cub"] } });
       const bear = idOf(s, "p2", "battlefield", "Bear Cub");
       s = settle(cast(s, "p1", "Behind the Mask", { t: [bear] }));
@@ -993,7 +993,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
       expect(chars(s, bear).types).not.toContain("Artifact");
     });
 
-    it("avec des preuves réunies (6), 1/1 de base à la place", () => {
+    it("with evidence collected (6), a base 1/1 instead", () => {
       let s = scenario({
         p1: { battlefield: ["Island"], hand: ["Behind the Mask"], graveyard: ["Pelakka Wurm"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -1013,13 +1013,13 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
       );
     };
 
-    it("en arrivant, vous pouvez sacrifier un artefact pour piocher une carte", () => {
+    it("when it enters, you may sacrifice an artifact to draw a card", () => {
       const s = run(true);
       expect(idsOf(s, "p1", "graveyard", "Candlestick")).toHaveLength(1);
       expect(s.players.p1?.hand).toHaveLength(1);
     });
 
-    it("sans sacrifice, pas de pioche", () => {
+    it("without a sacrifice, no draw", () => {
       const s = run(false);
       expect(idsOf(s, "p1", "battlefield", "Candlestick")).toHaveLength(1);
       expect(s.players.p1?.hand).toHaveLength(0);
@@ -1027,7 +1027,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
   });
 
   describe("Bubble Smuggler", () => {
-    it("retournée face visible pour {5}{U} : quatre marqueurs +1/+1, 6/5", () => {
+    it("turned face up for {5}{U}: four +1/+1 counters, 6/5", () => {
       let s = scenario({ p1: { battlefield: lands("Island", 9), hand: ["Bubble Smuggler"] } });
       s = castDisguisedThenFlip(s, "Bubble Smuggler");
       const id = idOf(s, "p1", "battlefield", "Bubble Smuggler");
@@ -1037,7 +1037,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
   });
 
   describe("Burden of Proof", () => {
-    it("sur un Détective que vous contrôlez : +2/+2", () => {
+    it("on a Detective you control: +2/+2", () => {
       let s = scenario({ p1: { battlefield: [...lands("Island", 2), DETECTIVE_CARD], hand: ["Burden of Proof"] } });
       const det = idOf(s, "p1", "battlefield", DETECTIVE_CARD.name);
       s = settle(cast(s, "p1", "Burden of Proof", { enchant: [det] }));
@@ -1045,7 +1045,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
       expect(chars(s, det)).toMatchObject({ power: 4, toughness: 4 });
     });
 
-    it("sinon : 1/1 de base, et elle ne peut pas bloquer les Détectives", () => {
+    it("otherwise: base 1/1, and it can't block Detectives", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Island", 2), DETECTIVE_CARD, "Bear Cub"], hand: ["Burden of Proof"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -1055,7 +1055,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
       expect(chars(s, bear)).toMatchObject({ power: 1, toughness: 1 });
       const det = idOf(s, "p1", "battlefield", DETECTIVE_CARD.name);
       const mine = idOf(s, "p1", "battlefield", "Bear Cub");
-      // Seule la créature enchantée est touchée.
+      // Only the enchanted creature is affected.
       expect(chars(s, det)).toMatchObject({ power: 2, toughness: 2 });
       expect(chars(s, mine)).toMatchObject({ power: 2, toughness: 2 });
       const c = attackWith(s, det, mine);
@@ -1065,7 +1065,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
   });
 
   describe("Candlestick", () => {
-    it("la créature équipée a +1/+1 et surveille 2 en attaquant", () => {
+    it("the equipped creature gets +1/+1 and surveils 2 when attacking", () => {
       let s = scenario({
         p1: { battlefield: ["Candlestick", "Bear Cub", ...lands("Island", 2)], library: ["Opt", "Opt", "Forest"] },
       });
@@ -1082,7 +1082,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
       expect(s.players.p1?.graveyard.map((id) => nameOf(s, id))).toEqual(["Opt", "Opt"]);
     });
 
-    it("{2}, sacrifiez-la : piochez une carte", () => {
+    it("{2}, sacrifice it: draw a card", () => {
       let s = scenario({ p1: { battlefield: ["Candlestick", ...lands("Island", 2)] } });
       s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Candlestick"), "Draw a card"));
       expect(idsOf(s, "p1", "graveyard", "Candlestick")).toHaveLength(1);
@@ -1091,15 +1091,15 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
   });
 
   describe("Case of the Filched Falcon", () => {
-    it("enquête en arrivant ; résolue avec trois artefacts ; l'artefact devient un Oiseau 4/4 volant", () => {
+    it("investigates when it enters; solved with three artifacts; the artifact becomes a 4/4 flying Bird", () => {
       let s = scenario({ p1: { battlefield: [...lands("Island", 4), "Candlestick"], hand: ["Case of the Filched Falcon"] } });
       s = settle(cast(s, "p1", "Case of the Filched Falcon"));
       expect(clues(s, "p1")).toBe(1);
       const caseId = idOf(s, "p1", "battlefield", "Case of the Filched Falcon");
-      // Deux artefacts seulement : pas résolue.
+      // Only two artifacts: not solved.
       const two = advanceUntil(s, (x) => x.turn.step === "cleanup" || x.turn.active !== "p1");
       expect((two.objects[caseId] as { solved?: boolean }).solved).toBeFalsy();
-      // Un troisième artefact (un second Indice) : résolue au début de l'étape de fin.
+      // A third artifact (a second Clue): solved at the beginning of the end step.
       let t = scenario({
         p1: { battlefield: [...lands("Island", 4), "Candlestick", "Magnifying Glass"], hand: ["Case of the Filched Falcon"] },
       });
@@ -1118,13 +1118,13 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
   });
 
   describe("Case of the Ransacked Lab", () => {
-    it("vos éphémères et rituels coûtent {1} de moins", () => {
+    it("your instants and sorceries cost {1} less", () => {
       let s = scenario({ p1: { battlefield: ["Case of the Ransacked Lab", "Mountain"], hand: ["Lightning Strike"] } });
       s = settle(cast(s, "p1", "Lightning Strike", { t: ["p2"] }));
       expect(s.players.p2?.life).toBe(17);
     });
 
-    it("résolue après quatre éphémères ce tour-ci ; ensuite chaque éphémère fait piocher une carte", () => {
+    it("solved after four instants this turn; then each instant draws a card", () => {
       let s = scenario({
         p1: { battlefield: ["Case of the Ransacked Lab", ...lands("Island", 5)], hand: Array(5).fill("Opt") },
       });
@@ -1133,13 +1133,13 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
       s = advanceUntil(s, (x) => solved(x, caseId));
       const before = s.players.p1?.hand.length ?? 0;
       s = settle(cast(s, "p1", "Opt"));
-      // Opt part de la main, puis deux cartes piochées (Opt et l'Affaire).
+      // Opt leaves the hand, then two cards drawn (Opt and the Case).
       expect(s.players.p1?.hand.length).toBe(before + 1);
     });
   });
 
   describe("Cold Case Cracker", () => {
-    it("quand elle meurt, son contrôleur enquête", () => {
+    it("when it dies, its controller investigates", () => {
       let s = scenario({
         p1: { battlefield: lands("Mountain", 2), hand: ["Lightning Strike"] },
         p2: { battlefield: ["Cold Case Cracker"] },
@@ -1151,7 +1151,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
   });
 
   describe("Coveted Falcon", () => {
-    it("retourné : un adversaire gagne le contrôle des permanents ciblés, vous piochez autant ; en attaquant, il les reprend", () => {
+    it("turned face up: an opponent gains control of the targeted permanents, you draw that many; when attacking, it takes them back", () => {
       let s = scenario({ p1: { battlefield: [...lands("Island", 5), "Bear Cub"], hand: ["Coveted Falcon"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = castDisguisedThenFlip(s, "Coveted Falcon", pickIf([bear]));
@@ -1165,7 +1165,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
       expect(s.objects[bear]?.controller).toBe("p1");
     });
 
-    it("en attaquant : la cible est un permanent que vous possédez sans le contrôler, pas celui d'un autre adversaire", () => {
+    it("when attacking: the target is a permanent you own but don't control, not another opponent's", () => {
       const s = scenario({
         players: 3,
         p1: { battlefield: ["Coveted Falcon", "Bear Cub"] },
@@ -1181,15 +1181,15 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
         (a) => a.kind === "triggered" && a.trigger.on === "attacks",
       );
       const spec = ab?.kind === "triggered" ? ab.targets?.[0] : undefined;
-      if (!spec) throw new Error("capacité d'attaque introuvable");
+      if (!spec) throw new Error("attack ability not found");
       expect(isLegalTarget(s, "p1", spec, bear, falcon)).toBe(true);
-      // La Serra Angel de p3 contrôlée par p2 : ni à vous, ni contrôlée par son propriétaire.
+      // p3's Serra Angel controlled by p2: neither yours, nor controlled by its owner.
       expect(isLegalTarget(s, "p1", spec, angel, falcon)).toBe(false);
     });
   });
 
   describe("Crimestopper Sprite", () => {
-    it("engage une créature en arrivant ; un marqueur d'étourdissement si des preuves ont été réunies", () => {
+    it("taps a creature when it enters; a stun counter if evidence was collected", () => {
       const run = (kicked: boolean) => {
         let s = scenario({
           p1: { battlefield: lands("Island", 3), hand: ["Crimestopper Sprite"], graveyard: ["Pelakka Wurm"] },
@@ -1210,7 +1210,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
   });
 
   describe("Curious Inquiry", () => {
-    it("+1/+1 ; des blessures de combat à un joueur font enquêter", () => {
+    it("+1/+1; combat damage to a player makes you investigate", () => {
       let s = scenario({ p1: { battlefield: ["Island", "Bear Cub"], hand: ["Curious Inquiry"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = settle(cast(s, "p1", "Curious Inquiry", { enchant: [bear] }));
@@ -1222,7 +1222,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
   });
 
   describe("Deduce", () => {
-    it("piochez une carte et enquêtez", () => {
+    it("draw a card and investigate", () => {
       let s = scenario({ p1: { battlefield: lands("Island", 2), hand: ["Deduce"] } });
       s = settle(cast(s, "p1", "Deduce"));
       expect(s.players.p1?.hand).toHaveLength(1);
@@ -1231,7 +1231,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
   });
 
   describe("Dramatic Accusation", () => {
-    it("engage la créature enchantée, qui ne se dégage plus ; {U}{U} : mélangée dans la bibliothèque de son propriétaire", () => {
+    it("taps the enchanted creature, which no longer untaps; {U}{U}: shuffled into its owner's library", () => {
       let s = scenario({
         p1: { battlefield: lands("Island", 5), hand: ["Dramatic Accusation"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -1255,7 +1255,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
   });
 
   describe("Eliminate the Impossible", () => {
-    it("enquêtez ; les créatures adverses ont −2/−0 et ne sont plus suspectes", () => {
+    it("investigate; opposing creatures get -2/-0 and are no longer suspected", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Island", 2), "Bear Cub"], hand: ["Eliminate the Impossible"] },
         p2: { battlefield: ["Bear Cub", "Fire Elemental"] },
@@ -1275,7 +1275,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
   });
 
   describe("Exit Specialist", () => {
-    it("ne peut pas être bloquée par les créatures de force 3 ou plus", () => {
+    it("can't be blocked by creatures with power 3 or more", () => {
       const s = scenario({ p1: { battlefield: ["Exit Specialist"] }, p2: { battlefield: ["Fire Elemental", "Bear Cub"] } });
       const spec = idOf(s, "p1", "battlefield", "Exit Specialist");
       const c = attackWith(s, spec);
@@ -1283,7 +1283,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
       expect(canBlock(c, idOf(s, "p2", "battlefield", "Bear Cub"), spec)).toBe(true);
     });
 
-    it("retournée face visible : renvoie une autre créature dans la main de son propriétaire", () => {
+    it("turned face up: returns another creature to its owner's hand", () => {
       let s = scenario({ p1: { battlefield: lands("Island", 5), hand: ["Exit Specialist"] }, p2: { battlefield: ["Bear Cub"] } });
       const bear = idOf(s, "p2", "battlefield", "Bear Cub");
       s = castDisguisedThenFlip(s, "Exit Specialist", pickIf([bear]));
@@ -1293,7 +1293,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
   });
 
   describe("Fae Flight", () => {
-    it("+1/+0 et le vol ; la défense talismanique jusqu'à la fin du tour", () => {
+    it("+1/+0 and flying; hexproof until end of turn", () => {
       let s = scenario({ p1: { battlefield: [...lands("Island", 2), "Bear Cub"], hand: ["Fae Flight"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = settle(cast(s, "p1", "Fae Flight", { enchant: [bear] }));
@@ -1306,11 +1306,11 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
   });
 
   describe("Forensic Gadgeteer", () => {
-    it("un sort d'artefact fait enquêter ; les capacités de vos artefacts coûtent {1} de moins", () => {
+    it("an artifact spell makes you investigate; your artifacts' abilities cost {1} less", () => {
       let s = scenario({ p1: { battlefield: ["Forensic Gadgeteer", ...lands("Island", 2)], hand: ["Candlestick"] } });
       s = settle(cast(s, "p1", "Candlestick"));
       expect(clues(s, "p1")).toBe(1);
-      // L'Indice coûte {1} au lieu de {2} : une seule Île suffit.
+      // The Clue costs {1} instead of {2}: a single Island is enough.
       s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Clue"), "Draw a card"));
       expect(clues(s, "p1")).toBe(0);
       expect(s.players.p1?.hand).toHaveLength(1);
@@ -1319,7 +1319,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
   });
 
   describe("Furtive Courier", () => {
-    it("imblocable si vous avez sacrifié un artefact ce tour-ci ; en attaquant, piochez puis défaussez", () => {
+    it("unblockable if you sacrificed an artifact this turn; when attacking, draw then discard", () => {
       let s = scenario({ p1: { battlefield: ["Furtive Courier", "Candlestick", ...lands("Island", 2)], hand: ["Forest"] } });
       const courier = idOf(s, "p1", "battlefield", "Furtive Courier");
       expect(chars(s, courier).keywords).not.toContain("unblockable");
@@ -1333,7 +1333,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
   });
 
   describe("Hotshot Investigators", () => {
-    it("renvoie une de vos créatures : enquêtez ; une créature adverse : pas d'Indice", () => {
+    it("returns one of your creatures: investigate; an opposing creature: no Clue", () => {
       const run = (owner: "p1" | "p2") => {
         let s = scenario({
           p1: { battlefield: [...lands("Island", 6), ...(owner === "p1" ? ["Bear Cub"] : [])], hand: ["Hotshot Investigators"] },
@@ -1350,7 +1350,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
   });
 
   describe("Jaded Analyst", () => {
-    it("à votre deuxième carte piochée du tour, perd le défenseur et gagne la vigilance", () => {
+    it("on your second card drawn this turn, loses defender and gains vigilance", () => {
       let s = scenario({ p1: { battlefield: ["Jaded Analyst", ...lands("Island", 2)], hand: ["Opt", "Opt"] } });
       const analyst = idOf(s, "p1", "battlefield", "Jaded Analyst");
       s = settle(cast(s, "p1", "Opt"));
@@ -1362,7 +1362,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
   });
 
   describe("Living Conundrum", () => {
-    it("bibliothèque vide : 10/10 avec le vol et la vigilance, et la pioche est passée", () => {
+    it("empty library: 10/10 with flying and vigilance, and the draw is skipped", () => {
       let s = scenario({ p1: { battlefield: ["Living Conundrum", "Island"], hand: ["Opt"], library: [] } });
       const id = idOf(s, "p1", "battlefield", "Living Conundrum");
       expect(chars(s, id)).toMatchObject({ power: 10, toughness: 10 });
@@ -1373,7 +1373,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
       expect(s.players.p1?.lost).toBeFalsy();
     });
 
-    it("avec des cartes dans la bibliothèque : 2/5 sans le vol", () => {
+    it("with cards in the library: 2/5 without flying", () => {
       const s = scenario({ p1: { battlefield: ["Living Conundrum"], library: ["Forest"] } });
       const id = idOf(s, "p1", "battlefield", "Living Conundrum");
       expect(chars(s, id)).toMatchObject({ power: 2, toughness: 5 });
@@ -1382,7 +1382,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
   });
 
   describe("Lost in the Maze", () => {
-    it("engage X créatures, étourdit celles des adversaires ; vos créatures engagées ont la défense talismanique", () => {
+    it("taps X creatures, stuns the opponents' ones; your tapped creatures have hexproof", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Island", 4), "Bear Cub"], hand: ["Lost in the Maze"] },
         p2: { battlefield: ["Bear Cub", "Fire Elemental"] },
@@ -1402,7 +1402,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
   });
 
   describe("Mistway Spy", () => {
-    it("retourné face visible : ce tour-ci, vos créatures qui blessent un joueur en combat font enquêter", () => {
+    it("turned face up: this turn, your creatures that deal combat damage to a player make you investigate", () => {
       let s = scenario({ p1: { battlefield: [...lands("Island", 5), "Bear Cub", "Llanowar Elves"], hand: ["Mistway Spy"] } });
       s = castDisguisedThenFlip(s, "Mistway Spy");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -1414,7 +1414,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
   });
 
   describe("Out Cold", () => {
-    it("ne peut pas être contrecarré ; engage et étourdit jusqu'à deux créatures, puis enquêtez", () => {
+    it("can't be countered; taps and stuns up to two creatures, then investigate", () => {
       let s = scenario({
         p1: { battlefield: lands("Island", 4), hand: ["Out Cold"] },
         p2: { battlefield: ["Bear Cub", "Fire Elemental", "Plains", "Island"], hand: ["No More Lies"] },
@@ -1433,7 +1433,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
   });
 
   describe("Proft's Eidetic Memory", () => {
-    it("pioche en arrivant ; au combat, X marqueurs +1/+1 où X est le nombre de cartes piochées moins une", () => {
+    it("draws when it enters; in combat, X +1/+1 counters where X is the number of cards drawn minus one", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Island", 3), "Bear Cub"], hand: ["Proft's Eidetic Memory", "Opt"] },
       });
@@ -1442,11 +1442,11 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
       s = settle(cast(s, "p1", "Opt"));
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
-      // Deux cartes piochées ce tour-ci : un marqueur.
+      // Two cards drawn this turn: one counter.
       expect(s.objects[bear]?.counters["+1/+1"]).toBe(1);
     });
 
-    it("une seule carte piochée : pas de marqueur ; pas de taille de main maximale", () => {
+    it("a single card drawn: no counter; no maximum hand size", () => {
       let s = scenario({ p1: { battlefield: [...lands("Island", 2), "Bear Cub"], hand: ["Proft's Eidetic Memory"] } });
       s = settle(cast(s, "p1", "Proft's Eidetic Memory"));
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -1459,14 +1459,14 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
   });
 
   describe("Projektor Inspector", () => {
-    it("elle-même ou un autre Détective arrive : vous pouvez piocher, puis défausser", () => {
+    it("itself or another Detective enters: you may draw, then discard", () => {
       let s = scenario({
         p1: { battlefield: lands("Island", 3), hand: ["Projektor Inspector", DETECTIVE_CARD], library: lands("Island", 5) },
       });
       const det = idOf(s, "p1", "hand", DETECTIVE_CARD.name);
       let asked = 0;
       const yes: Answer = (req) => {
-        // Défausse : jamais le Détective encore en main.
+        // Discard: never the Detective still in hand.
         if (req.type === "pick" && req.options.includes(det)) return req.options.filter((id) => id !== det).slice(0, 1);
         if (req.type !== "yesNo") return undefined;
         asked++;
@@ -1480,7 +1480,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
       expect(s.players.p1?.graveyard).toHaveLength(2);
     });
 
-    it("un Détective retourné face visible déclenche aussi", () => {
+    it("a Detective turned face up also triggers", () => {
       let s = scenario({ p1: { battlefield: ["Projektor Inspector", ...lands("Island", 5)], hand: ["Exit Specialist"] } });
       let asked = 0;
       s = castDisguisedThenFlip(s, "Exit Specialist", (req) => {
@@ -1493,7 +1493,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
   });
 
   describe("Reasonable Doubt", () => {
-    it("contrecarre un sort sauf si son contrôleur paie {2} ; suspecte jusqu'à une créature", () => {
+    it("counters a spell unless its controller pays {2}; suspects up to one creature", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Mountain", 2), "Bear Cub"], hand: ["Lightning Strike"] },
         p2: { battlefield: lands("Island", 2), hand: ["Reasonable Doubt"] },
@@ -1510,7 +1510,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
   });
 
   describe("Reenact the Crime", () => {
-    it("exile une carte mise dans un cimetière ce tour-ci et lance sa copie sans payer", () => {
+    it("exiles a card put into a graveyard this turn and casts its copy without paying", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Mountain", 2), ...lands("Island", 4)], hand: ["Lightning Strike", "Reenact the Crime"] },
       });
@@ -1523,7 +1523,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
       expect(s.exile.some((id) => nameOf(s, id) === "Lightning Strike")).toBe(true);
     });
 
-    it("une carte déjà au cimetière avant ce tour n'est pas une cible légale", () => {
+    it("a card already in the graveyard before this turn isn't a legal target", () => {
       const s = scenario({
         p1: { battlefield: lands("Island", 4), hand: ["Reenact the Crime"], graveyard: ["Lightning Strike"] },
       });
@@ -1535,7 +1535,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
   });
 
   describe("Sudden Setback", () => {
-    it("le propriétaire du permanent le met au-dessus ou au-dessous de sa bibliothèque", () => {
+    it("the permanent's owner puts it on top or on the bottom of their library", () => {
       let s = scenario({ p1: { battlefield: lands("Island", 4), hand: ["Sudden Setback"] }, p2: { battlefield: ["Bear Cub"] } });
       const bear = idOf(s, "p2", "battlefield", "Bear Cub");
       let chooser = "";
@@ -1550,7 +1550,7 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
   });
 
   describe("Unauthorized Exit", () => {
-    it("renvoie un permanent non-terrain dans la main de son propriétaire, puis surveillance 1", () => {
+    it("returns a nonland permanent to its owner's hand, then surveil 1", () => {
       let s = scenario({
         p1: { battlefield: lands("Island", 2), hand: ["Unauthorized Exit"], library: ["Opt", "Forest"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -1564,14 +1564,14 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
   });
 });
 
-describe("Murders at Karlov Manor, lot A — noir", () => {
+describe("Murders at Karlov Manor, lot A — black", () => {
   /**
-   * Murders at Karlov Manor, lot A : cartes noires, confrontées à leur texte Oracle (plan R, lot R7).
+   * Murders at Karlov Manor, lot A: black cards, checked against their Oracle text (plan R, lot R7).
    */
   type S = GameState;
   const names = (s: S, ids: string[] = []) => ids.map((id) => nameOf(s, id));
 
-  /** Capacité activée de la source dont le libellé contient `label`. */
+  /** Activated ability of the source whose label contains `label`. */
   const activation = (s: S, player: string, source: string, label: string) =>
     legalActions(s, player).find(
       (a): a is Extract<ReturnType<typeof legalActions>[number], { type: "activate" }> =>
@@ -1579,18 +1579,18 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
     );
   const activate = (s: S, player: string, source: string, label: string, extra: Partial<Decision> = {}) => {
     const a = activation(s, player, source, label);
-    if (!a) throw new Error(`Capacité « ${label} » introuvable`);
+    if (!a) throw new Error(`Ability "${label}" not found`);
     return act(s, player, { type: "activate", source, ability: a.ability, ...extra } as Decision);
   };
-  /** Choisit la cible voulue dans la première demande qui la propose. */
+  /** Chooses the wanted target in the first request that offers it. */
   const pickIt =
     (id: string): Answer =>
     (req) =>
       req.type === "pick" && req.options.includes(id) ? [id] : undefined;
 
   /**
-   * Combat du joueur actif : avance jusqu'à la déclaration des attaquants, attaque l'adversaire avec `attackers`, applique
-   * les blocages donnés, puis va jusqu'à la seconde phase principale.
+   * Combat of the active player: advances to declare attackers, attacks the opponent with `attackers`, applies
+   * the given blocks, then goes to the second main phase.
    */
   const fight = (
     s: S,
@@ -1625,18 +1625,18 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
       expect(idsOf(s, "p1", "graveyard", "Bear Cub")).toHaveLength(1);
       return s.players.p1?.hand.length;
     };
-    it("sacrifier une autre créature : piochez une carte", () => expect(run(false)).toBe(1));
-    it("si la créature sacrifiée était suspecte, piochez deux cartes à la place", () => expect(run(true)).toBe(2));
+    it("sacrificing another creature: draw a card", () => expect(run(false)).toBe(1));
+    it("if the sacrificed creature was suspected, draw two cards instead", () => expect(run(true)).toBe(2));
   });
 
   describe("Alley Assailant", () => {
-    it("lancée face visible, arrive engagée", () => {
+    it("cast face up, enters tapped", () => {
       let s = scenario({ p1: { battlefield: lands("Swamp", 3), hand: ["Alley Assailant"] } });
       s = settle(cast(s, "p1", "Alley Assailant"));
       expect(s.objects[idOf(s, "p1", "battlefield", "Alley Assailant")]?.tapped).toBe(true);
     });
 
-    it("déguisée puis retournée : l'adversaire perd 3 PV et vous en gagnez 3", () => {
+    it("disguised then turned face up: the opponent loses 3 life and you gain 3", () => {
       let s = scenario({ p1: { battlefield: lands("Swamp", 9), hand: ["Alley Assailant"] } });
       s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Alley Assailant"), faceDown: true }));
       const id = s.battlefield.find((x) => s.objects[x]?.defId === FACE_DOWN_ID) as string;
@@ -1648,7 +1648,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
   });
 
   describe("Barbed Servitor", () => {
-    it("arrive suspecte, indestructible ; ses blessures font perdre autant de PV à un adversaire", () => {
+    it("enters suspected, indestructible; its damage makes an opponent lose that much life", () => {
       let s = scenario({
         p1: { battlefield: lands("Swamp", 4), hand: ["Barbed Servitor"] },
         p2: { battlefield: lands("Mountain", 2), hand: ["Lightning Strike"] },
@@ -1663,7 +1663,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
       expect(s.players.p2?.life).toBe(17);
     });
 
-    it("blessures de combat à un joueur : vous piochez une carte et perdez 1 PV", () => {
+    it("combat damage to a player: you draw a card and lose 1 life", () => {
       const s0 = scenario({ p1: { battlefield: ["Barbed Servitor"], library: lands("Swamp", 3) } });
       const s = fight(s0, [idOf(s0, "p1", "battlefield", "Barbed Servitor")]);
       expect(s.players.p2?.life).toBe(19);
@@ -1672,7 +1672,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
     });
   });
 
-  it("Basilica Stalker : blessures de combat à un joueur, vous gagnez 1 PV et surveillez 1", () => {
+  it("Basilica Stalker: combat damage to a player, you gain 1 life and surveil 1", () => {
     const s0 = scenario({ p1: { battlefield: ["Basilica Stalker"], library: ["Opt", "Swamp"] } });
     const s = fight(s0, [idOf(s0, "p1", "battlefield", "Basilica Stalker")], [], (req) =>
       req.intent === "surveilGraveyard" && req.type === "pick" ? req.options : undefined,
@@ -1683,7 +1683,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
   });
 
   describe("Case of the Gorgon's Kiss", () => {
-    it("en arrivant, détruit jusqu'à une créature qui a subi des blessures ce tour-ci", () => {
+    it("when it enters, destroys up to one creature that was dealt damage this turn", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Swamp", 2), ...lands("Mountain", 2)],
@@ -1716,7 +1716,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
       return { s, id };
     };
 
-    it("résolue si trois cartes de créature ont été mises au cimetière : Gorgone 4/4, contact mortel, lien de vie", () => {
+    it("solved if three creature cards were put into the graveyard: 4/4 Gorgon, deathtouch, lifelink", () => {
       const { s, id } = solveWith(3);
       expect(s.objects[id]?.solved).toBe(true);
       const c = chars(s, id);
@@ -1726,7 +1726,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
       expect(c.keywords).toEqual(expect.arrayContaining(["deathtouch", "lifelink"]));
     });
 
-    it("deux cartes de créature ne suffisent pas", () => {
+    it("two creature cards aren't enough", () => {
       const { s, id } = solveWith(2);
       expect(s.objects[id]?.solved).toBeFalsy();
       expect(chars(s, id).types).not.toContain("Creature");
@@ -1734,7 +1734,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
   });
 
   describe("Case of the Stashed Skeleton", () => {
-    it("crée un Squelette 2/1 suspect ; non résolue tant que vous contrôlez un Squelette suspect", () => {
+    it("creates a suspected 2/1 Skeleton; not solved as long as you control a suspected Skeleton", () => {
       let s = scenario({ p1: { battlefield: lands("Swamp", 2), hand: ["Case of the Stashed Skeleton"] } });
       s = settle(cast(s, "p1", "Case of the Stashed Skeleton"));
       const skeleton = s.battlefield.find((id) => nameOf(s, id) === "Skeleton") as string;
@@ -1745,7 +1745,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
       expect(s.objects[id]?.solved).toBeFalsy();
     });
 
-    it("résolue sans Squelette suspect : {1}{B}, sacrifiez-la, cherchez une carte (en rituel)", () => {
+    it("solved with no suspected Skeleton: {1}{B}, sacrifice it, search for a card (at sorcery speed)", () => {
       let s = scenario({
         p1: { battlefield: ["Case of the Stashed Skeleton", ...lands("Swamp", 2)], library: ["Swamp", "Murder", "Swamp"] },
       });
@@ -1768,7 +1768,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
         p2: { hand: ["Forest", "Opt", "Bear Cub"] },
       });
 
-    it("premier mode : l'adversaire ciblé défausse deux cartes", () => {
+    it("first mode: the targeted opponent discards two cards", () => {
       let s = setup();
       s = settle(cast(s, "p1", "Cerebral Confiscation", { t: ["p2"] }, { mode: 0 }));
       if (s.pending?.kind === "discard") {
@@ -1779,7 +1779,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
       expect(s.players.p2?.graveyard).toHaveLength(2);
     });
 
-    it("second mode : vous choisissez une carte non-terrain de sa main, qu'il défausse", () => {
+    it("second mode: you choose a nonland card from their hand, which they discard", () => {
       const s0 = setup();
       let s = s0;
       const bear = idOf(s, "p2", "hand", "Bear Cub");
@@ -1795,7 +1795,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
     });
   });
 
-  it("Clandestine Meddler : suspecte une autre créature ; une créature suspecte attaque, surveillance 1", () => {
+  it("Clandestine Meddler: suspects another creature; a suspected creature attacks, surveil 1", () => {
     let s = scenario({
       p1: { battlefield: ["Bear Cub", ...lands("Swamp", 3)], hand: ["Clandestine Meddler"], library: ["Opt", "Swamp"] },
     });
@@ -1820,7 +1820,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
         p2: { battlefield: ["Serra Angel", "Llanowar Elves"] },
       });
 
-    it("sans preuves : chaque adversaire sacrifie la créature de son choix", () => {
+    it("without evidence: each opponent sacrifices the creature of their choice", () => {
       let s = setup();
       const elves = idOf(s, "p2", "battlefield", "Llanowar Elves");
       s = settle(cast(s, "p1", "Extract a Confession"), (req, player) =>
@@ -1830,7 +1830,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
       expect(s.players.p1?.graveyard).toHaveLength(3);
     });
 
-    it("preuves réunies (6) : il sacrifie sa créature de plus grande force", () => {
+    it("evidence collected (6): they sacrifice their creature with the greatest power", () => {
       let s = setup();
       s = settle(cast(s, "p1", "Extract a Confession", undefined, { kicked: true }));
       expect(names(s, s.players.p2?.graveyard)).toEqual(["Serra Angel"]);
@@ -1838,7 +1838,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
     });
   });
 
-  it("Festerleech : +2/+2 une seule fois par tour ; blessures de combat, meulez deux cartes", () => {
+  it("Festerleech: +2/+2 only once per turn; combat damage, mill two cards", () => {
     let s = scenario({ p1: { battlefield: ["Festerleech", ...lands("Swamp", 4)], library: lands("Swamp", 4) } });
     const leech = idOf(s, "p1", "battlefield", "Festerleech");
     s = settle(activate(s, "p1", leech, "+2/+2"));
@@ -1849,7 +1849,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
     expect(s.players.p1?.graveyard).toHaveLength(2);
   });
 
-  it("Homicide Investigator : une de vos créatures non-jetons meurt, enquêtez, une seule fois par tour", () => {
+  it("Homicide Investigator: one of your nontoken creatures dies, investigate, only once per turn", () => {
     let s = scenario({
       p1: {
         battlefield: ["Homicide Investigator", "Bear Cub", "Llanowar Elves", ...lands("Swamp", 6)],
@@ -1863,7 +1863,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
     expect(clues(s)).toBe(1);
   });
 
-  it("Hunted Bonebrute : l'adversaire ciblé crée deux Chiens 1/1 blancs ; quand elle meurt, chaque adversaire perd 3 PV", () => {
+  it("Hunted Bonebrute: the targeted opponent creates two 1/1 white Dogs; when it dies, each opponent loses 3 life", () => {
     let s = scenario({ p1: { battlefield: lands("Swamp", 6), hand: ["Hunted Bonebrute", "Murder"] } });
     s = settle(cast(s, "p1", "Hunted Bonebrute"));
     const dogs = s.battlefield.filter((id) => nameOf(s, id) === "Dog");
@@ -1873,7 +1873,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
     expect(s.players.p2?.life).toBe(17);
   });
 
-  it("Illicit Masquerade : marqueurs imposteur ; une telle créature meurt, exilée, et une autre revient du cimetière", () => {
+  it("Illicit Masquerade: imposter counters; such a creature dies, exiled, and another returns from the graveyard", () => {
     let s = scenario({
       p1: {
         battlefield: ["Bear Cub", ...lands("Swamp", 7)],
@@ -1885,7 +1885,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
     s = settle(cast(s, "p1", "Illicit Masquerade"));
     expect(s.objects[bear]?.counters.impostor).toBe(1);
     const angel = idOf(s, "p1", "graveyard", "Serra Angel");
-    // « une autre carte de créature » : la carte de la créature morte n'est pas proposée.
+    // "another creature card": the dead creature's card isn't offered.
     const offered: string[] = [];
     s = settle(cast(s, "p1", "Murder", { t: [bear] }), (req, p, cur) => {
       if (req.type === "pick" && req.options.includes(angel))
@@ -1895,11 +1895,11 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
     expect(offered).toEqual(["Serra Angel"]);
     expect(s.exile.some((id) => nameOf(s, id) === "Bear Cub")).toBe(true);
     expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
-    // La Serra Angel revenue n'a pas de marqueur imposteur.
+    // The returned Serra Angel has no imposter counter.
     expect(s.objects[idOf(s, "p1", "battlefield", "Serra Angel")]?.counters.impostor).toBeUndefined();
   });
 
-  it("It Doesn't Add Up : la carte de créature revient sur le champ de bataille, suspecte", () => {
+  it("It Doesn't Add Up: the creature card returns to the battlefield, suspected", () => {
     let s = scenario({ p1: { battlefield: lands("Swamp", 5), hand: ["It Doesn't Add Up"], graveyard: ["Serra Angel"] } });
     s = settle(cast(s, "p1", "It Doesn't Add Up", { t: [idOf(s, "p1", "graveyard", "Serra Angel")] }));
     const angel = idOf(s, "p1", "battlefield", "Serra Angel");
@@ -1907,7 +1907,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
     expect(chars(s, angel).keywords).toEqual(expect.arrayContaining(["menace", "cantBlock"]));
   });
 
-  it("Lead Pipe : +2/+0 ; la créature équipée meurt, chaque adversaire perd 1 PV ; {2}, sacrifice : piochez", () => {
+  it("Lead Pipe: +2/+0; the equipped creature dies, each opponent loses 1 life; {2}, sacrifice: draw", () => {
     let s = scenario({
       p1: { battlefield: ["Lead Pipe", "Bear Cub", ...lands("Swamp", 7)], hand: ["Murder"], library: lands("Swamp", 3) },
     });
@@ -1923,7 +1923,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
     expect(idsOf(s, "p1", "graveyard", "Lead Pipe")).toHaveLength(1);
   });
 
-  it("Leering Onlooker : depuis le cimetière, exilée, deux Chauves-souris 1/1 volantes engagées", () => {
+  it("Leering Onlooker: from the graveyard, exiled, two tapped 1/1 flying Bats", () => {
     let s = scenario({ p1: { battlefield: lands("Swamp", 4), graveyard: ["Leering Onlooker"] } });
     const card = idOf(s, "p1", "graveyard", "Leering Onlooker");
     s = settle(activate(s, "p1", card, "Bats"));
@@ -1934,7 +1934,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
     expect(s.exile.some((id) => nameOf(s, id) === "Leering Onlooker")).toBe(true);
   });
 
-  it("Long Goodbye : seulement une créature ou un planeswalker de valeur de mana 3 ou moins", () => {
+  it("Long Goodbye: only a creature or planeswalker with mana value 3 or less", () => {
     let s = scenario({
       p1: { battlefield: lands("Swamp", 2), hand: ["Long Goodbye"] },
       p2: { battlefield: ["Bear Cub", "Serra Angel"] },
@@ -1946,7 +1946,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
     expect(s.defs[s.objects[idOf(s, "p1", "graveyard", "Long Goodbye")]?.defId ?? ""]?.cantBeCountered).toBe(true);
   });
 
-  it("Macabre Reconstruction : {2} de moins si une carte de créature est allée dans votre cimetière ce tour-ci", () => {
+  it("Macabre Reconstruction: {2} less if a creature card went to your graveyard this turn", () => {
     const plain = scenario({
       p1: { battlefield: lands("Swamp", 3), hand: ["Macabre Reconstruction"], graveyard: ["Serra Angel"] },
     });
@@ -1961,13 +1961,13 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
     const angel = idOf(s, "p1", "graveyard", "Serra Angel");
     s = settle(cast(s, "p1", "Lightning Strike", { t: [idOf(s, "p1", "battlefield", "Bear Cub")] }));
     const bear = idOf(s, "p1", "graveyard", "Bear Cub");
-    // Il ne reste que deux Marais : {1}{B}.
+    // Only two Swamps remain: {1}{B}.
     s = settle(cast(s, "p1", "Macabre Reconstruction", { t: [angel, bear] }));
     expect(names(s, s.players.p1?.hand).sort()).toEqual(["Bear Cub", "Serra Angel"]);
   });
 
   describe("Massacre Girl, Known Killer", () => {
-    it("vos créatures ont l'infection ; une créature adverse meurt avec une endurance inférieure à 1 : piochez", () => {
+    it("your creatures have infect; an opposing creature dies with toughness less than 1: draw", () => {
       const s0 = scenario({
         p1: { battlefield: ["Massacre Girl, Known Killer", "Bear Cub"], library: lands("Swamp", 3) },
         p2: { battlefield: ["Bear Cub"] },
@@ -1981,7 +1981,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
       expect(s.players.p1?.hand).toHaveLength(1);
     });
 
-    it("une créature adverse détruite avec son endurance intacte ne fait rien piocher", () => {
+    it("an opposing creature destroyed with its toughness intact draws nothing", () => {
       let s = scenario({
         p1: { battlefield: ["Massacre Girl, Known Killer", ...lands("Swamp", 3)], hand: ["Murder"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -1991,7 +1991,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
     });
   });
 
-  it("Outrageous Robbery : l'adversaire exile X cartes ; vous pouvez les jouer avec du mana de n'importe quel type", () => {
+  it("Outrageous Robbery: the opponent exiles X cards; you may play them with mana of any type", () => {
     let s = scenario({
       p1: { battlefield: lands("Swamp", 5), hand: ["Outrageous Robbery"] },
       p2: { library: ["Opt", "Forest", "Island"] },
@@ -2008,7 +2008,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
     expect(s.players.p1?.hand).toHaveLength(1);
   });
 
-  it("Persuasive Interrogators : enquêtez ; vous sacrifiez un Indice, l'adversaire reçoit deux marqueurs poison", () => {
+  it("Persuasive Interrogators: investigate; you sacrifice a Clue, the opponent gets two poison counters", () => {
     let s = scenario({ p1: { battlefield: lands("Swamp", 8), hand: ["Persuasive Interrogators"] } });
     s = settle(cast(s, "p1", "Persuasive Interrogators"));
     const clue = s.battlefield.find((id) => nameOf(s, id) === "Clue") as string;
@@ -2018,7 +2018,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
     expect(s.players.p1?.hand).toHaveLength(1);
   });
 
-  it("Presumed Dead : +2/+0 ; quand elle meurt ce tour-ci, elle revient sous le contrôle de son propriétaire, suspecte", () => {
+  it("Presumed Dead: +2/+0; when it dies this turn, it returns under its owner's control, suspected", () => {
     let s = scenario({ p1: { battlefield: ["Bear Cub", ...lands("Swamp", 5)], hand: ["Presumed Dead", "Murder"] } });
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     s = settle(cast(s, "p1", "Presumed Dead", { t: [bear] }));
@@ -2030,7 +2030,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
     expect(chars(s, back).power).toBe(2);
   });
 
-  it("Repeat Offender : la première activation la suspecte, la suivante lui donne un marqueur +1/+1", () => {
+  it("Repeat Offender: the first activation suspects it, the next gives it a +1/+1 counter", () => {
     let s = scenario({ p1: { battlefield: ["Repeat Offender", ...lands("Swamp", 6)] } });
     const id = idOf(s, "p1", "battlefield", "Repeat Offender");
     s = settle(activate(s, "p1", id, "counter"));
@@ -2041,7 +2041,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
     expect(s.objects[id]?.counters["+1/+1"]).toBe(1);
   });
 
-  it("Rot Farm Mortipede et Soul Enervation : une carte de créature quitte votre cimetière", () => {
+  it("Rot Farm Mortipede and Soul Enervation: a creature card leaves your graveyard", () => {
     let s = scenario({
       p1: {
         battlefield: ["Rot Farm Mortipede", "Soul Enervation", ...lands("Swamp", 5)],
@@ -2056,7 +2056,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
     expect([s.players.p1?.life, s.players.p2?.life]).toEqual([21, 19]);
   });
 
-  it("Soul Enervation : flash, la créature ciblée prend -4/-4", () => {
+  it("Soul Enervation: flash, the target creature gets -4/-4", () => {
     let s = scenario({
       p1: { battlefield: ["Serra Angel"] },
       p2: { battlefield: lands("Swamp", 4), hand: ["Soul Enervation"] },
@@ -2067,7 +2067,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
     expect(idsOf(s, "p1", "graveyard", "Serra Angel")).toHaveLength(1);
   });
 
-  it("Slice from the Shadows : la créature ciblée prend -X/-X", () => {
+  it("Slice from the Shadows: the target creature gets -X/-X", () => {
     let s = scenario({
       p1: { battlefield: lands("Swamp", 4), hand: ["Slice from the Shadows"] },
       p2: { battlefield: ["Serra Angel"] },
@@ -2079,7 +2079,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
     expect([chars(s, angel).power, chars(s, angel).toughness]).toEqual([1, 1]);
   });
 
-  it("Slimy Dualleech : au début de votre combat, +1/+0 et contact mortel à une créature de force 2 ou moins", () => {
+  it("Slimy Dualleech: at the beginning of your combat, +1/+0 and deathtouch to a creature with power 2 or less", () => {
     let s = scenario({ p1: { battlefield: ["Slimy Dualleech", "Bear Cub", "Serra Angel"] } });
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     const angel = idOf(s, "p1", "battlefield", "Serra Angel");
@@ -2095,7 +2095,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
     expect(chars(s, bear).keywords).toContain("deathtouch");
   });
 
-  it("Snarling Gorehound : une autre de vos créatures de force 2 ou moins arrive, surveillance 1", () => {
+  it("Snarling Gorehound: another of your creatures with power 2 or less enters, surveil 1", () => {
     const run = (creature: string, mana: string[]) => {
       let s = scenario({ p1: { battlefield: ["Snarling Gorehound", ...mana], hand: [creature], library: ["Opt", "Swamp"] } });
       s = settle(cast(s, "p1", creature), (req) =>
@@ -2107,7 +2107,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
     expect(run("Serra Angel", lands("Plains", 5))).toBe(0);
   });
 
-  it("Toxin Analysis : contact mortel et lien de vie jusqu'à la fin du tour, puis enquêtez", () => {
+  it("Toxin Analysis: deathtouch and lifelink until end of turn, then investigate", () => {
     let s = scenario({ p1: { battlefield: ["Bear Cub", "Swamp"], hand: ["Toxin Analysis"] } });
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     s = settle(cast(s, "p1", "Toxin Analysis", { t: [bear] }));
@@ -2116,7 +2116,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
   });
 
   describe("Undercity Eliminator", () => {
-    it("vous sacrifiez un artefact ou une créature : exilez une créature adverse", () => {
+    it("you sacrifice an artifact or a creature: exile an opposing creature", () => {
       let s = scenario({
         p1: { battlefield: ["Bear Cub", ...lands("Swamp", 5)], hand: ["Undercity Eliminator"] },
         p2: { battlefield: ["Serra Angel"] },
@@ -2132,7 +2132,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
       expect(s.exile.some((id) => nameOf(s, id) === "Serra Angel")).toBe(true);
     });
 
-    it("sans sacrifice, rien n'est exilé", () => {
+    it("without a sacrifice, nothing is exiled", () => {
       let s = scenario({
         p1: { battlefield: ["Bear Cub", ...lands("Swamp", 5)], hand: ["Undercity Eliminator"] },
         p2: { battlefield: ["Serra Angel"] },
@@ -2143,7 +2143,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
     });
   });
 
-  it("Unscrupulous Agent : l'adversaire ciblé exile une carte de sa main", () => {
+  it("Unscrupulous Agent: the targeted opponent exiles a card from their hand", () => {
     let s = scenario({ p1: { battlefield: lands("Swamp", 2), hand: ["Unscrupulous Agent"] }, p2: { hand: ["Opt", "Forest"] } });
     const opt = idOf(s, "p2", "hand", "Opt");
     s = settle(cast(s, "p1", "Unscrupulous Agent"), (req, player) =>
@@ -2153,16 +2153,16 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
     expect(s.exile.some((id) => nameOf(s, id) === "Opt")).toBe(true);
   });
 
-  it("Nightdrinker Moroii : en arrivant, vous perdez 3 PV", () => {
+  it("Nightdrinker Moroii: when it enters, you lose 3 life", () => {
     let s = scenario({ p1: { battlefield: lands("Swamp", 4), hand: ["Nightdrinker Moroii"] } });
     s = settle(cast(s, "p1", "Nightdrinker Moroii"));
     expect(s.players.p1?.life).toBe(17);
   });
 });
 
-describe("Murders at Karlov Manor, lot A — rouge", () => {
+describe("Murders at Karlov Manor, lot A — red", () => {
   /**
-   * Murders at Karlov Manor, lot A : cartes rouges, confrontées à leur texte Oracle (plan R, lot R7).
+   * Murders at Karlov Manor, lot A: red cards, checked against their Oracle text (plan R, lot R7).
    */
   type S = GameState;
   const names = (s: S, ids: string[] = []) => ids.map((id) => nameOf(s, id));
@@ -2174,7 +2174,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
     );
   const activate = (s: S, player: string, source: string, label: string, extra: Partial<Decision> = {}) => {
     const a = activation(s, player, source, label);
-    if (!a) throw new Error(`Capacité « ${label} » introuvable`);
+    if (!a) throw new Error(`Ability "${label}" not found`);
     return act(s, player, { type: "activate", source, ability: a.ability, ...extra } as Decision);
   };
   const pickIt =
@@ -2184,27 +2184,27 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
   const yes: Answer = (req) => (req.type === "yesNo" ? [1] : undefined);
   const no: Answer = (req) => (req.type === "yesNo" ? [0] : undefined);
 
-  /** Déclare les attaquants du joueur actif contre p2, puis résout les déclenchements d'attaque. */
+  /** Declares the active player's attackers against p2, then resolves the attack triggers. */
   const attack = (s: S, attackers: string[], answer: Answer = () => undefined): S => {
     let cur = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
     cur = act(cur, "p1", { type: "declareAttackers", attackers: attackers.map((id) => ({ id, defender: "p2" })) });
     return settle(cur, answer);
   };
 
-  /** Artefact non-créature sans capacité. */
+  /** Noncreature artifact with no abilities. */
   const TRINKET = customCard({ name: "Babiole", typeLine: "Artifact", types: ["Artifact"] });
-  /** Éphémère d'essai : 2 blessures à n'importe quelle cible. */
+  /** Test instant: 2 damage to any target. */
   const ZAP = customCard({
-    name: "Décharge d'essai",
+    name: "Test Shock",
     typeLine: "Instant",
     types: ["Instant"],
     spell: dsl.spell([dsl.target.any()], [dsl.fx.damage(2, dsl.ref.target())]),
   });
-  /** Le permanent face cachée de p1. */
+  /** p1's face-down permanent. */
   const faceDownOf = (s: S) => s.battlefield.find((x) => s.objects[x]?.defId === FACE_DOWN_ID) as string;
 
   describe("Anzrag's Rampage", () => {
-    it("détruit les artefacts adverses, exile X cartes (X = artefacts mis au cimetière ce tour-ci), une créature revient avec la célérité puis en main", () => {
+    it("destroys the opposing artifacts, exiles X cards (X = artifacts put into the graveyard this turn), a creature returns with haste then to hand", () => {
       let s = scenario({
         p1: {
           battlefield: [TRINKET, ...lands("Mountain", 5)],
@@ -2220,7 +2220,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
       });
       expect(idsOf(s, "p1", "battlefield", TRINKET.name)).toHaveLength(1);
       expect(names(s, s.players.p2?.graveyard).sort()).toEqual([TRINKET.name, "Esoteric Duplicator"].sort());
-      // Deux artefacts mis au cimetière : deux cartes exilées ; l'Ours sur le champ de bataille, la Forêt en exil.
+      // Two artifacts put into the graveyard: two cards exiled; the Bear on the battlefield, the Forest in exile.
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       expect(chars(s, bear).keywords).toContain("haste");
       expect(names(s, s.exile)).toEqual(["Forest"]);
@@ -2231,7 +2231,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
   });
 
   describe("Bolrac-Clan Basher", () => {
-    it("double initiative, piétinement et déguisement lus dans le texte", () => {
+    it("double strike, trample and disguise read from the text", () => {
       const s = scenario({ p1: { battlefield: ["Bolrac-Clan Basher"] } });
       const id = idOf(s, "p1", "battlefield", "Bolrac-Clan Basher");
       expect(chars(s, id).keywords).toEqual(expect.arrayContaining(["doubleStrike", "trample"]));
@@ -2240,7 +2240,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
   });
 
   describe("Case of the Crimson Pulse", () => {
-    it("en arrivant : défaussez une carte, puis piochez-en deux ; résolue sans carte en main ; résolue : à l'entretien, défaussez votre main et piochez deux cartes", () => {
+    it("when it enters: discard a card, then draw two; solved with no card in hand; solved: at upkeep, discard your hand and draw two cards", () => {
       let s = scenario({
         p1: { battlefield: lands("Mountain", 3), hand: ["Case of the Crimson Pulse", "Opt"], library: lands("Island", 10) },
       });
@@ -2249,10 +2249,10 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
       expect(names(s, s.players.p1?.graveyard)).toEqual(["Opt"]);
       expect(names(s, s.players.p1?.hand)).toEqual(["Island", "Island"]);
       const caseId = idOf(s, "p1", "battlefield", "Case of the Crimson Pulse");
-      // Deux cartes en main à l'étape de fin : non résolue.
+      // Two cards in hand at the end step: not solved.
       let t = advanceUntil(s, (x) => x.turn.step === "cleanup" || x.turn.active !== "p1");
       expect((t.objects[caseId] as { solved?: boolean }).solved ?? false).toBe(false);
-      // Sans carte en main : résolue, puis à l'entretien suivant, main défaussée et deux cartes piochées.
+      // With no card in hand: solved, then at the next upkeep, hand discarded and two cards drawn.
       const o = s.players.p1;
       if (o) {
         for (const id of o.hand) {
@@ -2265,7 +2265,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
       t = advanceUntil(s, (x) => x.turn.step === "cleanup" || x.turn.active !== "p1");
       expect((t.objects[caseId] as { solved?: boolean }).solved).toBe(true);
       t = advanceUntil(t, (x) => x.turn.active === "p1" && x.turn.step === "upkeep" && x.stack.length > 0);
-      // À l'entretien, avant l'étape de pioche : main vide, rien à défausser, puis deux cartes piochées.
+      // At upkeep, before the draw step: empty hand, nothing to discard, then two cards drawn.
       expect(t.players.p1?.hand).toHaveLength(0);
       const before = t.players.p1?.graveyard.length ?? 0;
       t = settle(t);
@@ -2275,7 +2275,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
   });
 
   describe("Caught Red-Handed", () => {
-    it("ne peut pas être contrecarré ; gagne le contrôle, dégage, célérité, et suspecte la créature", () => {
+    it("can't be countered; gains control, untaps, haste, and suspects the creature", () => {
       let s = scenario({
         p1: { battlefield: lands("Mountain", 5), hand: ["Caught Red-Handed"] },
         p2: { battlefield: [{ name: "Bear Cub", tapped: true }] },
@@ -2287,14 +2287,14 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
       expect(s.objects[bear]?.tapped).toBe(false);
       expect(s.objects[bear]?.suspected).toBe(true);
       expect(chars(s, bear).keywords).toEqual(expect.arrayContaining(["haste", "menace", "cantBlock"]));
-      // Jusqu'à la fin du tour seulement.
+      // Until end of turn only.
       s = advanceUntil(s, (x) => x.turn.active === "p2");
       expect(s.objects[bear]?.controller).toBe("p2");
     });
   });
 
   describe("The Chase Is On", () => {
-    it("+3/+0 et l'initiative jusqu'à la fin du tour, et enquêtez", () => {
+    it("+3/+0 and first strike until end of turn, and investigate", () => {
       let s = scenario({ p1: { battlefield: [...lands("Mountain", 3), "Bear Cub"], hand: ["The Chase Is On"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = settle(cast(s, "p1", "The Chase Is On", { t: [bear] }));
@@ -2305,7 +2305,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
   });
 
   describe("Concealed Weapon", () => {
-    it("lancée face cachée, retournée pour {2}{R} : elle s'attache à une créature ciblée que vous contrôlez, +3/+0", () => {
+    it("cast face down, turned up for {2}{R}: it attaches to a target creature you control, +3/+0", () => {
       let s = scenario({ p1: { battlefield: [...lands("Mountain", 6), "Bear Cub"], hand: ["Concealed Weapon"] } });
       s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Concealed Weapon"), faceDown: true }));
       const id = faceDownOf(s);
@@ -2315,14 +2315,14 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
       expect(chars(s, id).types).not.toContain("Creature");
       expect(s.objects[id]?.attachedTo).toBe(bear);
       expect(chars(s, bear).power).toBe(5);
-      // Équiper {1}{R} : lu dans le texte.
+      // Equip {1}{R}: read from the text.
       const labels = chars(s, id).abilities.map((a) => (a.kind === "activated" ? a.label : undefined));
       expect(labels).toContain(msg("Equip {cost}", { cost: "{1}{R}" }));
     });
   });
 
   describe("Connecting the Dots", () => {
-    it("chaque attaquant exile la carte du dessus ; {1}{R}, défausser sa main, sacrifier : les cartes exilées vont en main", () => {
+    it("each attacker exiles the top card; {1}{R}, discard your hand, sacrifice: the exiled cards go to hand", () => {
       let s = scenario({
         p1: {
           battlefield: ["Connecting the Dots", "Bear Cub", "Llanowar Elves", ...lands("Mountain", 2)],
@@ -2343,7 +2343,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
   });
 
   describe("Convenient Target", () => {
-    it("en arrivant, suspecte la créature enchantée, qui a +1/+1 ; {2}{R} : revient du cimetière en main", () => {
+    it("when it enters, suspects the enchanted creature, which gets +1/+1; {2}{R}: returns from the graveyard to hand", () => {
       let s = scenario({
         p1: { battlefield: lands("Mountain", 4), hand: ["Convenient Target"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -2353,7 +2353,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
       expect(s.objects[bear]?.suspected).toBe(true);
       expect([chars(s, bear).power, chars(s, bear).toughness]).toEqual([3, 3]);
       expect(chars(s, bear).keywords).toEqual(expect.arrayContaining(["menace", "cantBlock"]));
-      // Dans le cimetière : la capacité la renvoie en main.
+      // In the graveyard: the ability returns it to hand.
       const aura = idOf(s, "p1", "battlefield", "Convenient Target");
       s.battlefield = s.battlefield.filter((x) => x !== aura);
       const o = s.objects[aura];
@@ -2368,7 +2368,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
   });
 
   describe("Cornered Crook", () => {
-    it("en arrivant, vous pouvez sacrifier un artefact : 3 blessures à n'importe quelle cible", () => {
+    it("when it enters, you may sacrifice an artifact: 3 damage to any target", () => {
       const setup = () => scenario({ p1: { battlefield: [TRINKET, ...lands("Mountain", 5)], hand: ["Cornered Crook"] } });
       let s = setup();
       const trinket = idOf(s, "p1", "battlefield", TRINKET.name);
@@ -2379,7 +2379,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
       });
       expect(s.players.p2?.life).toBe(17);
       expect(idsOf(s, "p1", "graveyard", TRINKET.name)).toHaveLength(1);
-      // Sans sacrifice, pas de blessures.
+      // Without a sacrifice, no damage.
       let t = setup();
       t = settle(cast(t, "p1", "Cornered Crook"), (req) => (req.type === "pick" && req.min === 0 ? [] : undefined));
       expect(t.players.p2?.life).toBe(20);
@@ -2388,7 +2388,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
   });
 
   describe("Crime Novelist", () => {
-    it("chaque fois que vous sacrifiez un artefact : un marqueur +1/+1 et {R}", () => {
+    it("whenever you sacrifice an artifact: a +1/+1 counter and {R}", () => {
       let s = scenario({
         p1: { battlefield: ["Crime Novelist", "Esoteric Duplicator", ...lands("Island", 2)], library: lands("Swamp", 3) },
       });
@@ -2403,7 +2403,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
   });
 
   describe("Expedited Inheritance", () => {
-    it("une créature blessée : son contrôleur peut exiler autant de cartes du dessus, jouables jusqu'à la fin de son prochain tour", () => {
+    it("a damaged creature: its controller may exile that many cards from the top, playable until the end of their next turn", () => {
       let s = scenario({
         p1: { battlefield: ["Expedited Inheritance", ...lands("Mountain", 2)], hand: ["Lightning Strike"] },
         p2: { battlefield: ["Fire Elemental"], library: ["Bear Cub", "Forest", "Opt", "Island"] },
@@ -2422,7 +2422,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
       expect(perms.every((p) => p.player === "p2" && p.until > s.turn.number)).toBe(true);
     });
 
-    it("le joueur peut refuser", () => {
+    it("the player may decline", () => {
       let s = scenario({
         p1: { battlefield: ["Expedited Inheritance", ...lands("Mountain", 2), "Bear Cub"], hand: ["Lightning Strike"] },
       });
@@ -2431,7 +2431,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
       expect(s.exile).toHaveLength(0);
     });
 
-    it("une créature volée tuée par les blessures : c'est son dernier contrôleur, pas son propriétaire, qui peut exiler", () => {
+    it("a stolen creature killed by the damage: its last controller, not its owner, may exile", () => {
       let s = scenario({
         p1: {
           battlefield: ["Expedited Inheritance", ...lands("Mountain", 2)],
@@ -2455,7 +2455,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
   });
 
   describe("Felonious Rage", () => {
-    it("+2/+0 et la célérité ; quand cette créature meurt ce tour-ci, créez un Détective 2/2", () => {
+    it("+2/+0 and haste; when that creature dies this turn, create a 2/2 Detective", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Mountain", 5), "Bear Cub", "Llanowar Elves"],
@@ -2466,10 +2466,10 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
       s = settle(cast(s, "p1", "Felonious Rage", { t: [bear] }));
       expect(chars(s, bear).power).toBe(4);
       expect(chars(s, bear).keywords).toContain("haste");
-      // Une autre créature qui meurt ne déclenche rien.
+      // Another creature that dies triggers nothing.
       s = settle(cast(s, "p1", "Lightning Strike", { t: [idOf(s, "p1", "battlefield", "Llanowar Elves")] }));
       expect(idsOf(s, "p1", "battlefield", "Detective")).toHaveLength(0);
-      // L'Ours meurt : le Détective arrive.
+      // The Bear dies: the Detective enters.
       s = settle(cast(s, "p1", ZAP.name, { t: [bear] }));
       expect(idsOf(s, "p1", "graveyard", "Bear Cub")).toHaveLength(1);
       const det = idOf(s, "p1", "battlefield", "Detective");
@@ -2478,7 +2478,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
   });
 
   describe("Frantic Scapegoat", () => {
-    it("en arrivant, elle se suspecte ; quand une autre créature arrive, elle peut lui passer la suspicion", () => {
+    it("when it enters, it suspects itself; when another creature enters, it may pass the suspect designation to it", () => {
       let s = scenario({ p1: { battlefield: ["Mountain", ...lands("Forest", 2)], hand: ["Frantic Scapegoat", "Bear Cub"] } });
       s = settle(cast(s, "p1", "Frantic Scapegoat"));
       const goat = idOf(s, "p1", "battlefield", "Frantic Scapegoat");
@@ -2490,7 +2490,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
       expect(s.objects[goat]?.suspected).toBeFalsy();
     });
 
-    it("si elle n'est pas suspecte, rien ne se passe ; on peut aussi refuser", () => {
+    it("if it isn't suspected, nothing happens; you may also decline", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Forest", 4), "Frantic Scapegoat"], hand: ["Bear Cub", "Llanowar Elves"] },
       });
@@ -2510,7 +2510,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
   });
 
   describe("Galvanize", () => {
-    it("3 blessures, ou 5 si vous avez pioché au moins deux cartes ce tour-ci", () => {
+    it("3 damage, or 5 if you drew at least two cards this turn", () => {
       const run = (drawn: number) => {
         let s = scenario({
           p1: { battlefield: lands("Mountain", 2), hand: ["Galvanize"] },
@@ -2527,7 +2527,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
   });
 
   describe("Gearbane Orangutan", () => {
-    it("mode 1 : détruit jusqu'à un artefact ciblé", () => {
+    it("mode 1: destroys up to one target artifact", () => {
       let s = scenario({
         p1: { battlefield: lands("Mountain", 3), hand: ["Gearbane Orangutan"] },
         p2: { battlefield: [TRINKET] },
@@ -2540,7 +2540,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
       expect(chars(s, idOf(s, "p1", "battlefield", "Gearbane Orangutan")).keywords).toContain("reach");
     });
 
-    it("mode 2 : sacrifiez un artefact ; si vous le faites, deux marqueurs +1/+1", () => {
+    it("mode 2: sacrifice an artifact; if you do, two +1/+1 counters", () => {
       const run = (withArtifact: boolean) => {
         let s = scenario({
           p1: { battlefield: [...lands("Mountain", 3), ...(withArtifact ? [TRINKET] : [])], hand: ["Gearbane Orangutan"] },
@@ -2554,7 +2554,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
   });
 
   describe("Harried Dronesmith", () => {
-    it("au début du combat : un Thopter 1/1 volant avec la célérité, sacrifié au début de votre étape de fin", () => {
+    it("at the beginning of combat: a 1/1 flying Thopter with haste, sacrificed at the beginning of your end step", () => {
       let s = scenario({ p1: { battlefield: ["Harried Dronesmith"] } });
       s = advanceUntil(s, (x) => x.turn.step === "beginCombat" && x.stack.length > 0);
       s = settle(s);
@@ -2568,7 +2568,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
   });
 
   describe("Innocent Bystander", () => {
-    it("quand elle subit 3 blessures ou plus, enquêtez ; pas pour 2", () => {
+    it("when it's dealt 3 or more damage, investigate; not for 2", () => {
       const run = (spell: string | typeof ZAP) => {
         const name = typeof spell === "string" ? spell : spell.name;
         let s = scenario({ p1: { battlefield: [...lands("Mountain", 2), "Innocent Bystander"], hand: [spell] } });
@@ -2582,7 +2582,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
   });
 
   describe("Knife", () => {
-    it("pendant votre tour, la créature équipée a +1/+0 et l'initiative ; {2}, sacrifice : piochez", () => {
+    it("during your turn, the equipped creature gets +1/+0 and first strike; {2}, sacrifice: draw", () => {
       let s = scenario({ p1: { battlefield: ["Knife", "Bear Cub", ...lands("Mountain", 4)], library: lands("Island", 3) } });
       const knife = idOf(s, "p1", "battlefield", "Knife");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -2601,7 +2601,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
   });
 
   describe("Krenko, Baron of Tin Street", () => {
-    it("{T}, sacrifiez un artefact : un marqueur +1/+1 sur chaque Gobelin que vous contrôlez ; l'artefact au cimetière : payez {R} pour un Gobelin avec la célérité", () => {
+    it("{T}, sacrifice an artifact: a +1/+1 counter on each Goblin you control; the artifact in the graveyard: pay {R} for a Goblin with haste", () => {
       let s = scenario({
         p1: { battlefield: ["Krenko, Baron of Tin Street", TRINKET, "Mountain", "Bear Cub"] },
         p2: { battlefield: ["Krenko, Baron of Tin Street"] },
@@ -2614,7 +2614,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
       expect(s.objects[krenko]?.counters["+1/+1"]).toBe(1);
       expect(s.objects[theirs]?.counters["+1/+1"] ?? 0).toBe(0);
       expect(s.objects[idOf(s, "p1", "battlefield", "Bear Cub")]?.counters["+1/+1"] ?? 0).toBe(0);
-      // Les deux Krenko se déclenchent ; seul p1 paie {R}.
+      // Both Krenkos trigger; only p1 pays {R}.
       const goblins = idsOf(s, "p1", "battlefield", "Goblin");
       expect(goblins).toHaveLength(1);
       expect(chars(s, goblins[0] as string).keywords).toContain("haste");
@@ -2623,7 +2623,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
   });
 
   describe("Krenko's Buzzcrusher", () => {
-    it("détruit jusqu'à un terrain non-base par joueur ; son contrôleur peut chercher un terrain de base, arrivé engagé", () => {
+    it("destroys up to one nonbasic land per player; its controller may search for a basic land, entering tapped", () => {
       let s = scenario({
         p1: { battlefield: lands("Mountain", 4), hand: ["Krenko's Buzzcrusher"] },
         p2: { battlefield: ["Thundering Falls"], library: ["Island", "Opt"] },
@@ -2643,7 +2643,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
       );
     });
 
-    it("un terrain volé détruit : c'est son contrôleur qui cherche, pas son propriétaire", () => {
+    it("a stolen land destroyed: its controller searches, not its owner", () => {
       let s = scenario({
         p1: { battlefield: lands("Mountain", 4), hand: ["Krenko's Buzzcrusher"], library: ["Mountain", "Opt"] },
         p2: { battlefield: ["Thundering Falls"], library: ["Island", "Opt"] },
@@ -2652,7 +2652,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
       steal(s, falls, "p1");
       s = settle(cast(s, "p1", "Krenko's Buzzcrusher"), (req) => {
         if (req.type !== "pick") return undefined;
-        // Le terrain volé est désormais l'un des vôtres : « Oui », détruire un de vos terrains non-base.
+        // The stolen land is now one of yours: "Yes", destroy one of your nonbasic lands.
         if (req.intent === "other") return ["1"];
         if (req.options.includes(falls)) return [falls];
         return req.options.filter((id) => nameOf(s, String(id)) === "Mountain").slice(0, 1);
@@ -2664,14 +2664,14 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
   });
 
   describe("Offender at Large", () => {
-    it("en arrivant face visible : jusqu'à une créature ciblée gagne +2/+0", () => {
+    it("when it enters face up: up to one target creature gets +2/+0", () => {
       let s = scenario({ p1: { battlefield: [...lands("Mountain", 5), "Bear Cub"], hand: ["Offender at Large"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = settle(cast(s, "p1", "Offender at Large"), pickIt(bear));
       expect(chars(s, bear).power).toBe(4);
     });
 
-    it("face cachée : rien en arrivant ; retournée face visible : +2/+0", () => {
+    it("face down: nothing on entering; turned face up: +2/+0", () => {
       let s = scenario({ p1: { battlefield: [...lands("Mountain", 8), "Bear Cub"], hand: ["Offender at Large"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Offender at Large"), faceDown: true }), pickIt(bear));
@@ -2684,7 +2684,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
   });
 
   describe("Person of Interest", () => {
-    it("en arrivant, elle se suspecte et crée un Détective 2/2", () => {
+    it("when it enters, it suspects itself and creates a 2/2 Detective", () => {
       let s = scenario({ p1: { battlefield: lands("Mountain", 4), hand: ["Person of Interest"] } });
       s = settle(cast(s, "p1", "Person of Interest"));
       expect(s.objects[idOf(s, "p1", "battlefield", "Person of Interest")]?.suspected).toBe(true);
@@ -2693,19 +2693,19 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
   });
 
   describe("Pyrotechnic Performer", () => {
-    it("retournée face visible, elle inflige autant de blessures que sa force à chaque adversaire ; de même pour une autre de vos créatures", () => {
+    it("turned face up, it deals damage equal to its power to each opponent; likewise for another of your creatures", () => {
       let s = scenario({
         players: 3,
         p1: { battlefield: [...lands("Mountain", 9), "Pyrotechnic Performer"], hand: ["Pyrotechnic Performer"] },
       });
       s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Pyrotechnic Performer"), faceDown: true }));
       const id = faceDownOf(s);
-      // Deux Performers : celle qui est retournée et celle déjà face visible se déclenchent chacune.
+      // Two Performers: the one turned up and the one already face up each trigger.
       s = settle(activate(s, "p1", id, "Turn face up"));
       expect([s.players.p1?.life, s.players.p2?.life, s.players.p3?.life]).toEqual([20, 14, 14]);
     });
 
-    it("une autre créature retournée face visible inflige ses blessures", () => {
+    it("another creature turned face up deals its damage", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Mountain", 8), "Pyrotechnic Performer"], hand: ["Offender at Large"] },
       });
@@ -2716,7 +2716,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
   });
 
   describe("Reckless Detective", () => {
-    it("en attaquant, sacrifiez un artefact ou défaussez une carte : piochez une carte et +2/+0", () => {
+    it("when attacking, sacrifice an artifact or discard a card: draw a card and +2/+0", () => {
       let s = scenario({ p1: { battlefield: ["Reckless Detective", TRINKET], library: lands("Island", 3) } });
       const det = idOf(s, "p1", "battlefield", "Reckless Detective");
       const trinket = idOf(s, "p1", "battlefield", TRINKET.name);
@@ -2726,7 +2726,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
       expect(s.players.p1?.hand).toHaveLength(1);
     });
 
-    it("sans artefact, en défaussant une carte ; sans rien, aucun effet", () => {
+    it("without an artifact, by discarding a card; with nothing, no effect", () => {
       let s = scenario({ p1: { battlefield: ["Reckless Detective"], hand: ["Opt"], library: lands("Island", 3) } });
       const det = idOf(s, "p1", "battlefield", "Reckless Detective");
       const opt = idOf(s, "p1", "hand", "Opt");
@@ -2743,7 +2743,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
   });
 
   describe("Red Herring", () => {
-    it("célérité, attaque à chaque combat si possible ; {2}, sacrifice : piochez", () => {
+    it("haste, attacks each combat if able; {2}, sacrifice: draw", () => {
       let s = scenario({ p1: { battlefield: ["Red Herring", ...lands("Mountain", 2)], library: lands("Island", 3) } });
       const fish = idOf(s, "p1", "battlefield", "Red Herring");
       expect(chars(s, fish).keywords).toEqual(expect.arrayContaining(["haste", "mustAttack"]));
@@ -2755,7 +2755,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
   });
 
   describe("Rubblebelt Braggart", () => {
-    it("en attaquant, si elle n'est pas suspecte, vous pouvez la suspecter", () => {
+    it("when attacking, if it isn't suspected, you may suspect it", () => {
       let s = scenario({ p1: { battlefield: ["Rubblebelt Braggart"] } });
       const id = idOf(s, "p1", "battlefield", "Rubblebelt Braggart");
       const t = attack(s, [id], no);
@@ -2767,7 +2767,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
   });
 
   describe("Suspicious Detonation", () => {
-    it("4 blessures à une créature ; coûte {3} de moins si vous avez sacrifié un artefact ce tour-ci ; ne peut pas être contrecarré", () => {
+    it("4 damage to a creature; costs {3} less if you sacrificed an artifact this turn; can't be countered", () => {
       let s = scenario({
         p1: {
           battlefield: ["Esoteric Duplicator", ...lands("Mountain", 4)],
@@ -2779,12 +2779,12 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
       const el = idOf(s, "p2", "battlefield", "Fire Elemental");
       const card = idOf(s, "p1", "hand", "Suspicious Detonation");
       expect(s.defs[s.objects[card]?.defId ?? ""]?.cantBeCountered).toBe(true);
-      // Quatre terrains : pas assez pour {4}{R}.
+      // Four lands: not enough for {4}{R}.
       expect(() => cast(s, "p1", "Suspicious Detonation", { t: [el] })).toThrow();
       const dup = idOf(s, "p1", "battlefield", "Esoteric Duplicator");
       const a = legalActions(s, "p1").find((x) => x.type === "activate" && x.source === dup);
       s = settle(act(s, "p1", { type: "activate", source: dup, ability: a?.type === "activate" ? a.ability : -1 }), no);
-      // Deux terrains restants suffisent pour {1}{R}.
+      // Two remaining lands are enough for {1}{R}.
       expect(s.battlefield.filter((id) => nameOf(s, id) === "Mountain" && !s.objects[id]?.tapped)).toHaveLength(2);
       s = settle(cast(s, "p1", "Suspicious Detonation", { t: [el] }));
       expect(idsOf(s, "p2", "graveyard", "Fire Elemental")).toHaveLength(1);
@@ -2792,7 +2792,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
   });
 
   describe("Torch the Witness", () => {
-    it("inflige deux fois X blessures ; s'il y a des blessures en excès, enquêtez", () => {
+    it("deals twice X damage; if there is excess damage, investigate", () => {
       const run = (x: number, target: string) => {
         let s = scenario({
           p1: { battlefield: lands("Mountain", 4), hand: ["Torch the Witness"] },
@@ -2802,34 +2802,34 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
         s = settle(cast(s, "p1", "Torch the Witness", { t: [t] }, { x }));
         return { dead: idsOf(s, "p2", "graveyard", target).length, clues: idsOf(s, "p1", "battlefield", "Clue").length };
       };
-      // Bear Cub 2/2 : X = 1 → 2 blessures, aucune en excès ; X = 2 → 4 blessures, 2 en excès.
+      // Bear Cub 2/2: X = 1 → 2 damage, none excess; X = 2 → 4 damage, 2 excess.
       expect(run(1, "Bear Cub")).toEqual({ dead: 1, clues: 0 });
       expect(run(2, "Bear Cub")).toEqual({ dead: 1, clues: 1 });
-      // Fire Elemental 5/4 : X = 2 → 4 blessures, mortelles sans excès.
+      // Fire Elemental 5/4: X = 2 → 4 damage, lethal with no excess.
       expect(run(2, "Fire Elemental")).toEqual({ dead: 1, clues: 0 });
     });
   });
 });
 
-describe("Murders at Karlov Manor, lot A — vert", () => {
+describe("Murders at Karlov Manor, lot A — green", () => {
   /**
-   * Murders at Karlov Manor, lot A — cartes vertes : chaque carte au comportement non trivial est confrontée à son texte
-   * Oracle (plan R, lot R7).
+   * Murders at Karlov Manor, lot A — green cards: each card with non-trivial behavior is checked against its Oracle text
+   * (plan R, lot R7).
    */
   type S = GameState;
   const names = (s: S, ids: readonly string[] = []) => ids.map((id) => nameOf(s, id)).sort();
   const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
   const onBattlefield = (s: S, player: string, name: string) => idsOf(s, player, "battlefield", name);
 
-  /** Active la capacité de `source` dont le libellé contient `label` (la première si absent). */
+  /** Activates the ability of `source` whose label contains `label` (the first if absent). */
   const activate = (s: S, player: string, source: string, label?: string, targets?: Record<string, string[]>) => {
     const a = legalActions(s, player).find(
       (x) => x.type === "activate" && x.source === source && (!label || (x.label ?? "").includes(label)),
     );
-    if (a?.type !== "activate") throw new Error(`Capacité introuvable : ${label ?? source}`);
+    if (a?.type !== "activate") throw new Error(`Ability not found: ${label ?? source}`);
     return act(s, player, { type: "activate", source, ability: a.ability, targets });
   };
-  /** Choisit, dans une demande « pick », les options dont le nom est donné. */
+  /** Chooses, in a "pick" request, the options whose name is given. */
   const pickNamed =
     (s: () => S, ...wanted: string[]): Answer =>
     (req) => {
@@ -2837,7 +2837,7 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
       const ids = req.options.filter((id) => wanted.includes(nameOf(s(), String(id)) ?? ""));
       return ids.length > 0 ? ids.slice(0, req.max) : undefined;
     };
-  /** Lance la carte face cachée pour {3}, puis la retourne face visible pour son coût de déguisement. */
+  /** Casts the card face down for {3}, then turns it face up for its disguise cost. */
   const castDisguisedThenTurnUp = (s: S, name: string): { s: S; id: string } => {
     let cur = passBoth(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", name), faceDown: true }));
     const id = cur.battlefield.find((x) => cur.objects[x]?.defId === FACE_DOWN_ID) as string;
@@ -2848,7 +2848,7 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
   };
 
   describe("Aftermath Analyst", () => {
-    it("en arrivant, meulez trois cartes ; {3}{G}, sacrifice : les cartes de terrain du cimetière reviennent engagées", () => {
+    it("when it enters, mill three cards; {3}{G}, sacrifice: the land cards in the graveyard return tapped", () => {
       let s = scenario({
         p1: {
           battlefield: lands("Forest", 6),
@@ -2870,13 +2870,13 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
   });
 
   describe("Analyze the Pollen", () => {
-    it("sans preuves : seulement une carte de terrain de base", () => {
+    it("without evidence: only a basic land card", () => {
       let s = scenario({ p1: { battlefield: ["Forest"], hand: ["Analyze the Pollen"], library: ["Bear Cub", "Forest"] } });
       s = settle(cast(s, "p1", "Analyze the Pollen"));
       expect(names(s, s.players.p1?.hand)).toEqual(["Forest"]);
     });
 
-    it("preuves 8 réunies : une carte de créature ou de terrain, au choix", () => {
+    it("evidence 8 collected: a creature or land card, your choice", () => {
       let s = scenario({
         p1: {
           battlefield: ["Forest"],
@@ -2890,13 +2890,13 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
         pickNamed(() => s, "Bear Cub"),
       );
       expect(names(s, s.players.p1?.hand)).toEqual(["Bear Cub"]);
-      // Les preuves sont exilées.
+      // The evidence is exiled.
       expect(s.players.p1?.graveyard.map((id) => nameOf(s, id))).toEqual(["Analyze the Pollen"]);
     });
   });
 
   describe("Archdruid's Charm", () => {
-    it("mode 1 : une carte de terrain trouvée arrive engagée ; une carte de créature va en main", () => {
+    it("mode 1: a land card found enters tapped; a creature card goes to hand", () => {
       const run = (wanted: string) => {
         let s = scenario({
           p1: { battlefield: lands("Forest", 3), hand: ["Archdruid's Charm"], library: ["Island", "Bear Cub"] },
@@ -2916,7 +2916,7 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
       expect(onBattlefield(creature, "p1", "Bear Cub")).toHaveLength(0);
     });
 
-    it("mode 2 : un marqueur +1/+1 sur votre créature, qui inflige des blessures égales à sa force", () => {
+    it("mode 2: a +1/+1 counter on your creature, which deals damage equal to its power", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Forest", 3), "Bear Cub"], hand: ["Archdruid's Charm"] },
         p2: { battlefield: ["Pelakka Wurm"] },
@@ -2928,7 +2928,7 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
       expect(s.objects[wurm]?.damage).toBe(3);
     });
 
-    it("mode 3 : exilez un artefact ou un enchantement", () => {
+    it("mode 3: exile an artifact or an enchantment", () => {
       let s = scenario({
         p1: { battlefield: lands("Forest", 3), hand: ["Archdruid's Charm"] },
         p2: { battlefield: ["Esoteric Duplicator"] },
@@ -2940,14 +2940,14 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
   });
 
   describe("Audience with Trostani", () => {
-    it("crée une Plante 0/1, puis pioche une carte par nom différent parmi vos jetons de créature", () => {
+    it("creates a 0/1 Plant, then draws a card for each different name among your creature tokens", () => {
       let s = scenario({ p1: { battlefield: lands("Forest", 6), hand: ["Audience with Trostani", "Audience with Trostani"] } });
       s = settle(cast(s, "p1", "Audience with Trostani"));
       const plants = onBattlefield(s, "p1", "Plant");
       expect(plants).toHaveLength(1);
       expect(pt(s, plants[0] as string)).toEqual([0, 1]);
       expect(s.players.p1?.hand).toHaveLength(2);
-      // Deux Plantes : un seul nom, une seule carte.
+      // Two Plants: a single name, a single card.
       s = settle(cast(s, "p1", "Audience with Trostani"));
       expect(onBattlefield(s, "p1", "Plant")).toHaveLength(2);
       expect(s.players.p1?.hand).toHaveLength(2);
@@ -2955,7 +2955,7 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
   });
 
   describe("Bite Down on Crime", () => {
-    it("coûte {2} de moins si des preuves ont été réunies ; +2/+0, puis blessures égales à la force", () => {
+    it("costs {2} less if evidence was collected; +2/+0, then damage equal to its power", () => {
       const setup = () =>
         scenario({
           p1: { battlefield: [...lands("Forest", 2), "Bear Cub"], hand: ["Bite Down on Crime"], graveyard: ["Pelakka Wurm"] },
@@ -2972,14 +2972,14 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
   });
 
   describe("Case of the Locked Hothouse", () => {
-    it("un terrain supplémentaire par tour", () => {
+    it("an additional land per turn", () => {
       let s = scenario({ p1: { battlefield: ["Case of the Locked Hothouse"], hand: ["Forest", "Forest", "Forest"] } });
       s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Forest") });
       s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Forest") });
       expect(() => act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Forest") })).toThrow();
     });
 
-    it("résolue avec sept terrains : terrains et sorts de créature du dessus de la bibliothèque", () => {
+    it("solved with seven lands: lands and creature spells from the top of the library", () => {
       const run = (n: number) => {
         let s = scenario({ p1: { battlefield: ["Case of the Locked Hothouse", ...lands("Forest", n)] } });
         const id = idOf(s, "p1", "battlefield", "Case of the Locked Hothouse");
@@ -3005,7 +3005,7 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
   });
 
   describe("Case of the Trampled Garden", () => {
-    it("en arrivant, deux marqueurs +1/+1 répartis ; résolue (force totale 8), un attaquant reçoit un marqueur et le piétinement", () => {
+    it("when it enters, two +1/+1 counters distributed; solved (total power 8), an attacker gets a counter and trample", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Forest", 3), "Pelakka Wurm"], hand: ["Case of the Trampled Garden"] },
       });
@@ -3017,7 +3017,7 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
       const caseId = idOf(s, "p1", "battlefield", "Case of the Trampled Garden");
       s = advanceUntil(s, (x) => x.turn.step === "cleanup" || x.turn.active !== "p1");
       expect((s.objects[caseId] as { solved?: boolean }).solved).toBe(true);
-      // Au tour suivant de p1 : attaque avec le Wurm.
+      // On p1's next turn: attack with the Wurm.
       s = advanceUntil(s, (x) => x.turn.active === "p1" && x.pending?.kind === "declareAttackers");
       s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: wurm, defender: "p2" }] });
       s = settle(s);
@@ -3025,7 +3025,7 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
       expect(chars(s, wurm).keywords).toContain("trample");
     });
 
-    it("non résolue si la force totale de vos créatures est inférieure à 8", () => {
+    it("not solved if the total power of your creatures is less than 8", () => {
       let s = scenario({ p1: { battlefield: ["Case of the Trampled Garden", "Bear Cub"] } });
       const caseId = idOf(s, "p1", "battlefield", "Case of the Trampled Garden");
       s = advanceUntil(s, (x) => x.turn.step === "cleanup" || x.turn.active !== "p1");
@@ -3034,7 +3034,7 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
   });
 
   describe("Chalk Outline", () => {
-    it("une carte de créature quitte votre cimetière : un Détective 2/2 et un Indice", () => {
+    it("a creature card leaves your graveyard: a 2/2 Detective and a Clue", () => {
       let s = scenario({
         p1: { battlefield: ["Chalk Outline", "Bear Cub", "Forest"], graveyard: ["Rubblebelt Maverick", "Opt"] },
       });
@@ -3048,7 +3048,7 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
   });
 
   describe("Flourishing Bloom-Kin", () => {
-    it("+1/+1 par Forêt ; retournée face visible : une Forêt arrive engagée, l'autre va en main", () => {
+    it("+1/+1 per Forest; turned face up: one Forest enters tapped, the other goes to hand", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Forest", 6), "Island", "Island"],
@@ -3069,7 +3069,7 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
   });
 
   describe("Get a Leg Up", () => {
-    it("+1/+1 par créature que vous contrôlez, et la portée", () => {
+    it("+1/+1 per creature you control, and reach", () => {
       let s = scenario({ p1: { battlefield: ["Forest", "Bear Cub", "Bear Cub", "Llanowar Elves"], hand: ["Get a Leg Up"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = settle(cast(s, "p1", "Get a Leg Up", { t: [bear] }));
@@ -3079,7 +3079,7 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
   });
 
   describe("Glint Weaver", () => {
-    it("trois marqueurs +1/+1 répartis, puis des PV égaux à la plus grande endurance parmi vos créatures", () => {
+    it("three +1/+1 counters distributed, then life equal to the greatest toughness among your creatures", () => {
       let s = scenario({ p1: { battlefield: [...lands("Forest", 7), "Bear Cub"], hand: ["Glint Weaver"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = settle(cast(s, "p1", "Glint Weaver"), (req) =>
@@ -3092,7 +3092,7 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
   });
 
   describe("Greenbelt Radical", () => {
-    it("retournée face visible : un marqueur +1/+1 sur chacune de vos créatures, qui gagnent le piétinement", () => {
+    it("turned face up: a +1/+1 counter on each of your creatures, which gain trample", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Forest", 10), "Bear Cub"], hand: ["Greenbelt Radical"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -3109,7 +3109,7 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
   });
 
   describe("Hard-Hitting Question", () => {
-    it("votre créature inflige des blessures égales à sa force à une créature ou un planeswalker adverse", () => {
+    it("your creature deals damage equal to its power to an opposing creature or planeswalker", () => {
       let s = scenario({
         p1: { battlefield: ["Forest", "Pelakka Wurm"], hand: ["Hard-Hitting Question"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -3123,7 +3123,7 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
   });
 
   describe("Hide in Plain Sight", () => {
-    it("regarde cinq cartes, en enveloppe deux d'une cape (2/2 face cachée, garde {2}), le reste dessous", () => {
+    it("looks at five cards, cloaks two of them (2/2 face down, ward {2}), the rest underneath", () => {
       let s = scenario({
         p1: {
           battlefield: lands("Forest", 4),
@@ -3147,7 +3147,7 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
   });
 
   describe("Loxodon Eavesdropper", () => {
-    it("en arrivant, enquêtez ; votre deuxième carte piochée du tour lui donne +1/+1 et la vigilance", () => {
+    it("when it enters, investigate; your second card drawn each turn gives it +1/+1 and vigilance", () => {
       let s = scenario({ p1: { battlefield: [...lands("Forest", 8), "Rope"], hand: ["Loxodon Eavesdropper"] } });
       s = settle(cast(s, "p1", "Loxodon Eavesdropper"));
       const elephant = idOf(s, "p1", "battlefield", "Loxodon Eavesdropper");
@@ -3161,7 +3161,7 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
   });
 
   describe("Nervous Gardener", () => {
-    it("retourné face visible : cherche une carte de terrain avec un type de terrain de base", () => {
+    it("turned face up: searches for a land card with a basic land type", () => {
       let s = scenario({
         p1: { battlefield: lands("Forest", 4), hand: ["Nervous Gardener"], library: ["Opt", "Thundering Falls"] },
       });
@@ -3172,7 +3172,7 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
   });
 
   describe("Pick Your Poison", () => {
-    it("chaque adversaire sacrifie une créature avec le vol", () => {
+    it("each opponent sacrifices a creature with flying", () => {
       let s = scenario({
         players: 3,
         p1: { battlefield: ["Forest"], hand: ["Pick Your Poison"] },
@@ -3185,7 +3185,7 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
       expect(onBattlefield(s, "p3", "Bear Cub")).toHaveLength(1);
     });
 
-    it("chaque adversaire sacrifie un artefact", () => {
+    it("each opponent sacrifices an artifact", () => {
       let s = scenario({
         p1: { battlefield: ["Forest", "Rope"], hand: ["Pick Your Poison"] },
         p2: { battlefield: ["Esoteric Duplicator"] },
@@ -3197,14 +3197,14 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
   });
 
   describe("Pompous Gadabout", () => {
-    it("défense talismanique pendant votre tour seulement", () => {
+    it("hexproof during your turn only", () => {
       const mine = scenario({ p1: { battlefield: ["Pompous Gadabout"] } });
       expect(chars(mine, idOf(mine, "p1", "battlefield", "Pompous Gadabout")).keywords).toContain("hexproof");
       const theirs = scenario({ active: "p2", p1: { battlefield: ["Pompous Gadabout"] } });
       expect(chars(theirs, idOf(theirs, "p1", "battlefield", "Pompous Gadabout")).keywords).not.toContain("hexproof");
     });
 
-    it("ne peut pas être bloquée par une créature face cachée (sans nom)", () => {
+    it("can't be blocked by a face-down creature (nameless)", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: ["Pompous Gadabout"] },
@@ -3220,9 +3220,9 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
   });
 
   describe("The Pride of Hull Clade", () => {
-    it("coûte {X} de moins, X étant l'endurance totale de vos créatures", () => {
+    it("costs {X} less, X being the total toughness of your creatures", () => {
       const s = scenario({ p1: { battlefield: [...lands("Forest", 3), "Pelakka Wurm"], hand: ["The Pride of Hull Clade"] } });
-      // {10}{G} − 7 = {3}{G} : quatre terrains manquent d'un.
+      // {10}{G} - 7 = {3}{G}: four lands short by one.
       expect(() => cast(s, "p1", "The Pride of Hull Clade")).toThrow();
       const t = scenario({ p1: { battlefield: [...lands("Forest", 4), "Pelakka Wurm"], hand: ["The Pride of Hull Clade"] } });
       const after = settle(cast(t, "p1", "The Pride of Hull Clade"));
@@ -3230,7 +3230,7 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
       expect(chars(after, pride).keywords).toContain("defender");
     });
 
-    it("{2}{U}{U} : +1/+0, attaque malgré le défenseur, et pioche autant que son endurance en blessant un joueur", () => {
+    it("{2}{U}{U}: +1/+0, attacks despite defender, and draws as many as its toughness when damaging a player", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Island", 4), "The Pride of Hull Clade"], library: lands("Forest", 20) },
       });
@@ -3247,7 +3247,7 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
   });
 
   describe("Rope", () => {
-    it("la créature équipée a +1/+2, la portée et ne peut être bloquée que par une seule créature ; {2}, sacrifice : piochez", () => {
+    it("the equipped creature gets +1/+2, reach and can be blocked by only one creature; {2}, sacrifice: draw", () => {
       let s = scenario({ p1: { battlefield: [...lands("Forest", 5), "Rope", "Bear Cub"] } });
       const rope = idOf(s, "p1", "battlefield", "Rope");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -3263,7 +3263,7 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
   });
 
   describe("Rubblebelt Maverick", () => {
-    it("en arrivant, surveillance 2", () => {
+    it("when it enters, surveil 2", () => {
       let s = scenario({ p1: { battlefield: ["Forest"], hand: ["Rubblebelt Maverick"], library: ["Opt", "Island", "Forest"] } });
       s = settle(cast(s, "p1", "Rubblebelt Maverick"), (req) =>
         req.intent === "surveilGraveyard" && req.type === "pick" ? req.options : undefined,
@@ -3271,7 +3271,7 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
       expect(names(s, s.players.p1?.graveyard)).toEqual(["Island", "Opt"]);
     });
 
-    it("{G}, exilez-la de votre cimetière : un marqueur +1/+1, en rituel seulement", () => {
+    it("{G}, exile it from your graveyard: a +1/+1 counter, at sorcery speed only", () => {
       let s = scenario({ p1: { battlefield: ["Forest", "Bear Cub"], graveyard: ["Rubblebelt Maverick"] } });
       const maverick = idOf(s, "p1", "graveyard", "Rubblebelt Maverick");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -3286,7 +3286,7 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
   });
 
   describe("Sharp-Eyed Rookie", () => {
-    it("une créature plus forte ou plus endurante arrive : un marqueur +1/+1 et un Indice ; sinon rien", () => {
+    it("a creature with greater power or toughness enters: a +1/+1 counter and a Clue; otherwise nothing", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Forest", 9), "Sharp-Eyed Rookie"], hand: ["Llanowar Elves", "Pelakka Wurm"] },
       });
@@ -3302,7 +3302,7 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
   });
 
   describe("Slime Against Humanity", () => {
-    it("un Limon 0/0 avec le piétinement et 2 + X marqueurs (Limons et homonymes au cimetière et en exil)", () => {
+    it("a 0/0 Ooze with trample and 2 + X counters (Oozes and namesakes in the graveyard and in exile)", () => {
       let s = scenario({
         p1: {
           battlefield: lands("Forest", 3),
@@ -3320,7 +3320,7 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
   });
 
   describe("They Went This Way", () => {
-    it("une carte de terrain de base arrive engagée, puis enquêtez", () => {
+    it("a basic land card enters tapped, then investigate", () => {
       let s = scenario({
         p1: { battlefield: lands("Forest", 3), hand: ["They Went This Way"], library: ["Bear Cub", "Island"] },
       });
@@ -3332,7 +3332,7 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
   });
 
   describe("Undergrowth Recon", () => {
-    it("au début de votre entretien, une carte de terrain de votre cimetière revient engagée", () => {
+    it("at the beginning of your upkeep, a land card from your graveyard returns tapped", () => {
       let s = scenario({ p1: { battlefield: ["Undergrowth Recon"], graveyard: ["Island", "Bear Cub"] } });
       s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "draw");
       const island = idOf(s, "p1", "battlefield", "Island");
@@ -3342,7 +3342,7 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
   });
 
   describe("Vengeful Creeper", () => {
-    it("retournée face visible : détruit un artefact ou un enchantement adverse", () => {
+    it("turned face up: destroys an opposing artifact or enchantment", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Forest", 9), "Rope"], hand: ["Vengeful Creeper"] },
         p2: { battlefield: ["Esoteric Duplicator"] },
@@ -3356,7 +3356,7 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
   });
 
   describe("Vitu-Ghazi Inspector", () => {
-    it("preuves 6 réunies : un marqueur +1/+1 sur une créature ciblée et 2 PV ; sinon rien", () => {
+    it("evidence 6 collected: a +1/+1 counter on a target creature and 2 life; otherwise nothing", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Forest", 4), "Bear Cub"],
@@ -3377,9 +3377,9 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
   });
 });
 
-describe("Murders at Karlov Manor, lot A — multicolores", () => {
+describe("Murders at Karlov Manor, lot A — multicolor", () => {
   /**
-   * Murders at Karlov Manor, lot A — cartes multicolores : chaque carte est confrontée à son texte Oracle (plan R, lot R7).
+   * Murders at Karlov Manor, lot A — multicolor cards: each card is checked against its Oracle text (plan R, lot R7).
    */
   type S = GameState;
   const names = (s: S, ids: string[] | undefined) => (ids ?? []).map((id) => nameOf(s, id));
@@ -3388,30 +3388,30 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
 
   const cast = (s: S, player: string, name: string, extra: Partial<Extract<Decision, { type: "cast" }>> = {}) =>
     act(s, player, { type: "cast", card: idOf(s, player, "hand", name), ...extra });
-  /** Active la capacité de la source dont le libellé contient `label` (la première sinon). */
+  /** Activates the ability of the source whose label contains `label` (the first otherwise). */
   const activate = (s: S, player: string, source: string, label = "", extra: object = {}) => {
     const a = legalActions(s, player).find(
       (x) => x.type === "activate" && x.source === source && (x.label ?? "").includes(label),
     );
-    if (a?.type !== "activate") throw new Error(`capacité introuvable : ${label}`);
+    if (a?.type !== "activate") throw new Error(`ability not found: ${label}`);
     return act(s, player, { type: "activate", source, ability: a.ability, ...extra });
   };
   const canActivate = (s: S, player: string, source: string, label = "") =>
     legalActions(s, player).some((x) => x.type === "activate" && x.source === source && (x.label ?? "").includes(label));
-  /** Choisit cette option dans un choix de type « pick » qui la propose. */
+  /** Chooses this option in a "pick" choice that offers it. */
   const pick =
     (...ids: string[]): Answer =>
     (req) =>
       req.type === "pick" && ids.some((id) => req.options.includes(id))
         ? ids.filter((id) => req.options.includes(id))
         : undefined;
-  /** Attaque avec ces créatures (p1 contre p2), puis résout les déclenchements. */
+  /** Attacks with these creatures (p1 against p2), then resolves the triggers. */
   const attack = (s: S, ids: string[], answer?: Answer) => {
     let c = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
     c = act(c, "p1", { type: "declareAttackers", attackers: ids.map((id) => ({ id, defender: "p2" })) });
     return c.stack.length > 0 || c.triggers.length > 0 || c.pending?.kind === "choice" ? settle(c, answer) : c;
   };
-  /** Lance la carte face cachée pour {3} et la résout ; renvoie l'état et l'identifiant du permanent face cachée. */
+  /** Casts the card face down for {3} and resolves it; returns the state and the id of the face-down permanent. */
   const castFaceDown = (s: S, name: string): [S, string] => {
     const t = settle(cast(s, "p1", name, { faceDown: true }));
     return [t, t.battlefield.find((x) => t.objects[x]?.defId === FACE_DOWN_ID) as string];
@@ -3419,7 +3419,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   const clues = (s: S, player = "p1") => idsOf(s, player, "battlefield", "Clue");
 
   describe("Agrus Kos, Spirit of Justice", () => {
-    it("en arrivant, suspecte la créature ciblée ; en attaquant, exile la créature déjà suspecte", () => {
+    it("when it enters, suspects the target creature; when attacking, exiles the already suspected creature", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Plains", 2), ...lands("Mountain", 2)], hand: ["Agrus Kos, Spirit of Justice"] },
         p2: { battlefield: ["Bear Cub", "Llanowar Elves"] },
@@ -3439,13 +3439,13 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 
   describe("Alquist Proft, Master Sleuth", () => {
-    it("en arrivant, enquête", () => {
+    it("when it enters, investigates", () => {
       let s = scenario({ p1: { battlefield: ["Plains", "Island", "Island"], hand: ["Alquist Proft, Master Sleuth"] } });
       s = settle(cast(s, "p1", "Alquist Proft, Master Sleuth"));
       expect(clues(s)).toHaveLength(1);
     });
 
-    it("{X}{W}{U}{U}, {T}, sacrifiez un Indice : piochez X cartes et gagnez X PV", () => {
+    it("{X}{W}{U}{U}, {T}, sacrifice a Clue: draw X cards and gain X life", () => {
       let s = scenario({
         p1: { battlefield: ["Alquist Proft, Master Sleuth", "Plains", ...lands("Island", 4)], library: lands("Forest", 5) },
       });
@@ -3460,7 +3460,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 
   describe("Anzrag, the Quake-Mole", () => {
-    it("bloquée : vos créatures se dégagent et une phase de combat supplémentaire suit", () => {
+    it("blocked: your creatures untap and an additional combat phase follows", () => {
       const s = scenario({
         p1: { battlefield: ["Anzrag, the Quake-Mole", "Bear Cub"] },
         p2: { battlefield: ["Fire Elemental"] },
@@ -3478,7 +3478,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
       expect(c.turn.addedPhases).toEqual(["beginCombat"]);
     });
 
-    it("{3}{R}{R}{G}{G} : doit être bloquée ce tour-ci", () => {
+    it("{3}{R}{R}{G}{G}: must be blocked this turn", () => {
       let s = scenario({ p1: { battlefield: ["Anzrag, the Quake-Mole", ...lands("Mountain", 3), ...lands("Forest", 4)] } });
       const anzrag = idOf(s, "p1", "battlefield", "Anzrag, the Quake-Mole");
       s = settle(activate(s, "p1", anzrag));
@@ -3487,7 +3487,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 
   describe("Assassin's Trophy", () => {
-    it("détruit le permanent adverse ; son contrôleur cherche un terrain de base et le met sur le champ de bataille", () => {
+    it("destroys the opposing permanent; its controller searches for a basic land and puts it onto the battlefield", () => {
       let s = scenario({
         p1: { battlefield: ["Swamp", "Forest"], hand: ["Assassin's Trophy"] },
         p2: { battlefield: ["Fire Elemental"], library: ["Plains", "Opt"] },
@@ -3499,7 +3499,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
       expect(s.objects[idOf(s, "p2", "battlefield", "Plains")]?.tapped).toBe(false);
     });
 
-    it("ne peut pas cibler un permanent que vous contrôlez", () => {
+    it("can't target a permanent you control", () => {
       const s = scenario({ p1: { battlefield: ["Swamp", "Forest", "Bear Cub"], hand: ["Assassin's Trophy"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       expect(() => cast(s, "p1", "Assassin's Trophy", { targets: { t: [bear] } })).toThrow();
@@ -3507,7 +3507,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 
   describe("Blood Spatter Analysis", () => {
-    it("en arrivant, 3 blessures à une créature adverse ; chaque mort : meule une carte et un marqueur de sang", () => {
+    it("when it enters, 3 damage to an opposing creature; each death: mills a card and a blood counter", () => {
       let s = scenario({
         p1: { battlefield: ["Swamp", "Mountain"], hand: ["Blood Spatter Analysis"], library: ["Opt", "Forest"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -3520,7 +3520,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
       expect(names(s, s.players.p1?.graveyard)).toEqual(["Opt"]);
     });
 
-    it("au cinquième marqueur, il est sacrifié et une carte de créature de votre cimetière revient en main", () => {
+    it("at the fifth counter, it is sacrificed and a creature card from your graveyard returns to hand", () => {
       let s = scenario({
         p1: {
           battlefield: [{ name: "Blood Spatter Analysis", counters: { bloodstain: 4 } }, ...lands("Mountain", 2)],
@@ -3538,7 +3538,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 
   describe("Break Out", () => {
-    it("une créature de valeur de mana 2 ou moins peut arriver avec la célérité ; le reste va dessous", () => {
+    it("a creature with mana value 2 or less may enter with haste; the rest goes underneath", () => {
       let s = scenario({
         p1: {
           battlefield: ["Mountain", "Forest"],
@@ -3555,7 +3555,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
       expect(s.players.p1?.library).toHaveLength(6);
     });
 
-    it("une créature plus chère va dans la main", () => {
+    it("a more expensive creature goes to hand", () => {
       let s = scenario({
         p1: { battlefield: ["Mountain", "Forest"], hand: ["Break Out"], library: ["Fire Elemental", "Opt", "Forest"] },
       });
@@ -3567,7 +3567,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 
   describe("Coerced to Kill", () => {
-    it("vous contrôlez la créature enchantée, 1/1 de base avec le contact mortel, Assassin en plus", () => {
+    it("you control the enchanted creature, a base 1/1 with deathtouch, plus an Assassin", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Island", 3), ...lands("Swamp", 2)], hand: ["Coerced to Kill"] },
         p2: { battlefield: ["Fire Elemental"] },
@@ -3585,7 +3585,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 
   describe("Crowd-Control Warden", () => {
-    it("arrive avec un marqueur +1/+1 par autre créature que vous contrôlez", () => {
+    it("enters with a +1/+1 counter per other creature you control", () => {
       let s = scenario({
         p1: {
           battlefield: ["Bear Cub", "Llanowar Elves", ...lands("Forest", 3), ...lands("Plains", 2)],
@@ -3599,7 +3599,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
       expect(pt(s, warden)).toEqual([6, 6]);
     });
 
-    it("face cachée : une 2/2 sans marqueur ; retournée face visible, elle reçoit ses marqueurs", () => {
+    it("face down: a 2/2 with no counters; turned face up, it gets its counters", () => {
       let s = scenario({
         p1: { battlefield: ["Bear Cub", ...lands("Forest", 4), ...lands("Plains", 4)], hand: ["Crowd-Control Warden"] },
       });
@@ -3613,7 +3613,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 
   describe("Curious Cadaver", () => {
-    it("quand vous sacrifiez un Indice, elle revient de votre cimetière dans votre main", () => {
+    it("when you sacrifice a Clue, it returns from your graveyard to your hand", () => {
       let s = scenario({ p1: { battlefield: lands("Island", 2), graveyard: ["Curious Cadaver"] } });
       const [clue] = createTokens(s, "p1", CLUE, 1);
       s = settle(activate(s, "p1", clue as string));
@@ -3623,7 +3623,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 
   describe("Deadly Complication", () => {
-    it("les deux modes : détruit une créature, marqueur +1/+1 sur votre créature suspecte qui n'est plus suspecte", () => {
+    it("both modes: destroys a creature, +1/+1 counter on your suspected creature that is no longer suspected", () => {
       let s = scenario({
         p1: { battlefield: ["Bear Cub", "Swamp", "Mountain", "Mountain"], hand: ["Deadly Complication"] },
         p2: { battlefield: ["Fire Elemental"] },
@@ -3640,7 +3640,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
       expect(s.objects[bear]?.suspected).toBeUndefined();
     });
 
-    it("le second mode ne cible qu'une créature suspecte que vous contrôlez", () => {
+    it("the second mode only targets a suspected creature you control", () => {
       const s = scenario({
         p1: { battlefield: ["Bear Cub", "Swamp", "Mountain", "Mountain"], hand: ["Deadly Complication"] },
       });
@@ -3650,7 +3650,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 
   describe("Detective's Satchel", () => {
-    it("enquête deux fois ; {T} : un Thopter, seulement si vous avez sacrifié un artefact ce tour-ci", () => {
+    it("investigates twice; {T}: a Thopter, only if you sacrificed an artifact this turn", () => {
       let s = scenario({ p1: { battlefield: [...lands("Island", 4), ...lands("Mountain", 2)], hand: ["Detective's Satchel"] } });
       s = settle(cast(s, "p1", "Detective's Satchel"));
       expect(clues(s)).toHaveLength(2);
@@ -3664,7 +3664,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 
   describe("Dog Walker", () => {
-    it("retournée face visible : crée deux Chiens 1/1 blancs engagés", () => {
+    it("turned face up: creates two tapped 1/1 white Dogs", () => {
       let s = scenario({ p1: { battlefield: [...lands("Mountain", 3), ...lands("Plains", 2)], hand: ["Dog Walker"] } });
       let id = "";
       [s, id] = castFaceDown(s, "Dog Walker");
@@ -3677,7 +3677,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 
   describe("Doppelgang", () => {
-    it("pour chacune des X cibles, X jetons copies", () => {
+    it("for each of the X targets, X token copies", () => {
       let s = scenario({
         p1: { battlefield: ["Bear Cub", ...lands("Forest", 4), ...lands("Island", 4)], hand: ["Doppelgang"] },
         p2: { battlefield: ["Llanowar Elves"] },
@@ -3692,7 +3692,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 
   describe("Drag the Canal", () => {
-    it("un Détective 2/2 ; si une créature est morte ce tour-ci, 2 PV, surveillance 2 et un Indice", () => {
+    it("a 2/2 Detective; if a creature died this turn, 2 life, surveil 2 and a Clue", () => {
       let s = scenario({ p1: { battlefield: ["Island", "Swamp"], hand: ["Drag the Canal"] } });
       s = settle(cast(s, "p1", "Drag the Canal"));
       expect(idsOf(s, "p1", "battlefield", "Detective")).toHaveLength(1);
@@ -3712,12 +3712,12 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 
   describe("Ezrim, Agency Chief", () => {
-    it("enquête deux fois ; {1}, sacrifiez un artefact : le lien de vie jusqu'à la fin du tour", () => {
+    it("investigates twice; {1}, sacrifice an artifact: lifelink until end of turn", () => {
       let s = scenario({ p1: { battlefield: [...lands("Plains", 3), ...lands("Island", 3)], hand: ["Ezrim, Agency Chief"] } });
       s = settle(cast(s, "p1", "Ezrim, Agency Chief"));
       expect(clues(s)).toHaveLength(2);
       const ezrim = idOf(s, "p1", "battlefield", "Ezrim, Agency Chief");
-      // Vigilance ? non ; lien de vie ? oui.
+      // Vigilance? no; lifelink? yes.
       s = settle(activate(s, "p1", ezrim, "lifelink", { sacrifice: [clues(s)[0] as string] }), (req) =>
         req.intent === "may" ? [req.prompt.includes("lifelink") ? 1 : 0] : undefined,
       );
@@ -3727,14 +3727,14 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
       expect(chars(s, ezrim).keywords).not.toContain("vigilance");
     });
 
-    it("« au choix » : une seule capacité, le mot-clé est choisi pendant la résolution (608.2d)", () => {
+    it('"your choice": a single ability, the keyword is chosen during resolution (608.2d)', () => {
       let s = scenario({ p1: { battlefield: ["Ezrim, Agency Chief", "Island"] } });
       createTokens(s, "p1", CLUE, 1);
       const ezrim = idOf(s, "p1", "battlefield", "Ezrim, Agency Chief");
       const boosts = legalActions(s, "p1").filter((x) => x.type === "activate" && x.source === ezrim);
       expect(boosts).toHaveLength(1);
       s = activate(s, "p1", ezrim, "your choice", { sacrifice: clues(s) });
-      // Aucune question à l'activation : la capacité est sur la pile, sans choix fait.
+      // No question on activation: the ability is on the stack, with no choice made.
       expect(s.stack).toHaveLength(1);
       expect(s.pending?.kind).toBe("priority");
       const prompts: string[] = [];
@@ -3743,7 +3743,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
         prompts.push(req.prompt);
         return [0];
       });
-      // Ni vigilance ni lien de vie : la défense talismanique.
+      // Neither vigilance nor lifelink: hexproof.
       expect(prompts).toHaveLength(2);
       expect(chars(s, ezrim).keywords).toContain("hexproof");
       expect(chars(s, ezrim).keywords).not.toContain("vigilance");
@@ -3754,7 +3754,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 
   describe("Faerie Snoop", () => {
-    it("retournée face visible : une des deux cartes du dessus en main, l'autre au cimetière", () => {
+    it("turned face up: one of the top two cards to hand, the other to the graveyard", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Island", 3), ...lands("Swamp", 3)],
@@ -3772,7 +3772,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 
   describe("Gadget Technician", () => {
-    it("un Thopter en arrivant, et un autre quand elle est retournée face visible", () => {
+    it("a Thopter when it enters, and another when it's turned face up", () => {
       let s = scenario({ p1: { battlefield: [...lands("Island", 2), ...lands("Mountain", 2)], hand: ["Gadget Technician"] } });
       s = settle(cast(s, "p1", "Gadget Technician"));
       expect(idsOf(s, "p1", "battlefield", "Thopter")).toHaveLength(1);
@@ -3788,7 +3788,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 
   describe("Gleaming Geardrake", () => {
-    it("enquête en arrivant ; chaque artefact sacrifié lui donne un marqueur +1/+1", () => {
+    it("investigates when it enters; each sacrificed artifact gives it a +1/+1 counter", () => {
       let s = scenario({ p1: { battlefield: [...lands("Island", 3), "Mountain"], hand: ["Gleaming Geardrake"] } });
       s = settle(cast(s, "p1", "Gleaming Geardrake"));
       const drake = idOf(s, "p1", "battlefield", "Gleaming Geardrake");
@@ -3799,7 +3799,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 
   describe("Granite Witness", () => {
-    it("retournée face visible : engage ou dégage la créature ciblée, au choix", () => {
+    it("turned face up: taps or untaps the target creature, your choice", () => {
       for (const tappedBefore of [false, true]) {
         let s = scenario({
           p1: { battlefield: [...lands("Plains", 3), ...lands("Island", 2)], hand: ["Granite Witness"] },
@@ -3815,7 +3815,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
       }
     });
 
-    it("la cible est choisie au déclenchement, engager ou dégager pendant la résolution (608.2d) ; on peut ne rien faire", () => {
+    it("the target is chosen on trigger, tap or untap during resolution (608.2d); you may do nothing", () => {
       const setup = () => {
         let s = scenario({
           p1: { battlefield: [...lands("Plains", 3), ...lands("Island", 2)], hand: ["Granite Witness"] },
@@ -3828,7 +3828,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
       let { s, id, elemental } = setup();
       let asked: ChoiceRequest[] = [];
       s = activate(s, "p1", id, "Turn face up");
-      // Mise sur la pile : seule la cible est demandée (pas de mode).
+      // Put on the stack: only the target is asked (no mode).
       for (let i = 0; i < 20 && !s.stack.some((it) => it.kind === "ability"); i++) {
         const p = s.pending;
         if (p?.kind === "priority") s = act(s, p.player, { type: "pass" });
@@ -3843,7 +3843,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
       }
       expect(asked.map((r) => r.intent)).not.toContain("triggerMode");
       expect(s.stack.find((it) => it.kind === "ability")?.targets.t).toEqual([elemental]);
-      // La créature est engagée en réponse : l'action proposée à la résolution est de la dégager.
+      // The creature is tapped in response: the action offered on resolution is to untap it.
       const fire = s.objects[elemental];
       if (fire) fire.tapped = true;
       bump(s);
@@ -3856,7 +3856,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
       expect(asked.map((r) => r.prompt).filter((p) => p.includes("Tap"))).toHaveLength(0);
       expect(s.objects[elemental]?.tapped).toBe(false);
 
-      // « Vous pouvez » : refuser ne fait rien.
+      // "You may": declining does nothing.
       ({ s, id, elemental } = setup());
       s = settle(activate(s, "p1", id, "Turn face up"), (req) =>
         req.intent === "may" ? [0] : req.type === "pick" && req.options.includes(elemental) ? [elemental] : undefined,
@@ -3866,7 +3866,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 
   describe("Insidious Roots", () => {
-    it("vos jetons de créature produisent du mana de n'importe quelle couleur", () => {
+    it("your creature tokens produce mana of any color", () => {
       const s = scenario({ p1: { battlefield: ["Insidious Roots", "Bear Cub"] } });
       const [dog] = createTokens(
         s,
@@ -3874,7 +3874,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
         { name: "Dog", colors: ["W"], types: ["Creature"], subtypes: ["Dog"], power: 1, toughness: 1 },
         1,
       );
-      // Pas de mal d'invocation : le jeton est sous votre contrôle depuis le début du tour.
+      // No summoning sickness: the token has been under your control since the start of the turn.
       const token = s.objects[dog as string];
       if (token) token.controlledSince = 0;
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -3883,7 +3883,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
       expect(legalActions(s, "p1").some((a) => a.type === "tapForMana" && a.source === bear)).toBe(false);
     });
 
-    it("des cartes de créature quittent votre cimetière : une Plante 0/1, puis un marqueur +1/+1 sur chaque Plante", () => {
+    it("creature cards leave your graveyard: a 0/1 Plant, then a +1/+1 counter on each Plant", () => {
       let s = scenario({
         p1: {
           battlefield: ["Insidious Roots", ...lands("Plains", 4), ...lands("Mountain", 2)],
@@ -3900,7 +3900,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 
   describe("Kellan, Inquisitive Prodigy // Tail the Suspect", () => {
-    it("Kellan attaque : détruit un artefact ; si c'était le vôtre, piochez une carte", () => {
+    it("Kellan attacks: destroys an artifact; if it was yours, draw a card", () => {
       let s = scenario({
         p1: { battlefield: ["Kellan, Inquisitive Prodigy // Tail the Suspect"], library: lands("Forest", 3) },
         p2: { battlefield: ["Esoteric Duplicator"] },
@@ -3916,7 +3916,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
       expect(s.players.p1?.hand).toHaveLength(1);
     });
 
-    it("Tail the Suspect : enquête, et un terrain de plus ce tour-ci", () => {
+    it("Tail the Suspect: investigates, and an additional land this turn", () => {
       let s = scenario({
         p1: { battlefield: ["Forest", "Island"], hand: ["Kellan, Inquisitive Prodigy // Tail the Suspect", "Forest", "Island"] },
       });
@@ -3929,7 +3929,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 
   describe("Kraul Whipcracker", () => {
-    it("en arrivant, détruit un jeton adverse (pas une carte)", () => {
+    it("when it enters, destroys an opposing token (not a card)", () => {
       let s = scenario({
         p1: { battlefield: ["Swamp", "Forest"], hand: ["Kraul Whipcracker"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -3942,7 +3942,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 
   describe("Leyline of the Guildpact", () => {
-    it("vos permanents non-terrains sont de toutes les couleurs ; vos terrains ont tous les types de base", () => {
+    it("your nonland permanents are every color; your lands have every basic type", () => {
       const s = scenario({
         p1: { battlefield: ["Leyline of the Guildpact", "Bear Cub", "Forest"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -3958,7 +3958,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 
   describe("Lightning Helix", () => {
-    it("3 blessures à n'importe quelle cible et 3 PV", () => {
+    it("3 damage to any target and 3 life", () => {
       let s = scenario({ p1: { battlefield: ["Mountain", "Plains"], hand: ["Lightning Helix"] } });
       s = settle(cast(s, "p1", "Lightning Helix", { targets: { t: ["p2"] } }));
       expect([s.players.p1?.life, s.players.p2?.life]).toEqual([23, 17]);
@@ -3966,7 +3966,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 
   describe("Meddling Youths", () => {
-    it("enquête quand vous attaquez avec trois créatures ou plus, pas avec deux", () => {
+    it("investigates when you attack with three or more creatures, not with two", () => {
       const s = scenario({ p1: { battlefield: ["Meddling Youths", "Bear Cub", "Llanowar Elves"] } });
       const all = idsOf(s, "p1", "battlefield", "Meddling Youths").concat(
         idsOf(s, "p1", "battlefield", "Bear Cub"),
@@ -3978,7 +3978,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 
   describe("Private Eye", () => {
-    it("les autres Détectives gagnent +1/+1 ; deuxième carte piochée : le Détective ciblé ne peut pas être bloqué", () => {
+    it("the other Detectives get +1/+1; second card drawn: the targeted Detective can't be blocked", () => {
       let s = scenario({
         p1: { battlefield: ["Private Eye", "Undercover Crocodelf", "Bear Cub", ...lands("Island", 3)], hand: ["Opt"] },
       });
@@ -3987,7 +3987,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
       expect(pt(s, croc)).toEqual([6, 6]);
       expect(pt(s, eye)).toEqual([3, 3]);
       expect(pt(s, idOf(s, "p1", "battlefield", "Bear Cub"))).toEqual([2, 2]);
-      // Le joueur a pioché sa première carte du tour (scénario : aucune) ; Opt fait piocher la première, la seconde déclenche.
+      // The player drew their first card of the turn (scenario: none); Opt draws the first, the second triggers.
       s = settle(cast(s, "p1", "Opt"));
       expect(chars(s, croc).keywords).not.toContain("unblockable");
       const [clue] = createTokens(s, "p1", CLUE, 1);
@@ -4002,19 +4002,19 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
         p1: { battlefield: ["Rakdos, Patron of Chaos"], library: lands("Swamp", 5) },
         p2: { battlefield: ["Bear Cub", "Llanowar Elves", "Forest"] },
       });
-    /** Jusqu'à la capacité de Rakdos sur la pile à l'étape de fin, puis l'adversaire répond. */
+    /** Up to Rakdos's ability on the stack at the end step, then the opponent responds. */
     const toEnd = (s: S, sacrifice: boolean) => {
       const c = advanceUntil(s, (x) => x.turn.step === "end" && x.stack.length > 0);
       return settle(c, (req) => (req.type === "yesNo" ? [sacrifice ? 1 : 0] : undefined));
     };
 
-    it("si l'adversaire ciblé ne sacrifie pas deux permanents non-terrains, vous piochez deux cartes", () => {
+    it("if the targeted opponent doesn't sacrifice two nonland permanents, you draw two cards", () => {
       const s = toEnd(setup(), false);
       expect(s.players.p1?.hand).toHaveLength(2);
       expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
     });
 
-    it("s'il les sacrifie, vous ne piochez pas", () => {
+    it("if they sacrifice them, you don't draw", () => {
       const s = toEnd(setup(), true);
       expect(s.players.p1?.hand).toHaveLength(0);
       expect(s.players.p2?.graveyard).toHaveLength(2);
@@ -4023,7 +4023,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 
   describe("Relive the Past", () => {
-    it("un artefact et un enchantement non-Aura reviennent en Élémentaux 5/5 en plus de leurs types", () => {
+    it("an artifact and a non-Aura enchantment return as 5/5 Elementals in addition to their types", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Forest", 5), ...lands("Plains", 2)],
@@ -4047,7 +4047,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 
   describe("Repulsive Mutation", () => {
-    it("X marqueurs +1/+1, puis contrecarre le sort sauf si son contrôleur paie la plus grande force parmi vos créatures", () => {
+    it("X +1/+1 counters, then counters the spell unless its controller pays the greatest power among your creatures", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: ["Bear Cub", "Forest", "Island", "Forest"], hand: ["Repulsive Mutation"] },
@@ -4064,7 +4064,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
         asked = true;
         return [1];
       });
-      // Force 3 : les deux Montagnes restantes ne suffisent pas.
+      // Power 3: the two remaining Mountains aren't enough.
       expect(asked).toBe(false);
       expect(s.objects[bear]?.counters["+1/+1"]).toBe(1);
       expect(s.players.p1?.life).toBe(20);
@@ -4073,7 +4073,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 
   describe("Rune-Brand Juggler", () => {
-    it("suspecte une de vos créatures ; {3}{B}{R}, sacrifiez une créature suspecte : -5/-5", () => {
+    it("suspects one of your creatures; {3}{B}{R}, sacrifice a suspected creature: -5/-5", () => {
       let s = scenario({
         p1: { battlefield: ["Bear Cub", ...lands("Swamp", 4), ...lands("Mountain", 3)], hand: ["Rune-Brand Juggler"] },
         p2: { battlefield: ["Fire Elemental"] },
@@ -4088,7 +4088,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
       expect(idsOf(s, "p2", "graveyard", "Fire Elemental")).toHaveLength(1);
     });
 
-    it("suspect lui-même, le Juggler peut se sacrifier pour payer son coût", () => {
+    it("suspected itself, the Juggler can sacrifice itself to pay its cost", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Swamp", 4), ...lands("Mountain", 3)], hand: ["Rune-Brand Juggler"] },
         p2: { battlefield: ["Fire Elemental"] },
@@ -4104,7 +4104,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 
   describe("Sanguine Savior, Shady Informant", () => {
-    it("Sanguine Savior retournée face visible : une autre de vos créatures gagne le lien de vie", () => {
+    it("Sanguine Savior turned face up: another of your creatures gains lifelink", () => {
       let s = scenario({
         p1: { battlefield: ["Bear Cub", ...lands("Plains", 3), ...lands("Swamp", 2)], hand: ["Sanguine Savior"] },
       });
@@ -4115,7 +4115,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
       expect(chars(s, bear).keywords).toContain("lifelink");
     });
 
-    it("Shady Informant meurt : 2 blessures à n'importe quelle cible", () => {
+    it("Shady Informant dies: 2 damage to any target", () => {
       let s = scenario({
         p1: { battlefield: ["Shady Informant", ...lands("Mountain", 2)], hand: ["Lightning Strike"] },
       });
@@ -4128,7 +4128,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 
   describe("Soul Search", () => {
-    it("exile la carte non-terrain choisie dans la main adverse ; valeur de mana 1 ou moins : un Esprit", () => {
+    it("exiles the chosen nonland card from the opponent's hand; mana value 1 or less: a Spirit", () => {
       const run = (card: string) => {
         let s = scenario({
           p1: { battlefield: ["Plains", "Swamp"], hand: ["Soul Search"] },
@@ -4148,7 +4148,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 
   describe("Sumala Sentry", () => {
-    it("un permanent face cachée que vous contrôlez est retourné : un marqueur +1/+1 sur lui et sur Sumala Sentry", () => {
+    it("a face-down permanent you control is turned up: a +1/+1 counter on it and on Sumala Sentry", () => {
       let s = scenario({
         p1: { battlefield: ["Sumala Sentry", ...lands("Mountain", 3), ...lands("Plains", 2)], hand: ["Dog Walker"] },
       });
@@ -4161,7 +4161,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 
   describe("Teysa, Opulent Oligarch", () => {
-    it("à votre étape de fin, enquête pour chaque adversaire qui a perdu des PV ; un Indice au cimetière : un Esprit, une fois par tour", () => {
+    it("at your end step, investigate for each opponent who lost life; a Clue in the graveyard: a Spirit, once per turn", () => {
       let s = scenario({
         p1: {
           battlefield: ["Teysa, Opulent Oligarch", ...lands("Mountain", 6)],
@@ -4179,7 +4179,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 
   describe("Trostani, Three Whispers", () => {
-    it("trois capacités : contact mortel, vigilance, double initiative à la créature ciblée", () => {
+    it("three abilities: deathtouch, vigilance, double strike to the target creature", () => {
       let s = scenario({
         p1: { battlefield: ["Trostani, Three Whispers", "Bear Cub", ...lands("Forest", 3), ...lands("Plains", 3)] },
       });
@@ -4193,7 +4193,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 
   describe("Undercover Crocodelf", () => {
-    it("blessures de combat à un joueur : enquête", () => {
+    it("combat damage to a player: investigate", () => {
       let s = scenario({ p1: { battlefield: ["Undercover Crocodelf"] } });
       s = attack(s, [idOf(s, "p1", "battlefield", "Undercover Crocodelf")]);
       s = advanceUntil(s, (x) => x.turn.step === "endCombat" || x.turn.step === "main2");
@@ -4203,7 +4203,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 
   describe("Wispdrinker Vampire", () => {
-    it("une autre créature de force 2 ou moins arrive sous votre contrôle : chaque adversaire perd 1 PV, vous en gagnez 1", () => {
+    it("another creature with power 2 or less enters under your control: each opponent loses 1 life, you gain 1", () => {
       let s = scenario({
         p1: { battlefield: ["Wispdrinker Vampire", ...lands("Forest", 7)], hand: ["Bear Cub", "Pelakka Wurm"] },
       });
@@ -4219,7 +4219,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
       expect(t.players.p2?.life).toBe(20);
     });
 
-    it("{5}{W}{B} : vos créatures de force 2 ou moins gagnent le contact mortel et le lien de vie", () => {
+    it("{5}{W}{B}: your creatures with power 2 or less gain deathtouch and lifelink", () => {
       let s = scenario({
         p1: { battlefield: ["Wispdrinker Vampire", "Bear Cub", "Fire Elemental", ...lands("Plains", 4), ...lands("Swamp", 3)] },
       });
@@ -4233,7 +4233,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 
   describe("Worldsoul's Rage", () => {
-    it("X blessures, puis jusqu'à X cartes de terrain de votre main et de votre cimetière, engagées", () => {
+    it("X damage, then up to X land cards from your hand and your graveyard, tapped", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Mountain", 2), ...lands("Forest", 2)],
@@ -4259,8 +4259,8 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
     });
   });
 
-  describe("cartes scindées", () => {
-    it("Cease : exile jusqu'à deux cartes d'un même cimetière ; le joueur ciblé gagne 2 PV et pioche", () => {
+  describe("split cards", () => {
+    it("Cease: exiles up to two cards from a single graveyard; the targeted player gains 2 life and draws", () => {
       let s = scenario({
         p1: { battlefield: ["Swamp", "Forest"], hand: ["Cease // Desist"] },
         p2: { graveyard: ["Opt", "Bear Cub"] },
@@ -4273,7 +4273,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
       expect(s.players.p1?.hand).toHaveLength(1);
     });
 
-    it("Desist : détruit tous les artefacts et enchantements", () => {
+    it("Desist: destroys all artifacts and enchantments", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Forest", 4), ...lands("Plains", 2), "Insidious Roots"], hand: ["Cease // Desist"] },
         p2: { battlefield: ["Esoteric Duplicator", "Bear Cub"] },
@@ -4284,7 +4284,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
       expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
     });
 
-    it("Fuss : un marqueur +1/+1 sur chaque créature attaquante que vous contrôlez", () => {
+    it("Fuss: a +1/+1 counter on each attacking creature you control", () => {
       let s = scenario({
         p1: { battlefield: ["Bear Cub", "Llanowar Elves", ...lands("Mountain", 3)], hand: ["Fuss // Bother"] },
       });
@@ -4296,13 +4296,13 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
       expect(s.objects[elves]?.counters["+1/+1"] ?? 0).toBe(0);
     });
 
-    it("Bother : trois Thopters 1/1 volants, puis surveillance 2", () => {
+    it("Bother: three 1/1 flying Thopters, then surveil 2", () => {
       let s = scenario({ p1: { battlefield: [...lands("Plains", 3), ...lands("Island", 3)], hand: ["Fuss // Bother"] } });
       s = settle(cast(s, "p1", "Fuss // Bother", { face: 1 }));
       expect(idsOf(s, "p1", "battlefield", "Thopter")).toHaveLength(3);
     });
 
-    it("Push détruit une créature engagée seulement ; Pull : jusqu'à deux créatures d'un cimetière, sacrifiées à la fin du tour", () => {
+    it("Push destroys a tapped creature only; Pull: up to two creatures from a graveyard, sacrificed at the end of turn", () => {
       const s = scenario({
         p1: { battlefield: [...lands("Plains", 2)], hand: ["Push // Pull"] },
         p2: { battlefield: [{ name: "Bear Cub", tapped: true }, "Fire Elemental"] },
@@ -4329,7 +4329,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
       expect(idsOf(t, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
     });
 
-    it("Pull : les cibles doivent venir d'un seul cimetière", () => {
+    it("Pull: the targets must come from a single graveyard", () => {
       const s = scenario({
         p1: { battlefield: [...lands("Swamp", 4), ...lands("Mountain", 2)], hand: ["Push // Pull"], graveyard: ["Bear Cub"] },
         p2: { graveyard: ["Fire Elemental"] },
@@ -4340,12 +4340,12 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
   });
 });
 
-describe("Murders at Karlov Manor, lot A — incolores et terrains", () => {
+describe("Murders at Karlov Manor, lot A — colorless and lands", () => {
   /**
-   * Murders at Karlov Manor, lot A : cartes incolores et terrains, confrontées à leur texte Oracle (plan R, lot R7).
+   * Murders at Karlov Manor, lot A: colorless cards and lands, checked against their Oracle text (plan R, lot R7).
    */
   type S = GameState;
-  /** Capacité activée de la source dont le libellé contient `label` (indice et option proposée). */
+  /** Activates the ability of the source whose label contains `label` (index and offered option). */
   const activation = (s: S, player: string, source: string, label: string) =>
     legalActions(s, player).find(
       (a): a is Extract<ReturnType<typeof legalActions>[number], { type: "activate" }> =>
@@ -4353,18 +4353,18 @@ describe("Murders at Karlov Manor, lot A — incolores et terrains", () => {
     );
   const activate = (s: S, player: string, source: string, label: string, extra: Partial<Decision> = {}) => {
     const a = activation(s, player, source, label);
-    if (!a) throw new Error(`Capacité « ${label} » introuvable`);
+    if (!a) throw new Error(`Ability "${label}" not found`);
     return act(s, player, { type: "activate", source, ability: a.ability, ...extra } as Decision);
   };
-  /** Couleurs proposées par les capacités de mana d'une source. */
+  /** Colors offered by a source's mana abilities. */
   const manaColors = (s: S, player: string, source: string) =>
     [...new Set(legalActions(s, player).flatMap((a) => (a.type === "tapForMana" && a.source === source ? a.colors : [])))].sort();
 
   const DETECTIVE_CARD = customCard({ name: "Test Detective", subtypes: ["Detective"], power: 2, toughness: 2 });
   const PRISM = customCard({ name: "Test Prism", colors: ["W", "U", "B", "R", "G"], power: 1, toughness: 1 });
 
-  describe("terrains à surveillance", () => {
-    it("Commercial District arrive engagé, puis surveillance 1", () => {
+  describe("surveil lands", () => {
+    it("Commercial District enters tapped, then surveil 1", () => {
       let s = scenario({ p1: { hand: ["Commercial District"], library: ["Opt", "Forest"] } });
       s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Commercial District") });
       expect(s.objects[idOf(s, "p1", "battlefield", "Commercial District")]?.tapped).toBe(true);
@@ -4372,7 +4372,7 @@ describe("Murders at Karlov Manor, lot A — incolores et terrains", () => {
       expect(s.players.p1?.graveyard.map((id) => nameOf(s, id))).toEqual(["Opt"]);
     });
 
-    it("leurs types de terrain de base donnent leurs deux couleurs", () => {
+    it("their basic land types give their two colors", () => {
       const names = [
         "Commercial District",
         "Elegant Parlor",
@@ -4395,14 +4395,14 @@ describe("Murders at Karlov Manor, lot A — incolores et terrains", () => {
       return settle(s, answer);
     };
 
-    it("arrive engagé ; en engageant un terrain dégagé, on le garde", () => {
+    it("enters tapped; by tapping an untapped land, you keep it", () => {
       const s = play(["Forest"]);
       const pt = idOf(s, "p1", "battlefield", "Public Thoroughfare");
       expect(s.objects[pt]?.tapped).toBe(true);
       expect(s.objects[idOf(s, "p1", "battlefield", "Forest")]?.tapped).toBe(true);
     });
 
-    it("sacrifié si l'on n'engage rien, ou faute d'artefact ou de terrain dégagé (une créature ne suffit pas)", () => {
+    it("sacrificed if you tap nothing, or for lack of an artifact or untapped land (a creature isn't enough)", () => {
       const refused = play(["Forest"], (req) => (req.type === "pick" ? [] : undefined));
       expect(idsOf(refused, "p1", "battlefield", "Public Thoroughfare")).toHaveLength(0);
       expect(idsOf(refused, "p1", "graveyard", "Public Thoroughfare")).toHaveLength(1);
@@ -4411,7 +4411,7 @@ describe("Murders at Karlov Manor, lot A — incolores et terrains", () => {
       expect(none.objects[idOf(none, "p1", "battlefield", "Bear Cub")]?.tapped).toBe(false);
     });
 
-    it("un artefact dégagé convient aussi ; le terrain produit un mana de n'importe quelle couleur", () => {
+    it("an untapped artifact works too; the land produces one mana of any color", () => {
       const s = play(["Magnifying Glass"]);
       expect(s.objects[idOf(s, "p1", "battlefield", "Magnifying Glass")]?.tapped).toBe(true);
       const t = scenario({ p1: { battlefield: ["Public Thoroughfare"] } });
@@ -4420,7 +4420,7 @@ describe("Murders at Karlov Manor, lot A — incolores et terrains", () => {
   });
 
   describe("Scene of the Crime", () => {
-    it("terrain-artefact Indice qui arrive engagé", () => {
+    it("artifact land Clue that enters tapped", () => {
       let s = scenario({ p1: { hand: ["Scene of the Crime"] } });
       s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Scene of the Crime") });
       const id = idOf(s, "p1", "battlefield", "Scene of the Crime");
@@ -4429,7 +4429,7 @@ describe("Murders at Karlov Manor, lot A — incolores et terrains", () => {
       expect(chars(s, id).subtypes).toEqual(["Clue"]);
     });
 
-    it("{C} seul ; n'importe quelle couleur en engageant une créature dégagée", () => {
+    it("{C} only; any color by tapping an untapped creature", () => {
       const alone = scenario({ p1: { battlefield: ["Scene of the Crime"] } });
       expect(manaColors(alone, "p1", idOf(alone, "p1", "battlefield", "Scene of the Crime"))).toEqual(["C"]);
       let s = scenario({ p1: { battlefield: ["Scene of the Crime", "Bear Cub"] } });
@@ -4446,7 +4446,7 @@ describe("Murders at Karlov Manor, lot A — incolores et terrains", () => {
       expect(s.objects[idOf(s, "p1", "battlefield", "Bear Cub")]?.tapped).toBe(true);
     });
 
-    it("{2}, sacrifiez-le : piochez une carte", () => {
+    it("{2}, sacrifice it: draw a card", () => {
       let s = scenario({ p1: { battlefield: ["Scene of the Crime", ...lands("Forest", 2)], library: ["Opt"] } });
       s = activate(s, "p1", idOf(s, "p1", "battlefield", "Scene of the Crime"), "Draw a card");
       s = settle(s);
@@ -4456,7 +4456,7 @@ describe("Murders at Karlov Manor, lot A — incolores et terrains", () => {
   });
 
   describe("Magnifying Glass", () => {
-    it("{T} : {C} ; {4}, {T} : enquêtez", () => {
+    it("{T}: {C}; {4}, {T}: investigate", () => {
       let s = scenario({ p1: { battlefield: ["Magnifying Glass", ...lands("Forest", 4)] } });
       const glass = idOf(s, "p1", "battlefield", "Magnifying Glass");
       expect(manaColors(s, "p1", glass)).toEqual(["C"]);
@@ -4469,7 +4469,7 @@ describe("Murders at Karlov Manor, lot A — incolores et terrains", () => {
   });
 
   describe("Sanitation Automaton", () => {
-    it("en arrivant, surveillance 1", () => {
+    it("when it enters, surveil 1", () => {
       let s = scenario({ p1: { battlefield: lands("Forest", 2), hand: ["Sanitation Automaton"], library: ["Opt"] } });
       s = cast(s, "p1", "Sanitation Automaton");
       s = settle(s, (req) => (req.intent === "surveilGraveyard" && req.type === "pick" ? req.options : undefined));
@@ -4479,7 +4479,7 @@ describe("Murders at Karlov Manor, lot A — incolores et terrains", () => {
   });
 
   describe("Thinking Cap", () => {
-    it("Équiper Détective {1} ne vise qu'un Détective ; la créature équipée gagne +1/+2", () => {
+    it("Detective equip {1} only targets a Detective; the equipped creature gets +1/+2", () => {
       let s = scenario({ p1: { battlefield: ["Thinking Cap", DETECTIVE_CARD, "Bear Cub", "Plains"] } });
       const cap = idOf(s, "p1", "battlefield", "Thinking Cap");
       const detective = idOf(s, "p1", "battlefield", DETECTIVE_CARD.name);
@@ -4492,7 +4492,7 @@ describe("Murders at Karlov Manor, lot A — incolores et terrains", () => {
       expect([chars(s, detective).power, chars(s, detective).toughness]).toEqual([3, 4]);
     });
 
-    it("Équiper {3} sur n'importe quelle créature que vous contrôlez", () => {
+    it("Equip {3} on any creature you control", () => {
       let s = scenario({ p1: { battlefield: ["Thinking Cap", "Bear Cub", ...lands("Plains", 3)] } });
       const cap = idOf(s, "p1", "battlefield", "Thinking Cap");
       const cub = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -4503,7 +4503,7 @@ describe("Murders at Karlov Manor, lot A — incolores et terrains", () => {
   });
 
   describe("Magnetic Snuffler", () => {
-    it("en arrivant, renvoie un Équipement de votre cimetière attaché à elle", () => {
+    it("when it enters, returns an Equipment from your graveyard attached to it", () => {
       let s = scenario({
         p1: { battlefield: lands("Plains", 5), hand: ["Magnetic Snuffler"], graveyard: ["Thinking Cap"] },
       });
@@ -4514,7 +4514,7 @@ describe("Murders at Karlov Manor, lot A — incolores et terrains", () => {
       expect([chars(s, snuffler).power, chars(s, snuffler).toughness]).toEqual([5, 6]);
     });
 
-    it("chaque fois que vous sacrifiez un artefact, un marqueur +1/+1 ; pas quand un adversaire le fait", () => {
+    it("whenever you sacrifice an artifact, a +1/+1 counter; not when an opponent does", () => {
       let s = scenario({
         p1: { battlefield: ["Magnetic Snuffler", "Scene of the Crime", ...lands("Forest", 2)] },
         p2: { battlefield: ["Magnetic Snuffler"] },
@@ -4526,7 +4526,7 @@ describe("Murders at Karlov Manor, lot A — incolores et terrains", () => {
   });
 
   describe("Gravestone Strider", () => {
-    it("{1} : un mana de n'importe quelle couleur, une seule fois par tour", () => {
+    it("{1}: one mana of any color, once per turn", () => {
       let s = scenario({ p1: { battlefield: ["Gravestone Strider", ...lands("Forest", 2)] } });
       const strider = idOf(s, "p1", "battlefield", "Gravestone Strider");
       s = activate(s, "p1", strider, "once per turn");
@@ -4535,7 +4535,7 @@ describe("Murders at Karlov Manor, lot A — incolores et terrains", () => {
       expect(activation(s, "p1", strider, "once per turn")).toBeUndefined();
     });
 
-    it("{2}, exilez-la de votre cimetière : exilez une carte ciblée d'un cimetière", () => {
+    it("{2}, exile it from your graveyard: exile a target card from a graveyard", () => {
       let s = scenario({
         p1: { battlefield: lands("Forest", 2), graveyard: ["Gravestone Strider"] },
         p2: { graveyard: ["Bear Cub"] },
@@ -4549,7 +4549,7 @@ describe("Murders at Karlov Manor, lot A — incolores et terrains", () => {
   });
 
   describe("Lumbering Laundry", () => {
-    it("{2} : jusqu'à la fin du tour, vous voyez les créatures face cachée adverses", () => {
+    it("{2}: until end of turn, you see the opposing face-down creatures", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: ["Lumbering Laundry", ...lands("Forest", 2)] },
@@ -4561,7 +4561,7 @@ describe("Murders at Karlov Manor, lot A — incolores et terrains", () => {
       expect(hidden).toBeDefined();
       const seen = (x: S) => projectView(x, "p1").battlefield.find((o) => o.id === hidden)?.faceDownCard;
       expect(seen(s)).toBeUndefined();
-      // p2 garde la priorité après la résolution : il passe, p1 active.
+      // p2 keeps priority after the resolution: it passes, p1 activates.
       if (s.pending?.kind === "priority" && s.pending.player === "p2") s = act(s, "p2", { type: "pass" });
       s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Lumbering Laundry"), "face-down"));
       expect(seen(s)?.name).toBe("Lumbering Laundry");
@@ -4571,7 +4571,7 @@ describe("Murders at Karlov Manor, lot A — incolores et terrains", () => {
   });
 
   describe("Case of the Shattered Pact", () => {
-    it("en arrivant, cherche une carte de terrain de base et la met en main", () => {
+    it("when it enters, searches for a basic land card and puts it into hand", () => {
       let s = scenario({
         p1: { battlefield: lands("Forest", 2), hand: ["Case of the Shattered Pact"], library: ["Opt", "Plains"] },
       });
@@ -4579,7 +4579,7 @@ describe("Murders at Karlov Manor, lot A — incolores et terrains", () => {
       expect(s.players.p1?.hand.map((id) => nameOf(s, id))).toEqual(["Plains"]);
     });
 
-    it("résolue à votre étape de fin s'il y a cinq couleurs parmi vos permanents", () => {
+    it("solved at your end step if there are five colors among your permanents", () => {
       const run = (battlefield: (string | typeof PRISM)[]) => {
         let s = scenario({ p1: { battlefield: ["Case of the Shattered Pact", ...battlefield] } });
         const id = idOf(s, "p1", "battlefield", "Case of the Shattered Pact");
@@ -4590,7 +4590,7 @@ describe("Murders at Karlov Manor, lot A — incolores et terrains", () => {
       expect(run(["Bear Cub"])).toBe(false);
     });
 
-    it("résolue : au début du combat, une créature ciblée gagne le vol, la double initiative et la vigilance", () => {
+    it("solved: at the beginning of combat, a target creature gains flying, double strike and vigilance", () => {
       let s = scenario({ p1: { battlefield: ["Case of the Shattered Pact", "Bear Cub"] } });
       const caseId = idOf(s, "p1", "battlefield", "Case of the Shattered Pact");
       const cub = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -4602,25 +4602,25 @@ describe("Murders at Karlov Manor, lot A — incolores et terrains", () => {
   });
 });
 
-describe("Murders at Karlov Manor, lot B1 : réunir des preuves (701.59)", () => {
+describe("Murders at Karlov Manor, lot B1: collect evidence (701.59)", () => {
   const yes: Answer = (req) => (req.type === "yesNo" ? [1] : undefined);
   const activateFirst = (s: S, source: string, label: string, targets?: Record<string, string[]>) => {
     const a = legalActions(s, "p1").find((x) => x.type === "activate" && x.source === source && (x.label ?? "").includes(label));
     return a?.type === "activate" ? act(s, "p1", { type: "activate", source, ability: a.ability, targets }) : undefined;
   };
 
-  it("Surveillance Monitor : en arrivant, vous pouvez réunir des preuves 4 ; chaque fois que vous le faites, un Thopter", () => {
+  it("Surveillance Monitor: when it enters, you may collect evidence 4; whenever you do, a Thopter", () => {
     let s = scenario({
       p1: { battlefield: lands("Island", 4), hand: ["Surveillance Monitor"], graveyard: ["Shivan Dragon", "Opt"] },
     });
     s = settle(cast(s, "p1", "Surveillance Monitor"), yes);
-    // Shivan Dragon (VM 6) suffit : Opt reste au cimetière.
+    // Shivan Dragon (MV 6) is enough: Opt stays in the graveyard.
     expect(idsOf(s, "p1", "graveyard", "Opt")).toHaveLength(1);
     expect(s.exile.map((id) => nameOf(s, id))).toEqual(["Shivan Dragon"]);
     expect(idsOf(s, "p1", "battlefield", "Thopter")).toHaveLength(1);
   });
 
-  it("Forensic Researcher : {T}, réunissez des preuves 3 en coût ; impossible sans preuves suffisantes", () => {
+  it("Forensic Researcher: {T}, collect evidence 3 as a cost; impossible without enough evidence", () => {
     let s = scenario({
       p1: { battlefield: ["Forensic Researcher"], graveyard: ["Opt", "Bear Cub"] },
       p2: { battlefield: ["Bear Cub"] },
@@ -4636,7 +4636,7 @@ describe("Murders at Karlov Manor, lot B1 : réunir des preuves (701.59)", () =>
     expect(activateFirst(t, r2, "tap a creature", { t: [idOf(t, "p2", "battlefield", "Bear Cub")] })).toBeUndefined();
   });
 
-  it("Incinerator of the Guilty : blessures de combat à un joueur, réunissez des preuves X : X blessures à ses créatures", () => {
+  it("Incinerator of the Guilty: combat damage to a player, collect evidence X: X damage to its creatures", () => {
     let s = scenario({
       p1: { battlefield: ["Incinerator of the Guilty"], graveyard: ["Bear Cub", "Opt"] },
       p2: { battlefield: ["Bear Cub", "Llanowar Elves"] },
@@ -4644,7 +4644,7 @@ describe("Murders at Karlov Manor, lot B1 : réunir des preuves (701.59)", () =>
     const dragon = idOf(s, "p1", "battlefield", "Incinerator of the Guilty");
     s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
     s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: dragon, defender: "p2" }] });
-    // Jusqu'à la fin du combat : X = 2.
+    // Until end of combat: X = 2.
     for (let i = 0; i < 60 && s.turn.step !== "endCombat" && s.turn.step !== "main2"; i++) {
       const p = s.pending;
       if (p?.kind === "choice")
@@ -4657,11 +4657,11 @@ describe("Murders at Karlov Manor, lot B1 : réunir des preuves (701.59)", () =>
     expect(s.players.p2?.life).toBe(14);
     expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(0);
     expect(idsOf(s, "p2", "battlefield", "Llanowar Elves")).toHaveLength(0);
-    // X = 2 : Bear Cub (VM 2) exilé, Opt reste.
+    // X = 2: Bear Cub (MV 2) exiled, Opt stays.
     expect(idsOf(s, "p1", "graveyard", "Opt")).toHaveLength(1);
   });
 
-  it("Lamplight Phoenix : en mourant, exilez-le et réunissez des preuves 4 (sans lui) : il revient engagé", () => {
+  it("Lamplight Phoenix: when it dies, exile it and collect evidence 4 (without it): it returns tapped", () => {
     let s = scenario({
       p1: {
         battlefield: ["Lamplight Phoenix", ...lands("Mountain", 2)],
@@ -4673,13 +4673,13 @@ describe("Murders at Karlov Manor, lot B1 : réunir des preuves (701.59)", () =>
     const phoenix = idOf(s, "p1", "battlefield", "Lamplight Phoenix");
     expect(s.objects[phoenix]?.tapped).toBe(true);
     expect(s.exile.map((id) => nameOf(s, id))).toEqual(["Shivan Dragon"]);
-    // Sans preuves suffisantes (le Phénix ne compte pas) : il reste au cimetière.
+    // Without enough evidence (the Phoenix doesn't count): it stays in the graveyard.
     let t = scenario({ p1: { battlefield: ["Lamplight Phoenix", ...lands("Mountain", 2)], hand: ["Lightning Strike"] } });
     t = settle(cast(t, "p1", "Lightning Strike", { t: [idOf(t, "p1", "battlefield", "Lamplight Phoenix")] }), yes);
     expect(idsOf(t, "p1", "graveyard", "Lamplight Phoenix")).toHaveLength(1);
   });
 
-  it("Axebane Ferox : garde — réunissez des preuves 4 (payée par l'adversaire qui la cible)", () => {
+  it("Axebane Ferox: ward — collect evidence 4 (paid by the opponent who targets it)", () => {
     const run = (graveyard: string[]) => {
       let s = scenario({
         active: "p2",
@@ -4693,15 +4693,15 @@ describe("Murders at Karlov Manor, lot B1 : réunir des preuves (701.59)", () =>
       });
       return settle(s, yes);
     };
-    // Sans preuves : le sort est contrecarré.
+    // Without evidence: the spell is countered.
     expect(idsOf(run([]), "p1", "battlefield", "Axebane Ferox")).toHaveLength(1);
-    // Avec Shivan Dragon : l'adversaire paie, 3 blessures (4/4 : elle survit).
+    // With Shivan Dragon: the opponent pays, 3 damage (4/4: it survives).
     const s = run(["Shivan Dragon"]);
     expect(s.objects[idOf(s, "p1", "battlefield", "Axebane Ferox")]?.damage).toBe(3);
     expect(s.exile.some((id) => nameOf(s, id) === "Shivan Dragon")).toBe(true);
   });
 
-  it("Vein Ripper : garde — sacrifiez une créature ; chaque créature qui meurt draine 2", () => {
+  it("Vein Ripper: ward — sacrifice a creature; each creature that dies drains 2", () => {
     let s = scenario({
       active: "p2",
       p1: { battlefield: ["Vein Ripper"] },
@@ -4713,13 +4713,13 @@ describe("Murders at Karlov Manor, lot B1 : réunir des preuves (701.59)", () =>
       targets: { t: [idOf(s, "p1", "battlefield", "Vein Ripper")] },
     });
     s = settle(s, yes);
-    // Les Elfes sont sacrifiés pour payer la garde, et leur mort draine 2 au profit de Vein Ripper.
+    // The Elves are sacrificed to pay for ward, and their death drains 2 for Vein Ripper's benefit.
     expect(idsOf(s, "p2", "battlefield", "Llanowar Elves")).toHaveLength(0);
     expect(s.players.p2?.life).toBe(18);
     expect(s.players.p1?.life).toBe(22);
   });
 
-  it("Cryptex : {T}, réunissez des preuves 3 : un mana et un marqueur de déverrouillage ; à cinq, sacrifiez-le pour surveiller et piocher", () => {
+  it("Cryptex: {T}, collect evidence 3: one mana and an unlock counter; at five, sacrifice it to surveil and draw", () => {
     let s = scenario({ p1: { battlefield: ["Cryptex"], graveyard: ["Shivan Dragon"], library: lands("Island", 8) } });
     const cryptex = idOf(s, "p1", "battlefield", "Cryptex");
     const mana = legalActions(s, "p1").find((a) => a.type === "tapForMana" && a.source === cryptex);
@@ -4740,7 +4740,7 @@ describe("Murders at Karlov Manor, lot B1 : réunir des preuves (701.59)", () =>
     expect(s.players.p1?.hand).toHaveLength(hand + 3);
   });
 
-  it("Tenth District Hero : Détective 4/4 avec la vigilance, puis Mileva, the Stalwart (5/5, vos autres créatures indestructibles)", () => {
+  it("Tenth District Hero: 4/4 Detective with vigilance, then Mileva, the Stalwart (5/5, your other creatures indestructible)", () => {
     let s = scenario({
       p1: { battlefield: ["Tenth District Hero", "Bear Cub", ...lands("Plains", 5)], graveyard: ["Bear Cub", "Shivan Dragon"] },
     });
@@ -4755,7 +4755,7 @@ describe("Murders at Karlov Manor, lot B1 : réunir des preuves (701.59)", () =>
   });
 });
 
-describe("Murders at Karlov Manor, lot B2 : déguisement", () => {
+describe("Murders at Karlov Manor, lot B2: disguise", () => {
   const faceDown = (s: S, player: string, name: string) =>
     act(s, player, { type: "cast", card: idOf(s, player, "hand", name), faceDown: true });
   const faceUpAction = (s: S, player: string, id: string) =>
@@ -4763,7 +4763,7 @@ describe("Murders at Karlov Manor, lot B2 : déguisement", () => {
   const downId = (s: S, player: string) =>
     s.battlefield.find((id) => s.objects[id]?.controller === player && s.objects[id]?.faceDown) as string;
 
-  it("Aurelia's Vindicator : déguisement {X}{3}{W} ; retournée, exile jusqu'à X autres créatures (retour en main quand elle part)", () => {
+  it("Aurelia's Vindicator: disguise {X}{3}{W}; turned up, exiles up to X other creatures (return to hand when it leaves)", () => {
     let s = scenario({
       p1: { battlefield: lands("Plains", 8), hand: ["Aurelia's Vindicator"] },
       p2: { battlefield: ["Bear Cub"], graveyard: ["Llanowar Elves"] },
@@ -4776,13 +4776,13 @@ describe("Murders at Karlov Manor, lot B2 : déguisement", () => {
     s = act(s, "p1", { type: "activate", source: angel, ability: a?.type === "activate" ? a.ability : -1, x: 1 });
     s = settle(s, (req) => (req.type === "pick" && req.options.includes(bear) ? [bear] : undefined));
     expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(0);
-    // X = 1 : une seule cible ; les Elfes restent au cimetière.
+    // X = 1: a single target; the Elves stay in the graveyard.
     expect(idsOf(s, "p2", "graveyard", "Llanowar Elves")).toEqual([elves]);
     destroy(s, idOf(s, "p1", "battlefield", "Aurelia's Vindicator"));
     expect(idsOf(s, "p2", "hand", "Bear Cub")).toHaveLength(1);
   });
 
-  it("Fugitive Codebreaker : coût de déguisement réduit de {1} par éphémère ou rituel au cimetière ; retournée, défaussez votre main et piochez trois cartes", () => {
+  it("Fugitive Codebreaker: disguise cost reduced by {1} per instant or sorcery in the graveyard; turned up, discard your hand and draw three cards", () => {
     let s = scenario({
       p1: {
         battlefield: lands("Mountain", 7),
@@ -4795,13 +4795,13 @@ describe("Murders at Karlov Manor, lot B2 : déguisement", () => {
     const goblin = downId(s, "p1");
     const a = faceUpAction(s, "p1", goblin);
     s = settle(act(s, "p1", { type: "activate", source: goblin, ability: a?.type === "activate" ? a.ability : -1 }));
-    // {3} pour le lancer face cachée, puis {5}{R} − 2 = {3}{R} : sept Montagnes engagées.
+    // {3} to cast it face down, then {5}{R} - 2 = {3}{R}: seven tapped Mountains.
     expect(s.battlefield.filter((id) => nameOf(s, id) === "Mountain" && s.objects[id]?.tapped)).toHaveLength(7);
     expect(idsOf(s, "p1", "graveyard", "Opt")).toHaveLength(3);
     expect(s.players.p1?.hand.map((id) => nameOf(s, id))).toEqual(["Island", "Island", "Island"]);
   });
 
-  it("Goblin Maskmaker : en attaquant, vos sorts face cachée coûtent {1} de moins ce tour-ci", () => {
+  it("Goblin Maskmaker: when attacking, your face-down spells cost {1} less this turn", () => {
     let s = scenario({ p1: { battlefield: ["Goblin Maskmaker", ...lands("Mountain", 2)], hand: ["Fugitive Codebreaker"] } });
     const card = idOf(s, "p1", "hand", "Fugitive Codebreaker");
     const faceDownOption = (x: S) => legalActions(x, "p1").some((a) => a.type === "cast" && a.card === card && a.faceDown);
@@ -4810,12 +4810,12 @@ describe("Murders at Karlov Manor, lot B2 : déguisement", () => {
     s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
     s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: maskmaker, defender: "p2" }] });
     s = settle(s);
-    expect(faceDownOption(s)).toBe(false); // rituel : pas pendant le combat
+    expect(faceDownOption(s)).toBe(false); // sorcery: not during combat
     s = advanceUntil(s, (x) => x.turn.step === "main2" && x.pending?.player === "p1");
     expect(faceDownOption(s)).toBe(true);
   });
 
-  it("Karlov Watchdog : pendant votre tour, les permanents adverses ne peuvent pas être retournés face visible", () => {
+  it("Karlov Watchdog: during your turn, opposing permanents can't be turned face up", () => {
     let s = scenario({
       active: "p2",
       p1: { battlefield: ["Karlov Watchdog"] },
@@ -4823,7 +4823,7 @@ describe("Murders at Karlov Manor, lot B2 : déguisement", () => {
     });
     s = settle(faceDown(s, "p2", "Fugitive Codebreaker"));
     const goblin = downId(s, "p2");
-    // Pendant le tour de l'adversaire (p2), il peut la retourner.
+    // During the opponent's turn (p2), it can turn it up.
     expect(faceUpAction(s, "p2", goblin)).toBeDefined();
     s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.pending?.player === "p1");
     s = act(s, "p1", { type: "pass" });
@@ -4831,7 +4831,7 @@ describe("Murders at Karlov Manor, lot B2 : déguisement", () => {
     expect(faceUpAction(s, "p2", goblin)).toBeUndefined();
   });
 
-  it("Branch of Vitu-Ghazi : un terrain lancé face cachée ; retourné, deux mana d'une couleur gardés jusqu'à la fin du tour", () => {
+  it("Branch of Vitu-Ghazi: a land cast face down; turned up, two mana of one color kept until end of turn", () => {
     let s = scenario({ p1: { battlefield: lands("Forest", 6), hand: ["Branch of Vitu-Ghazi"] } });
     s = settle(faceDown(s, "p1", "Branch of Vitu-Ghazi"));
     const branch = downId(s, "p1");
@@ -4845,25 +4845,25 @@ describe("Murders at Karlov Manor, lot B2 : déguisement", () => {
     expect(s.players.p1?.manaPool.G).toBe(2);
   });
 
-  it("Tunnel Tipster : à votre étape de fin, si une créature face cachée est arrivée sous votre contrôle ce tour-ci, un marqueur +1/+1", () => {
+  it("Tunnel Tipster: at your end step, if a face-down creature entered under your control this turn, a +1/+1 counter", () => {
     let s = scenario({ p1: { battlefield: ["Tunnel Tipster", ...lands("Mountain", 3)], hand: ["Fugitive Codebreaker"] } });
     const mole = idOf(s, "p1", "battlefield", "Tunnel Tipster");
     s = settle(faceDown(s, "p1", "Fugitive Codebreaker"));
     s = advanceUntil(s, (x) => x.turn.step === "end" && x.stack.length === 0 && x.triggers.length === 0);
     expect(s.objects[mole]?.counters["+1/+1"]).toBe(1);
-    // Tour suivant de p1 sans créature face cachée : pas de marqueur de plus.
+    // p1's next turn without a face-down creature: no extra counter.
     s = advanceUntil(s, (x) => x.turn.number === 5 && x.turn.step === "end" && x.stack.length === 0 && x.triggers.length === 0);
     expect(s.objects[mole]?.counters["+1/+1"]).toBe(1);
   });
 });
 
-describe("Murders at Karlov Manor, lot B3 : cape (701.58)", () => {
-  /** Met face cachée (cape) une carte de la main du joueur. */
+describe("Murders at Karlov Manor, lot B3: cloak (701.58)", () => {
+  /** Puts a card from the player's hand face down (cloak). */
   const cloakFromHand = (s: S, player: string, name: string) =>
     putFaceDown(s, player, idOf(s, player, "hand", name), true) as string;
   const yes: Answer = (req) => (req.type === "yesNo" ? [1] : undefined);
 
-  it("Cryptic Coat : la carte du dessus enveloppée d'une cape, équipée (+1/+0, ne peut pas être bloquée) ; {1}{U} : en main", () => {
+  it("Cryptic Coat: the top card cloaked, equipped (+1/+0, can't be blocked); {1}{U}: to hand", () => {
     let s = scenario({ p1: { battlefield: lands("Island", 5), hand: ["Cryptic Coat"], library: ["Bear Cub", "Island"] } });
     s = settle(cast(s, "p1", "Cryptic Coat"));
     const cloaked = s.battlefield.find((id) => s.objects[id]?.faceDown) as string;
@@ -4877,7 +4877,7 @@ describe("Murders at Karlov Manor, lot B3 : cape (701.58)", () => {
     expect(idsOf(s, "p1", "hand", "Cryptic Coat")).toHaveLength(1);
   });
 
-  it("Expose the Culprit : retourne une créature face cachée ; exile vos créatures à déguisement et les enveloppe d'une cape", () => {
+  it("Expose the Culprit: turns a creature face up; exiles your disguise creatures and cloaks them", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Mountain", 2), "Fugitive Codebreaker"], hand: ["Expose the Culprit", "Bear Cub"] },
     });
@@ -4888,7 +4888,7 @@ describe("Murders at Karlov Manor, lot B3 : cape (701.58)", () => {
     expect(idsOf(s, "p1", "battlefield", "Fugitive Codebreaker")).toHaveLength(0);
     const down = s.battlefield.find((id) => s.objects[id]?.faceDown) as string;
     expect(s.defs[s.objects[down]?.faceDown?.card ?? ""]?.name).toBe("Fugitive Codebreaker");
-    // Mode 1 : retourner une créature face cachée (une Ours enveloppée d'une cape).
+    // Mode 1: turn a face-down creature face up (a cloaked Bear).
     let t = scenario({ p1: { battlefield: lands("Mountain", 2), hand: ["Expose the Culprit", "Bear Cub"] } });
     const bear = cloakFromHand(t, "p1", "Bear Cub");
     const card2 = idOf(t, "p1", "hand", "Expose the Culprit");
@@ -4899,7 +4899,7 @@ describe("Murders at Karlov Manor, lot B3 : cape (701.58)", () => {
     expect(chars(t, bear).name).toBe("Bear Cub");
   });
 
-  it("Yarus : une créature face cachée qui meurt revient face cachée sous le contrôle de son propriétaire, puis est retournée face visible", () => {
+  it("Yarus: a face-down creature that dies returns face down under its owner's control, then is turned face up", () => {
     let s = scenario({
       p1: { battlefield: ["Yarus, Roar of the Old Gods", ...lands("Mountain", 2)], hand: ["Bear Cub", "Lightning Strike"] },
     });
@@ -4910,7 +4910,7 @@ describe("Murders at Karlov Manor, lot B3 : cape (701.58)", () => {
     expect(chars(s, bear).name).toBe("Bear Cub");
   });
 
-  it("Etrata : vos créatures face cachée ont « {2}{U}{B} : retournez-la ; si vous ne pouvez pas, exilez-la et lancez-la gratuitement »", () => {
+  it('Etrata: your face-down creatures have "{2}{U}{B}: turn it face up; if you can\'t, exile it and cast it for free"', () => {
     let s = scenario({
       p1: {
         battlefield: ["Etrata, Deadly Fugitive", ...lands("Island", 2), ...lands("Swamp", 2)],
@@ -4931,12 +4931,12 @@ describe("Murders at Karlov Manor, lot B3 : cape (701.58)", () => {
       else if (p?.kind === "choice") s = act(s, p.player, { type: "choose", values: p.request.suggested });
       else if (p?.kind === "priority") s = act(s, p.player, { type: "pass" });
     }
-    // Opt (éphémère) ne peut pas être retourné : exilé, lancé gratuitement (regard 1, piochez une carte).
+    // Opt (instant) can't be turned face up: exiled, cast for free (scry 1, draw a card).
     expect(idsOf(s, "p1", "graveyard", "Opt")).toHaveLength(1);
     expect(s.players.p1?.hand).toHaveLength(hand + 1);
   });
 
-  it("Vannifar : au début de votre combat, enveloppez d'une cape une carte de votre main", () => {
+  it("Vannifar: at the beginning of your combat, cloak a card from your hand", () => {
     let s = scenario({ p1: { battlefield: ["Vannifar, Evolved Enigma"], hand: ["Shivan Dragon"] } });
     s = advanceUntil(s, (x) => x.pending?.kind === "choice" && x.pending.request.intent === "triggerMode");
     const p = s.pending;
@@ -4948,7 +4948,7 @@ describe("Murders at Karlov Manor, lot B3 : cape (701.58)", () => {
     expect(s.players.p1?.hand).toHaveLength(0);
   });
 
-  it("Lazav : en attaquant, exile une carte d'un cimetière et enquête ; un Indice sacrifié : il peut devenir une copie d'une créature exilée avec lui", () => {
+  it("Lazav: when attacking, exiles a card from a graveyard and investigates; a sacrificed Clue: it may become a copy of a creature exiled with it", () => {
     let s = scenario({
       p1: { battlefield: ["Lazav, Wearer of Faces", ...lands("Island", 2)] },
       p2: { graveyard: ["Shivan Dragon"] },
@@ -4966,11 +4966,11 @@ describe("Murders at Karlov Manor, lot B3 : cape (701.58)", () => {
   });
 });
 
-describe("Murders at Karlov Manor, lot B4 : suspect et Affaires", () => {
+describe("Murders at Karlov Manor, lot B4: suspect and Cases", () => {
   const castOptions = (s: S, player: string, card: string) =>
     legalActions(s, player).filter((a) => a.type === "cast" && a.card === card);
 
-  it("Airtight Alibi : dégage la créature, défense talismanique, plus suspecte ; +2/+2 et ne peut plus devenir suspecte", () => {
+  it("Airtight Alibi: untaps the creature, hexproof, no longer suspected; +2/+2 and can't become suspected", () => {
     let s = scenario({
       p1: {
         battlefield: [{ name: "Bear Cub", tapped: true }, ...lands("Forest", 3), ...lands("Mountain", 3)],
@@ -4985,12 +4985,12 @@ describe("Murders at Karlov Manor, lot B4 : suspect et Affaires", () => {
     expect(s.objects[bear]?.suspected).toBeUndefined();
     expect(chars(s, bear).keywords).toContain("hexproof");
     expect(chars(s, bear).power).toBe(4);
-    // Convenient Target : « suspectez la créature enchantée » ne fait rien.
+    // Convenient Target: "suspect the enchanted creature" does nothing.
     s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Convenient Target"), targets: { enchant: [bear] } }));
     expect(s.objects[bear]?.suspected).toBeUndefined();
   });
 
-  it("Case File Auditor : en arrivant, un enchantement parmi six cartes ; mana de n'importe quelle couleur pour les sorts d'Affaire", () => {
+  it("Case File Auditor: when it enters, an enchantment among six cards; mana of any color for Case spells", () => {
     let s = scenario({
       p1: {
         battlefield: lands("Island", 5),
@@ -4998,7 +4998,7 @@ describe("Murders at Karlov Manor, lot B4 : suspect et Affaires", () => {
         library: ["Opt", "Case of the Gateway Express", "Bear Cub", "Opt", "Opt", "Opt", "Island"],
       },
     });
-    // {2}{W} payé avec des Îles : impossible, ce n'est pas une Affaire.
+    // {2}{W} paid with Islands: impossible, it isn't a Case.
     expect(castOptions(s, "p1", idOf(s, "p1", "hand", "Case File Auditor"))).toHaveLength(0);
     s = scenario({
       p1: {
@@ -5010,11 +5010,11 @@ describe("Murders at Karlov Manor, lot B4 : suspect et Affaires", () => {
     s = settle(cast(s, "p1", "Case File Auditor"));
     const casePick = idOf(s, "p1", "hand", "Case of the Gateway Express");
     expect(casePick).toBeDefined();
-    // {1}{W} avec deux Îles : l'Affaire se lance.
+    // {1}{W} with two Islands: the Case can be cast.
     expect(castOptions(s, "p1", casePick)).not.toHaveLength(0);
   });
 
-  it("Case of the Gateway Express : chacune de vos créatures inflige 1 blessure ; résolue après trois attaquants, vos créatures +1/+0", () => {
+  it("Case of the Gateway Express: each of your creatures deals 1 damage; solved after three attackers, your creatures +1/+0", () => {
     let s = scenario({
       p1: {
         battlefield: ["Bear Cub", "Bear Cub", "Llanowar Elves", ...lands("Plains", 2)],
@@ -5034,7 +5034,7 @@ describe("Murders at Karlov Manor, lot B4 : suspect et Affaires", () => {
     expect(chars(s, attackers[0] as string).power).toBe(3);
   });
 
-  it("Case of the Burning Masks : 3 blessures en arrivant ; résolue si trois de vos sources ont infligé des blessures ce tour-ci", () => {
+  it("Case of the Burning Masks: 3 damage when it enters; solved if three of your sources dealt damage this turn", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Mountain", 7)], hand: ["Case of the Burning Masks", "Lightning Strike", "Lightning Strike"] },
       p2: { battlefield: ["Bear Cub"] },
@@ -5049,14 +5049,14 @@ describe("Murders at Karlov Manor, lot B4 : suspect et Affaires", () => {
   });
 });
 
-describe("Murders at Karlov Manor, lot C1 : exigences de blocage (509.1c)", () => {
+describe("Murders at Karlov Manor, lot C1: blocking requirements (509.1c)", () => {
   const toBlockers = (s: S, attackers: string[]) => {
     let c = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
     c = act(c, "p1", { type: "declareAttackers", attackers: attackers.map((id) => ({ id, defender: "p2" })) });
     return advanceUntil(c, (x) => x.pending?.kind === "declareBlockers");
   };
 
-  it("Culvert Ambusher : la créature ciblée bloque ce tour-ci si possible", () => {
+  it("Culvert Ambusher: the target creature blocks this turn if able", () => {
     let s = scenario({
       p1: { battlefield: ["Bear Cub", ...lands("Forest", 5)], hand: ["Culvert Ambusher"] },
       p2: { battlefield: ["Llanowar Elves"] },
@@ -5072,7 +5072,7 @@ describe("Murders at Karlov Manor, lot C1 : exigences de blocage (509.1c)", () =
     expect(() => act(b, "p2", { type: "declareBlockers", blocks: [{ blocker: elves, attacker: bear }] })).not.toThrow();
   });
 
-  it("Hustle : la créature ciblée attaque ou bloque ce tour-ci si possible", () => {
+  it("Hustle: the target creature attacks or blocks this turn if able", () => {
     let s = scenario({ p1: { battlefield: ["Bear Cub", "Island"], hand: ["Hustle // Bustle"] } });
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     const card = idOf(s, "p1", "hand", "Hustle // Bustle");
@@ -5083,7 +5083,7 @@ describe("Murders at Karlov Manor, lot C1 : exigences de blocage (509.1c)", () =
     expect(() => act(s, "p1", { type: "declareAttackers", attackers: [] })).toThrow(RulesError);
   });
 
-  it("Tolsimir : Voja Fenstalker en arrivant ; un Loup qui attaque avec Tolsimir doit être bloqué par la créature ciblée si possible", () => {
+  it("Tolsimir: Voja Fenstalker when it enters; a Wolf that attacks with Tolsimir must be blocked by the target creature if able", () => {
     let s = scenario({
       p1: { battlefield: lands("Plains", 3).concat(lands("Forest", 2)), hand: ["Tolsimir, Midnight's Light"] },
       p2: { battlefield: ["Bear Cub"] },
@@ -5092,20 +5092,20 @@ describe("Murders at Karlov Manor, lot C1 : exigences de blocage (509.1c)", () =
     const voja = idOf(s, "p1", "battlefield", "Voja Fenstalker");
     expect(chars(s, voja).supertypes).toContain("Legendary");
     const tolsimir = idOf(s, "p1", "battlefield", "Tolsimir, Midnight's Light");
-    // Mal d'invocation : le tour suivant de p1.
+    // Summoning sickness: p1's next turn.
     s = advanceUntil(s, (x) => x.turn.number === 5 && x.turn.step === "main1");
     const bear = idOf(s, "p2", "battlefield", "Bear Cub");
     const b = toBlockers(s, [tolsimir, voja]);
-    // Bloquer Tolsimir plutôt que le Loup n'obéit pas à l'exigence.
+    // Blocking Tolsimir rather than the Wolf doesn't satisfy the requirement.
     expect(() => act(b, "p2", { type: "declareBlockers", blocks: [{ blocker: bear, attacker: tolsimir }] })).toThrow(RulesError);
     expect(() => act(b, "p2", { type: "declareBlockers", blocks: [{ blocker: bear, attacker: voja }] })).not.toThrow();
   });
 });
 
-describe("Murders at Karlov Manor, lot C2 : montants et coûts", () => {
+describe("Murders at Karlov Manor, lot C2: amounts and costs", () => {
   const clues = (s: S, p: string) => idsOf(s, p, "battlefield", "Clue").length;
 
-  it("No Witnesses : chaque joueur qui contrôle le plus de créatures enquête, puis toutes les créatures sont détruites", () => {
+  it("No Witnesses: each player who controls the most creatures investigates, then all creatures are destroyed", () => {
     let s = scenario({
       p1: { battlefield: ["Bear Cub", ...lands("Plains", 4)], hand: ["No Witnesses"] },
       p2: { battlefield: ["Bear Cub", "Llanowar Elves"] },
@@ -5116,7 +5116,7 @@ describe("Murders at Karlov Manor, lot C2 : montants et coûts", () => {
     expect(s.battlefield.filter((id) => chars(s, id).types.includes("Creature"))).toHaveLength(0);
   });
 
-  it("Wojek Investigator : à votre entretien, un Indice par adversaire qui a plus de cartes en main que vous", () => {
+  it("Wojek Investigator: at your upkeep, a Clue for each opponent who has more cards in hand than you", () => {
     let s = scenario({
       turn: 2,
       active: "p2",
@@ -5127,7 +5127,7 @@ describe("Murders at Karlov Manor, lot C2 : montants et coûts", () => {
     expect(clues(s, "p1")).toBe(1);
   });
 
-  it("Ill-Timed Explosion : piochez deux cartes, défaussez-en deux : X blessures à chaque créature (X : plus grande VM défaussée)", () => {
+  it("Ill-Timed Explosion: draw two cards, discard two: X damage to each creature (X: greatest MV discarded)", () => {
     let s = scenario({
       p1: {
         battlefield: [...lands("Island", 2), ...lands("Mountain", 2), "Serra Angel"],
@@ -5139,12 +5139,12 @@ describe("Murders at Karlov Manor, lot C2 : montants et coûts", () => {
     s = settle(cast(s, "p1", "Ill-Timed Explosion"), (req) =>
       req.type === "pick" && req.intent === "discard" ? req.options.slice(0, 2) : undefined,
     );
-    // Shivan Dragon (VM 6) défaussé : 6 blessures, l'Ange (4/4) et l'Ours meurent.
+    // Shivan Dragon (MV 6) discarded: 6 damage, the Angel (4/4) and the Bear die.
     expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
     expect(idsOf(s, "p1", "graveyard", "Serra Angel")).toHaveLength(1);
   });
 
-  it("Ill-Timed Explosion : « quand vous le faites » est une capacité réflexive ; deux cartes ou aucune", () => {
+  it('Ill-Timed Explosion: "when you do" is a reflexive ability; two cards or none', () => {
     const base = () =>
       scenario({
         p1: {
@@ -5154,8 +5154,8 @@ describe("Murders at Karlov Manor, lot C2 : montants et coûts", () => {
         },
         p2: { battlefield: ["Bear Cub"] },
       });
-    // La défausse se fait pendant la résolution du sort ; les blessures, par une capacité réflexive mise ensuite sur la
-    // pile (on peut y répondre), sans cible.
+    // The discard happens during the spell's resolution; the damage, by a reflexive ability put on the
+    // stack afterwards (it can be responded to), with no target.
     let s = base();
     let discardAsked: ChoiceRequest | undefined;
     s = cast(s, "p1", "Ill-Timed Explosion");
@@ -5172,24 +5172,24 @@ describe("Murders at Karlov Manor, lot C2 : montants et coûts", () => {
         } else s = act(s, p.player, { type: "choose", values: req.suggested });
       } else break;
     }
-    // Deux cartes exactement, sans possibilité d'en défausser une seule.
+    // Exactly two cards, with no possibility of discarding just one.
     expect(discardAsked?.type === "pick" && [discardAsked.min, discardAsked.max]).toEqual([2, 2]);
     expect(s.stack).toHaveLength(1);
     expect(s.stack[0]?.kind).toBe("ability");
     expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
-    // Shivan Dragon quitte le cimetière avant la résolution (PLAN-D, D8) : X reste celui des cartes défaussées.
+    // Shivan Dragon leaves the graveyard before resolution (PLAN-D, D8): X remains that of the discarded cards.
     moveObject(s, idOf(s, "p1", "graveyard", "Shivan Dragon"), "exile");
     s = settle(s);
-    // Shivan Dragon (VM 6) parmi les cartes défaussées : 6 blessures à chaque créature.
+    // Shivan Dragon (MV 6) among the discarded cards: 6 damage to each creature.
     expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
 
-    // Refuser : rien n'est défaussé, aucune blessure.
+    // Decline: nothing is discarded, no damage.
     s = settle(cast(base(), "p1", "Ill-Timed Explosion"), (req) => (req.intent === "may" ? [0] : undefined));
     expect(s.players.p1?.hand).toHaveLength(3);
     expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
   });
 
-  it("Officious Interrogation : {W}{U} de plus par cible au-delà de la première ; un Indice par créature des joueurs ciblés", () => {
+  it("Officious Interrogation: {W}{U} more per target beyond the first; a Clue for each creature of the targeted players", () => {
     const base = {
       p1: { battlefield: ["Bear Cub", ...lands("Plains", 2), ...lands("Island", 2)], hand: ["Officious Interrogation"] },
       p2: { battlefield: ["Bear Cub", "Llanowar Elves"] },
@@ -5198,16 +5198,16 @@ describe("Murders at Karlov Manor, lot C2 : montants et coûts", () => {
     s = settle(cast(s, "p1", "Officious Interrogation", { p: ["p1", "p2"] }));
     expect(clues(s, "p1")).toBe(3);
     expect(s.battlefield.filter((id) => s.objects[id]?.tapped)).toHaveLength(4);
-    // Deux cibles avec seulement {W}{U} : impossible.
+    // Two targets with only {W}{U}: impossible.
     const t = scenario({ ...base, p1: { ...base.p1, battlefield: ["Bear Cub", "Plains", "Island"] } });
     expect(() => cast(t, "p1", "Officious Interrogation", { p: ["p1", "p2"] })).toThrow(RulesError);
   });
 
-  it("Demand Answers : en coût additionnel, sacrifiez un artefact ou défaussez une carte ; piochez deux cartes", () => {
+  it("Demand Answers: as an additional cost, sacrifice an artifact or discard a card; draw two cards", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Mountain", 2), "Bear Cub"], hand: ["Demand Answers"], library: lands("Mountain", 3) },
     });
-    // Sans carte en main ni artefact : impossible (l'Ours n'est pas un artefact).
+    // With no card in hand nor artifact: impossible (the Bear isn't an artifact).
     expect(() => cast(s, "p1", "Demand Answers")).toThrow(RulesError);
     s = scenario({
       p1: { battlefield: [...lands("Mountain", 2)], hand: ["Demand Answers", "Opt"], library: lands("Mountain", 3) },
@@ -5216,7 +5216,7 @@ describe("Murders at Karlov Manor, lot C2 : montants et coûts", () => {
     expect(s.players.p1?.hand).toHaveLength(2);
   });
 
-  it("Treacherous Greed : sacrifiez une créature qui a infligé des blessures ce tour-ci ; piochez trois cartes, drain 3", () => {
+  it("Treacherous Greed: sacrifice a creature that dealt damage this turn; draw three cards, drain 3", () => {
     let s = scenario({
       p1: {
         battlefield: ["Bear Cub", "Llanowar Elves", ...lands("Plains", 2), "Swamp"],
@@ -5236,7 +5236,7 @@ describe("Murders at Karlov Manor, lot C2 : montants et coûts", () => {
     expect(s.players.p1?.life).toBe(23);
   });
 
-  it("Urgent Necropsy : réunissez des preuves X (VM totale des cibles) ; détruit jusqu'à un artefact, une créature, un enchantement, un planeswalker", () => {
+  it("Urgent Necropsy: collect evidence X (total MV of the targets); destroys up to one artifact, creature, enchantment, planeswalker", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Swamp", 2), ...lands("Forest", 2)], hand: ["Urgent Necropsy"], graveyard: ["Shivan Dragon"] },
       p2: { battlefield: ["Bear Cub", "Serra Angel"] },
@@ -5245,7 +5245,7 @@ describe("Murders at Karlov Manor, lot C2 : montants et coûts", () => {
     s = settle(cast(s, "p1", "Urgent Necropsy", { a: [], c: [angel], e: [], w: [] }));
     expect(idsOf(s, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
     expect(s.exile.map((id) => nameOf(s, id))).toEqual(["Shivan Dragon"]);
-    // VM 5 sans preuves suffisantes : impossible.
+    // MV 5 without enough evidence: impossible.
     const t = scenario({
       p1: { battlefield: [...lands("Swamp", 2), ...lands("Forest", 2)], hand: ["Urgent Necropsy"], graveyard: ["Opt"] },
       p2: { battlefield: ["Serra Angel"] },
@@ -5255,7 +5255,7 @@ describe("Murders at Karlov Manor, lot C2 : montants et coûts", () => {
     ).toThrow(RulesError);
   });
 
-  it("Niv-Mizzet, Guildpact : X = paires de couleurs différentes parmi vos permanents exactement bicolores", () => {
+  it("Niv-Mizzet, Guildpact: X = different color pairs among your exactly two-colored permanents", () => {
     const t = scenario({ p1: { battlefield: ["Tin Street Gossip", "Agrus Kos, Spirit of Justice", "Bear Cub"] } });
     const ctx = {
       controller: "p1",
@@ -5266,11 +5266,11 @@ describe("Murders at Karlov Manor, lot C2 : montants et coûts", () => {
       x: 0,
       kicked: false,
     };
-    // R/G (Tin Street Gossip) et R/W (Agrus Kos) : deux paires.
+    // R/G (Tin Street Gossip) and R/W (Agrus Kos): two pairs.
     expect(evalAmount(t, ctx as never, dsl.amount.colorPairsAmong({ permanent: true, controller: "you" }))).toBe(2);
   });
 
-  it("Aurelia, the Law Above : un joueur (même un adversaire) attaque avec trois créatures ou plus : vous piochez", () => {
+  it("Aurelia, the Law Above: a player (even an opponent) attacks with three or more creatures: you draw", () => {
     let s = scenario({
       turn: 2,
       active: "p2",
@@ -5285,12 +5285,12 @@ describe("Murders at Karlov Manor, lot C2 : montants et coûts", () => {
     expect(s.players.p1?.hand).toHaveLength(hand + 1);
   });
 
-  it("Tin Street Gossip : {R}{G} seulement pour lancer des sorts face cachée", () => {
+  it("Tin Street Gossip: {R}{G} only for casting face-down spells", () => {
     let s = scenario({ p1: { battlefield: ["Tin Street Gossip", "Mountain"], hand: ["Fugitive Codebreaker", "Bear Cub"] } });
     const gossip = idOf(s, "p1", "battlefield", "Tin Street Gossip");
     const a = legalActions(s, "p1").find((x) => x.type === "activate" && x.source === gossip);
     s = settle(act(s, "p1", { type: "activate", source: gossip, ability: a?.type === "activate" ? a.ability : -1 }));
-    // Bear Cub ({1}{G}) : non (mana restreint) ; Fugitive Codebreaker face cachée ({3}) : oui.
+    // Bear Cub ({1}{G}): no (restricted mana); Fugitive Codebreaker face down ({3}): yes.
     expect(legalActions(s, "p1").some((x) => x.type === "cast" && x.card === idOf(s, "p1", "hand", "Bear Cub"))).toBe(false);
     expect(
       legalActions(s, "p1").some(
@@ -5300,13 +5300,13 @@ describe("Murders at Karlov Manor, lot C2 : montants et coûts", () => {
   });
 });
 
-describe("Murders at Karlov Manor, lot C3 : cartes uniques", () => {
+describe("Murders at Karlov Manor, lot C3: unique cards", () => {
   const yes: Answer = (req) => (req.type === "yesNo" ? [1] : undefined);
   const activateLabel = (s: S, source: string, label: string, extra: object = {}) => {
     const a = legalActions(s, "p1").find((x) => x.type === "activate" && x.source === source && (x.label ?? "").includes(label));
     return act(s, "p1", { type: "activate", source, ability: a?.type === "activate" ? a.ability : -1, ...extra });
   };
-  /** Joue la résolution en lançant chaque carte proposée par un « lancer maintenant ». */
+  /** Plays the resolution by casting each card offered by a "cast now". */
   const castAll = (s: S, targets?: Record<string, string[]>) => {
     let cur = s;
     for (let i = 0; i < 60 && (cur.stack.length || cur.triggers.length || cur.pending?.kind === "choice"); i++) {
@@ -5320,7 +5320,7 @@ describe("Murders at Karlov Manor, lot C3 : cartes uniques", () => {
     return cur;
   };
 
-  it("Conspiracy Unraveler : réunir des preuves 10 plutôt que payer le coût de mana de vos sorts", () => {
+  it("Conspiracy Unraveler: collect evidence 10 rather than pay the mana cost of your spells", () => {
     let s = scenario({
       p1: { battlefield: ["Conspiracy Unraveler"], hand: ["Bear Cub"], graveyard: ["Shivan Dragon", "Serra Angel"] },
     });
@@ -5329,7 +5329,7 @@ describe("Murders at Karlov Manor, lot C3 : cartes uniques", () => {
     expect(s.players.p1?.graveyard).toHaveLength(0);
   });
 
-  it("Intrude on the Mind : deux piles révélées ; un Thopter 0/0 avec un marqueur par carte mise au cimetière", () => {
+  it("Intrude on the Mind: two revealed piles; a 0/0 Thopter with a counter per card put into the graveyard", () => {
     let s = scenario({
       p1: {
         battlefield: lands("Island", 5),
@@ -5346,7 +5346,7 @@ describe("Murders at Karlov Manor, lot C3 : cartes uniques", () => {
     expect(s.objects[thopter]?.counters["+1/+1"]).toBe(toGraveyard);
   });
 
-  it("Intrude on the Mind (trois joueurs) : vous choisissez l'adversaire qui choisit la pile", () => {
+  it("Intrude on the Mind (three players): you choose the opponent who chooses the pile", () => {
     let s = scenario({
       players: 3,
       p1: {
@@ -5371,12 +5371,12 @@ describe("Murders at Karlov Manor, lot C3 : cartes uniques", () => {
     });
     expect(offered).toEqual([["p1", "p2", "p3"]]);
     expect(chooser).toBe("p3");
-    // La première pile (deux cartes) en main, les trois autres au cimetière : un Thopter avec trois marqueurs.
+    // The first pile (two cards) to hand, the other three to the graveyard: a Thopter with three counters.
     expect(s.players.p1?.hand).toHaveLength(2);
     expect(s.objects[idOf(s, "p1", "battlefield", "Thopter")]?.counters["+1/+1"]).toBe(3);
   });
 
-  it("Hedge Whisperer : un terrain devient un Sanglier 5/5 tant qu'elle reste engagée ; elle peut rester engagée", () => {
+  it("Hedge Whisperer: a land becomes a 5/5 Boar while it stays tapped; it may stay tapped", () => {
     let s = scenario({ p1: { battlefield: ["Hedge Whisperer", ...lands("Forest", 5)], graveyard: ["Shivan Dragon"] } });
     const whisperer = idOf(s, "p1", "battlefield", "Hedge Whisperer");
     const land = idOf(s, "p1", "battlefield", "Forest");
@@ -5388,14 +5388,14 @@ describe("Murders at Karlov Manor, lot C3 : cartes uniques", () => {
     expect(chars(s, land).power).toBe(5);
   });
 
-  it("A Killer Among Us : trois jetons, un type choisi en secret ; sacrifiée, un jeton attaquant du type choisi grandit", () => {
+  it("A Killer Among Us: three tokens, a type chosen in secret; sacrificed, an attacking token of the chosen type grows", () => {
     let s = scenario({ p1: { battlefield: lands("Forest", 5), hand: ["A Killer Among Us"] } });
     s = settle(cast(s, "p1", "A Killer Among Us"), (req) =>
       req.type === "pick" && req.options.includes("Goblin") ? ["Goblin"] : undefined,
     );
     const killer = idOf(s, "p1", "battlefield", "A Killer Among Us");
     expect(s.objects[killer]?.chosen?.creatureType).toBe("Goblin");
-    // Choix secret : l'adversaire ne le voit pas.
+    // Secret choice: the opponent doesn't see it.
     expect(projectView(s, "p2").battlefield.find((o) => o.id === killer)?.chosen).toBeNull();
     expect(projectView(s, "p1").battlefield.find((o) => o.id === killer)?.chosen?.creatureType).toBe("Goblin");
     s = advanceUntil(s, (x) => x.turn.number === 5 && x.pending?.kind === "declareAttackers");
@@ -5407,7 +5407,7 @@ describe("Murders at Karlov Manor, lot C3 : cartes uniques", () => {
     expect(chars(s, goblin).keywords).toContain("deathtouch");
   });
 
-  it("Kylox's Voltstrider : réunissez des preuves 6 (liées à lui) ; en attaquant, lancez un éphémère parmi elles, puis au-dessous de la bibliothèque", () => {
+  it("Kylox's Voltstrider: collect evidence 6 (tied to it); when attacking, cast an instant among them, then on the bottom of the library", () => {
     let s = scenario({
       p1: {
         battlefield: ["Kylox's Voltstrider", ...lands("Mountain", 2)],
@@ -5425,7 +5425,7 @@ describe("Murders at Karlov Manor, lot C3 : cartes uniques", () => {
     expect(nameOf(s, s.players.p1?.library.at(-1) as string)).toBe("Lightning Strike");
   });
 
-  it("Judith : un éphémère lancé gagne le contact mortel et le lien de vie (mode choisi)", () => {
+  it("Judith: a cast instant gains deathtouch and lifelink (mode chosen)", () => {
     let s = scenario({
       p1: { battlefield: ["Judith, Carnage Connoisseur", ...lands("Mountain", 2)], hand: ["Lightning Strike"] },
     });
@@ -5436,7 +5436,7 @@ describe("Murders at Karlov Manor, lot C3 : cartes uniques", () => {
     expect(s.players.p1?.life).toBe(23);
   });
 
-  it("Kaya, Spirits' Justice : une de vos créatures exilée : un jeton que vous contrôlez en devient une copie, avec le vol", () => {
+  it("Kaya, Spirits' Justice: one of your creatures exiled: a token you control becomes a copy of it, with flying", () => {
     let s = scenario({ p1: { battlefield: ["Kaya, Spirits' Justice", "Bear Cub"] } });
     createTokens(s, "p1", SPIRIT_WB, 1);
     const kaya = idOf(s, "p1", "battlefield", "Kaya, Spirits' Justice");
@@ -5447,11 +5447,11 @@ describe("Murders at Karlov Manor, lot C3 : cartes uniques", () => {
     expect(chars(s, spirit).keywords).toContain("flying");
   });
 
-  it("Kaya, Spirits' Justice : une créature et une carte de créature du cimetière exilées ensemble : un seul déclenchement, vous choisissez la carte parmi elles", () => {
+  it("Kaya, Spirits' Justice: a creature and a creature card from the graveyard exiled together: a single trigger, you choose the card among them", () => {
     let s = scenario({ p1: { battlefield: ["Kaya, Spirits' Justice", "Bear Cub"], graveyard: ["Shivan Dragon", "Opt"] } });
     createTokens(s, "p1", SPIRIT_WB, 1);
     const spirit = idOf(s, "p1", "battlefield", "Spirit");
-    // Un même lot : la créature du champ de bataille, une carte de créature et un éphémère du cimetière.
+    // A single batch: the creature from the battlefield, a creature card and an instant from the graveyard.
     moveObject(s, idOf(s, "p1", "battlefield", "Bear Cub"), "exile");
     moveObject(s, idOf(s, "p1", "graveyard", "Shivan Dragon"), "exile");
     moveObject(s, idOf(s, "p1", "graveyard", "Opt"), "exile");
@@ -5465,19 +5465,19 @@ describe("Murders at Karlov Manor, lot C3 : cartes uniques", () => {
     expect(options).toEqual(["Bear Cub", "Shivan Dragon"]);
     expect(chars(s, spirit).name).toBe("Shivan Dragon");
     expect(chars(s, spirit).keywords).toContain("flying");
-    // « Vous pouvez » : sans choix, le jeton reste lui-même.
+    // "You may": with no choice, the token stays itself.
     let t = scenario({ p1: { battlefield: ["Kaya, Spirits' Justice"], graveyard: ["Shivan Dragon"] } });
     createTokens(t, "p1", SPIRIT_WB, 1);
     moveObject(t, idOf(t, "p1", "graveyard", "Shivan Dragon"), "exile");
     t = settle(t, (req) => (req.type === "pick" ? [] : undefined));
     expect(chars(t, idOf(t, "p1", "battlefield", "Spirit")).name).toBe("Spirit");
-    // Une créature d'un adversaire exilée ne déclenche rien.
+    // An opponent's creature exiled triggers nothing.
     const u = scenario({ p1: { battlefield: ["Kaya, Spirits' Justice"] }, p2: { battlefield: ["Bear Cub"] } });
     moveObject(u, idOf(u, "p2", "battlefield", "Bear Cub"), "exile");
     expect(u.triggers).toHaveLength(0);
   });
 
-  it("Kylox, Visionary Inventor : sacrifiez d'autres créatures, exilez X cartes (leur force totale), lancez-en les éphémères gratuitement", () => {
+  it("Kylox, Visionary Inventor: sacrifice other creatures, exile X cards (their total power), cast the instants among them for free", () => {
     let s = scenario({
       p1: { battlefield: ["Kylox, Visionary Inventor", "Bear Cub"], library: ["Lightning Strike", "Island", "Opt"] },
     });
@@ -5486,12 +5486,12 @@ describe("Murders at Karlov Manor, lot C3 : cartes uniques", () => {
     s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: kylox, defender: "p2" }] });
     s = castAll(s, { t: ["p2"] });
     expect(idsOf(s, "p1", "graveyard", "Bear Cub")).toHaveLength(1);
-    // Force 2 : Lightning Strike et Island exilées ; Strike lancée gratuitement.
+    // Power 2: Lightning Strike and Island exiled; Strike cast for free.
     expect(s.players.p2?.life).toBe(17);
     expect(nameOf(s, s.players.p1?.library[0] as string)).toBe("Opt");
   });
 
-  it("Flotsam // Jetsam : meulez trois cartes et enquêtez ; chaque adversaire meule trois cartes, lancez-en un sort gratuitement (exilé ensuite)", () => {
+  it("Flotsam // Jetsam: mill three cards and investigate; each opponent mills three cards, cast a spell from them for free (exiled afterwards)", () => {
     let s = scenario({
       p1: { battlefield: lands("Island", 6), hand: ["Flotsam // Jetsam"], library: lands("Island", 6) },
       p2: { library: ["Opt", "Island", "Island", "Island"] },
@@ -5505,12 +5505,12 @@ describe("Murders at Karlov Manor, lot C3 : cartes uniques", () => {
     });
     const hand = (t.players.p1?.hand.length ?? 0) - 1;
     t = castAll(cast(t, "p1", "Flotsam // Jetsam", undefined, { face: 1 }));
-    // Opt de l'adversaire lancé gratuitement (vous piochez), puis exilé.
+    // The opponent's Opt cast for free (you draw), then exiled.
     expect(t.exile.some((id) => nameOf(t, id) === "Opt")).toBe(true);
     expect(t.players.p1?.hand).toHaveLength(hand + 1);
   });
 
-  it("Jetsam à plusieurs : un sort lancé gratuitement depuis le cimetière de chaque adversaire (PLAN-H, H2)", () => {
+  it("Jetsam with several opponents: a spell cast for free from each opponent's graveyard (PLAN-H, H2)", () => {
     let s = scenario({
       players: 3,
       p1: { battlefield: lands("Island", 6), hand: ["Flotsam // Jetsam"], library: lands("Island", 6) },
@@ -5519,12 +5519,12 @@ describe("Murders at Karlov Manor, lot C3 : cartes uniques", () => {
     });
     const hand = (s.players.p1?.hand.length ?? 0) - 1;
     s = castAll(cast(s, "p1", "Flotsam // Jetsam", undefined, { face: 1 }));
-    // Les deux Opt (un par cimetière) sont lancés, puis exilés ; vous piochez deux cartes.
+    // Both Opts (one per graveyard) are cast, then exiled; you draw two cards.
     expect(s.exile.filter((id) => nameOf(s, id) === "Opt")).toHaveLength(2);
     expect(s.players.p1?.hand).toHaveLength(hand + 2);
   });
 
-  it("Jetsam : un seul sort par cimetière adverse, même s'il en contient plusieurs (PLAN-H, H2)", () => {
+  it("Jetsam: a single spell per opposing graveyard, even if it holds several (PLAN-H, H2)", () => {
     let s = scenario({
       p1: { battlefield: lands("Island", 6), hand: ["Flotsam // Jetsam"], library: lands("Island", 6) },
       p2: { library: ["Opt", "Opt", "Opt", "Island"] },
@@ -5536,7 +5536,7 @@ describe("Murders at Karlov Manor, lot C3 : cartes uniques", () => {
     expect(s.players.p1?.hand).toHaveLength(hand + 1);
   });
 
-  it("Kaya, Spirits' Justice (−2) à plusieurs : jusqu'à une créature ciblée de chaque autre joueur (PLAN-H, H2)", () => {
+  it("Kaya, Spirits' Justice (-2) with several players: up to one target creature of each other player (PLAN-H, H2)", () => {
     const setup = () =>
       scenario({
         players: 3,
@@ -5557,7 +5557,7 @@ describe("Murders at Karlov Manor, lot C3 : cartes uniques", () => {
     const elves = idOf(s, "p2", "battlefield", "Llanowar Elves");
     const dragon = idOf(s, "p3", "battlefield", "Shivan Dragon");
     const { kaya, ability } = minus(s);
-    // Deux créatures du même adversaire : refusé.
+    // Two creatures of the same opponent: refused.
     expect(() => act(s, "p1", { type: "activate", source: kaya, ability, targets: { a: [bear], b: [angel, elves] } })).toThrow(
       RulesError,
     );
@@ -5566,7 +5566,7 @@ describe("Murders at Karlov Manor, lot C3 : cartes uniques", () => {
     expect(idsOf(s, "p2", "battlefield", "Llanowar Elves")).toHaveLength(1);
   });
 
-  it("Krenko's Buzzcrusher à plusieurs : un terrain non-base par joueur, choisi sans le cibler (PLAN-H, H2)", () => {
+  it("Krenko's Buzzcrusher with several players: one nonbasic land per player, chosen without targeting it (PLAN-H, H2)", () => {
     let s = scenario({
       players: 3,
       p1: {
@@ -5585,7 +5585,7 @@ describe("Murders at Karlov Manor, lot C3 : cartes uniques", () => {
     const mineAsked: ChoiceValue[][] = [];
     s = settle(cast(s, "p1", "Krenko's Buzzcrusher"), (req) => {
       if (req.type !== "pick") return undefined;
-      // Vos propres terrains : une question oui / non, « Non » suggéré ; vous gardez votre terrain.
+      // Your own lands: a yes / no question, "No" suggested; you keep your land.
       if (req.intent === "other") {
         mineAsked.push(req.suggested);
         return ["0"];
@@ -5593,26 +5593,26 @@ describe("Murders at Karlov Manor, lot C3 : cartes uniques", () => {
       if (req.intent === "pickCards") {
         prompts.push(req.options.map(String));
         expect(req.options).not.toContain(mine);
-        // Un terrain de chaque adversaire, suggéré d'office.
+        // A land of each opponent, suggested automatically.
         expect(req.suggested).toEqual(req.options.slice(0, 1));
         return req.options.filter((id) => id === theirs || id === third);
       }
       return req.options.filter((id) => nameOf(s, String(id)) === "Island").slice(0, 1);
     });
     expect(mineAsked).toEqual([["0"]]);
-    // Une question par adversaire qui contrôle un terrain non-base ; les choix ne sont pas des cibles (rien sur la pile).
+    // One question per opponent who controls a nonbasic land; the choices aren't targets (nothing on the stack).
     expect(prompts).toEqual([both, [third]]);
     expect(idsOf(s, "p1", "battlefield", "Thundering Falls")).toHaveLength(1);
     expect(idsOf(s, "p2", "battlefield", "Thundering Falls")).toHaveLength(1);
     expect(idsOf(s, "p2", "graveyard", "Thundering Falls")).toHaveLength(1);
     expect(idsOf(s, "p3", "graveyard", "Thundering Falls")).toHaveLength(1);
-    // Chaque contrôleur d'un terrain détruit cherche un terrain de base, qui arrive engagé.
+    // Each controller of a destroyed land searches for a basic land, which enters tapped.
     expect(s.objects[idOf(s, "p2", "battlefield", "Island")]?.tapped).toBe(true);
     expect(s.objects[idOf(s, "p3", "battlefield", "Island")]?.tapped).toBe(true);
     expect(idsOf(s, "p1", "battlefield", "Mountain")).toHaveLength(4);
   });
 
-  it("Buried in the Garden : exile un permanent adverse jusqu'à son départ ; le terrain enchanté produit un mana de plus", () => {
+  it("Buried in the Garden: exiles an opposing permanent until it leaves; the enchanted land produces one more mana", () => {
     let s = scenario({
       p1: { battlefield: lands("Forest", 3).concat(lands("Plains", 1)), hand: ["Buried in the Garden"] },
       p2: { battlefield: ["Bear Cub"] },
@@ -5624,7 +5624,7 @@ describe("Murders at Karlov Manor, lot C3 : cartes uniques", () => {
       (req) => (req.type === "pick" && req.options.includes(bear) ? [bear] : undefined),
     );
     expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(0);
-    // Un sort plus tard : le terrain enchanté (dégagé au tour suivant) produit deux mana.
+    // One spell later: the enchanted land (untapped next turn) produces two mana.
     s = advanceUntil(s, (x) => x.turn.number === 5 && x.turn.step === "main1");
     const forestNow = s.battlefield.find(
       (id) => nameOf(s, id) === "Forest" && s.battlefield.some((a) => s.objects[a]?.attachedTo === id),
@@ -5637,8 +5637,8 @@ describe("Murders at Karlov Manor, lot C3 : cartes uniques", () => {
   });
 });
 
-describe("Murders at Karlov Manor : promotions légales en Standard (PLAN-C, lot C19)", () => {
-  it("Melek, Reforged Researcher : F/E égales à deux fois les éphémères et rituels du cimetière ; le premier du tour coûte {3} de moins", () => {
+describe("Murders at Karlov Manor: legal promotions in Standard (PLAN-C, lot C19)", () => {
+  it("Melek, Reforged Researcher: P/T equal to twice the instants and sorceries in the graveyard; the first of the turn costs {3} less", () => {
     let s = scenario({
       p1: {
         battlefield: ["Melek, Reforged Researcher", "Island"],
@@ -5649,16 +5649,16 @@ describe("Murders at Karlov Manor : promotions légales en Standard (PLAN-C, lot
     });
     const melek = idOf(s, "p1", "battlefield", "Melek, Reforged Researcher");
     expect([chars(s, melek).power, chars(s, melek).toughness]).toEqual([4, 4]);
-    // Quick Study ({2}{U}) : {3} de moins (le générique seulement), il coûte {U}.
+    // Quick Study ({2}{U}): {3} less (generic only), it costs {U}.
     const [first, second] = idsOf(s, "p1", "hand", "Quick Study") as [string, string];
     expect(castable(s, "p1", first)).toBe(true);
     s = settle(cast(s, "p1", "Quick Study"));
     expect([chars(s, melek).power, chars(s, melek).toughness]).toEqual([6, 6]);
-    // Le deuxième du tour paie son coût entier : impossible sans autre terrain.
+    // The second of the turn pays its full cost: impossible without another land.
     expect(castable(s, "p1", second)).toBe(false);
   });
 
-  it("Tomik, Wielder of Law : affinité pour les planeswalkers ; un adversaire qui vous attaque avec deux créatures perd 3 PV et vous piochez", () => {
+  it("Tomik, Wielder of Law: affinity for planeswalkers; an opponent who attacks you with two creatures loses 3 life and you draw", () => {
     let s = scenario({
       p1: { battlefield: ["Chandra, Flameshaper", "Plains", "Swamp"], hand: ["Tomik, Wielder of Law"], library: ["Opt"] },
     });
@@ -5688,7 +5688,7 @@ describe("Murders at Karlov Manor : promotions légales en Standard (PLAN-C, lot
     expect(one.players.p1?.hand).toHaveLength(0);
   });
 
-  it("Voja, Jaws of the Conclave : en attaquant, autant de marqueurs +1/+1 que d'Elfes sur chacune de vos créatures, une carte par Loup", () => {
+  it("Voja, Jaws of the Conclave: when attacking, as many +1/+1 counters as Elves on each of your creatures, a card per Wolf", () => {
     let s = scenario({
       p1: { battlefield: ["Voja, Jaws of the Conclave", "Llanowar Elves", "Llanowar Elves"], library: ["Opt", "Opt", "Opt"] },
     });
@@ -5699,17 +5699,17 @@ describe("Murders at Karlov Manor : promotions légales en Standard (PLAN-C, lot
     s = settle(s);
     expect(s.objects[voja]?.counters["+1/+1"]).toBe(2);
     for (const elf of idsOf(s, "p1", "battlefield", "Llanowar Elves")) expect(s.objects[elf]?.counters["+1/+1"]).toBe(2);
-    // Voja est le seul Loup : une carte.
+    // Voja is the only Wolf: one card.
     expect(s.players.p1?.hand).toHaveLength(1);
   });
 });
 
-describe("Murders at Karlov Manor, PLAN-D D9 : dernières cartes", () => {
+describe("Murders at Karlov Manor, PLAN-D D9: last cards", () => {
   const yes: Answer = (req) => (req.type === "yesNo" ? [1] : undefined);
   const no: Answer = (req) => (req.type === "yesNo" ? [0] : undefined);
   const activateLabel = (s: S, source: string, label: string) => {
     const a = legalActions(s, "p1").find((x) => x.type === "activate" && x.source === source && (x.label ?? "").includes(label));
-    if (a?.type !== "activate") throw new Error(`capacité introuvable : ${label}`);
+    if (a?.type !== "activate") throw new Error(`ability not found: ${label}`);
     return act(s, "p1", { type: "activate", source, ability: a.ability });
   };
   const attackWith = (s: S, ...ids: string[]) => {
@@ -5717,7 +5717,7 @@ describe("Murders at Karlov Manor, PLAN-D D9 : dernières cartes", () => {
     return act(cur, "p1", { type: "declareAttackers", attackers: ids.map((id) => ({ id, defender: "p2" })) });
   };
 
-  it("Izoni, Center of the Web : menace ; en arrivant ou en attaquant, preuves 4 : deux Araignées 2/1 ; quatre jetons sacrifiés : surveillance 2, deux cartes, 2 PV", () => {
+  it("Izoni, Center of the Web: menace; when it enters or attacks, evidence 4: two 2/1 Spiders; four tokens sacrificed: surveil 2, two cards, 2 life", () => {
     const IZONI = "Izoni, Center of the Web";
     let s = scenario({
       p1: {
@@ -5731,8 +5731,8 @@ describe("Murders at Karlov Manor, PLAN-D D9 : dernières cartes", () => {
     const izoni = idOf(s, "p1", "battlefield", IZONI);
     expect([chars(s, izoni).power, chars(s, izoni).toughness]).toEqual([5, 4]);
     expect(chars(s, izoni).keywords).toContain("menace");
-    // En arrivant : preuves 4 réunies, deux Araignées. Avec la suggestion (la moins chère qui suffit), une seule des deux
-    // cartes est exilée.
+    // When it enters: evidence 4 collected, two Spiders. With the suggestion (the cheapest that suffices), a single one of the two
+    // cards is exiled.
     expect(s.players.p1?.graveyard).toHaveLength(1);
     expect(s.exile).toHaveLength(1);
     const spiders = idsOf(s, "p1", "battlefield", "Spider");
@@ -5745,15 +5745,15 @@ describe("Murders at Karlov Manor, PLAN-D D9 : dernières cartes", () => {
       expect(c.keywords).toEqual(expect.arrayContaining(["reach", "menace"]));
       expect(s.objects[id]?.isToken).toBe(true);
     }
-    // Trois jetons seulement (Izoni n'en est pas un) : la dernière capacité ne s'active pas.
+    // Only three tokens (Izoni isn't one): the last ability can't be activated.
     expect(legalActions(s, "p1").some((x) => x.type === "activate" && x.source === izoni)).toBe(false);
-    // Au tour suivant (Forest piochée), en attaquant : de nouveau preuves 4 (la carte restante), deux Araignées de plus.
+    // On the next turn (Forest drawn), when attacking: evidence 4 again (the remaining card), two more Spiders.
     s = settleNoBlocks(attackWith(s, izoni), yes);
     s = advanceUntil(s, (x) => x.turn.step === "main2" && x.pending?.kind === "priority");
     expect(s.players.p1?.graveyard).toHaveLength(0);
     expect(idsOf(s, "p1", "battlefield", "Spider")).toHaveLength(4);
     expect(s.players.p2?.life).toBe(15);
-    // Sacrifiez quatre jetons : surveillance 2 (les deux Opt au cimetière), puis piochez deux cartes, et 2 PV.
+    // Sacrifice four tokens: surveil 2 (the two Opts in the graveyard), then draw two cards, and 2 life.
     s = settle(activateLabel(s, izoni, "Sacrifice four tokens"), (req) =>
       req.intent === "surveilGraveyard" && req.type === "pick" ? req.options : undefined,
     );
@@ -5762,7 +5762,7 @@ describe("Murders at Karlov Manor, PLAN-D D9 : dernières cartes", () => {
     expect(s.players.p1?.hand.map((id) => nameOf(s, id))).toEqual(["Forest", "Island", "Island"]);
     expect(s.players.p1?.life).toBe(22);
 
-    // « Vous pouvez » : refusé, ou sans preuves suffisantes, aucune Araignée.
+    // "You may": declined, or without enough evidence, no Spiders.
     const run = (graveyard: string[], answer: Answer) => {
       let t = scenario({ p1: { battlefield: [...lands("Swamp", 3), ...lands("Forest", 3)], hand: [IZONI], graveyard } });
       t = settle(cast(t, "p1", IZONI), answer);
@@ -5772,7 +5772,7 @@ describe("Murders at Karlov Manor, PLAN-D D9 : dernières cartes", () => {
     expect(run(["Opt", "Bear Cub"], yes)).toEqual([0, 2]);
   });
 
-  it("Evidence Examiner : au début du combat de votre tour, vous pouvez réunir des preuves 4 ; chaque fois que vous en réunissez, enquêtez", () => {
+  it("Evidence Examiner: at the beginning of combat on your turn, you may collect evidence 4; whenever you collect, investigate", () => {
     let s = scenario({
       p1: {
         battlefield: ["Evidence Examiner", ...lands("Island", 4)],
@@ -5782,19 +5782,19 @@ describe("Murders at Karlov Manor, PLAN-D D9 : dernières cartes", () => {
     });
     s = advanceUntil(s, (x) => x.turn.step === "beginCombat" && x.stack.length > 0);
     s = settle(s, yes);
-    // Shivan Dragon (VM 6) exilé (Opt seul ne suffit pas ; la suggestion garde Opt) ; un Indice.
+    // Shivan Dragon (MV 6) exiled (Opt alone isn't enough; the suggestion keeps Opt); a Clue.
     expect(s.exile.map((id) => nameOf(s, id))).toEqual(["Shivan Dragon"]);
     expect(idsOf(s, "p1", "graveyard", "Opt")).toHaveLength(1);
     const clue = idOf(s, "p1", "battlefield", "Clue");
     expect(chars(s, clue).types).toContain("Artifact");
-    // Indice : {2}, sacrifiez-le : piochez une carte.
+    // Clue: {2}, sacrifice it: draw a card.
     const hand = s.players.p1?.hand.length ?? 0;
     s = settle(activateLabel(s, clue, "Draw a card"));
     expect(s.players.p1?.hand).toHaveLength(hand + 1);
     expect(idsOf(s, "p1", "battlefield", "Clue")).toHaveLength(0);
 
-    // Les cartes exilées sont choisies par le joueur (PLAN-D, D9) : Shivan Dragon plutôt que Serra Angel, suggérée ; un
-    // choix qui ne suffit pas (Opt seul) est complété par la suggestion.
+    // The exiled cards are chosen by the player (PLAN-D, D9): Shivan Dragon rather than Serra Angel, suggested; a
+    // choice that isn't enough (Opt alone) is completed by the suggestion.
     const pickExile = (names: string[]) => (req: ChoiceRequest, _p: string, cur: GameState) =>
       req.type === "pick" && req.intent === "pickCards"
         ? req.options.filter((id) => names.includes(nameOf(cur, String(id)) ?? ""))
@@ -5811,20 +5811,20 @@ describe("Murders at Karlov Manor, PLAN-D D9 : dernières cartes", () => {
     c = settle(examiner(), pickExile(["Opt"]));
     expect(c.exile.map((id) => nameOf(c, id)).sort()).toEqual(["Opt", "Serra Angel"]);
 
-    // Refusé : rien n'est exilé, pas d'Indice.
+    // Declined: nothing is exiled, no Clue.
     let r = scenario({ p1: { battlefield: ["Evidence Examiner"], graveyard: ["Shivan Dragon"] } });
     r = advanceUntil(r, (x) => x.turn.step === "beginCombat" && x.stack.length > 0);
     r = settle(r, no);
     expect(r.players.p1?.graveyard).toHaveLength(1);
     expect(idsOf(r, "p1", "battlefield", "Clue")).toHaveLength(0);
 
-    // Au combat de l'adversaire : pas de déclenchement.
+    // At the opponent's combat: no trigger.
     let t = scenario({ active: "p2", p1: { battlefield: ["Evidence Examiner"], graveyard: ["Shivan Dragon"] } });
     t = advanceUntil(t, (x) => x.turn.active === "p2" && x.turn.step === "main2");
     expect(t.players.p1?.graveyard).toHaveLength(1);
     expect(idsOf(t, "p1", "battlefield", "Clue")).toHaveLength(0);
 
-    // Preuves réunies par un autre effet (Surveillance Monitor) : enquêtez aussi.
+    // Evidence collected by another effect (Surveillance Monitor): investigate too.
     let u = scenario({
       p1: {
         battlefield: ["Evidence Examiner", ...lands("Island", 4)],
@@ -5837,7 +5837,7 @@ describe("Murders at Karlov Manor, PLAN-D D9 : dernières cartes", () => {
     expect(idsOf(u, "p1", "battlefield", "Clue")).toHaveLength(1);
   });
 
-  it("Sample Collector : en attaquant, vous pouvez réunir des preuves 3 ; si vous le faites, un marqueur +1/+1 sur une créature ciblée que vous contrôlez", () => {
+  it("Sample Collector: when attacking, you may collect evidence 3; if you do, a +1/+1 counter on a target creature you control", () => {
     const run = (graveyard: string[], answer: Answer) => {
       let s = scenario({
         p1: { battlefield: ["Sample Collector", "Bear Cub"], graveyard },
@@ -5856,14 +5856,14 @@ describe("Murders at Karlov Manor, PLAN-D D9 : dernières cartes", () => {
       });
       return { s, bear, elves, collector, options };
     };
-    // Opt (1) + Bear Cub (2) = 3 : preuves réunies, marqueur sur le Bear Cub.
+    // Opt (1) + Bear Cub (2) = 3: evidence collected, counter on the Bear Cub.
     const a = run(["Opt", "Bear Cub"], yes);
     expect(a.s.players.p1?.graveyard).toHaveLength(0);
     expect(a.s.objects[a.bear]?.counters["+1/+1"]).toBe(1);
-    // Seulement une créature que vous contrôlez.
+    // Only a creature you control.
     expect(a.options).toEqual(expect.arrayContaining([a.bear, a.collector]));
     expect(a.options).not.toContain(a.elves);
-    // Refusé, ou VM totale 2 seulement : ni exil ni marqueur.
+    // Declined, or total MV 2 only: neither exile nor counter.
     const b = run(["Opt", "Bear Cub"], no);
     expect(b.s.players.p1?.graveyard).toHaveLength(2);
     expect(b.s.objects[b.bear]?.counters["+1/+1"] ?? 0).toBe(0);
@@ -5873,8 +5873,8 @@ describe("Murders at Karlov Manor, PLAN-D D9 : dernières cartes", () => {
   });
 });
 
-describe("Hedge Whisperer : « vous pouvez choisir de ne pas dégager cette créature lors de votre étape de dégagement » (PLAN-H, H8b)", () => {
-  /** Va jusqu'à la question de l'étape de dégagement du prochain tour de p1 (ou à sa phase principale, sans question). */
+describe('Hedge Whisperer: "you may choose not to untap this creature during your untap step" (PLAN-H, H8b)', () => {
+  /** Goes to the untap step question of p1's next turn (or to its main phase, with no question). */
   const toUntapQuestion = (s: GameState): GameState =>
     advanceUntil(
       s,
@@ -5883,7 +5883,7 @@ describe("Hedge Whisperer : « vous pouvez choisir de ne pas dégager cette cré
         (x.turn.active === "p1" && x.turn.number > s.turn.number && x.turn.step === "main1"),
     );
 
-  it("un vrai choix (502.3) : la garder engagée ou la dégager ; sans effet qui en dépend, la réponse proposée la dégage", () => {
+  it("a real choice (502.3): keep it tapped or untap it; with no effect depending on it, the suggested answer untaps it", () => {
     const s = scenario({
       active: "p2",
       p1: {
@@ -5898,7 +5898,7 @@ describe("Hedge Whisperer : « vous pouvez choisir de ne pas dégager cette cré
     const q = toUntapQuestion(s);
     expect(q.pending?.kind === "choice" && q.pending.player).toBe("p1");
     const req = q.pending?.kind === "choice" ? q.pending.request : undefined;
-    // Seule Hedge Whisperer est proposée ; la Forêt se dégage d'office.
+    // Only Hedge Whisperer is offered; the Forest untaps automatically.
     expect(req?.type === "pick" && [req.options, req.min, req.max, req.suggested]).toEqual([[hw], 0, 1, []]);
     const kept = act(q, "p1", { type: "choose", values: [hw] });
     expect([kept.objects[hw]?.tapped, kept.objects[forest]?.tapped]).toEqual([true, false]);
@@ -5906,7 +5906,7 @@ describe("Hedge Whisperer : « vous pouvez choisir de ne pas dégager cette cré
     expect([untapped.objects[hw]?.tapped, untapped.objects[forest]?.tapped]).toEqual([false, false]);
   });
 
-  it("pas de question si elle est dégagée ; tant que le terrain 5/5 dépend d'elle, la réponse proposée la garde engagée", () => {
+  it("no question if it's untapped; as long as the 5/5 land depends on it, the suggested answer keeps it tapped", () => {
     const quiet = toUntapQuestion(scenario({ active: "p2", p1: { battlefield: ["Hedge Whisperer"] } }));
     expect(quiet.pending?.kind).toBe("priority");
     expect(quiet.turn.step).toBe("main1");
@@ -5933,22 +5933,22 @@ describe("Hedge Whisperer : « vous pouvez choisir de ne pas dégager cette cré
     expect([untapped.objects[hw]?.tapped, chars(untapped, land).types.includes("Creature")]).toEqual([false, false]);
   });
 
-  it("le choix ne vaut que pour l'étape de dégagement : un effet la dégage", () => {
+  it("the choice only applies to the untap step: an effect untaps it", () => {
     const UNTAP = customCard({
-      name: "Dégagement d'essai",
+      name: "Test Untap",
       typeLine: "Instant",
       types: ["Instant"],
       spell: dsl.spell([dsl.target.creature()], [dsl.fx.untap(dsl.ref.target())]),
     });
     let s = scenario({ p1: { battlefield: [{ name: "Hedge Whisperer", tapped: true }], hand: [UNTAP] } });
     const hw = idOf(s, "p1", "battlefield", "Hedge Whisperer");
-    s = settle(cast(s, "p1", "Dégagement d'essai", { t: [hw] }));
+    s = settle(cast(s, "p1", "Test Untap", { t: [hw] }));
     expect(s.objects[hw]?.tapped).toBe(false);
   });
 });
 
-describe("vue : la restriction de dégagement est montrée sur le permanent (PLAN-H, H8b)", () => {
-  it("Hedge Whisperer « peut ne pas se dégager » ; une créature enchantée par Starlight Snare « ne se dégage pas »", () => {
+describe("view: the untap restriction is shown on the permanent (PLAN-H, H8b)", () => {
+  it('Hedge Whisperer "may not untap"; a creature enchanted by Starlight Snare "doesn\'t untap"', () => {
     let s = scenario({
       p1: { battlefield: ["Hedge Whisperer", ...lands("Island", 3)], hand: ["Starlight Snare"] },
       p2: { battlefield: ["Bear Cub"] },

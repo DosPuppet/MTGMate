@@ -17,11 +17,23 @@ export interface Progress {
   current: string | null;
 }
 
+/** Lesson ids before PLAN-I (French), in progress saved by earlier versions. */
+const LEGACY_IDS: Record<string, string> = {
+  ecran: "screen",
+  attaque: "attack",
+  blocage: "block",
+  sorts: "spells",
+  pile: "stack",
+  capacites: "abilities",
+  partie: "game",
+};
+
 function loadProgress(): Progress {
   try {
     const raw = JSON.parse(localStorage.getItem(KEY) ?? "null") as Partial<Progress> | null;
-    const done = (raw?.done ?? []).filter((id) => lessonById(id));
-    const current = raw?.current && lessonById(raw.current) ? raw.current : null;
+    const id = (x: string) => LEGACY_IDS[x] ?? x;
+    const done = (raw?.done ?? []).map(id).filter((x) => lessonById(x));
+    const current = raw?.current && lessonById(id(raw.current)) ? id(raw.current) : null;
     return { done, current };
   } catch {
     return { done: [], current: null };

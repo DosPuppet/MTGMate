@@ -5,7 +5,7 @@ import { createScenario } from "../src/scenario";
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
-/** IA minimale : joue un terrain quand elle peut (action visible), sinon la décision par défaut. */
+/** Minimal AI: plays a land when it can (visible action), otherwise the default decision. */
 const landPlayer: Agent = (s, me) => {
   const p = s.pending;
   if (p?.kind === "priority" && s.turn.active === me && s.turn.step === "main1" && s.turn.landsPlayed === 0) {
@@ -16,31 +16,31 @@ const landPlayer: Agent = (s, me) => {
 };
 
 describe("GameHost", () => {
-  it("une décision humaine arrivée pendant la pause de l'IA relance la partie", async () => {
+  it("a human decision arriving during the AI's pause restarts the game", async () => {
     const forest = card("Forest");
     const { state, events } = createScenario({
       seed: 1,
       active: "p2",
       players: [
-        { id: "p1", name: "Vous", library: Array(10).fill(forest), hand: [forest] },
+        { id: "p1", name: "You", library: Array(10).fill(forest), hand: [forest] },
         { id: "p2", name: "IA", library: Array(10).fill(forest), hand: [forest, forest] },
       ],
     });
     const host = new GameHost(state, { agents: { p2: landPlayer }, aiDelay: 60, sleep }, events);
-    // L'IA joue son terrain (action visible), puis la partie arrive à une décision de l'humain pendant la pause.
+    // The AI plays its land (visible action), then the game reaches a human decision during the pause.
     const first = host.run();
     await sleep(20);
     expect(host.state.pending?.player).toBe("p1");
-    // L'humain passe pendant la pause : la boucle en cours doit reprendre et faire jouer l'IA ensuite.
+    // The human passes during the pause: the running loop must resume and let the AI play afterwards.
     const p = host.state.pending;
     if (p?.kind === "priority") await host.submitHuman("p1", { type: "pass" });
     await first;
     await sleep(200);
-    // Plus aucune décision d'IA en souffrance : c'est de nouveau à l'humain (ou la partie a avancé d'autant).
+    // No AI decision left pending: it is the human's turn again (or the game advanced by as much).
     expect(host.state.pending?.player).toBe("p1");
   });
 
-  it("mode « étapes » : une mise à jour par résolution, sans décision en attente (intermédiaire)", async () => {
+  it('"steps" mode: one update per resolution, no pending decision (intermediate)', async () => {
     const forest = card("Forest");
     const { state, events } = createScenario({
       seed: 1,
@@ -48,7 +48,7 @@ describe("GameHost", () => {
       players: [
         {
           id: "p1",
-          name: "Vous",
+          name: "You",
           library: Array(10).fill(forest),
           hand: [card("Burst Lightning"), card("Burst Lightning")],
           battlefield: [{ def: card("Mountain") }, { def: card("Mountain") }],
@@ -69,7 +69,7 @@ describe("GameHost", () => {
     );
     await host.run();
     updates.length = 0;
-    // Deux sorts lancés l'un après l'autre (l'automatisme passe la priorité : chacun se résout aussitôt).
+    // Two spells cast one after the other (autopilot passes priority: each resolves right away).
     for (let i = 0; i < 2; i++) {
       const card0 = host.state.players.p1?.hand[0] as string;
       await host.submitHuman("p1", { type: "cast", card: card0, targets: { t: ["p2"] } });
@@ -77,7 +77,7 @@ describe("GameHost", () => {
     const frames = updates.filter((u) => u.resolved > 0);
     expect(frames).toHaveLength(2);
     expect(frames.every((u) => u.pending === null)).toBe(true);
-    // Après chaque résolution, une mise à jour finale redonne la main à l'humain.
+    // After each resolution, a final update gives control back to the human.
     expect(updates[updates.length - 1]?.pending).toBe("priority");
     expect(host.state.players.p2?.life).toBe(16);
   });

@@ -1,6 +1,6 @@
 /**
- * Foundations, lot F : cartes à mécaniques uniques (permissions de lancement, doublements, protection,
- * choix en arrivant, mana restreint, copie de sorts, fin du tour…).
+ * Foundations, lot F: cards with unique mechanics (casting permissions, doubling, protection,
+ * choices on entering, restricted mana, spell copying, end of turn…
  */
 import { describe, expect, it } from "vitest";
 import { dealDamage, destroy, sourceFromObject } from "../src/actions";
@@ -33,7 +33,7 @@ const castOption = (s: S, p: string, card: string) =>
   legalActions(s, p).find((a): a is Extract<ActionOption, { type: "cast" }> => a.type === "cast" && a.card === card);
 const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
 const counters = (s: S, id: string) => s.objects[id]?.counters ?? {};
-/** Avance (passes, réponses suggérées, aucune attaque ni blocage) jusqu'à ce que `until` soit vrai. */
+/** Advances (passes, suggested answers, no attack or block) until `until` is true. */
 function advance(s: S, until: (x: S) => boolean): S {
   let cur = s;
   for (let i = 0; i < 400 && !until(cur) && !cur.over; i++) {
@@ -50,8 +50,8 @@ function advance(s: S, until: (x: S) => boolean): S {
   return cur;
 }
 
-describe("Lot F : joueurs et prévention", () => {
-  it("Crystal Barricade : défense talismanique du joueur, blessures non de combat prévenues", () => {
+describe("Lot F: players and prevention", () => {
+  it("Crystal Barricade: player hexproof, noncombat damage prevented", () => {
     let s = scenario({
       active: "p2",
       p1: { battlefield: ["Crystal Barricade", "Llanowar Elves"] },
@@ -65,7 +65,7 @@ describe("Lot F : joueurs et prévention", () => {
     expect(onBattlefield(s, elf)).toBe(true);
   });
 
-  it("Herald of Eternal Dawn : on ne perd pas à 0 point de vie", () => {
+  it("Herald of Eternal Dawn: you don't lose at 0 life", () => {
     let s = scenario({
       p1: { battlefield: ["Herald of Eternal Dawn"], life: 1 },
       p2: { battlefield: lands("Mountain", 1), hand: ["Burst Lightning"] },
@@ -77,7 +77,7 @@ describe("Lot F : joueurs et prévention", () => {
     expect(s.over).toBe(false);
   });
 
-  it("Niv-Mizzet : on pioche autant que les blessures non de combat infligées à un adversaire", () => {
+  it("Niv-Mizzet: you draw as many cards as noncombat damage dealt to an opponent", () => {
     let s = scenario({ p1: { battlefield: ["Niv-Mizzet, Visionary", "Mountain"], hand: ["Burst Lightning"] } });
     const hand = s.players.p1?.hand.length ?? 0;
     s = cast(s, "p1", "Burst Lightning", { targets: { t: ["p2"] } });
@@ -85,7 +85,7 @@ describe("Lot F : joueurs et prévention", () => {
     expect(s.players.p1?.hand.length).toBe(hand - 1 + 2);
   });
 
-  it("Twinflame Tyrant : les blessures aux adversaires et à leurs permanents sont doublées", () => {
+  it("Twinflame Tyrant: damage to opponents and their permanents is doubled", () => {
     let s = scenario({ p1: { battlefield: ["Twinflame Tyrant", "Mountain"], hand: ["Burst Lightning"] } });
     s = cast(s, "p1", "Burst Lightning", { targets: { t: ["p2"] } });
     s = passBoth(s);
@@ -93,8 +93,8 @@ describe("Lot F : joueurs et prévention", () => {
   });
 });
 
-describe("Lot F : coûts", () => {
-  it("Luminous Rebuke coûte {3} de moins s'il cible une créature engagée", () => {
+describe("Lot F: costs", () => {
+  it("Luminous Rebuke costs {3} less if it targets a tapped creature", () => {
     const s = scenario({
       p1: { battlefield: lands("Plains", 2), hand: ["Luminous Rebuke"] },
       p2: { battlefield: [{ name: "Shivan Dragon", tapped: true }, "Llanowar Elves"] },
@@ -108,7 +108,7 @@ describe("Lot F : coûts", () => {
     expect(passBoth(t).players.p2?.graveyard.map((id) => nameOf(t, id))).toBeDefined();
   });
 
-  it("Blasphemous Edict : coût alternatif {B} avec 13 créatures en jeu", () => {
+  it("Blasphemous Edict: alternative cost {B} with 13 creatures in play", () => {
     const setup = (n: number) =>
       scenario({ p1: { battlefield: ["Swamp", ...Array(n).fill("Llanowar Elves")], hand: ["Blasphemous Edict"] } });
     expect(castOption(setup(5), "p1", idOf(setup(5), "p1", "hand", "Blasphemous Edict"))).toBeUndefined();
@@ -120,7 +120,7 @@ describe("Lot F : coûts", () => {
     expect(idsOf(s, "p1", "battlefield", "Llanowar Elves")).toHaveLength(0);
   });
 
-  it("Eaten Alive : sacrifier une créature, ou payer {3}{B} à la place", () => {
+  it("Eaten Alive: sacrifice a creature, or pay {3}{B} instead", () => {
     const base = () =>
       scenario({
         p1: { battlefield: [...lands("Swamp", 4), "Llanowar Elves"], hand: ["Eaten Alive"] },
@@ -139,7 +139,7 @@ describe("Lot F : coûts", () => {
     expect(idsOf(t, "p1", "graveyard", "Llanowar Elves")).toHaveLength(1);
   });
 
-  it("Omniscience : les sorts de la main se lancent sans payer", () => {
+  it("Omniscience: spells from hand are cast without paying", () => {
     let s = scenario({ p1: { battlefield: ["Omniscience"], hand: ["Shivan Dragon"] } });
     const opt = castOption(s, "p1", idOf(s, "p1", "hand", "Shivan Dragon"));
     expect(opt?.freeAvailable).toBe(true);
@@ -149,8 +149,8 @@ describe("Lot F : coûts", () => {
   });
 });
 
-describe("Lot F : jouer depuis d'autres zones", () => {
-  it("Sphinx of Forgotten Lore : un éphémère du cimetière gagne le flashback (puis est exilé)", () => {
+describe("Lot F: playing from other zones", () => {
+  it("Sphinx of Forgotten Lore: an instant in the graveyard gains flashback (then is exiled)", () => {
     let s = scenario({
       step: "beginCombat",
       p1: { battlefield: ["Sphinx of Forgotten Lore", "Mountain"], graveyard: ["Burst Lightning"] },
@@ -168,7 +168,7 @@ describe("Lot F : jouer depuis d'autres zones", () => {
     expect(s.exile.map((id) => nameOf(s, id))).toContain("Burst Lightning");
   });
 
-  it("flashback {0} accordé (Archmage's Newt montée) : lancé sans mana, puis exilé ; rien le tour suivant", () => {
+  it("flashback {0} granted (Archmage's Newt pumped): cast for no mana, then exiled; nothing the next turn", () => {
     let s = scenario({ p1: { graveyard: ["Burst Lightning"] } });
     const bolt = idOf(s, "p1", "graveyard", "Burst Lightning");
     grantPlay(s, "p1", [bolt], "thisTurn", { flashback: true, free: true });
@@ -177,7 +177,7 @@ describe("Lot F : jouer depuis d'autres zones", () => {
     s = passBoth(s);
     expect(s.players.p2?.life).toBe(18);
     expect(s.exile.map((id) => nameOf(s, id))).toContain("Burst Lightning");
-    // La permission expire à la fin du tour.
+    // The permission expires at end of turn.
     const t = scenario({ p1: { graveyard: ["Burst Lightning"] } });
     const card = idOf(t, "p1", "graveyard", "Burst Lightning");
     grantPlay(t, "p1", [card], "thisTurn", { flashback: true });
@@ -185,7 +185,7 @@ describe("Lot F : jouer depuis d'autres zones", () => {
     expect(castOption(next, "p1", card)).toBeUndefined();
   });
 
-  it("Strongbox Raider : la carte choisie reste jouable jusqu'à la fin du prochain tour", () => {
+  it("Strongbox Raider: the chosen card stays playable until the end of the next turn", () => {
     let s = scenario({
       p1: {
         battlefield: [...lands("Mountain", 4), "Island"],
@@ -193,20 +193,20 @@ describe("Lot F : jouer depuis d'autres zones", () => {
         library: ["Shivan Dragon", "Opt", "Forest", "Forest", "Forest"],
       },
     });
-    // Une attaque ce tour-ci (journal du tour).
+    // An attack this turn (turn log).
     s.turnLog.push({ e: "attack", player: "p1", defender: "p2", types: ["Creature"], subtypes: [] });
     s = cast(s, "p1", "Strongbox Raider");
     s = passAccepting(s, (x) => x.pending?.kind === "choice" && x.pending.request.intent === "impulse");
     const opt = s.exile.find((id) => nameOf(s, id) === "Opt") as string;
     s = choose(s, [opt]);
-    // Tour adverse, puis notre tour suivant : toujours jouable ; au tour d'après, plus du tout.
+    // Opponent's turn, then our next turn: still playable; the turn after that, not at all.
     s = advance(s, (x) => x.turn.number === 5 && x.turn.step === "main1" && x.pending?.kind === "priority");
     expect(castOption(s, "p1", opt)).toBeDefined();
     s = advance(s, (x) => x.turn.number === 7 && x.turn.step === "main1" && x.pending?.kind === "priority");
     expect(castOption(s, "p1", opt)).toBeUndefined();
   });
 
-  it("Etali : les cartes exilées se lancent gratuitement", () => {
+  it("Etali: the exiled cards are cast for free", () => {
     let s = scenario({
       step: "beginCombat",
       p1: { battlefield: ["Etali, Primal Storm"], library: ["Shivan Dragon", "Forest"] },
@@ -218,30 +218,30 @@ describe("Lot F : jouer depuis d'autres zones", () => {
       attackers: [{ id: idOf(s, "p1", "battlefield", "Etali, Primal Storm"), defender: "p2" }],
     });
     s = untilCastNow(s);
-    // Pendant la résolution (608.2g) : les deux sorts exilés sont proposés (pas les terrains).
+    // During resolution (608.2g): the two exiled spells are offered (not the lands).
     const wurm = s.exile.find((id) => nameOf(s, id) === "Pelakka Wurm") as string;
     const dragon = s.exile.find((id) => nameOf(s, id) === "Shivan Dragon") as string;
     expect([...(castNowOf(s)?.cards ?? [])].sort()).toEqual([wurm, dragon].sort());
     expect(castOption(s, "p1", wurm)?.free).toBe(true);
     s = act(s, "p1", { type: "cast", card: wurm });
-    // « Autant de sorts que vous voulez » : le Dragon reste proposé ; on refuse.
+    // "As many spells as you want": the Dragon is still offered; we decline.
     expect(castNowOf(s)?.cards).toEqual([dragon]);
     s = act(s, "p1", { type: "pass" });
     expect(castNowOf(s)).toBeUndefined();
     s = passAccepting(s, (x) => x.stack.length === 0);
     expect(s.battlefield.some((id) => nameOf(s, id) === "Pelakka Wurm" && s.objects[id]?.controller === "p1")).toBe(true);
-    // Le Dragon non lancé reste en exil, sans permission.
+    // The uncast Dragon stays in exile, without permission.
     expect(s.exile).toContain(dragon);
     expect(castOption(s, "p1", dragon)).toBeUndefined();
   });
 
-  /** La capacité activée de Tinybones (« chaque adversaire défausse une carte »). */
+  /** The activated ability of Tinybones ("each opponent discards a card"). */
   const opt0 = (s: GameState) => {
     const tiny = idOf(s, "p1", "battlefield", "Tinybones, Bauble Burglar");
     const a = legalActions(s, "p1").find((x) => x.type === "activate" && x.source === tiny);
     return a?.type === "activate" ? a.ability : -1;
   };
-  it("Tinybones : la carte défaussée est exilée avec un marqueur de butin, jouable avec n'importe quel mana", () => {
+  it("Tinybones: the discarded card is exiled with a plunder counter, playable with any mana", () => {
     let s = scenario({
       p1: { battlefield: ["Tinybones, Bauble Burglar", ...lands("Swamp", 5), "Forest"] },
       p2: { hand: ["Giant Growth"] },
@@ -256,11 +256,11 @@ describe("Lot F : jouer depuis d'autres zones", () => {
     s = passAccepting(s, (x) => x.stack.length === 0);
     const growth = s.exile.find((id) => nameOf(s, id) === "Giant Growth") as string;
     expect(counters(s, growth).stash).toBe(1);
-    // Giant Growth coûte {G} ; le Swamp non engagé suffit (mana de n'importe quel type).
+    // Giant Growth costs {G}; the untapped Swamp is enough (mana of any type).
     for (const id of s.battlefield) if (nameOf(s, id) === "Forest") (s.objects[id] as { tapped: boolean }).tapped = true;
     const opt = castOption(s, "p1", growth);
     expect(opt).toBeDefined();
-    // « Jouer » : un terrain défaussé se joue aussi (PLAN-D, D8).
+    // "Play": a discarded land can be played too (PLAN-D, D8).
     let t = scenario({
       p1: { battlefield: ["Tinybones, Bauble Burglar", ...lands("Swamp", 4)] },
       p2: { hand: ["Island"] },
@@ -274,7 +274,7 @@ describe("Lot F : jouer depuis d'autres zones", () => {
     expect(idsOf(t, "p1", "battlefield", "Island")).toHaveLength(1);
   });
 
-  it("Muldrotha : un permanent de chaque type depuis le cimetière, une fois par tour", () => {
+  it("Muldrotha: one permanent of each type from the graveyard, once per turn", () => {
     let s = scenario({
       p1: {
         battlefield: ["Muldrotha, the Gravetide", ...lands("Forest", 6)],
@@ -286,13 +286,13 @@ describe("Lot F : jouer depuis d'autres zones", () => {
     s = act(s, "p1", { type: "cast", card: elves });
     s = passBoth(s);
     const hunter = idOf(s, "p1", "graveyard", "Helpful Hunter");
-    expect(castOption(s, "p1", hunter)).toBeUndefined(); // type Créature déjà utilisé ce tour
+    expect(castOption(s, "p1", hunter)).toBeUndefined(); // Creature type already used this turn
     expect(legalActions(s, "p1").some((a) => a.type === "playLand" && a.card === idOf(s, "p1", "graveyard", "Forest"))).toBe(
       true,
     );
   });
 
-  it("Quilled Greatwurm : se lance depuis le cimetière en retirant six marqueurs", () => {
+  it("Quilled Greatwurm: cast from the graveyard by removing six counters", () => {
     let s = scenario({ p1: { battlefield: [...lands("Forest", 6), "Llanowar Elves"], graveyard: ["Quilled Greatwurm"] } });
     const wurm = idOf(s, "p1", "graveyard", "Quilled Greatwurm");
     expect(castOption(s, "p1", wurm)).toBeUndefined();
@@ -303,7 +303,7 @@ describe("Lot F : jouer depuis d'autres zones", () => {
     expect(counters(s, elf)["+1/+1"] ?? 0).toBe(0);
   });
 
-  it("Quilled Greatwurm : le joueur répartit les six marqueurs retirés entre ses créatures", () => {
+  it("Quilled Greatwurm: the player distributes the six removed counters among their creatures", () => {
     const start = () => {
       const s = scenario({
         p1: {
@@ -325,11 +325,11 @@ describe("Lot F : jouer depuis d'autres zones", () => {
     expect(pick?.count).toBe(6);
     expect(pick?.options.sort()).toEqual([elf, cub].sort());
     expect(pick?.repeat).toEqual({ [elf]: 4, [cub]: 3 });
-    // Trois de chaque : l'Elfe garde un marqueur (le moteur les aurait pris d'abord sur l'Elfe).
+    // Three of each: the Elf keeps one counter (the engine would have taken them from the Elf first).
     const t = act(s, "p1", { type: "cast", card: wurm, picks: { counterFrom: [cub, cub, cub, elf, elf, elf] } });
     expect(counters(t, elf)["+1/+1"]).toBe(1);
     expect(counters(t, cub)["+1/+1"] ?? 0).toBe(0);
-    // Plus de marqueurs qu'une créature n'en a, ou un autre nombre que six : refusé.
+    // More counters than a creature has, or a number other than six: refused.
     expect(() => act(s, "p1", { type: "cast", card: wurm, picks: { counterFrom: [cub, cub, cub, cub, elf, elf] } })).toThrow(
       RulesError,
     );
@@ -338,7 +338,7 @@ describe("Lot F : jouer depuis d'autres zones", () => {
     );
   });
 
-  it("Flamewake Phoenix : revient du cimetière au début du combat (férocité, {R})", () => {
+  it("Flamewake Phoenix: returns from the graveyard at the beginning of combat (ferocious, {R})", () => {
     let s = scenario({ step: "main1", p1: { battlefield: ["Shivan Dragon", "Mountain"], graveyard: ["Flamewake Phoenix"] } });
     s = passAccepting(
       s,
@@ -348,15 +348,15 @@ describe("Lot F : jouer depuis d'autres zones", () => {
   });
 });
 
-describe("Lot F : doublements, copies, contrôle", () => {
-  it("Doubling Season : jetons et marqueurs doublés", () => {
+describe("Lot F: doubling, copies, control", () => {
+  it("Doubling Season: tokens and counters doubled", () => {
     let s = scenario({ p1: { battlefield: ["Doubling Season", ...lands("Mountain", 3)], hand: ["Dragon Fodder"] } });
     s = cast(s, "p1", "Dragon Fodder");
     s = passBoth(s);
     expect(idsOf(s, "p1", "battlefield", "Goblin")).toHaveLength(4);
   });
 
-  it("Thousand-Year Storm : une copie par éphémère ou rituel déjà lancé ce tour-ci", () => {
+  it("Thousand-Year Storm: one copy per instant or sorcery already cast this turn", () => {
     let s = scenario({
       p1: { battlefield: ["Thousand-Year Storm", ...lands("Mountain", 3)], hand: ["Burst Lightning", "Burst Lightning"] },
     });
@@ -366,10 +366,10 @@ describe("Lot F : doublements, copies, contrôle", () => {
     expect(s.players.p2?.life).toBe(18);
     s = act(s, "p1", { type: "cast", card: bolts[1] as string, targets: { t: ["p2"] } });
     s = passAccepting(s, (x) => x.stack.length === 0);
-    expect(s.players.p2?.life).toBe(14); // le second éclair et sa copie
+    expect(s.players.p2?.life).toBe(14); // the second bolt and its copy
   });
 
-  it("Involuntary Employment : contrôle jusqu'à la fin du tour, dégagée, célérité", () => {
+  it("Involuntary Employment: control until end of turn, untapped, haste", () => {
     let s = scenario({
       p1: { battlefield: lands("Mountain", 4), hand: ["Involuntary Employment"] },
       p2: { battlefield: [{ name: "Shivan Dragon", tapped: true }] },
@@ -383,16 +383,16 @@ describe("Lot F : doublements, copies, contrôle", () => {
     expect(s.objects[dragon]?.controller).toBe("p2");
   });
 
-  it("Abyssal Harvester : copie Cauchemar d'une créature morte ce tour-ci", () => {
+  it("Abyssal Harvester: Nightmare copy of a creature that died this turn", () => {
     let s = scenario({
       p1: { battlefield: ["Abyssal Harvester"] },
       p2: { battlefield: ["Shivan Dragon"], graveyard: ["Pelakka Wurm"] },
     });
-    // Le Wurm est au cimetière depuis un tour précédent.
+    // The Wurm has been in the graveyard since a previous turn.
     (s.objects[idOf(s, "p2", "graveyard", "Pelakka Wurm")] as { controlledSince: number }).controlledSince = 1;
     const harvester = idOf(s, "p1", "battlefield", "Abyssal Harvester");
     const opt = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === harvester);
-    expect(opt).toBeUndefined(); // le Wurm n'est pas mort ce tour-ci : aucune cible, capacité non proposée
+    expect(opt).toBeUndefined(); // the Wurm did not die this turn: no target, ability not offered
     destroy(s, idOf(s, "p2", "battlefield", "Shivan Dragon"));
     const dead = idOf(s, "p2", "graveyard", "Shivan Dragon");
     s = act(s, "p1", { type: "activate", source: harvester, ability: 0, targets: { t: [dead] } });
@@ -400,8 +400,8 @@ describe("Lot F : doublements, copies, contrôle", () => {
     const copy = idOf(s, "p1", "battlefield", "Shivan Dragon");
     expect(s.objects[copy]?.isToken).toBe(true);
     expect(chars(s, copy).subtypes).toContain("Nightmare");
-    // « Puis exilez tous les autres jetons Cauchemar » : après la création de la nouvelle copie, qui voit partir
-    // l'ancienne (« chaque fois qu'une autre créature que vous contrôlez quitte le champ de bataille »).
+    // "Then exile all other Nightmare tokens": after the new copy is created, which sees the old one
+    // leave ("whenever another creature you control leaves the battlefield").
     const watcher = customCard({
       name: "Veilleur",
       power: 1,
@@ -426,8 +426,8 @@ describe("Lot F : doublements, copies, contrôle", () => {
   });
 });
 
-describe("Lot F : choix en arrivant et mana restreint", () => {
-  it("Banner of Kinship : type choisi, marqueurs et bonus", () => {
+describe("Lot F: choices on entering and restricted mana", () => {
+  it("Banner of Kinship: chosen type, counters and bonus", () => {
     let s = scenario({
       p1: {
         battlefield: [...lands("Forest", 5), "Llanowar Elves", "Llanowar Elves", "Prideful Parent"],
@@ -445,7 +445,7 @@ describe("Lot F : choix en arrivant et mana restreint", () => {
     expect(chars(s, idOf(s, "p1", "battlefield", "Prideful Parent")).power).toBe(2);
   });
 
-  it("Heraldic Banner : couleur choisie, +1/+0 et mana de cette couleur", () => {
+  it("Heraldic Banner: chosen color, +1/+0 and mana of that color", () => {
     let s = scenario({ p1: { battlefield: [...lands("Mountain", 3), "Llanowar Elves"], hand: ["Heraldic Banner"] } });
     s = cast(s, "p1", "Heraldic Banner");
     s = passBoth(s);
@@ -455,7 +455,7 @@ describe("Lot F : choix en arrivant et mana restreint", () => {
     expect(chars(s, idOf(s, "p1", "battlefield", "Llanowar Elves")).power).toBe(2);
   });
 
-  it("Secluded Courtyard : mana de couleur seulement pour les créatures du type choisi", () => {
+  it("Secluded Courtyard: colored mana only for creatures of the chosen type", () => {
     let s = scenario({ p1: { hand: ["Secluded Courtyard", "Llanowar Elves", "Giant Growth"] } });
     s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Secluded Courtyard") });
     const court = idOf(s, "p1", "battlefield", "Secluded Courtyard");
@@ -464,7 +464,7 @@ describe("Lot F : choix en arrivant et mana restreint", () => {
     expect(castOption(s, "p1", idOf(s, "p1", "hand", "Giant Growth"))).toBeUndefined();
   });
 
-  it("Giada : les autres Anges arrivent avec des marqueurs ; {W} réservé aux sorts d'Ange", () => {
+  it("Giada: other Angels enter with counters; {W} reserved for Angel spells", () => {
     let s = scenario({
       p1: { battlefield: ["Giada, Font of Hope", "Youthful Valkyrie", ...lands("Plains", 2)], hand: ["Dazzling Angel"] },
     });
@@ -477,20 +477,20 @@ describe("Lot F : choix en arrivant et mana restreint", () => {
     );
   });
 
-  it("Soulstone Sanctuary : devient une créature 3/3 de tous les types", () => {
+  it("Soulstone Sanctuary: becomes a 3/3 creature of all types", () => {
     let s = scenario({ p1: { battlefield: ["Soulstone Sanctuary", ...lands("Forest", 4), "Imperious Perfect"] } });
     const land = idOf(s, "p1", "battlefield", "Soulstone Sanctuary");
     s = act(s, "p1", { type: "activate", source: land, ability: 1 });
     s = passBoth(s);
     const c = chars(s, land);
     expect(c.types).toEqual(expect.arrayContaining(["Land", "Creature"]));
-    // « Les autres Elfes que vous contrôlez gagnent +1/+1 » : tous les types de créature, donc Elfe.
+    // "Other Elves you control get +1/+1": all creature types, hence Elf.
     expect([c.power, c.toughness]).toEqual([4, 4]);
   });
 });
 
-describe("Lot F : divers", () => {
-  it("Curator of Destinies : l'adversaire choisit la pile qui va en main", () => {
+describe("Lot F: miscellaneous", () => {
+  it("Curator of Destinies: the opponent chooses the pile that goes to hand", () => {
     let s = scenario({
       p1: {
         battlefield: lands("Island", 6),
@@ -502,14 +502,14 @@ describe("Lot F : divers", () => {
     s = passAccepting(s, (x) => x.pending?.kind === "choice" && x.pending.request.intent === "piles");
     const req = s.pending?.kind === "choice" ? s.pending.request : null;
     const top = req?.type === "pick" ? req.options : [];
-    s = choose(s, top.slice(0, 2)); // face cachée : 2 cartes
+    s = choose(s, top.slice(0, 2)); // face down: 2 cards
     expect(s.pending?.player).toBe("p2");
-    s = choose(s, ["up"]); // l'adversaire donne la pile face visible (3 cartes)
+    s = choose(s, ["up"]); // the opponent gives the face-up pile (3 cards)
     expect(s.players.p1?.hand).toHaveLength(3);
     expect(s.players.p1?.graveyard).toHaveLength(2);
   });
 
-  it("Time Stop : le tour se termine, la pile est exilée", () => {
+  it("Time Stop: the turn ends, the stack is exiled", () => {
     let s = scenario({
       p1: { battlefield: lands("Forest", 7), hand: ["Pelakka Wurm"] },
       p2: { battlefield: lands("Island", 6), hand: ["Time Stop"] },
@@ -523,7 +523,7 @@ describe("Lot F : divers", () => {
     expect(s.turn.number).toBe(4);
   });
 
-  it("Nine-Lives Familiar : revient à l'étape de fin avec un marqueur de moins", () => {
+  it("Nine-Lives Familiar: returns at the end step with one fewer counter", () => {
     let s = scenario({ p1: { battlefield: lands("Swamp", 3), hand: ["Nine-Lives Familiar"] } });
     s = cast(s, "p1", "Nine-Lives Familiar");
     s = passBoth(s);
@@ -535,10 +535,10 @@ describe("Lot F : divers", () => {
     expect(counters(s, cat).revival).toBe(7);
   });
 
-  it("Kellan : Éclaireur → Détective → Voleur 3/2 double initiative", () => {
+  it("Kellan: Scout -> Detective -> Rogue 3/2 double strike", () => {
     let s = scenario({ p1: { battlefield: ["Kellan, Planar Trailblazer", ...lands("Mountain", 8)] } });
     const k = idOf(s, "p1", "battlefield", "Kellan, Planar Trailblazer");
-    s = act(s, "p1", { type: "activate", source: k, ability: 1 }); // Détective d'abord : sans effet (pas Détective)
+    s = act(s, "p1", { type: "activate", source: k, ability: 1 }); // Detective first: no effect (not a Detective)
     s = passBoth(s);
     expect(chars(s, k).power).toBe(2);
     s = act(s, "p1", { type: "activate", source: k, ability: 0 });
@@ -550,14 +550,14 @@ describe("Lot F : divers", () => {
     expect(chars(s, k).keywords).toContain("doubleStrike");
   });
 
-  it("Loot : deux terrains par tour", () => {
+  it("Loot: two lands per turn", () => {
     let s = scenario({ p1: { battlefield: ["Loot, Exuberant Explorer"], hand: ["Forest", "Island", "Swamp"] } });
     s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Forest") });
     s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Island") });
     expect(legalActions(s, "p1").some((a) => a.type === "playLand")).toBe(false);
   });
 
-  it("Elenda : défense talismanique contre les éphémères seulement", () => {
+  it("Elenda: hexproof against instants only", () => {
     const s = scenario({
       active: "p2",
       p1: { battlefield: ["Elenda, Saint of Dusk"] },
@@ -568,7 +568,7 @@ describe("Lot F : divers", () => {
     expect(chars(s, elenda).keywords).not.toContain("hexproof");
   });
 
-  it("Consuming Aberration : F/E = cartes des cimetières adverses ; meule jusqu'à un terrain", () => {
+  it("Consuming Aberration: P/T = cards in opponents' graveyards; mill until a land", () => {
     let s = scenario({
       p1: { battlefield: ["Consuming Aberration", "Island"], hand: ["Opt"] },
       p2: { graveyard: ["Opt", "Stab", "Pelakka Wurm"], library: ["Opt", "Stab", "Forest", "Island"] },
@@ -581,7 +581,7 @@ describe("Lot F : divers", () => {
     expect(chars(s, ab).power).toBe(6);
   });
 
-  it("Progenitus : protection contre tout, mélangé dans la bibliothèque au lieu du cimetière", () => {
+  it("Progenitus: protection from everything, shuffled into the library instead of the graveyard", () => {
     const s = scenario({
       p1: { battlefield: ["Progenitus"] },
       p2: { battlefield: ["Mountain", "Shivan Dragon"], hand: ["Burst Lightning"] },
@@ -599,8 +599,8 @@ describe("Lot F : divers", () => {
   });
 });
 
-describe("capacités retardées : références figées", () => {
-  it("Electroduplicate : le jeton copie est sacrifié à l'étape de fin", () => {
+describe("delayed abilities: frozen references", () => {
+  it("Electroduplicate: the copy token is sacrificed at the end step", () => {
     let s = scenario({ p1: { battlefield: ["Shivan Dragon", ...lands("Mountain", 3)], hand: ["Electroduplicate"] } });
     s = cast(s, "p1", "Electroduplicate", { targets: { t: [idOf(s, "p1", "battlefield", "Shivan Dragon")] } });
     s = passBoth(s);
@@ -609,7 +609,7 @@ describe("capacités retardées : références figées", () => {
     expect(idsOf(s, "p1", "battlefield", "Shivan Dragon")).toHaveLength(1);
   });
 
-  it("Kykar : la créature exilée revient à l'étape de fin", () => {
+  it("Kykar: the exiled creature returns at the end step", () => {
     let s = scenario({ p1: { battlefield: ["Kykar, Zephyr Awakener", "Llanowar Elves", "Island"], hand: ["Opt"] } });
     s = cast(s, "p1", "Opt");
     s = advance(s, (x) => x.pending?.kind === "choice" && x.pending.request.intent === "triggerMode");
@@ -621,8 +621,8 @@ describe("capacités retardées : références figées", () => {
   });
 });
 
-describe("piles à plusieurs adversaires (PLAN-H H4)", () => {
-  it("Curator of Destinies : après la séparation, vous choisissez l'adversaire qui choisit la pile", () => {
+describe("piles with several opponents (PLAN-H H4)", () => {
+  it("Curator of Destinies: after the split, you choose the opponent who chooses the pile", () => {
     let s = scenario({
       players: 3,
       p1: {

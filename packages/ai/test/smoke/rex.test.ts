@@ -1,4 +1,4 @@
-/** Test de fumée : Jurassic World Collection (rééditions, « Sans limite »). */
+/** Smoke test: Jurassic World Collection (reprints, "Unlimited"). */
 import { smokeTest } from "./harness";
 
 smokeTest(["REX"]);

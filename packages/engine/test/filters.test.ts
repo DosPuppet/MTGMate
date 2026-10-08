@@ -1,7 +1,7 @@
 /**
- * Filtres d'objets (PLAN-H H10) : comparaisons dynamiques (`ObjectFilter.compare`, un seul résolveur `resolveCompare`),
- * attaches (`attached`) et équipage (`crew`). Un test par ancien champ : chacun se comporte exactement comme avant
- * (cas limites compris : force négative, dernières informations connues, X de la capacité ou du permanent).
+ * Object filters (PLAN-H H10): dynamic comparisons (`ObjectFilter.compare`, a single `resolveCompare` resolver),
+ * attachments (`attached`) and crew (`crew`). One test per former field: each behaves exactly as before
+ * (edge cases included: negative power, last known information, X of the ability or of the permanent).
  */
 import { card } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
@@ -22,7 +22,7 @@ const SOURCE = (power: number) => creature(`Source ${power}`, power, 1);
 const P1 = creature("Un", 1, 3, 1);
 const P2 = creature("Deux", 2, 2, 2);
 const P3 = creature("Trois", 3, 1, 3);
-const P0 = creature("Zéro", 0, 4, 0);
+const P0 = creature("Zero", 0, 4, 0);
 
 const id = (s: S, name: string) => {
   const found = s.battlefield.find((x) => s.defs[s.objects[x]?.defId ?? ""]?.name === name);
@@ -30,7 +30,7 @@ const id = (s: S, name: string) => {
   return found;
 };
 
-/** Noms des créatures de p2 qui correspondent au filtre, vu de p1, avec cette source. */
+/** Names of p2's creatures that match the filter, seen from p1, with this source. */
 const matching = (s: S, f: ObjectFilter, sourceId?: string) =>
   s.battlefield
     .filter((x) => s.objects[x]?.controller === "p2" && matchesObjectFilter(s, "p1", x, f, sourceId))
@@ -40,14 +40,14 @@ const matching = (s: S, f: ObjectFilter, sourceId?: string) =>
 const board = (sourcePower: number, extra: CardDef[] = []) =>
   scenario({ p1: { battlefield: [SOURCE(sourcePower)] }, p2: { battlefield: [P0, P1, P2, P3, ...extra] } });
 
-/** Contexte d'une résolution dont la source est `sourceId`. */
+/** Context of a resolution whose source is `sourceId`. */
 const resolving = (s: S, sourceId: string, x = 0, targets: Record<string, string[]> = {}): EffectContext => ({
   ...staticContext(s, "p1", sourceId),
   x,
   targets,
 });
 
-/** La source quitte le champ de bataille : seules restent ses dernières informations connues. */
+/** The source leaves the battlefield: only its last known information remains. */
 function leave(s: S, sourceId: string, lki: Record<string, unknown>): void {
   s.lki[sourceId] = { ...snapshot(s, sourceId), ...lki };
   s.battlefield = s.battlefield.filter((x) => x !== sourceId);
@@ -55,57 +55,57 @@ function leave(s: S, sourceId: string, lki: Record<string, unknown>): void {
   s.version += 1;
 }
 
-describe("ObjectFilter.compare : comparaisons dynamiques (un champ retiré par test)", () => {
-  it("powerAboveSource → cmp.power('>', amount.sourcePower) : force supérieure, sans plancher, d'après les dernières informations", () => {
+describe("ObjectFilter.compare: dynamic comparisons (one field removed per test)", () => {
+  it("powerAboveSource → cmp.power('>', amount.sourcePower): greater power, no floor, from last known information", () => {
     const f = { compare: [cmp.power(">", amount.sourcePower)] };
     let s = board(2);
     expect(matching(s, f, id(s, "Source 2"))).toEqual(["Trois"]);
     s = board(-1);
-    expect(matching(s, f, id(s, "Source -1"))).toEqual(["Deux", "Trois", "Un", "Zéro"]);
+    expect(matching(s, f, id(s, "Source -1"))).toEqual(["Deux", "Trois", "Un", "Zero"]);
     s = board(2);
     const src = id(s, "Source 2");
     leave(s, src, { power: 1 });
     expect(matching(s, f, src)).toEqual(["Deux", "Trois"]);
-    // Sans source : 0.
+    // With no source: 0.
     expect(matching(s, f, undefined)).toEqual(["Deux", "Trois", "Un"]);
   });
 
-  it("powerBelowSource → cmp.power('<', amount.sourcePower) : force inférieure (Formation Breaker)", () => {
+  it("powerBelowSource → cmp.power('<', amount.sourcePower): lesser power (Formation Breaker)", () => {
     const f = { compare: [cmp.power("<", amount.sourcePower)] };
     const s = board(2);
-    expect(matching(s, f, id(s, "Source 2"))).toEqual(["Un", "Zéro"]);
+    expect(matching(s, f, id(s, "Source 2"))).toEqual(["Un", "Zero"]);
     const t = board(-1);
     expect(matching(t, f, id(t, "Source -1"))).toEqual([]);
   });
 
-  it("powerAboveOf → cmp.power('>', amount.rawPowerOf(ref)) : force supérieure à celle de la cible, à la résolution", () => {
+  it("powerAboveOf → cmp.power('>', amount.rawPowerOf(ref)): power greater than the target's, on resolution", () => {
     const f = { types: ["Creature" as const], compare: [cmp.power(">", amount.rawPowerOf(ref.target()))] };
     const s = board(5, [creature("Moins un", -1, 5)]);
     const src = id(s, "Source 5");
     const names = (g: ObjectFilter) => matching(s, g, src);
     expect(names(withX(s, f, resolving(s, src, 0, { t: [id(s, "Deux")] })))).toEqual(["Trois"]);
-    // Force négative : sans plancher (une créature de force 0 a une force supérieure).
-    expect(names(withX(s, f, resolving(s, src, 0, { t: [id(s, "Moins un")] })))).toEqual(["Deux", "Trois", "Un", "Zéro"]);
-    // Sans créature désignée sur le champ de bataille, rien ne correspond.
+    // Negative power: no floor (a creature with power 0 has greater power).
+    expect(names(withX(s, f, resolving(s, src, 0, { t: [id(s, "Moins un")] })))).toEqual(["Deux", "Trois", "Un", "Zero"]);
+    // With no designated creature on the battlefield, nothing matches.
     expect(names(withX(s, f, resolving(s, src, 0, { t: [] })))).toEqual([]);
   });
 
-  it("manaValueSourcePower → cmp.manaValue('=', amount.sourcePower) : valeur de mana égale à la force (Jackal)", () => {
+  it("manaValueSourcePower → cmp.manaValue('=', amount.sourcePower): mana value equal to the power (Jackal)", () => {
     const f = { compare: [cmp.manaValue("=", amount.sourcePower)] };
     const s = board(2);
     expect(matching(s, f, id(s, "Source 2"))).toEqual(["Deux"]);
   });
 
-  it("maxManaValueSourcePower → cmp.manaValue('<=', amount.sourcePower) : au plus la force (Alesha), dernières informations", () => {
+  it("maxManaValueSourcePower → cmp.manaValue('<=', amount.sourcePower): at most the power (Alesha), last known information", () => {
     const f = { compare: [cmp.manaValue("<=", amount.sourcePower)] };
     const s = board(2);
     const src = id(s, "Source 2");
-    expect(matching(s, f, src)).toEqual(["Deux", "Un", "Zéro"]);
+    expect(matching(s, f, src)).toEqual(["Deux", "Un", "Zero"]);
     leave(s, src, { power: 1 });
-    expect(matching(s, f, src)).toEqual(["Un", "Zéro"]);
+    expect(matching(s, f, src)).toEqual(["Un", "Zero"]);
   });
 
-  it("maxManaValueSourcePower (Loki Laufeyson) : la borne figée à la résolution ne descend pas sous 0", () => {
+  it("maxManaValueSourcePower (Loki Laufeyson): the bound fixed on resolution does not go below 0", () => {
     const frozen = (power: number) => {
       const loki = { ...card("Loki Laufeyson"), id: `test-loki-${power}`, power };
       let s = scenario({ p1: { battlefield: [loki, ...lands("Mountain", 2)] } });
@@ -121,11 +121,11 @@ describe("ObjectFilter.compare : comparaisons dynamiques (un champ retiré par t
     expect(frozen(-2)).toEqual([{ what: "manaValue", cmp: "<=", to: 0 }]);
   });
 
-  it("manaValueSourceCounters → cmp.manaValue('=', amount.lkiCounters(sorte)) : marqueurs de la source (Blast Zone)", () => {
+  it("manaValueSourceCounters → cmp.manaValue('=', amount.lkiCounters(kind)): counters on the source (Blast Zone)", () => {
     const f = { compare: [cmp.manaValue("=", amount.lkiCounters("charge"))] };
     const s = board(1);
     const src = id(s, "Source 1");
-    expect(matching(s, f, src)).toEqual(["Zéro"]);
+    expect(matching(s, f, src)).toEqual(["Zero"]);
     (s.objects[src] as { counters: Record<string, number> }).counters.charge = 2;
     s.version += 1;
     expect(matching(s, f, src)).toEqual(["Deux"]);
@@ -139,18 +139,18 @@ describe("ObjectFilter.compare : comparaisons dynamiques (un champ retiré par t
     const src = id(s, "Source 1");
     (s.objects[src] as { counters: Record<string, number> }).counters.time = 1;
     s.version += 1;
-    expect(matching(s, f, src)).toEqual(["Un", "Zéro"]);
+    expect(matching(s, f, src)).toEqual(["Un", "Zero"]);
   });
 
-  it("maxManaValueManaSpent → cmp.manaValue('<=', amount.sourceManaSpent) : permanent, dernières informations (Astelli)", () => {
+  it("maxManaValueManaSpent → cmp.manaValue('<=', amount.sourceManaSpent): permanent, last known information (Astelli)", () => {
     const f = { compare: [cmp.manaValue("<=", amount.sourceManaSpent)] };
     const s = board(1);
     const src = id(s, "Source 1");
-    expect(matching(s, f, src)).toEqual(["Zéro"]);
+    expect(matching(s, f, src)).toEqual(["Zero"]);
     s.objects[src]!.cast = { manaSpent: 2 } as never;
-    expect(matching(s, f, src)).toEqual(["Deux", "Un", "Zéro"]);
+    expect(matching(s, f, src)).toEqual(["Deux", "Un", "Zero"]);
     leave(s, src, { manaSpent: 1 });
-    expect(matching(s, f, src)).toEqual(["Un", "Zéro"]);
+    expect(matching(s, f, src)).toEqual(["Un", "Zero"]);
   });
 
   it("maxManaValueColorsSpent → cmp.manaValue('<=', amount.colorsSpent) : convergence (Sundering Archaic)", () => {
@@ -158,18 +158,18 @@ describe("ObjectFilter.compare : comparaisons dynamiques (un champ retiré par t
     const s = board(1);
     const src = id(s, "Source 1");
     s.objects[src]!.cast = { spentColors: { W: 1, U: 2, B: 0 } } as never;
-    expect(matching(s, f, src)).toEqual(["Deux", "Un", "Zéro"]);
+    expect(matching(s, f, src)).toEqual(["Deux", "Un", "Zero"]);
   });
 
-  it("maxManaValueX → cmp.manaValue('<=', amount.x) : le X de la capacité à la résolution, sinon celui du permanent", () => {
+  it("maxManaValueX → cmp.manaValue('<=', amount.x): the ability's X on resolution, otherwise the permanent's", () => {
     const f = { compare: [cmp.manaValue("<=", amount.x)] };
     const s = board(1);
     const src = id(s, "Source 1");
-    expect(matching(s, f, src)).toEqual(["Zéro"]);
+    expect(matching(s, f, src)).toEqual(["Zero"]);
     s.objects[src]!.x = 2;
-    expect(matching(s, f, src)).toEqual(["Deux", "Un", "Zéro"]);
-    expect(matching(s, withX(s, f, resolving(s, src, 1)), src)).toEqual(["Un", "Zéro"]);
-    // Une carte (cimetière, bibliothèque) : même comparaison.
+    expect(matching(s, f, src)).toEqual(["Deux", "Un", "Zero"]);
+    expect(matching(s, withX(s, f, resolving(s, src, 1)), src)).toEqual(["Un", "Zero"]);
+    // A card (graveyard, library): same comparison.
     const t = scenario({ p1: { battlefield: [SOURCE(1)], graveyard: [P1, P3] } });
     const tsrc = id(t, "Source 1");
     t.objects[tsrc]!.x = 2;
@@ -177,31 +177,31 @@ describe("ObjectFilter.compare : comparaisons dynamiques (un champ retiré par t
     expect(cards.map((x) => t.defs[t.objects[x]?.defId ?? ""]?.name)).toEqual(["Un"]);
   });
 
-  it("maxToughnessX → cmp.toughness('<=', amount.x) : endurance au plus X à la résolution (Zero Point Ballad)", () => {
+  it("maxToughnessX → cmp.toughness('<=', amount.x): toughness at most X on resolution (Zero Point Ballad)", () => {
     const f = { compare: [cmp.toughness("<=", amount.x)] };
     const s = board(1);
     const src = id(s, "Source 1");
     expect(matching(s, withX(s, f, resolving(s, src, 2)), src)).toEqual(["Deux", "Trois"]);
   });
 
-  it("manaValueX → cmp.manaValue('=', amount.x) : valeur de mana égale à X à la résolution (Dauntless Dismantler)", () => {
+  it("manaValueX → cmp.manaValue('=', amount.x): mana value equal to X on resolution (Dauntless Dismantler)", () => {
     const f = { compare: [cmp.manaValue("=", amount.x)] };
     const s = board(1);
     const src = id(s, "Source 1");
     expect(matching(s, withX(s, f, resolving(s, src, 3)), src)).toEqual(["Trois"]);
-    expect(matching(s, withX(s, f, resolving(s, src, 0)), src)).toEqual(["Zéro"]);
+    expect(matching(s, withX(s, f, resolving(s, src, 0)), src)).toEqual(["Zero"]);
   });
 
-  it("toughnessAbovePower → cmp.toughness('>', 'power') : endurance supérieure à sa force (Fecund Greenshell)", () => {
+  it("toughnessAbovePower → cmp.toughness('>', 'power'): toughness greater than its power (Fecund Greenshell)", () => {
     const f = { compare: [cmp.toughness(">", "power")] };
     const s = board(1);
-    expect(matching(s, f)).toEqual(["Un", "Zéro"]);
-    // Lu aussi directement sur une vue (déclencheurs).
+    expect(matching(s, f)).toEqual(["Un", "Zero"]);
+    // Also read directly on a view (triggers).
     expect(matchesView(snapshot(s, id(s, "Un")), f, "p1")).toBe(true);
     expect(matchesView(snapshot(s, id(s, "Deux")), f, "p1")).toBe(false);
   });
 
-  it("powerAboveBase → cmp.power('>', 'basePower') : force supérieure à sa force de base (Kutzil)", () => {
+  it("powerAboveBase → cmp.power('>', 'basePower'): power greater than its base power (Kutzil)", () => {
     const f = { compare: [cmp.power(">", "basePower")] };
     const s = board(1);
     expect(matching(s, f)).toEqual([]);
@@ -210,24 +210,24 @@ describe("ObjectFilter.compare : comparaisons dynamiques (un champ retiré par t
     expect(matching(s, f)).toEqual(["Deux"]);
   });
 
-  it("manaValueParity → cmp.parity : valeur de mana paire ou impaire (Mutinous Massacre), parité choisie (Gollum)", () => {
+  it("manaValueParity → cmp.parity: even or odd mana value (Mutinous Massacre), chosen parity (Gollum)", () => {
     const s = board(1);
     expect(matching(s, { compare: [cmp.parity("odd")] })).toEqual(["Trois", "Un"]);
-    expect(matching(s, { compare: [cmp.parity("even")] })).toEqual(["Deux", "Zéro"]);
+    expect(matching(s, { compare: [cmp.parity("even")] })).toEqual(["Deux", "Zero"]);
     expect(withChosen({ parityChosen: true }, { chosen: { parity: "odd" } })).toEqual({
       compare: [{ what: "manaValue", cmp: "odd" }],
     });
-    // Sans choix : pair.
-    expect(matching(s, withChosen({ parityChosen: true }, {}))).toEqual(["Deux", "Zéro"]);
+    // With no choice: even.
+    expect(matching(s, withChosen({ parityChosen: true }, {}))).toEqual(["Deux", "Zero"]);
   });
 
-  it("un montant non résolu (filtre lu directement sur une vue) est ignoré, comme les anciens champs", () => {
+  it("an unresolved amount (filter read directly on a view) is ignored, like the former fields", () => {
     const s = board(2);
     expect(matchesView(snapshot(s, id(s, "Un")), { compare: [cmp.power(">", amount.sourcePower)] }, "p1")).toBe(true);
   });
 });
 
-describe("ObjectFilter.attached et crew : attaches et équipage (un champ retiré par test)", () => {
+describe("ObjectFilter.attached and crew: attachments and crew (one field removed per test)", () => {
   const aura = customCard({ name: "Test Aura", types: ["Enchantment"], typeLine: "Enchantment — Aura", subtypes: ["Aura"] });
   const attachedBoard = () => {
     const s = scenario({ p1: { battlefield: [aura, P1, P2] }, p2: { battlefield: [P0, P3] } });
@@ -239,7 +239,7 @@ describe("ObjectFilter.attached et crew : attaches et équipage (un champ retir�
       .map((x) => s.defs[s.objects[x]?.defId ?? ""]?.name)
       .sort();
 
-  it("attachedToSource → attached: 'host' : le permanent auquel la source est attachée", () => {
+  it("attachedToSource → attached: 'host': the permanent the source is attached to", () => {
     const { s, src, un } = attachedBoard();
     expect(all(s, { attached: "host" }, src)).toEqual([]);
     s.objects[src]!.attachedTo = un;
@@ -248,15 +248,15 @@ describe("ObjectFilter.attached et crew : attaches et équipage (un champ retir�
     expect(all(s, { attached: "host" })).toEqual([]);
   });
 
-  it("notAttachedToSource → attached: 'notHost' : tout autre que lui (sans source : tous)", () => {
+  it("notAttachedToSource → attached: 'notHost': any other than it (with no source: all)", () => {
     const { s, src, un } = attachedBoard();
     s.objects[src]!.attachedTo = un;
     s.version += 1;
-    expect(all(s, { types: ["Creature"], attached: "notHost" }, src)).toEqual(["Deux", "Trois", "Zéro"]);
-    expect(all(s, { types: ["Creature"], attached: "notHost" })).toEqual(["Deux", "Trois", "Un", "Zéro"]);
+    expect(all(s, { types: ["Creature"], attached: "notHost" }, src)).toEqual(["Deux", "Trois", "Zero"]);
+    expect(all(s, { types: ["Creature"], attached: "notHost" })).toEqual(["Deux", "Trois", "Un", "Zero"]);
   });
 
-  it("attachedToSelf → attached: 'toSource' : attaché à la source", () => {
+  it("attachedToSelf → attached: 'toSource': attached to the source", () => {
     const { s, src, un } = attachedBoard();
     expect(all(s, { attached: "toSource" }, un)).toEqual([]);
     s.objects[src]!.attachedTo = un;
@@ -265,7 +265,7 @@ describe("ObjectFilter.attached et crew : attaches et équipage (un champ retir�
     expect(matchesView(snapshot(s, src), { attached: "toSource" }, "p1", un)).toBe(true);
   });
 
-  it("attachedToSourceHost → attached: 'toHost' : attaché au permanent auquel la source est attachée", () => {
+  it("attachedToSourceHost → attached: 'toHost': attached to the permanent the source is attached to", () => {
     const aura2 = customCard({ name: "Test Aura 2", types: ["Enchantment"], typeLine: "Enchantment — Aura", subtypes: ["Aura"] });
     const s = scenario({ p1: { battlefield: [aura, aura2, P1] } });
     const [a1, a2, un] = [id(s, "Test Aura"), id(s, "Test Aura 2"), id(s, "Un")];
@@ -278,7 +278,7 @@ describe("ObjectFilter.attached et crew : attaches et équipage (un champ retir�
     expect(all(s, { attached: "toHost" }, a1)).toEqual([]);
   });
 
-  it("wasAttachedToSource → attached: 'wasToSource' : était attaché à la source quand elle est partie", () => {
+  it("wasAttachedToSource → attached: 'wasToSource': was attached to the source when it left", () => {
     const { s, src, un } = attachedBoard();
     s.objects[src]!.lastAttachedTo = un;
     s.version += 1;
@@ -288,7 +288,7 @@ describe("ObjectFilter.attached et crew : attaches et équipage (un champ retir�
     expect(all(s, { attached: "wasToSource" }, un)).toEqual([]);
   });
 
-  it("crewedBySource → crew: 'bySource' : un Véhicule que la source a piloté ce tour-ci", () => {
+  it("crewedBySource → crew: 'bySource': a Vehicle the source crewed this turn", () => {
     const { s, un, deux } = attachedBoard();
     s.objects[deux]!.crewedBy = { turn: s.turn.number, ids: [un] };
     s.version += 1;
@@ -298,7 +298,7 @@ describe("ObjectFilter.attached et crew : attaches et équipage (un champ retir�
     expect(all(s, { crew: "bySource" }, un)).toEqual([]);
   });
 
-  it("crewedSource → crew: 'source' : une créature qui a piloté ou monté la source ce tour-ci", () => {
+  it("crewedSource → crew: 'source': a creature that crewed or saddled the source this turn", () => {
     const { s, un, deux } = attachedBoard();
     s.objects[deux]!.crewedBy = { turn: s.turn.number, ids: [un] };
     s.version += 1;

@@ -1,6 +1,6 @@
 /**
- * Tests tirés des décisions officielles (rulings Scryfall et règles complètes) pour les interactions fréquentes du méta :
- * lien de vie, copies, remplacements, nettoyage (docs/plans/PLAN-R.md, lot R7).
+ * Tests drawn from official rulings (Scryfall rulings and comprehensive rules) for frequent meta interactions:
+ * lifelink, copies, replacements, cleanup (PLAN-R in docs/history.md, lot R7).
  */
 import { card, nameCatalog } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
@@ -41,13 +41,13 @@ const resolution = (controller: string) => ({
   pc: 0,
 });
 
-/** Passe et accepte les choix suggérés jusqu'à la condition. */
+/** Passes and accepts the suggested choices until the condition holds. */
 const settle = (s: GameState, until: (x: GameState) => boolean) => passAccepting(s, until);
 
-describe("lien de vie (702.15, décisions d'Ajani's Pridemate)", () => {
+describe("lifelink (702.15, Ajani's Pridemate rulings)", () => {
   const linker = (name: string) => customCard({ name, power: 2, toughness: 2, keywords: ["lifelink"] });
 
-  it("deux sources avec le lien de vie qui blessent en même temps : deux gains de points de vie distincts", () => {
+  it("two sources with lifelink dealing damage at the same time: two separate life gains", () => {
     const a = linker("Lien A");
     const b = linker("Lien B");
     let s = scenario({ p1: { battlefield: ["Ajani's Pridemate", a, b] } });
@@ -65,7 +65,7 @@ describe("lien de vie (702.15, décisions d'Ajani's Pridemate)", () => {
     expect(s.objects[pridemate]?.counters["+1/+1"]).toBe(2);
   });
 
-  it("des blessures prévenues ne font pas gagner de points de vie", () => {
+  it("prevented damage does not gain life", () => {
     const a = linker("Lien C");
     const s = scenario({ p1: { battlefield: [a] }, p2: { battlefield: ["Progenitus"] } });
     const src = idOf(s, "p1", "battlefield", a.name);
@@ -80,9 +80,9 @@ describe("lien de vie (702.15, décisions d'Ajani's Pridemate)", () => {
   });
 });
 
-describe("copies de sorts (707.10)", () => {
-  it("une copie n'est pas lancée : la prouesse ne se déclenche que pour les sorts lancés", () => {
-    const prowler = customCard({ name: "Prouesse de test", power: 1, toughness: 1, keywords: ["prowess"] });
+describe("spell copies (707.10)", () => {
+  it("a copy is not cast: prowess triggers only for cast spells", () => {
+    const prowler = customCard({ name: "Test Prowess", power: 1, toughness: 1, keywords: ["prowess"] });
     let s = scenario({
       p1: {
         battlefield: ["Thousand-Year Storm", prowler, "Forest", "Forest", "Forest", "Forest"],
@@ -95,11 +95,11 @@ describe("copies de sorts (707.10)", () => {
       const growth = idsOf(s, "p1", "hand", "Giant Growth")[0] as string;
       s = settle(act(s, "p1", { type: "cast", card: growth, targets: { t: [id] } }), empty);
     }
-    // Deux Giant Growth lancés et une copie (+9), deux prouesses (+2) : 1 + 9 + 2.
+    // Two Giant Growths cast and a copy (+9), two prowess triggers (+2): 1 + 9 + 2.
     expect(chars(s, id).power).toBe(12);
   });
 
-  it("contrecarrer l'original ne contrecarre pas la copie", () => {
+  it("countering the original does not counter the copy", () => {
     let s = scenario({
       p1: { battlefield: ["Thousand-Year Storm", "Bear Cub", "Forest", "Forest"], hand: ["Giant Growth", "Giant Growth"] },
     });
@@ -111,17 +111,17 @@ describe("copies de sorts (707.10)", () => {
     );
     s = act(s, "p1", { type: "cast", card: idsOf(s, "p1", "hand", "Giant Growth")[0] as string, targets: { t: [bear] } });
     const original = s.stack[0]?.id as string;
-    // Le déclenchement de Thousand-Year Storm se résout : la copie est au-dessus de l'original.
+    // Thousand-Year Storm's trigger resolves: the copy is above the original.
     s = settle(s, (x) => x.stack.some((i) => i.copy) && x.pending?.kind === "priority");
     expect(counterItem(s, original, "test")).toBe(true);
     s = settle(s, empty);
-    // Premier Giant Growth et la copie : +6.
+    // First Giant Growth and the copy: +6.
     expect(chars(s, bear).power).toBe(2 + 6);
   });
 });
 
 describe("remplacements (616, 615)", () => {
-  it("616.1 : le joueur blessé applique son bouclier après le doubleur adverse (New Way Forward renvoie 6, pas 3)", () => {
+  it("616.1: the damaged player applies their shield after the opposing doubler (New Way Forward returns 6, not 3)", () => {
     const tyrant = ench(
       "Tyran D",
       eventReplacement({ event: "damage", source: { controller: "you" }, to: "opponentSide", modify: { times: 2 } }),
@@ -152,7 +152,7 @@ describe("remplacements (616, 615)", () => {
     expect(t.players.p1?.life).toBe(20 - 6);
   });
 
-  it("616.1 : une prévention d'un autre joueur passe avant les doubleurs (The Mindskinner fait meuler 3, pas 6)", () => {
+  it("616.1: a prevention from another player goes before the doublers (The Mindskinner mills 3, not 6)", () => {
     const s = scenario({
       p1: { battlefield: ["The Mindskinner", "Twinflame Tyrant", "Bear Cub"] },
       p2: { library: Array(10).fill("Forest") },
@@ -162,7 +162,7 @@ describe("remplacements (616, 615)", () => {
     expect(s.players.p2?.library).toHaveLength(7);
   });
 
-  it("deux doubleurs de blessures se cumulent : 3 blessures en font 12", () => {
+  it("two damage doublers stack: 3 damage becomes 12", () => {
     const tyrant = (name: string) =>
       ench(name, eventReplacement({ event: "damage", source: { controller: "you" }, to: "opponentSide", modify: { times: 2 } }));
     const s = scenario({ p1: { battlefield: [tyrant("Tyran A"), tyrant("Tyran B"), "Bear Cub"] } });
@@ -179,7 +179,7 @@ describe("remplacements (616, 615)", () => {
     expect(s.players.p2?.life).toBe(20 - 12);
   });
 
-  it("des blessures prévenues ne sont pas doublées (615 avant 616)", () => {
+  it("prevented damage is not doubled (615 before 616)", () => {
     const s = scenario({
       p1: {
         battlefield: [
@@ -196,9 +196,9 @@ describe("remplacements (616, 615)", () => {
     expect(s.objects[progenitus]?.damage).toBe(0);
   });
 
-  it("« exilez-la à la place » : une créature exilée au lieu d'aller au cimetière ne « meurt » pas", () => {
-    const exile = ench("Exil de test", graveyardReplacement({}));
-    const mourner = ench("Deuil de test", triggered(when.dies({ types: ["Creature"] }), [fx.gainLife(5)], { label: "deuil" }));
+  it("'exile it instead': a creature exiled instead of going to the graveyard doesn't 'die'", () => {
+    const exile = ench("Test Exile", graveyardReplacement({}));
+    const mourner = ench("Test Mourning", triggered(when.dies({ types: ["Creature"] }), [fx.gainLife(5)], { label: "mourning" }));
     let s = scenario({ p1: { battlefield: [exile, mourner, "Bear Cub"] } });
     destroy(s, idOf(s, "p1", "battlefield", "Bear Cub"));
     s = settle(s, (x) => x.stack.length === 0 && x.triggers.length === 0);
@@ -207,8 +207,8 @@ describe("remplacements (616, 615)", () => {
   });
 });
 
-describe("remplacements des jetons et des marqueurs (R1, famille H)", () => {
-  it("616.1 : un jeton d'artefact remplacé (Draconic Visitor) est aussi doublé (Doubling Season)", () => {
+describe("token and counter replacements (R1, family H)", () => {
+  it("616.1: a replaced artifact token (Draconic Visitor) is also doubled (Doubling Season)", () => {
     const s = scenario({ p1: { battlefield: ["Doubling Season", "Draconic Visitor", "Bear Cub"] } });
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     runEffect(
@@ -220,8 +220,8 @@ describe("remplacements des jetons et des marqueurs (R1, famille H)", () => {
     expect(dragons).toHaveLength(2);
   });
 
-  it("une prévention (« on ne peut pas mettre de marqueurs ») l'emporte sur un doubleur", () => {
-    const shield = ench("Sans marqueurs", eventReplacement({ event: "counters", modify: { prevent: true } }));
+  it("a prevention ('counters can't be put') wins over a doubler", () => {
+    const shield = ench("No Counters", eventReplacement({ event: "counters", modify: { prevent: true } }));
     const s = scenario({ p1: { battlefield: ["Doubling Season", shield, "Bear Cub"] } });
     const bear = s.objects[idOf(s, "p1", "battlefield", "Bear Cub")];
     if (bear) changeCounters(s, bear, "+1/+1", 1);
@@ -230,8 +230,8 @@ describe("remplacements des jetons et des marqueurs (R1, famille H)", () => {
 });
 
 describe("nettoyage (514)", () => {
-  it("une défausse du nettoyage qui déclenche : priorité, puis une nouvelle étape de nettoyage (514.3a)", () => {
-    const counter = ench("Défausse de test", triggered(when.discard("you"), [fx.gainLife(1)], { label: "défausse" }));
+  it("a cleanup discard that triggers: priority, then a new cleanup step (514.3a)", () => {
+    const counter = ench("Test Discard", triggered(when.discard("you"), [fx.gainLife(1)], { label: "discard" }));
     const hand = Array(9).fill("Forest") as string[];
     let s = scenario({ p1: { battlefield: [counter], hand }, step: "end" });
     s = advanceUntil(s, (x) => x.turn.number === 4);
@@ -241,7 +241,7 @@ describe("nettoyage (514)", () => {
 });
 
 describe("prouesse multiple (702.108b)", () => {
-  it("Thor Odinson (« prowess, prowess ») : +2/+2 par sort non-créature", () => {
+  it("Thor Odinson ('prowess, prowess'): +2/+2 per noncreature spell", () => {
     let s = scenario({ p1: { battlefield: ["Thor Odinson", "Island"], hand: ["Opt"] } });
     const thor = idOf(s, "p1", "battlefield", "Thor Odinson");
     const base = chars(s, thor).power;
@@ -253,8 +253,8 @@ describe("prouesse multiple (702.108b)", () => {
   });
 });
 
-describe("Tablet of Discovery (SOS) : permissions et mana restreint", () => {
-  it("un terrain meulé se joue ce tour-ci ; {R}{R} restreint paie un éphémère", () => {
+describe("Tablet of Discovery (SOS): permissions and restricted mana", () => {
+  it("a milled land can be played this turn; restricted {R}{R} pays for an instant", () => {
     let s = scenario({
       p1: {
         battlefield: ["Mountain", "Mountain", "Mountain"],
@@ -269,22 +269,22 @@ describe("Tablet of Discovery (SOS) : permissions et mana restreint", () => {
     const island = idOf(s, "p1", "graveyard", "Island");
     s = act(s, "p1", { type: "playLand", card: island });
     expect(idsOf(s, "p1", "battlefield", "Island")).toHaveLength(1);
-    // Seule source : la Tablet, dont {R}{R} (réservé aux éphémères et rituels) paie Lightning Strike ({1}{R}).
+    // Only source: the Tablet, whose {R}{R} (reserved for instants and sorceries) pays for Lightning Strike ({1}{R}).
     let t = scenario({ p1: { battlefield: ["Tablet of Discovery"], hand: ["Lightning Strike"] } });
     t = act(t, "p1", { type: "cast", card: idOf(t, "p1", "hand", "Lightning Strike"), targets: { t: ["p2"] } });
     expect(t.stack.length).toBe(1);
   });
 });
 
-describe("Ashiok, Wicked Manipulator (rulings du 01/09/2023)", () => {
+describe("Ashiok, Wicked Manipulator (rulings of 2023-09-01)", () => {
   const pricey = customCard({
-    name: "Prêtre de décision",
+    name: "Ruling Priest",
     power: 1,
     toughness: 1,
     abilities: [{ kind: "activated", cost: { payLife: 3 }, effects: [fx.gainLife(1)], targets: [], label: "Gagnez 1 PV" }],
   });
 
-  it("ne permet pas de payer plus de PV que son total, même avec assez de cartes", () => {
+  it("doesn't allow paying more life than the total, even with enough cards", () => {
     const s = scenario({
       p1: { life: 2, battlefield: ["Ashiok, Wicked Manipulator", pricey], library: Array(10).fill("Swamp") },
     });
@@ -292,7 +292,7 @@ describe("Ashiok, Wicked Manipulator (rulings du 01/09/2023)", () => {
     expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === priest)).toBe(false);
   });
 
-  it("le remplacement est obligatoire : aucun PV payé tant que la bibliothèque suffit", () => {
+  it("the replacement is mandatory: no life paid as long as the library suffices", () => {
     let s = scenario({ p1: { battlefield: ["Ashiok, Wicked Manipulator", pricey], library: Array(4).fill("Swamp") } });
     const priest = idOf(s, "p1", "battlefield", pricey.name);
     const a = legalActions(s, "p1").find((x) => x.type === "activate" && x.source === priest);
@@ -302,9 +302,9 @@ describe("Ashiok, Wicked Manipulator (rulings du 01/09/2023)", () => {
   });
 });
 
-describe("509.1c : « doit être bloquée si possible » et la menace", () => {
-  it("avec une seule créature capable de bloquer, aucun blocage n'est exigé ; avec deux, il faut bloquer avec les deux", () => {
-    const lure = customCard({ name: "Appât menaçant", power: 2, toughness: 2, keywords: ["mustBeBlocked", "menace"] });
+describe("509.1c: 'must be blocked if able' and menace", () => {
+  it("with a single creature able to block, no block is required; with two, both must block", () => {
+    const lure = customCard({ name: "Menacing Lure", power: 2, toughness: 2, keywords: ["mustBeBlocked", "menace"] });
     const run = (blockers: string[]) => {
       let s = scenario({ p1: { battlefield: [lure] }, p2: { battlefield: blockers } });
       const attacker = idOf(s, "p1", "battlefield", lure.name);
@@ -312,7 +312,7 @@ describe("509.1c : « doit être bloquée si possible » et la menace", () => {
       s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: attacker, defender: "p2" }] });
       return { s: advanceUntil(s, (x) => x.pending?.kind === "declareBlockers"), attacker };
     };
-    // Une seule créature : aucun blocage possible avec la menace, donc rien n'est exigé (le moteur ne demande rien).
+    // A single creature: no block possible with menace, so nothing is required (the engine asks nothing).
     const one = run(["Bear Cub"]);
     if (one.s.pending?.kind === "declareBlockers")
       expect(() => act(one.s, "p2", { type: "declareBlockers", blocks: [] })).not.toThrow();
@@ -332,8 +332,8 @@ describe("509.1c : « doit être bloquée si possible » et la menace", () => {
   });
 });
 
-describe("608.2h : dernières informations connues de la créature qui meurt", () => {
-  it("Rakdos Joins Up : les blessures valent la force de la créature légendaire au moment de mourir, marqueurs compris", () => {
+describe("608.2h: last known information of the creature that dies", () => {
+  it("Rakdos Joins Up: the damage equals the legendary creature's power when it died, counters included", () => {
     const hero = customCard({ name: "Test Hero", supertypes: ["Legendary"], power: 2, toughness: 2 });
     let s = scenario({
       p1: { battlefield: ["Rakdos Joins Up", { name: hero, counters: { "+1/+1": 2 } }] },
@@ -345,8 +345,8 @@ describe("608.2h : dernières informations connues de la créature qui meurt", (
   });
 });
 
-describe("« carte » : un jeton qui change de zone n'est pas une carte", () => {
-  it("Moonshadow : un jeton mis au cimetière ne retire pas de marqueur -1/-1 ; une carte de permanent, si", () => {
+describe("'card': a token that changes zones is not a card", () => {
+  it("Moonshadow: a token put into the graveyard doesn't remove a -1/-1 counter; a permanent card does", () => {
     const token = customCard({ name: "Test Token", power: 1, toughness: 1 });
     let s = scenario({ p1: { battlefield: [{ name: "Moonshadow", counters: { "-1/-1": 6 } }, "Bear Cub", token] } });
     const shadow = idOf(s, "p1", "battlefield", "Moonshadow");
@@ -361,11 +361,11 @@ describe("« carte » : un jeton qui change de zone n'est pas une carte", () => 
   });
 });
 
-describe("correctifs du lot A6 de Marvel Super Heroes", () => {
-  it("608.2h : « quand une créature attaquante meurt » voit qu'elle attaquait (dernières informations avant 506.4)", () => {
+describe("fixes of lot A6 of Marvel Super Heroes", () => {
+  it("608.2h: 'when an attacking creature dies' sees that it was attacking (last known information before 506.4)", () => {
     const mourner = ench(
       "Deuil d'attaquant",
-      triggered(when.dies({ types: ["Creature"], attacking: true }), [fx.gainLife(5)], { label: "deuil" }),
+      triggered(when.dies({ types: ["Creature"], attacking: true }), [fx.gainLife(5)], { label: "mourning" }),
     );
     let s = scenario({ p1: { battlefield: [mourner, "Bear Cub"] } });
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -376,7 +376,7 @@ describe("correctifs du lot A6 de Marvel Super Heroes", () => {
     expect(s.players.p1?.life).toBe(25);
   });
 
-  it("301.5c : un Équipement qui devient une créature se détache", () => {
+  it("301.5c: an Equipment that becomes a creature becomes unattached", () => {
     const gear = customCard({
       name: "Test Gear",
       types: ["Artifact"],
@@ -395,7 +395,7 @@ describe("correctifs du lot A6 de Marvel Super Heroes", () => {
     expect(s.objects[g]?.attachedTo).toBeUndefined();
   });
 
-  it("F/E définies par une capacité : « créatures légendaires que vous contrôlez » ne compte que les légendaires", () => {
+  it("P/T defined by an ability: 'legendary creatures you control' counts only legendary ones", () => {
     const adaptoid = customCard({
       name: "Test Adaptoid",
       power: 0,
@@ -408,8 +408,8 @@ describe("correctifs du lot A6 de Marvel Super Heroes", () => {
   });
 });
 
-describe("socle de Marvel's Spider-Man", () => {
-  it("700.9 : modifié = un marqueur, un Équipement, ou une Aura contrôlée par le contrôleur de la créature", () => {
+describe("foundation of Marvel's Spider-Man", () => {
+  it("700.9: modified = a counter, an Equipment, or an Aura controlled by the creature's controller", () => {
     const aura = customCard({ name: "Test Aura", types: ["Enchantment"], subtypes: ["Aura"], typeLine: "Enchantment — Aura" });
     const s = scenario({
       p1: { battlefield: ["Bear Cub", { name: "Llanowar Elves", counters: { "+1/+1": 1 } }, "Serra Angel"] },
@@ -418,7 +418,7 @@ describe("socle de Marvel's Spider-Man", () => {
     const modified = (name: string) => matchesObjectFilter(s, "p1", idOf(s, "p1", "battlefield", name), { modified: true });
     expect(modified("Bear Cub")).toBe(false);
     expect(modified("Llanowar Elves")).toBe(true);
-    // Aura de l'adversaire : la créature n'est pas modifiée.
+    // Opponent's Aura: the creature is not modified.
     const a = idOf(s, "p2", "battlefield", "Test Aura");
     s.objects[a]!.attachedTo = idOf(s, "p1", "battlefield", "Serra Angel");
     bump(s);
@@ -428,7 +428,7 @@ describe("socle de Marvel's Spider-Man", () => {
     expect(modified("Serra Angel")).toBe(true);
   });
 
-  it("615 : Anti-Venom reçoit les marqueurs dans le remplacement même, sans capacité sur la pile", () => {
+  it("615: Anti-Venom receives the counters within the replacement itself, with no ability on the stack", () => {
     const s = scenario({ p1: { battlefield: ["Anti-Venom, Horrifying Healer"] }, p2: { battlefield: ["Bear Cub"] } });
     const venom = idOf(s, "p1", "battlefield", "Anti-Venom, Horrifying Healer");
     dealDamage(s, sourceFromObject(s, idOf(s, "p2", "battlefield", "Bear Cub")), venom, 2, true);
@@ -438,7 +438,7 @@ describe("socle de Marvel's Spider-Man", () => {
     expect(s.triggers).toHaveLength(0);
   });
 
-  it("305.1 : « jouez un terrain depuis l'exil » ne compte pas un terrain joué depuis la main", () => {
+  it("305.1: 'play a land from exile' doesn't count a land played from hand", () => {
     const watcher = customCard({
       name: "Test Exile Watcher",
       types: ["Enchantment"],
@@ -451,7 +451,7 @@ describe("socle de Marvel's Spider-Man", () => {
     expect(s.objects[w]?.counters["+1/+1"] ?? 0).toBe(0);
   });
 
-  it("journal du tour : un terrain joué est noté avec sa zone de départ (Spider-Man 2099)", () => {
+  it("turn log: a played land is recorded with its starting zone (Spider-Man 2099)", () => {
     let s = scenario({ p1: { hand: ["Forest"] } });
     s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Forest") });
     expect(countTurnEvents(s, { event: "playLand", who: "you", fromZone: "hand" }, "p1")).toBe(1);
@@ -459,7 +459,7 @@ describe("socle de Marvel's Spider-Man", () => {
     expect(countTurnEvents(s, { event: "playLand", who: "opponent" }, "p1")).toBe(0);
   });
 
-  it("Chimil, the Inner Sun : « les sorts que vous contrôlez » couvre aussi un sort de créature", () => {
+  it("Chimil, the Inner Sun: 'spells you control' also covers a creature spell", () => {
     let s = scenario({ p1: { battlefield: ["Chimil, the Inner Sun", "Forest", "Forest"], hand: ["Bear Cub"] } });
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Bear Cub") });
     const item = s.stack[0]?.id as string;
@@ -468,8 +468,8 @@ describe("socle de Marvel's Spider-Man", () => {
   });
 });
 
-describe("correctifs du lot A de Teenage Mutant Ninja Turtles", () => {
-  it("603.3d : cibles « de joueurs différents » toutes chez un même joueur — pas de cible légale, pas de choix impossible", () => {
+describe("fixes of lot A of Teenage Mutant Ninja Turtles", () => {
+  it("603.3d: targets 'of different players' all on the same player — no legal target, no impossible choice", () => {
     let s = scenario({
       p1: { battlefield: Array(6).fill("Island"), hand: ["Kitsune, Dragon's Daughter"] },
       p2: { battlefield: ["Bear Cub", "Serra Angel"] },
@@ -481,11 +481,11 @@ describe("correctifs du lot A de Teenage Mutant Ninja Turtles", () => {
   });
 });
 
-describe("correctifs du lot A de The Hobbit", () => {
-  it("106.6 : un mana restreint produit à la main va dans la réserve restreinte, pas dans la réserve libre", () => {
+describe("fixes of lot A of The Hobbit", () => {
+  it("106.6: restricted mana produced by hand goes into the restricted pool, not the free pool", () => {
     let s = scenario({ p1: { battlefield: ["Castle Doom"], hand: ["Bear Cub"] } });
     const castle = idOf(s, "p1", "battlefield", "Castle Doom");
-    // Deuxième capacité de mana : une couleur, seulement pour un sort d'artefact.
+    // Second mana ability: one color, only for an artifact spell.
     s = act(s, "p1", { type: "tapForMana", source: castle, ability: 1, color: "G" });
     expect(s.players.p1?.manaPool.G).toBe(0);
     expect(s.players.p1?.restrictedMana).toEqual([
@@ -495,8 +495,8 @@ describe("correctifs du lot A de The Hobbit", () => {
   });
 });
 
-describe("correctifs de fin de The Hobbit", () => {
-  it("613.1b : l'Aura qui donne le contrôle part — le contrôle revient aussitôt, avant les actions basées sur l'état", () => {
+describe("end-of-The-Hobbit fixes", () => {
+  it("613.1b: the Aura that gives control leaves — control returns at once, before state-based actions", () => {
     let s = scenario({
       p1: { battlefield: [...Array(6).fill("Island")], hand: ["Confiscate"] },
       p2: { battlefield: ["Forest"] },
@@ -505,12 +505,12 @@ describe("correctifs de fin de The Hobbit", () => {
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Confiscate"), targets: { enchant: [forest] } });
     s = passAccepting(s, (x) => x.stack.length === 0 && x.triggers.length === 0);
     expect(s.objects[forest]?.controller).toBe("p1");
-    // Renvoyée en main au milieu d'une résolution : pas d'actions basées sur l'état entre-temps.
+    // Returned to hand in the middle of a resolution: no state-based actions in between.
     moveObject(s, idOf(s, "p1", "battlefield", "Confiscate"), "hand");
     expect(s.objects[forest]?.controller).toBe("p2");
   });
 
-  it("plafond : dix doubleurs de jetons ne créent pas 1 024 jetons, mais au plus 100 (approximation documentée)", () => {
+  it("ceiling: ten token doublers do not create 1,024 tokens, but at most 100 (documented approximation)", () => {
     const doubler = customCard({
       name: "Test Token Doubler",
       types: ["Enchantment"],
@@ -528,8 +528,8 @@ describe("correctifs de fin de The Hobbit", () => {
   });
 });
 
-describe("509.1c et 509.1d : respecter autant d'exigences de blocage que possible (PLAN-C, lot C4)", () => {
-  /** p1 attaque p2 avec `attackers` ; renvoie la position de la déclaration des bloqueurs. */
+describe("509.1c and 509.1d: satisfy as many blocking requirements as possible (PLAN-C, lot C4)", () => {
+  /** p1 attacks p2 with `attackers`; returns the position at the declare blockers step. */
   const toBlocks = (p1: (string | CardDef)[], p2: (string | CardDef)[], extra: Partial<Parameters<typeof scenario>[0]> = {}) => {
     let s = scenario({ p1: { battlefield: p1 }, p2: { battlefield: p2 }, ...extra });
     const attackers = s.battlefield.filter((id) => s.objects[id]?.controller === "p1" && chars(s, id).types.includes("Creature"));
@@ -537,34 +537,34 @@ describe("509.1c et 509.1d : respecter autant d'exigences de blocage que possibl
     s = act(s, "p1", { type: "declareAttackers", attackers: attackers.map((id) => ({ id, defender: "p2" })) });
     return advanceUntil(s, (x) => x.pending?.kind === "declareBlockers");
   };
-  const wolf = customCard({ name: "Loup de test", power: 2, toughness: 2, subtypes: ["Wolf"] });
-  const lure = customCard({ name: "Appât de test", power: 2, toughness: 2, keywords: ["mustBeBlocked"] });
-  const guard = customCard({ name: "Garde de test", power: 1, toughness: 5 });
+  const wolf = customCard({ name: "Test Wolf", power: 2, toughness: 2, subtypes: ["Wolf"] });
+  const lure = customCard({ name: "Test Lure", power: 2, toughness: 2, keywords: ["mustBeBlocked"] });
+  const guard = customCard({ name: "Test Guard", power: 1, toughness: 5 });
 
-  it("« bloque ce Loup si possible » et un attaquant « doit être bloqué » : chacun des deux blocages est accepté", () => {
+  it("'blocks this Wolf if able' and an attacker that 'must be blocked': either block is accepted", () => {
     let s = toBlocks([wolf, lure], [guard]);
     const [w, l, g] = [
       idOf(s, "p1", "battlefield", wolf.name),
       idOf(s, "p1", "battlefield", lure.name),
       idOf(s, "p2", "battlefield", guard.name),
     ];
-    // Tolsimir : la créature doit bloquer ce Loup si possible.
-    addEffect(s, [g], { addBlockRules: [{ mustBlockAttacker: w, label: "Bloque ce Loup si possible" }] }, "endOfTurn");
-    // Une seule exigence peut être respectée : bloquer le Loup ou l'appât ; ne pas bloquer en respecte zéro.
+    // Tolsimir: the creature must block this Wolf if able.
+    addEffect(s, [g], { addBlockRules: [{ mustBlockAttacker: w, label: "Blocks this Wolf if able" }] }, "endOfTurn");
+    // Only one requirement can be satisfied: block the Wolf or the lure; not blocking satisfies none.
     expect(() => act(s, "p2", { type: "declareBlockers", blocks: [{ blocker: g, attacker: w }] })).not.toThrow();
     expect(() => act(s, "p2", { type: "declareBlockers", blocks: [{ blocker: g, attacker: l }] })).not.toThrow();
     expect(() => act(s, "p2", { type: "declareBlockers", blocks: [] })).toThrow(RulesError);
-    // Le blocage par défaut (repli de l'hôte, automatisme) est accepté.
+    // The default block (host fallback, autopilot) is accepted.
     const fallback = requiredBlocks(s, "p2");
     expect(fallback).toHaveLength(1);
     s = act(s, "p2", { type: "declareBlockers", blocks: fallback });
     expect(s.pending?.kind).not.toBe("declareBlockers");
   });
 
-  it("deux créatures qui bloquent si possible, un seul attaquant : les deux doivent bloquer", () => {
+  it("two creatures that block if able, a single attacker: both must block", () => {
     const eager = (name: string) => customCard({ name, power: 1, toughness: 1 });
-    const s = toBlocks([wolf], [eager("Zélé A"), eager("Zélé B")]);
-    const [a, b] = ["Zélé A", "Zélé B"].map((n) => idOf(s, "p2", "battlefield", n)) as [string, string];
+    const s = toBlocks([wolf], [eager("Eager A"), eager("Eager B")]);
+    const [a, b] = ["Eager A", "Eager B"].map((n) => idOf(s, "p2", "battlefield", n)) as [string, string];
     addEffect(s, [a, b], { addBlockRules: [{ mustBlock: true, label: "Bloque si possible" }] }, "endOfTurn");
     const w = idOf(s, "p1", "battlefield", wolf.name);
     expect(() => act(s, "p2", { type: "declareBlockers", blocks: [{ blocker: a, attacker: w }] })).toThrow(RulesError);
@@ -579,18 +579,18 @@ describe("509.1c et 509.1d : respecter autant d'exigences de blocage que possibl
     ).not.toThrow();
   });
 
-  it("509.1d : avec une taxe de blocage, aucune exigence ne s'impose (Archangel of Tithes)", () => {
+  it("509.1d: with a block tax, no requirement applies (Archangel of Tithes)", () => {
     const s = toBlocks(["Archangel of Tithes", lure], [guard]);
     expect(blockRequirements(s, "p2")).toEqual([]);
     expect(requiredBlocks(s, "p2")).toEqual([]);
     expect(() => act(s, "p2", { type: "declareBlockers", blocks: [] })).not.toThrow();
   });
 
-  it("la déclaration d'attaque par défaut fait attaquer ce qui doit attaquer (Juggernaut : corde expirée en ligne)", () => {
+  it("the default attack declaration attacks with what must attack (Juggernaut: rope expired online)", () => {
     let s = scenario({ p1: { battlefield: ["Juggernaut"] }, p2: { battlefield: [guard] } });
     s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
     const p = s.pending;
-    if (p?.kind !== "declareAttackers") throw new Error("pas de déclaration des attaquants");
+    if (p?.kind !== "declareAttackers") throw new Error("no declare attackers decision");
     const d = fallbackDecision(s, p);
     expect(d).toEqual({
       type: "declareAttackers",
@@ -600,9 +600,9 @@ describe("509.1c et 509.1d : respecter autant d'exigences de blocage que possibl
   });
 });
 
-describe("106.6 : mana marqué engagé à la main (PLAN-C, lot C5)", () => {
+describe("106.6: mana marked as tapped by hand (PLAN-C, lot C5)", () => {
   const elf = customCard({
-    name: "Elfe de test",
+    name: "Test Elf",
     power: 1,
     toughness: 1,
     subtypes: ["Elf"],
@@ -611,7 +611,7 @@ describe("106.6 : mana marqué engagé à la main (PLAN-C, lot C5)", () => {
     manaCostText: "{1}",
   });
   const bear = customCard({
-    name: "Ours de test",
+    name: "Test Bear",
     power: 2,
     toughness: 2,
     subtypes: ["Bear"],
@@ -627,29 +627,29 @@ describe("106.6 : mana marqué engagé à la main (PLAN-C, lot C5)", () => {
     return { s, cavern };
   };
 
-  it("Cavern of Souls engagée à la main : son mana coloré est proposé, garde le type choisi et rend le sort incontrecarrable", () => {
+  it("Cavern of Souls tapped by hand: its colored mana is offered, keeps the chosen type and makes the spell uncounterable", () => {
     let { s, cavern } = withCavern();
     expect(legalActions(s, "p1").some((a) => a.type === "tapForMana" && a.source === cavern && a.ability === 1)).toBe(true);
     s = act(s, "p1", { type: "tapForMana", source: cavern, ability: 1, color: "G" });
     expect(s.players.p1?.restrictedMana?.[0]).toMatchObject({ type: "G", source: cavern, chosen: { creatureType: "Elf" } });
-    // Le mana ne sert pas à l'Ours (autre type), il sert à l'Elfe.
-    expect(legalActions(s, "p1").some((a) => a.type === "cast" && a.card === idOf(s, "p1", "hand", "Ours de test"))).toBe(false);
-    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Elfe de test") });
+    // The mana doesn't serve the Bear (other type), it serves the Elf.
+    expect(legalActions(s, "p1").some((a) => a.type === "cast" && a.card === idOf(s, "p1", "hand", "Test Bear"))).toBe(false);
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Test Elf") });
     expect(s.players.p1?.restrictedMana).toBeUndefined();
     expect(s.stack[0]?.uncounterable).toBe(true);
   });
 
-  it("le type reste celui choisi à la production, même si la Caverne quitte le champ de bataille", () => {
+  it("the type stays the one chosen at production, even if the Cavern leaves the battlefield", () => {
     let { s, cavern } = withCavern();
     s = act(s, "p1", { type: "tapForMana", source: cavern, ability: 1, color: "G" });
     moveObject(s, cavern, "graveyard");
-    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Elfe de test") });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Test Elf") });
     expect(s.stack[0]?.uncounterable).toBe(true);
   });
 });
 
-describe("approximations levées (PLAN-C, lot C12)", () => {
-  it("Ordeal of Nylea : sacrifiée par un autre moyen, elle cherche quand même deux terrains de base", () => {
+describe("approximations lifted (PLAN-C, lot C12)", () => {
+  it("Ordeal of Nylea: sacrificed some other way, it still searches for two basic lands", () => {
     let s = scenario({ p1: { battlefield: ["Bear Cub"], library: ["Forest", "Island", "Plains"] } });
     const def = card("Ordeal of Nylea");
     registerDef(s, def);
@@ -662,20 +662,20 @@ describe("approximations levées (PLAN-C, lot C12)", () => {
     expect(lands).toHaveLength(2);
   });
 
-  it("« une ou plusieurs … » : un déclenchement par lot d'événements simultanés (un par effet d'une résolution)", () => {
+  it("'one or more …': one trigger per batch of simultaneous events (one per effect of a resolution)", () => {
     const watcher = customCard({
-      name: "Veilleur de test",
+      name: "Test Watcher",
       types: ["Enchantment"],
       typeLine: "Enchantment",
       abilities: [
         triggered(when.zoneChange(["graveyard"], { whose: "you" }), [fx.gainLife(1)], {
           batched: true,
-          label: "Des cartes quittent votre cimetière : 1 PV",
+          label: "Cards leave your graveyard: 1 life",
         }),
       ],
     });
     const twoEffects = customCard({
-      name: "Deux exils",
+      name: "Two Exiles",
       types: ["Sorcery"],
       typeLine: "Sorcery",
       spell: spell(
@@ -684,7 +684,7 @@ describe("approximations levées (PLAN-C, lot C12)", () => {
       ),
     });
     const oneEffect = customCard({
-      name: "Un exil",
+      name: "An Exile",
       types: ["Sorcery"],
       typeLine: "Sorcery",
       spell: spell([target.upTo(2, target.cardInGraveyard("t", {}, "you"))], [fx.exileCard(ref.target())]),
@@ -701,8 +701,8 @@ describe("approximations levées (PLAN-C, lot C12)", () => {
   });
 });
 
-describe("mana d'une source sacrifiée pour son coût (dernière information connue)", () => {
-  it("Roxanne, Starfall Savant et un Trésor : le jeton engagé puis sacrifié produit un mana de plus (2)", async () => {
+describe("mana of a source sacrificed for its cost (last known information)", () => {
+  it("Roxanne, Starfall Savant and a Treasure: the tapped then sacrificed token produces one more mana (2)", async () => {
     const { TOKEN_SPECS } = await import("@mtgx/cards");
     let s = scenario({ p1: { battlefield: ["Roxanne, Starfall Savant"] } });
     s = structuredClone(s);
@@ -714,24 +714,24 @@ describe("mana d'une source sacrifiée pour son coût (dernière information con
   });
 });
 
-describe("701.38 et 508.1d : provocation et exigences d'attaque (PLAN-H, lot H3)", () => {
-  /** p1 contrôle un Ourson provoqué par `goaders` ; position de la déclaration des attaquants de p1. */
+describe("701.38 and 508.1d: goad and attack requirements (PLAN-H, lot H3)", () => {
+  /** p1 controls a Cub goaded by `goaders`; position at p1's declare attackers step. */
   const goaded = (players: number, goaders: string[], extra: Parameters<typeof scenario>[0] = {}) => {
     let s = scenario({ players, ...extra, p1: { battlefield: ["Bear Cub", ...(extra.p1?.battlefield ?? [])] } });
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-    for (const by of goaders) addEffect(s, [bear], { addBlockRules: [{ goadedBy: by, label: "Provoquée" }] }, "permanent");
+    for (const by of goaders) addEffect(s, [bear], { addBlockRules: [{ goadedBy: by, label: "Goaded" }] }, "permanent");
     s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
     return { s, bear };
   };
   const declare = (s: GameState, attackers: { id: string; defender: string }[]) =>
     act(s, "p1", { type: "declareAttackers", attackers });
 
-  it("provoquée par un joueur : elle doit attaquer, et un autre joueur que lui si possible", () => {
+  it("goaded by a player: it must attack, and a player other than that one if able", () => {
     const { s, bear } = goaded(3, ["p2"]);
     expect(() => declare(s, [])).toThrow(RulesError);
     expect(() => declare(s, [{ id: bear, defender: "p2" }])).toThrow(RulesError);
     expect(() => declare(s, [{ id: bear, defender: "p3" }])).not.toThrow();
-    // La déclaration par défaut (hôte, automatisme) attaque l'autre joueur.
+    // The default declaration (host, autopilot) attacks the other player.
     expect(forcedAttacks(s, "p1")).toEqual([{ id: bear, defender: "p3" }]);
     expect(preferredDefenders(s, bear)).toEqual(["p3"]);
     expect(fallbackDecision(s, s.pending as never)).toEqual({
@@ -740,13 +740,13 @@ describe("701.38 et 508.1d : provocation et exigences d'attaque (PLAN-H, lot H3)
     });
   });
 
-  it("en duel, provoquée par le seul adversaire : elle l'attaque (exigence « attaque si possible »)", () => {
+  it("in a duel, goaded by the only opponent: it attacks them ('attacks if able' requirement)", () => {
     const { s, bear } = goaded(2, ["p2"]);
     expect(() => declare(s, [])).toThrow(RulesError);
     expect(() => declare(s, [{ id: bear, defender: "p2" }])).not.toThrow();
   });
 
-  it("provoquée par deux joueurs : un adversaire qui ne l'a pas provoquée, sinon l'un des deux (701.38c)", () => {
+  it("goaded by two players: an opponent who didn't goad it, otherwise either of the two (701.38c)", () => {
     const three = goaded(3, ["p2", "p3"]);
     expect(() => declare(three.s, [])).toThrow(RulesError);
     expect(() => declare(three.s, [{ id: three.bear, defender: "p2" }])).not.toThrow();
@@ -757,68 +757,68 @@ describe("701.38 et 508.1d : provocation et exigences d'attaque (PLAN-H, lot H3)
     expect(() => declare(four.s, [{ id: four.bear, defender: "p4" }])).not.toThrow();
   });
 
-  it("provoquée deux fois par le même joueur : les mêmes exigences, une seule fois", () => {
+  it("goaded twice by the same player: the same requirements, only once", () => {
     const { s, bear } = goaded(3, ["p2", "p2"]);
     expect(attackRequirements(s, bear)).toHaveLength(2);
     expect(() => declare(s, [{ id: bear, defender: "p3" }])).not.toThrow();
   });
 
-  it("un planeswalker ne satisfait pas « un joueur autre que vous » : attaquer ce joueur, pas son planeswalker", () => {
+  it("a planeswalker doesn't satisfy 'a player other than you': attack that player, not their planeswalker", () => {
     const { s, bear } = goaded(3, ["p2"], { p3: { battlefield: ["Ajani Resolute"] } });
     const walker = idOf(s, "p3", "battlefield", "Ajani Resolute");
     expect(() => declare(s, [{ id: bear, defender: walker }])).toThrow(RulesError);
     expect(() => declare(s, [{ id: bear, defender: "p3" }])).not.toThrow();
   });
 
-  it("une obligation n'impose pas de payer : l'autre joueur exige une taxe, elle peut attaquer celui qui l'a provoquée", () => {
+  it("an obligation doesn't force payment: the other player demands a tax, it may attack the one who goaded it", () => {
     const { s, bear } = goaded(3, ["p2"], { p1: { battlefield: lands("Plains", 2) }, p3: { battlefield: ["Propaganda"] } });
     expect(() => declare(s, [])).toThrow(RulesError);
     expect(() => declare(s, [{ id: bear, defender: "p2" }])).not.toThrow();
-    // Payer la taxe pour attaquer p3 respecte davantage d'exigences : permis.
+    // Paying the tax to attack p3 satisfies more requirements: allowed.
     expect(() => declare(s, [{ id: bear, defender: "p3" }])).not.toThrow();
     expect(forcedAttacks(s, "p1")).toEqual([{ id: bear, defender: "p2" }]);
   });
 
-  it("taxe partout : provoquée, elle n'est pas obligée d'attaquer", () => {
+  it("tax everywhere: goaded, it isn't forced to attack", () => {
     const { s } = goaded(3, ["p2"], { p2: { battlefield: ["Propaganda"] }, p3: { battlefield: ["Propaganda"] } });
     expect(() => declare(s, [])).not.toThrow();
     expect(forcedAttacks(s, "p1")).toEqual([]);
   });
 
-  it("restriction et provocation : elle ne peut pas attaquer l'autre joueur, elle attaque donc celui qui l'a provoquée", () => {
+  it("restriction and goad: it can't attack the other player, so it attacks the one who goaded it", () => {
     const { s, bear } = goaded(3, ["p2"]);
-    addEffect(s, [bear], { addBlockRules: [{ cantAttackPlayer: "p3", label: "Ne peut pas attaquer p3" }] }, "permanent");
+    addEffect(s, [bear], { addBlockRules: [{ cantAttackPlayer: "p3", label: "Can't attack p3" }] }, "permanent");
     expect(allowedDefenders(s, bear)).toEqual(["p2"]);
     expect(() => declare(s, [])).toThrow(RulesError);
     expect(() => declare(s, [{ id: bear, defender: "p2" }])).not.toThrow();
   });
 
-  it("« attaque ce joueur à chaque combat si possible » : seule une attaque contre ce joueur la satisfait", () => {
+  it("'attacks that player each combat if able': only an attack against that player satisfies it", () => {
     const { s, bear } = goaded(3, []);
     addEffect(s, [bear], { addBlockRules: [{ mustAttackPlayer: "p3", label: "Attaque p3" }] }, "permanent");
     expect(() => declare(s, [])).toThrow(RulesError);
     expect(() => declare(s, [{ id: bear, defender: "p2" }])).toThrow(RulesError);
     expect(() => declare(s, [{ id: bear, defender: "p3" }])).not.toThrow();
-    // Elle ne peut pas attaquer ce joueur : aucune obligation.
-    addEffect(s, [bear], { addBlockRules: [{ cantAttackPlayer: "p3", label: "Ne peut pas attaquer p3" }] }, "permanent");
+    // It can't attack that player: no obligation.
+    addEffect(s, [bear], { addBlockRules: [{ cantAttackPlayer: "p3", label: "Can't attack p3" }] }, "permanent");
     expect(() => declare(s, [])).not.toThrow();
   });
 
-  it("508.1d : le plus d'exigences possible ; une attaque volontaire ne peut pas en faire respecter moins (Mirri)", () => {
-    // Mirri, Weatherlight Duelist (p3), engagée : une seule créature peut attaquer p3 à chaque combat.
+  it("508.1d: as many requirements as possible; a voluntary attack can't satisfy fewer (Mirri)", () => {
+    // Mirri, Weatherlight Duelist (p3), tapped: only one creature can attack p3 each combat.
     const { s, bear } = goaded(3, ["p2"], {
       p1: { battlefield: ["Savannah Lions"] },
       p3: { battlefield: [{ name: "Mirri, Weatherlight Duelist", tapped: true }] },
     });
     const lions = idOf(s, "p1", "battlefield", "Savannah Lions");
-    // Une seule créature sur p3.
+    // A single creature on p3.
     expect(() =>
       declare(s, [
         { id: lions, defender: "p3" },
         { id: bear, defender: "p3" },
       ]),
     ).toThrow(RulesError);
-    // Les Lions sur p3 obligeraient l'Ourson provoqué à attaquer p2 (une exigence au lieu de deux) : refusé.
+    // The Lions on p3 would force the goaded Cub to attack p2 (one requirement instead of two): refused.
     const wrong = [
       { id: lions, defender: "p3" },
       { id: bear, defender: "p2" },
@@ -830,7 +830,7 @@ describe("701.38 et 508.1d : provocation et exigences d'attaque (PLAN-H, lot H3)
         { id: bear, defender: "p3" },
       ]),
     ).not.toThrow();
-    // L'IA qui voulait envoyer les Lions sur p3 voit sa déclaration réparée : l'Ourson prend p3, les Lions attaquent p2.
+    // The AI that wanted to send the Lions at p3 gets its declaration repaired: the Cub takes p3, the Lions attack p2.
     const repaired = repairAttacks(s, "p1", wrong);
     expect(repaired).toEqual(
       expect.arrayContaining([
@@ -842,14 +842,14 @@ describe("701.38 et 508.1d : provocation et exigences d'attaque (PLAN-H, lot H3)
     expect(() => declare(s, repaired)).not.toThrow();
   });
 
-  it("508.1d : payer une taxe pour une créature ne dispense pas une autre de ses exigences sans coût", () => {
-    // Deux créatures provoquées par p2, Propaganda chez p3 : l'Ourson paie pour attaquer p3, les Lions doivent attaquer p2.
+  it("508.1d: paying a tax for one creature doesn't excuse another from its costless requirements", () => {
+    // Two creatures goaded by p2, Propaganda on p3: the Cub pays to attack p3, the Lions must attack p2.
     const { s, bear } = goaded(3, ["p2"], {
       p1: { battlefield: ["Savannah Lions", ...lands("Plains", 2)] },
       p3: { battlefield: ["Propaganda"] },
     });
     const lions = idOf(s, "p1", "battlefield", "Savannah Lions");
-    addEffect(s, [lions], { addBlockRules: [{ goadedBy: "p2", label: "Provoquée" }] }, "permanent");
+    addEffect(s, [lions], { addBlockRules: [{ goadedBy: "p2", label: "Goaded" }] }, "permanent");
     expect(() => declare(s, [{ id: bear, defender: "p3" }])).toThrow(RulesError);
     expect(() =>
       declare(s, [
@@ -857,7 +857,7 @@ describe("701.38 et 508.1d : provocation et exigences d'attaque (PLAN-H, lot H3)
         { id: lions, defender: "p2" },
       ]),
     ).not.toThrow();
-    // Même chose avec « attaque à chaque combat si possible ».
+    // Same with "attacks each combat if able".
     const t = goaded(3, ["p2"], {
       p1: { battlefield: ["Savannah Lions", ...lands("Plains", 2)] },
       p3: { battlefield: ["Propaganda"] },
@@ -867,7 +867,7 @@ describe("701.38 et 508.1d : provocation et exigences d'attaque (PLAN-H, lot H3)
     expect(() => declare(t.s, [{ id: t.bear, defender: "p3" }])).toThrow(RulesError);
   });
 
-  it("« ne peut pas attaquer seule » : provoquée, elle attaque avec une autre créature plutôt que de rester chez elle", () => {
+  it("'can't attack alone': goaded, it attacks with another creature rather than stay home", () => {
     let s = scenario({ players: 2, p1: { battlefield: ["Bear Cub", "Savannah Lions"] } });
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     const lions = idOf(s, "p1", "battlefield", "Savannah Lions");
@@ -876,8 +876,8 @@ describe("701.38 et 508.1d : provocation et exigences d'attaque (PLAN-H, lot H3)
       [bear],
       {
         addBlockRules: [
-          { notAlone: true, label: "Ne peut pas attaquer seule" },
-          { goadedBy: "p2", label: "Provoquée" },
+          { notAlone: true, label: "Can't attack alone" },
+          { goadedBy: "p2", label: "Goaded" },
         ],
       },
       "permanent",
@@ -892,19 +892,19 @@ describe("701.38 et 508.1d : provocation et exigences d'attaque (PLAN-H, lot H3)
     expect(() => declare(s, forcedAttacks(s, "p1"))).not.toThrow();
   });
 
-  it("une règle de même forme qui n'est pas une provocation garde ses exigences à côté d'une provocation du même joueur", () => {
-    // Maximum Carnage (p2) puis une provocation de p2 : quatre exigences ; une seconde provocation de p2 n'ajoute rien.
+  it("a rule of the same form that isn't a goad keeps its requirements next to a goad from the same player", () => {
+    // Maximum Carnage (p2) then a goad from p2: four requirements; a second goad from p2 adds nothing.
     const { s, bear } = goaded(3, ["p2"], {
       p1: { battlefield: ["Savannah Lions"] },
       p3: { battlefield: [{ name: "Mirri, Weatherlight Duelist", tapped: true }] },
     });
     addEffect(s, [bear], { addBlockRules: [{ goadedBy: "p2", label: "Maximum Carnage" }] }, "permanent");
     expect(attackRequirements(s, bear)).toHaveLength(4);
-    addEffect(s, [bear], { addBlockRules: [{ goadedBy: "p2", label: "Provoquée" }] }, "permanent");
+    addEffect(s, [bear], { addBlockRules: [{ goadedBy: "p2", label: "Goaded" }] }, "permanent");
     expect(attackRequirements(s, bear)).toHaveLength(4);
-    // Les Lions, provoqués par p2 (deux exigences), cèdent la seule place sur p3 (Mirri) à l'Ourson (quatre).
+    // The Lions, goaded by p2 (two requirements), give up the only slot on p3 (Mirri) to the Cub (four).
     const lions = idOf(s, "p1", "battlefield", "Savannah Lions");
-    addEffect(s, [lions], { addBlockRules: [{ goadedBy: "p2", label: "Provoquée" }] }, "permanent");
+    addEffect(s, [lions], { addBlockRules: [{ goadedBy: "p2", label: "Goaded" }] }, "permanent");
     expect(() =>
       declare(s, [
         { id: lions, defender: "p3" },
@@ -920,12 +920,12 @@ describe("701.38 et 508.1d : provocation et exigences d'attaque (PLAN-H, lot H3)
   });
 });
 
-describe("508.4 et 702.49c : joueur attaqué par un permanent mis sur le champ de bataille attaquant (PLAN-H, lot H5)", () => {
-  /** Déclare les attaques de p1, puis aucun blocage. */
+describe("508.4 and 702.49c: player attacked by a permanent put onto the battlefield attacking (PLAN-H, lot H5)", () => {
+  /** Declares p1's attacks, then no blocks. */
   const attackThenNoBlocks = (s: GameState, attacks: { id: string; defender: string }[]): GameState => {
     let cur = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
     cur = act(cur, "p1", { type: "declareAttackers", attackers: attacks });
-    // Jusqu'à la priorité du joueur actif dans l'étape de déclaration des bloqueurs.
+    // Until the active player's priority in the declare blockers step.
     for (let i = 0; i < 20 && !(cur.turn.step === "declareBlockers" && cur.pending?.kind === "priority"); i++) {
       const p = cur.pending;
       if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
@@ -944,7 +944,7 @@ describe("508.4 et 702.49c : joueur attaqué par un permanent mis sur le champ d
   };
   const defenderOf = (s: GameState, id: string) => s.combat?.attackers.find((a) => a.id === id)?.defender;
 
-  it("702.49c : le ninja attaque ce qu'attaquait la créature renvoyée, pas ce qu'attaque votre première créature", () => {
+  it("702.49c: the ninja attacks what the returned creature was attacking, not what your first creature attacks", () => {
     let s = scenario({
       players: 3,
       p1: { battlefield: ["Bear Cub", "Llanowar Elves", "Island", "Swamp", "Swamp"], hand: ["Kaito, Bane of Nightmares"] },
@@ -959,7 +959,7 @@ describe("508.4 et 702.49c : joueur attaqué par un permanent mis sur le champ d
     expect(defenderOf(s, idOf(s, "p1", "battlefield", "Kaito, Bane of Nightmares"))).toBe("p3");
   });
 
-  it("702.49c : la créature renvoyée attaquait un planeswalker, le ninja l'attaque aussi", () => {
+  it("702.49c: the returned creature was attacking a planeswalker, the ninja attacks it too", () => {
     let s = scenario({
       p1: { battlefield: ["Bear Cub", "Llanowar Elves", "Island", "Swamp", "Swamp"], hand: ["Kaito, Bane of Nightmares"] },
       p2: { battlefield: ["Ajani Resolute"] },
@@ -974,7 +974,7 @@ describe("508.4 et 702.49c : joueur attaqué par un permanent mis sur le champ d
     expect(defenderOf(s, idOf(s, "p1", "battlefield", "Kaito, Bane of Nightmares"))).toBe(walker);
   });
 
-  it("508.4 : son contrôleur choisit ce qu'attaque le permanent mis sur le champ de bataille attaquant ; il n'a pas « attaqué »", () => {
+  it("508.4: its controller chooses what the permanent put onto the battlefield attacking attacks; it hasn't 'attacked'", () => {
     let s = scenario({
       players: 3,
       p1: { battlefield: ["Kinscaer Sentry", "Bear Cub"], hand: ["Kinscaer Sentry", "Savannah Lions"] },
@@ -1006,16 +1006,16 @@ describe("508.4 et 702.49c : joueur attaqué par un permanent mis sur le champ d
       } else if (p?.kind === "choice") s = act(s, p.player, { type: "choose", values: p.request.suggested });
       else break;
     }
-    // Ses adversaires et leurs planeswalkers ; le nouveau Kinscaer Sentry attaque le planeswalker choisi.
+    // Its opponents and their planeswalkers; the new Kinscaer Sentry attacks the chosen planeswalker.
     expect(asked).toEqual([["p2", "p3", walker].sort()]);
     const entered = idsOf(s, "p1", "battlefield", "Kinscaer Sentry").find((id) => id !== sentry) as string;
     expect(defenderOf(s, entered)).toBe(walker);
-    // Mis sur le champ de bataille attaquant, il n'a pas attaqué : sa capacité « quand elle attaque » ne se déclenche pas.
+    // Put onto the battlefield attacking, it didn't attack: its "when it attacks" ability doesn't trigger.
     expect(handPrompts).toBe(1);
     expect(idsOf(s, "p1", "hand", "Savannah Lions")).toHaveLength(1);
   });
 
-  it("508.4 : une seule option (duel sans planeswalker), aucune question", () => {
+  it("508.4: a single option (duel without a planeswalker), no question", () => {
     let s = scenario({ p1: { battlefield: ["Kinscaer Sentry", "Bear Cub"], hand: ["Kinscaer Sentry"] } });
     const sentry = idOf(s, "p1", "battlefield", "Kinscaer Sentry");
     s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
@@ -1042,8 +1042,8 @@ describe("508.4 et 702.49c : joueur attaqué par un permanent mis sur le champ d
   });
 });
 
-describe("« Gardez les permanents choisis » : les choix dans l'ordre APNAP, puis le sort en même temps (PLAN-H H8a)", () => {
-  /** Résout la pile en répondant aux choix par `answer`. */
+describe("'Keep the chosen permanents': choices in APNAP order, then the fate at the same time (PLAN-H H8a)", () => {
+  /** Resolves the stack, answering choices with `answer`. */
   const resolveAll = (s: GameState, answer: (req: ChoiceRequest, player: string, cur: GameState) => ChoiceValue[]) => {
     let cur = s;
     for (let i = 0; i < 100; i++) {
@@ -1057,10 +1057,10 @@ describe("« Gardez les permanents choisis » : les choix dans l'ordre APNAP, pu
   };
   const nameIs = (s: GameState, id: unknown) => s.defs[s.objects[String(id)]?.defId ?? ""]?.name;
 
-  it("Liliana, Dreadhorde General −9 à trois : chaque adversaire choisit à son tour ; un permanent compte pour chacun de ses types", () => {
-    // Décisions officielles : en commençant par l'adversaire suivant dans l'ordre du tour, chaque adversaire choisit en
-    // connaissant les choix précédents, puis tous sacrifient en même temps ; un artefact-créature peut être choisi à la
-    // fois comme artefact et comme créature.
+  it("Liliana, Dreadhorde General -9 with three players: each opponent chooses in turn; a permanent counts for each of its types", () => {
+    // Official rulings: starting with the next opponent in turn order, each opponent chooses
+    // knowing the previous choices, then everyone sacrifices at the same time; an artifact creature can be chosen both
+    // as an artifact and as a creature.
     let s = scenario({
       players: 3,
       p1: { battlefield: [{ name: "Liliana, Dreadhorde General", counters: { loyalty: 9 } }] },
@@ -1069,13 +1069,13 @@ describe("« Gardez les permanents choisis » : les choix dans l'ordre APNAP, pu
     });
     const lili = idOf(s, "p1", "battlefield", "Liliana, Dreadhorde General");
     const a = legalActions(s, "p1").find((x) => x.type === "activate" && x.source === lili && x.label?.includes("each type"));
-    if (a?.type !== "activate") throw new Error("capacité −9 indisponible");
+    if (a?.type !== "activate") throw new Error("-9 ability unavailable");
     s = act(s, "p1", { type: "activate", source: lili, ability: a.ability });
     const field = s.battlefield.length;
     const asked: string[] = [];
     s = resolveAll(s, (req, player, cur) => {
       if (req.type !== "pick") return req.suggested;
-      // Rien n'est sacrifié avant la fin des choix.
+      // Nothing is sacrificed before the choices end.
       expect(cur.battlefield.length).toBe(field);
       asked.push(`${player}:${cur.objects[String(req.options[0])]?.controller}`);
       const keep = req.options.find((id) => ["Adaptive Automaton", "Island"].includes(nameIs(cur, id) ?? ""));
@@ -1092,11 +1092,11 @@ describe("« Gardez les permanents choisis » : les choix dans l'ordre APNAP, pu
   });
 });
 
-describe("PLAN-H H8b : « ne peut pas » face aux remplacements et aux préventions", () => {
-  /** « Chaque fois que vous gagnez des points de vie, piochez une carte. » */
-  const GAIN_DRAW = ench("Gain d'essai", triggered(when.gainLife, [fx.draw(1)], { label: "Piochez une carte" }));
+describe("PLAN-H H8b: 'can't' versus replacements and preventions", () => {
+  /** "Whenever you gain life, draw a card." */
+  const GAIN_DRAW = ench("Test Gain", triggered(when.gainLife, [fx.draw(1)], { label: "Draw a card" }));
 
-  it("Grievous Wound (119.7, 101.2) : le joueur enchanté ne gagne pas de PV, même avec Angel of Vitality, et rien ne se déclenche ; les autres joueurs, si", () => {
+  it("Grievous Wound (119.7, 101.2): the enchanted player doesn't gain life, even with Angel of Vitality, and nothing triggers; other players do", () => {
     const s = scenario({
       players: 3,
       p2: { battlefield: ["Angel of Vitality", GAIN_DRAW] },
@@ -1112,11 +1112,11 @@ describe("PLAN-H H8b : « ne peut pas » face aux remplacements et aux préventi
     expect(s.triggers).toHaveLength(0);
   });
 
-  /** Prévient toutes les blessures qui seraient infligées aux créatures de son contrôleur (combat ou non). */
+  /** Prevents all damage that would be dealt to its controller's creatures (combat or not). */
   const SHIELD = ench("Bouclier d'essai", { kind: "prevention", filter: { types: ["Creature"], controller: "you" } });
   const src = { defId: "test", controller: "p2", keywords: [] };
 
-  it("Frenzied Baloth : les blessures de combat ne peuvent pas être prévenues (ni l'Immunité de Diamond Weapon, ni une prévention) ; les autres, si", () => {
+  it("Frenzied Baloth: combat damage can't be prevented (neither Diamond Weapon's Immunity nor a prevention); other damage can", () => {
     const s = scenario({ p1: { battlefield: ["Diamond Weapon", "Bear Cub", SHIELD] }, p2: { battlefield: ["Frenzied Baloth"] } });
     const dw = idOf(s, "p1", "battlefield", "Diamond Weapon");
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -1126,14 +1126,14 @@ describe("PLAN-H H8b : « ne peut pas » face aux remplacements et aux préventi
     expect([s.objects[dw]?.damage, s.objects[cub]?.damage]).toEqual([3, 1]);
   });
 
-  it("Sunspine Lynx : aucune blessure ne peut être prévenue, de combat ou non", () => {
+  it("Sunspine Lynx: no damage can be prevented, combat or not", () => {
     const s = scenario({ p1: { battlefield: ["Bear Cub", SHIELD] }, p2: { battlefield: ["Sunspine Lynx"] } });
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
     dealDamage(s, src, cub, 1, false);
     expect(s.objects[cub]?.damage).toBe(1);
   });
 
-  it("perdre la partie (104.3) : Phyrexian Unlife n'empêche que la défaite à 0 PV ; Angel's Grace empêche aussi celle par le poison", () => {
+  it("losing the game (104.3): Phyrexian Unlife only prevents the loss at 0 life; Angel's Grace also prevents the poison loss", () => {
     const poisoned = (life: number, effect?: boolean) => {
       const s = scenario({ p1: { life, battlefield: ["Phyrexian Unlife"] } });
       if (effect) addPlayerEffect(s, "p1", { cantLose: true }, s.turn.number);
@@ -1149,8 +1149,8 @@ describe("PLAN-H H8b : « ne peut pas » face aux remplacements et aux préventi
   });
 });
 
-describe("PLAN-H H9 : « en arrivant » (614.1c, 614.12) et copies (707.9, 707.10)", () => {
-  /** Joue jusqu'à une pile vide : les choix de cartes reçoivent tour à tour les réponses données, les autres la suggestion. */
+describe("PLAN-H H9: 'as it enters' (614.1c, 614.12) and copies (707.9, 707.10)", () => {
+  /** Plays until the stack is empty: card choices receive the given answers in turn, the others the suggestion. */
   const play = (s: GameState, picks: string[][] = [], typed: string[] = []) => {
     const asked: ChoiceRequest[] = [];
     let cur = s;
@@ -1172,14 +1172,14 @@ describe("PLAN-H H9 : « en arrivant » (614.1c, 614.12) et copies (707.9, 707.1
   };
   const castCard = (s: GameState, name: string) => act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", name) });
 
-  it("707.10 : la copie d'un sort de Visage Bandit (Double Down) devient un jeton qui choisit lui-même ce qu'il copie", () => {
+  it("707.10: the copy of a Bandit Face spell (Double Down) becomes a token that chooses what it copies itself", () => {
     const s0 = scenario({
       p1: { battlefield: ["Double Down", "Serra Angel", "Bear Cub", ...lands("Island", 4)], hand: ["Visage Bandit"] },
     });
     const angel = idOf(s0, "p1", "battlefield", "Serra Angel");
     const cub = idOf(s0, "p1", "battlefield", "Bear Cub");
     const { s, asked } = play(castCard(s0, "Visage Bandit"), [[angel], [cub]]);
-    // Deux questions : le jeton (la copie se résout d'abord), puis la carte.
+    // Two questions: the token (the copy resolves first), then the card.
     expect(asked.filter((r) => r.intent === "pickCards")).toHaveLength(2);
     const token = s.battlefield.find((id) => s.objects[id]?.isToken) as string;
     expect(chars(s, token).name).toBe("Serra Angel");
@@ -1190,7 +1190,7 @@ describe("PLAN-H H9 : « en arrivant » (614.1c, 614.12) et copies (707.9, 707.1
     expect(bandit && chars(s, bandit).name).toBe("Bear Cub");
   });
 
-  it("707.9 et 614.12 : Phantasmal Image qui copie Adaptive Automaton fait le choix « en arrivant » du modèle", () => {
+  it("707.9 and 614.12: Phantasmal Image copying Adaptive Automaton makes the model's 'as it enters' choice", () => {
     const s0 = scenario({
       p1: { battlefield: lands("Island", 2), hand: ["Phantasmal Image"] },
       p2: { battlefield: ["Adaptive Automaton"] },
@@ -1204,7 +1204,7 @@ describe("PLAN-H H9 : « en arrivant » (614.1c, 614.12) et copies (707.9, 707.1
     expect(chars(s, image).subtypes).toEqual(expect.arrayContaining(["Construct", "Goblin", "Illusion"]));
   });
 
-  it("708.2 : un permanent mis face cachée (cape) n'a aucun effet « en arrivant » : ni question, ni choix", () => {
+  it("708.2: a permanent put face down (cloak) has no 'as it enters' effect: no question, no choice", () => {
     const s = scenario({ p1: { hand: ["Adaptive Automaton"] } });
     const card = idOf(s, "p1", "hand", "Adaptive Automaton");
     const r = { ...resolution("p1"), targets: { t: [card] } };
@@ -1214,7 +1214,7 @@ describe("PLAN-H H9 : « en arrivant » (614.1c, 614.12) et copies (707.9, 707.1
     expect(s.objects[id]?.chosen).toBeUndefined();
   });
 
-  it("un permanent mis sur le champ de bataille sous le contrôle d'un autre joueur : celui-ci choisit, parmi ses permanents", () => {
+  it("a permanent put onto the battlefield under another player's control: that player chooses, among their permanents", () => {
     const s = scenario({
       p1: { battlefield: ["Serra Angel"], graveyard: ["Waxen Shapethief"] },
       p2: { battlefield: ["Bear Cub"] },
@@ -1232,7 +1232,7 @@ describe("PLAN-H H9 : « en arrivant » (614.1c, 614.12) et copies (707.9, 707.1
     expect(chars(s, back).name).toBe("Bear Cub");
   });
 
-  it("un jeton copie d'un permanent à choix (Electroduplicate sur Adaptive Automaton) : le choix par défaut, sans question", () => {
+  it("a token copy of a permanent with a choice (Electroduplicate on Adaptive Automaton): the default choice, no question", () => {
     const s0 = scenario({
       p1: { battlefield: ["Adaptive Automaton", ...lands("Mountain", 3)], hand: ["Electroduplicate"] },
     });
@@ -1244,7 +1244,7 @@ describe("PLAN-H H9 : « en arrivant » (614.1c, 614.12) et copies (707.9, 707.1
     expect(s.objects[token]?.chosen?.creatureType).toBeDefined();
   });
 
-  it("702.136 : une créature avec l'émeute remise sur le champ de bataille par un effet (Zombify) demande le marqueur ou la célérité", () => {
+  it("702.136: a creature with riot put back onto the battlefield by an effect (Zombify) asks for the counter or haste", () => {
     const s0 = scenario({ p1: { battlefield: lands("Swamp", 4), hand: ["Zombify"], graveyard: ["Spider-Punk"] } });
     const punk = idOf(s0, "p1", "graveyard", "Spider-Punk");
     const cast = act(s0, "p1", { type: "cast", card: idOf(s0, "p1", "hand", "Zombify"), targets: { t: [punk] } });
@@ -1254,7 +1254,7 @@ describe("PLAN-H H9 : « en arrivant » (614.1c, 614.12) et copies (707.9, 707.1
     expect(chars(s, idOf(s, "p1", "battlefield", "Spider-Punk")).keywords).toContain("haste");
   });
 
-  it("Waxen Shapethief qui copie Sorcerous Spyglass nomme une carte ; les capacités activées des sources de ce nom sont interdites", () => {
+  it("Waxen Shapethief copying Sorcerous Spyglass names a card; activated abilities of sources with that name are forbidden", () => {
     const s0 = scenario({
       p1: { battlefield: ["Sorcerous Spyglass", ...lands("Island", 6)], hand: ["Waxen Shapethief", "Waxen Shapethief"] },
     });
@@ -1267,13 +1267,13 @@ describe("PLAN-H H9 : « en arrivant » (614.1c, 614.12) et copies (707.9, 707.1
     const wax = s.battlefield.find((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === "Waxen Shapethief") as string;
     expect(chars(s, wax).name).toBe("Sorcerous Spyglass");
     expect(s.objects[wax]?.chosen?.cardName).toBe("Waxen Shapethief");
-    // Le recyclage de l'autre Waxen Shapethief (une capacité activée depuis la main) ne peut plus être activé.
+    // The other Waxen Shapethief's cycling (an ability activated from hand) can no longer be activated.
     expect(cycling(s)).toBe(false);
   });
 });
 
-describe("201.3, 709.4, 715.4, 712.8a : noms des cartes à plusieurs faces (audit du 07/10, D1)", () => {
-  /** Ancient Vendetta : p1 nomme `name` ; cartes de p2 (bibliothèque) exilées. */
+describe("201.3, 709.4, 715.4, 712.8a: names of multi-faced cards (audit of 2026-10-07, D1)", () => {
+  /** Ancient Vendetta: p1 names `name`; p2's cards (library) exiled. */
   const vendetta = (name: string, library: string[]) => {
     let s = scenario({ p1: { battlefield: lands("Swamp", 4), hand: ["Ancient Vendetta"] }, p2: { library } });
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Ancient Vendetta"), targets: { t: ["p2"] } });
@@ -1287,22 +1287,22 @@ describe("201.3, 709.4, 715.4, 712.8a : noms des cartes à plusieurs faces (audi
   const MODAL = "Sink into Stupor // Soporific Springs";
   const LIB = [ROOM, ADVENTURER, MODAL, "Opt", "Opt"];
 
-  it("709.4 : une carte scindée (Salle) hors du champ de bataille a ses deux noms", () => {
+  it("709.4: a split card (Room) outside the battlefield has both its names", () => {
     expect(vendetta("Dazzling Theater", LIB)).toEqual([ROOM]);
     expect(vendetta("Prop Room", LIB)).toEqual([ROOM]);
   });
 
-  it("715.4 : hors de la pile, un aventurier n'a que son nom principal", () => {
+  it("715.4: outside the stack, an adventurer has only its main name", () => {
     expect(vendetta("Beanstalk Wurm", LIB)).toEqual([ADVENTURER]);
     expect(vendetta("Plant Beans", LIB)).toEqual([]);
   });
 
-  it("712.8a : hors du champ de bataille et de la pile, une carte modale à deux faces a le nom de son recto", () => {
+  it("712.8a: outside the battlefield and the stack, a modal double-faced card has its front face's name", () => {
     expect(vendetta("Sink into Stupor", LIB)).toEqual([MODAL]);
     expect(vendetta("Soporific Springs", LIB)).toEqual([]);
   });
 
-  it("201.3 : « A // B » n'est pas un nom de carte (catalogue et noms de la partie) ; chaque face en est un", () => {
+  it("201.3: 'A // B' is not a card name (catalog and game names); each face is one", () => {
     const s = scenario({ p1: { hand: [ROOM, ADVENTURER, MODAL] } });
     const allowed = nameValidator(s, "card");
     for (const full of [ROOM, ADVENTURER, MODAL]) expect(allowed(full)).toBe(false);
@@ -1314,7 +1314,7 @@ describe("201.3, 709.4, 715.4, 712.8a : noms des cartes à plusieurs faces (audi
     expect(catalog.lands).toContain("Soporific Springs");
   });
 
-  it("712.8a : sur le champ de bataille, le nom de la face visible ; une Salle, ceux de ses portes déverrouillées", () => {
+  it("712.8a: on the battlefield, the name of the visible face; a Room, those of its unlocked doors", () => {
     const s = scenario({ p1: { battlefield: [MODAL, ADVENTURER, ROOM] } });
     const room = idOf(s, "p1", "battlefield", ROOM);
     (s.objects[room] as { unlocked?: number[] }).unlocked = [1];
@@ -1328,11 +1328,11 @@ describe("201.3, 709.4, 715.4, 712.8a : noms des cartes à plusieurs faces (audi
   });
 });
 
-describe("701.38 : la provocation n'est pas une capacité (audit du 07/10, D2)", () => {
-  it("une créature provoquée qui perd ensuite toutes ses capacités reste provoquée ; ce qu'elle avait gagné est perdu", () => {
+describe("701.38: goad is not an ability (audit of 2026-10-07, D2)", () => {
+  it("a goaded creature that then loses all abilities stays goaded; what it had gained is lost", () => {
     let s = scenario({ players: 3, p1: { battlefield: ["Bear Cub"] } });
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-    // Provoquée par p2 (effet de résolution, fx.goad), avec le vol pour la même durée ; puis « perd toutes ses capacités ».
+    // Goaded by p2 (resolution effect, fx.goad), with flying for the same duration; then "loses all abilities".
     runEffect(
       s,
       { ...resolution("p2"), targets: { t: [bear] } } as never,
@@ -1348,8 +1348,8 @@ describe("701.38 : la provocation n'est pas une capacité (audit du 07/10, D2)",
   });
 });
 
-describe("702.116a et 508.5 : myriade, joueur défenseur figé au déclenchement (audit du 07/10, D4)", () => {
-  /** Duel : Goldlust Triad attaque `at` ; `meanwhile` agit avant la résolution de la myriade. */
+describe("702.116a and 508.5: myriad, defending player locked in at trigger time (audit of 2026-10-07, D4)", () => {
+  /** Duel: Goldlust Triad attacks `at`; `meanwhile` acts before the myriad resolves. */
   const myriad = (at: "p2" | "walker", meanwhile: (s: GameState, triad: string, walker: string) => void) => {
     let s = scenario({ p1: { battlefield: ["Goldlust Triad"] }, p2: { battlefield: ["Ajani Resolute"] } });
     const triad = idOf(s, "p1", "battlefield", "Goldlust Triad");
@@ -1367,19 +1367,19 @@ describe("702.116a et 508.5 : myriade, joueur défenseur figé au déclenchement
     return { asked, copies };
   };
 
-  it("la créature meurt avant la résolution : en duel, aucun adversaire autre que le joueur défenseur, aucune copie", () => {
+  it("the creature dies before resolution: in a duel, no opponent other than the defending player, no copy", () => {
     expect(myriad("p2", (s, triad) => destroy(s, triad))).toEqual({ asked: 0, copies: [] });
   });
 
-  it("le planeswalker attaqué est retiré avant la résolution : son contrôleur reste le joueur défenseur, aucune copie", () => {
+  it("the attacked planeswalker is removed before resolution: its controller stays the defending player, no copy", () => {
     expect(myriad("walker", (s, _t, walker) => void moveObject(s, walker, "graveyard"))).toEqual({ asked: 0, copies: [] });
   });
 });
 
-describe("603.2 et 603.2e : Elesh Norn, Mother of Machines (deck Nissa)", () => {
-  it("l'arrivée d'un terrain adverse fait se déclencher deux fois une capacité de votre permanent ; celle de l'adversaire, jamais", () => {
-    // Décision du 2023-02-04 : seul compte le contrôleur du permanent dont la capacité se déclenche, pas celui du
-    // permanent qui arrive.
+describe("603.2 and 603.2e: Elesh Norn, Mother of Machines (deck Nissa)", () => {
+  it("an opposing land entering triggers an ability of your permanent twice; the opponent's, never", () => {
+    // Ruling of 2023-02-04: only the controller of the permanent whose ability triggers matters, not that of the
+    // permanent that enters.
     let s = scenario({
       active: "p2",
       p1: { battlefield: ["Elesh Norn, Mother of Machines", "Polluted Bonds"] },
@@ -1388,7 +1388,7 @@ describe("603.2 et 603.2e : Elesh Norn, Mother of Machines (deck Nissa)", () => 
     s = act(s, "p2", { type: "playLand", card: idOf(s, "p2", "hand", "Plains") });
     s = passAccepting(s, (x) => x.stack.length === 0 && x.triggers.length === 0 && x.pending?.kind === "priority");
     expect([s.players.p1?.life, s.players.p2?.life]).toEqual([24, 16]);
-    // Un terrain de p1 : la Polluted Bonds de p2 (un permanent adverse pour Elesh Norn) ne se déclenche pas.
+    // A land of p1: p2's Polluted Bonds (an opposing permanent for Elesh Norn) doesn't trigger.
     let t = scenario({
       p1: { battlefield: ["Elesh Norn, Mother of Machines"], hand: ["Plains"] },
       p2: { battlefield: ["Polluted Bonds"] },
@@ -1399,16 +1399,16 @@ describe("603.2 et 603.2e : Elesh Norn, Mother of Machines (deck Nissa)", () => 
   });
 });
 
-describe("603.2d et 707.10 : Echoes of Eternity (deck The Vision)", () => {
-  it("la capacité « quand vous lancez ce sort » d'un sort incolore se déclenche une fois de plus ; le sort est copié", () => {
-    // Décision (Modern Horizons 3) : Echoes of Eternity touche aussi les capacités déclenchées des sorts incolores que vous
-    // contrôlez, comme « quand vous lancez ce sort » ; la copie d'un sort de permanent devient un jeton.
+describe("603.2d and 707.10: Echoes of Eternity (deck The Vision)", () => {
+  it("the 'when you cast this spell' ability of a colorless spell triggers once more; the spell is copied", () => {
+    // Ruling (Modern Horizons 3): Echoes of Eternity also affects triggered abilities of colorless spells you
+    // control, like "when you cast this spell"; the copy of a permanent spell becomes a token.
     let s = scenario({
       p1: { battlefield: ["Echoes of Eternity", ...lands("Wastes", 7)], hand: ["Ugin, Eye of the Storms"] },
       p2: { battlefield: ["Bear Cub", "Shivan Dragon", "Sol Ring"] },
     });
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Ugin, Eye of the Storms") });
-    // Chaque exil vise un permanent coloré différent : Bear Cub, puis Shivan Dragon.
+    // Each exile targets a different colored permanent: Bear Cub, then Shivan Dragon.
     const wanted = [idOf(s, "p2", "battlefield", "Bear Cub"), idOf(s, "p2", "battlefield", "Shivan Dragon")];
     for (let i = 0; i < 200 && !(s.stack.length === 0 && s.triggers.length === 0 && s.pending?.kind === "priority"); i++) {
       const p = s.pending;
@@ -1421,16 +1421,16 @@ describe("603.2d et 707.10 : Echoes of Eternity (deck The Vision)", () => {
         s = act(s, p.player, { type: "choose", values: pick ? [pick] : req.suggested });
       } else break;
     }
-    // Deux exils (déclenchement doublé) : les deux permanents colorés ; Sol Ring (incolore) reste.
+    // Two exiles (doubled trigger): both colored permanents; Sol Ring (colorless) stays.
     expect(idsOf(s, "p2", "battlefield", "Sol Ring")).toHaveLength(1);
     expect(s.exile.filter((id) => s.objects[id]?.owner === "p2")).toHaveLength(2);
-    // Le sort et sa copie (un jeton) : la règle des légendes n'en laisse qu'un.
+    // The spell and its copy (a token): the legend rule leaves only one.
     expect(s.battlefield.filter((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === "Ugin, Eye of the Storms")).toHaveLength(1);
   });
 });
 
-describe("500.7 : Gerrard's Hourglass Pendant (deck The Vision)", () => {
-  it("un joueur qui devrait commencer un tour supplémentaire le passe, quel que soit le contrôleur du Pendentif", () => {
+describe("500.7: Gerrard's Hourglass Pendant (deck The Vision)", () => {
+  it("a player who would begin an extra turn skips it, whoever controls the Pendant", () => {
     let s = scenario({
       p1: { hand: ["Temporal Manipulation"], battlefield: lands("Island", 5) },
       p2: { battlefield: ["Gerrard's Hourglass Pendant"] },
@@ -1438,12 +1438,12 @@ describe("500.7 : Gerrard's Hourglass Pendant (deck The Vision)", () => {
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Temporal Manipulation") });
     s = passAccepting(s, (x) => x.stack.length === 0 && x.pending?.kind === "priority");
     s = advanceUntil(s, (x) => x.turn.number > 3 && x.turn.step === "main1");
-    // Le tour supplémentaire de p1 est passé : le tour suivant est celui de p2.
+    // p1's extra turn is skipped: the next turn is p2's.
     expect([s.turn.number, s.turn.active]).toEqual([4, "p2"]);
   });
 });
 
-describe("Deck Dark Leo & Shredder : rulings", () => {
+describe("Deck Dark Leo & Shredder: rulings", () => {
   const throughCombat = (s0: GameState): GameState => {
     let s = s0;
     for (let i = 0; i < 300 && s.turn.step !== "main2"; i++) {
@@ -1456,7 +1456,7 @@ describe("Deck Dark Leo & Shredder : rulings", () => {
     return s;
   };
 
-  it("509.1h et 702.49c : un Ninja mis sur le champ de bataille attaquant par le ninjutsu est non bloqué (Throatseeker)", () => {
+  it("509.1h and 702.49c: a Ninja put onto the battlefield attacking by ninjutsu is unblocked (Throatseeker)", () => {
     let s = scenario({ p1: { battlefield: ["Throatseeker", "Bear Cub", ...lands("Swamp", 4)], hand: ["Okiba-Gang Shinobi"] } });
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
@@ -1478,7 +1478,7 @@ describe("Deck Dark Leo & Shredder : rulings", () => {
     expect(s.players.p1?.life).toBe(23);
   });
 
-  it("Wound Reflection : les PV perdus ce tour-ci, sans compter ceux gagnés", () => {
+  it("Wound Reflection: life lost this turn, not counting life gained", () => {
     let s = scenario({ p1: { battlefield: ["Wound Reflection", "Bear Cub"] } });
     s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
     s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: idOf(s, "p1", "battlefield", "Bear Cub"), defender: "p2" }] });
@@ -1489,7 +1489,7 @@ describe("Deck Dark Leo & Shredder : rulings", () => {
     expect(s.players.p2?.life).toBe(21);
   });
 
-  it("Akroma's Will : le commandant est vérifié au lancement ; parti ensuite, les deux modes s'appliquent", () => {
+  it("Akroma's Will: the commander is checked on cast; gone afterwards, both modes apply", () => {
     let s = scenario({
       p1: { battlefield: ["Bear Cub", "Savannah Lions", ...lands("Plains", 4)], hand: ["Akroma's Will"] },
       p2: { battlefield: ["Mountain"], hand: ["Shock"] },
@@ -1505,7 +1505,7 @@ describe("Deck Dark Leo & Shredder : rulings", () => {
       .find((m) => m.label?.startsWith("Both"));
     expect(both).toBeDefined();
     s = act(s, "p1", { type: "cast", card: will, mode: both?.index } as never);
-    // En réponse, le commandant meurt.
+    // In response, the commander dies.
     s = act(s, "p1", { type: "pass" });
     s = act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Shock"), targets: { t: [lions] } });
     s = passAccepting(s, (x) => x.stack.length === 0 && x.pending?.kind === "priority");
@@ -1514,7 +1514,7 @@ describe("Deck Dark Leo & Shredder : rulings", () => {
     expect(chars(s, bear).keywords).toEqual(expect.arrayContaining(["flying", "doubleStrike", "lifelink", "indestructible"]));
   });
 
-  it("Archetype of Courage : la double initiative d'une créature adverse n'est pas touchée", () => {
+  it("Archetype of Courage: an opposing creature's double strike is not affected", () => {
     const s = scenario({
       p1: { battlefield: ["Archetype of Courage"] },
       p2: { battlefield: ["Leonardo, Worldly Warrior"] },

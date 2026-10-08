@@ -8,19 +8,19 @@ import type { GameState } from "../src/types";
 const names = (s: GameState, ids: string[]) => ids.map((id) => s.defs[s.objects[id]?.defId ?? ""]?.name);
 
 describe("createScenario", () => {
-  it("garde l'ordre de la bibliothèque, sans mulligan, et commence au tour indiqué", () => {
+  it("keeps the library order, no mulligan, and starts at the given turn", () => {
     const { state: s, events } = createScenario({
       seed: 1,
       active: "p1",
       players: [
         {
           id: "p1",
-          name: "Vous",
+          name: "You",
           library: [card("Plains"), card("Forest"), card("Mountain")],
           hand: [card("Savannah Lions")],
           battlefield: [{ def: card("Llanowar Elves") }, { def: card("Forest"), tapped: true }],
         },
-        { id: "p2", name: "IA", life: 7, library: [card("Island")], hand: [] },
+        { id: "p2", name: "AI", life: 7, library: [card("Island")], hand: [] },
       ],
     });
     expect(s.mulliganQueue).toEqual([]);
@@ -32,12 +32,12 @@ describe("createScenario", () => {
     expect(s.players.p2?.life).toBe(7);
     const elves = s.battlefield.find((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === "Llanowar Elves") ?? "";
     expect(isSummoningSick(s, elves)).toBe(false);
-    // Dégagement : le terrain engagé du joueur actif s'est dégagé.
+    // Untap: the active player's tapped land untapped.
     expect(s.battlefield.every((id) => !s.objects[id]?.tapped)).toBe(true);
     expect(events.some((e) => e.type === "turnStart")).toBe(true);
   });
 
-  it("pioche au début d'un tour après le premier ; mal d'invocation si demandé", () => {
+  it("draws at the start of a turn after the first; summoning sickness if requested", () => {
     const { state } = createScenario({
       seed: 1,
       active: "p1",
@@ -45,12 +45,12 @@ describe("createScenario", () => {
       players: [
         {
           id: "p1",
-          name: "Vous",
+          name: "You",
           library: [card("Plains"), card("Forest")],
           hand: [],
           battlefield: [{ def: card("Savannah Lions"), sick: true }, { def: card("Llanowar Elves") }],
         },
-        { id: "p2", name: "IA", library: [card("Island")], hand: [] },
+        { id: "p2", name: "AI", library: [card("Island")], hand: [] },
       ],
     });
     let s = state;
@@ -64,15 +64,15 @@ describe("createScenario", () => {
     expect(isSummoningSick(s, elves ?? "")).toBe(false);
   });
 
-  it("peut commencer par le mulligan avec la main prévue", () => {
+  it("can start with the mulligan using the planned hand", () => {
     const hand = ["Plains", "Plains", "Forest", "Savannah Lions", "Llanowar Elves", "Giant Growth", "Forest"].map((n) => card(n));
     const { state: s } = createScenario({
       seed: 1,
       active: "p1",
       mulligan: true,
       players: [
-        { id: "p1", name: "Vous", library: [card("Plains")], hand },
-        { id: "p2", name: "IA", library: [card("Island")], hand: [card("Island")] },
+        { id: "p1", name: "You", library: [card("Plains")], hand },
+        { id: "p2", name: "AI", library: [card("Island")], hand: [card("Island")] },
       ],
     });
     expect(s.pending).toMatchObject({ kind: "mulligan", player: "p1" });

@@ -1,4 +1,4 @@
-/** Test de fumée : Commander (pseudo-ensemble EDH, PLAN-E), cartes des decks Commander importées par nom. */
+/** Smoke test: Commander (EDH pseudo-set, PLAN-E), Commander deck cards imported by name. */
 import { smokeTest } from "./harness";
 
 smokeTest(["EDH"]);

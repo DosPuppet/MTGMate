@@ -1,8 +1,8 @@
 /**
- * Mesures des surfaces du moteur pour le garde-fou de la dette (debt.test.ts ; docs/plans/PLAN-C.md, lot C1).
+ * Measurements of the engine surfaces for the debt guard (debt.test.ts ; PLAN-C in docs/history.md, lot C1).
  *
- * Le paquet `typescript` 7 n'expose pas l'API du compilateur : un petit analyseur suffit, les fichiers de types du moteur
- * étant réguliers (interfaces et unions d'objets à discriminant).
+ * The `typescript` 7 package does not expose the compiler API: a small parser is enough, the engine's type files
+ * being regular (interfaces and unions of objects with a discriminant).
  */
 import { readdirSync, readFileSync } from "node:fs";
 import { implementedCards } from "../src/index";
@@ -11,7 +11,7 @@ const ROOT = new URL("../../", import.meta.url);
 
 export const source = (path: string) => readFileSync(new URL(path, ROOT), "utf8");
 
-/** Le texte sans ses commentaires (les chaînes sont gardées telles quelles). */
+/** The text without its comments (strings are kept as they are). */
 export function stripComments(text: string): string {
   let out = "";
   let i = 0;
@@ -44,7 +44,7 @@ export function stripComments(text: string): string {
 const OPEN = new Set(["{", "[", "("]);
 const CLOSE = new Set(["}", "]", ")"]);
 
-/** Indice de l'accolade fermante qui répond à celle de `start`. */
+/** Index of the closing brace matching the one at `start`. */
 function matching(text: string, start: number): number {
   let depth = 0;
   for (let i = start; i < text.length; i++) {
@@ -61,10 +61,10 @@ function matching(text: string, start: number): number {
       if (depth === 0) return i;
     }
   }
-  throw new Error("accolade non fermée");
+  throw new Error("unclosed brace");
 }
 
-/** Noms des membres d'un corps d'objet de type (au premier niveau seulement). */
+/** Names of the members of an object type body (top level only). */
 function members(body: string): string[] {
   const out: string[] = [];
   let depth = 0;
@@ -116,7 +116,7 @@ function model(): string {
   return modelText;
 }
 
-/** Champs d'une interface du modèle (sans ceux hérités par `extends`). */
+/** Fields of a model interface (without those inherited through `extends`). */
 export function interfaceFields(name: string): string[] {
   const text = model();
   const m = new RegExp(`export interface ${name}\\b[^{]*\\{`).exec(text);
@@ -125,19 +125,19 @@ export function interfaceFields(name: string): string[] {
   return members(text.slice(open + 1, matching(text, open)));
 }
 
-/** Variantes d'une union d'objets à discriminant : valeur du discriminant → champs de la variante. */
+/** Variants of a union of objects with a discriminant: discriminant value → variant fields. */
 export function unionVariants(name: string, discriminant: string): Map<string, string[]> {
   const text = model();
   const m = new RegExp(`export type ${name}\\s*=`).exec(text);
   if (!m) throw new Error(`type ${name} introuvable`);
   const out = new Map<string, string[]>();
   let i = m.index + m[0].length;
-  // L'union s'arrête au premier « ; » de premier niveau.
+  // The union stops at the first top-level ";".
   for (; i < text.length; i++) {
     const c = text[i];
     if (c === ";") break;
     if (c === '"') {
-      // Membre littéral (« | "self" ») : compté comme une variante sans champ.
+      // Literal member ("| \"self\""): counted as a variant without fields.
       const end = text.indexOf('"', i + 1);
       out.set(text.slice(i + 1, end), []);
       i = end;
@@ -157,9 +157,9 @@ export function unionVariants(name: string, discriminant: string): Map<string, s
 }
 
 /**
- * Noms de champs déclarés dans tout le modèle (interfaces et variantes) : en début de ligne, et aussi après `{`, `;` ou
- * `,` (variante d'union écrite sur une ligne, objet imbriqué), sans quoi ces clés échappaient à la garde (audit du
- * 07/10/2026).
+ * Field names declared across the model (interfaces and variants): at the start of a line, and also after `{`, `;` or
+ * `,` (union variant written on one line, nested object), without which these keys escaped the guard (audit of
+ * 2026-10-07).
  */
 export function declaredFieldNames(): Set<string> {
   const text = model();
@@ -169,7 +169,7 @@ export function declaredFieldNames(): Set<string> {
   ]);
 }
 
-/** Imports d'exécution (hors `import type`) entre les fichiers de `engine/src`, puis plus grand cycle (Tarjan). */
+/** Runtime imports (excluding `import type`) between the `engine/src` files, then the largest cycle (Tarjan). */
 export function largestImportCycle(): string[] {
   const dir = new URL("engine/src/", ROOT);
   const files: string[] = [];
@@ -196,7 +196,7 @@ export function largestImportCycle(): string[] {
     const deps: string[] = [];
     for (const m of text.matchAll(/^\s*(import|export)\s+(type\s+)?([^;]*?)\s+from\s+"([^"]+)"/gm)) {
       if (m[2]) continue;
-      // `import { type A, type B }` : seulement des types.
+      // `import { type A, type B }`: only types.
       const names = /\{([\s\S]*)\}/.exec(m[3] ?? "")?.[1];
       if (names?.split(",").every((n) => !n.trim() || n.trim().startsWith("type "))) continue;
       const to = norm(f, m[4] as string);
@@ -237,7 +237,7 @@ export function largestImportCycle(): string[] {
   return best.sort();
 }
 
-/** Chaînes littérales du code de `engine/src` (commentaires exclus). */
+/** String literals in the `engine/src` code (comments excluded). */
 export function engineLiterals(): string[] {
   const dir = new URL("engine/src/", ROOT);
   const out: string[] = [];
@@ -255,9 +255,9 @@ export function engineLiterals(): string[] {
 }
 
 /**
- * Surfaces mesurées par le garde-fou de la dette (`debt.test.ts`, section `ceilings`, et `tools/debt-ceilings.ts`) :
- * interfaces du modèle (nombre de champs) et unions à discriminant (variantes, et champs de toutes les variantes).
- * PLAN-H H0 : dix structures ajoutées, qui grandissaient sans être suivies ; H10 : `FilterCompare`.
+ * Surfaces measured by the debt guard (`debt.test.ts`, `ceilings` section, and `tools/debt-ceilings.ts`):
+ * model interfaces (number of fields) and unions with a discriminant (variants, and fields of all variants).
+ * PLAN-H H0: ten structures added, which were growing untracked; H10: `FilterCompare`.
  */
 export const INTERFACE_SURFACES = [
   "CardDef",
@@ -291,7 +291,7 @@ export const UNION_SURFACES = [
   ["Ref", "kind"],
 ] as const;
 
-/** Taille de chaque surface du modèle : champs d'une interface, variantes d'une union, champs de toutes ses variantes. */
+/** Size of each model surface: fields of an interface, variants of a union, fields of all its variants. */
 export function measureSurfaces(): Record<string, number> {
   const out: Record<string, number> = {};
   out["Single-card values"] = singleCardValues(implementedCards());
@@ -304,14 +304,14 @@ export function measureSurfaces(): Record<string, number> {
   return out;
 }
 
-/** Littéraux de chaîne écrits dans le modèle (valeurs d'unions fermées : `"host" | "notHost"`…). */
+/** String literals written in the model (closed union values: `"host" | "notHost"`…). */
 function modelLiterals(): Set<string> {
   return new Set([...model().matchAll(/"([^"\n]+)"/g)].map((m) => m[1] as string));
 }
 
 /**
- * Champs dont la valeur est une donnée imprimée ou un nom libre, et non un choix du modèle : types, couleurs, mots-clés,
- * sortes de marqueurs, noms de cartes et de valeurs retenues, discriminants suivis à part (`op`, `kind`, `on`).
+ * Fields whose value is printed data or a free name, not a model choice: types, colors, keywords,
+ * counter kinds, card names and remembered values, discriminants tracked separately (`op`, `kind`, `on`).
  */
 const PLAYER_TEXT = new Set(["label", "prompt", "text"]);
 
@@ -361,9 +361,9 @@ const NOT_MODEL_VALUES = new Set([
 ]);
 
 /**
- * Valeurs d'unions fermées du modèle (`attached: "toHost"`, `spellFate.fate: "rebound"`…) qu'une seule carte gérée
- * écrit, comptées par couple champ et valeur : de la dette propre à une carte que les clés ne montrent pas (audit du
- * 07/10/2026). Suivies par un plafond plutôt que par une liste.
+ * Closed model union values (`attached: "toHost"`, `spellFate.fate: "rebound"`…) that a single handled card
+ * writes, counted per field and value pair: single-card debt that the keys do not show (audit of
+ * 2026-10-07). Tracked by a ceiling rather than a list.
  */
 export function singleCardValues(cards: readonly { name: string }[]): number {
   const literals = modelLiterals();

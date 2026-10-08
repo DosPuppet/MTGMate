@@ -6,24 +6,24 @@ const VIEW = { w: 1500, h: 880 };
 const SIZE = { w: 380, h: 120 };
 
 describe("placeBubble", () => {
-  it("se place près de la cible sans la recouvrir", () => {
-    const target = { x: 400, y: 740, w: 150, h: 140 }; // une carte de la main
+  it("is placed near the target without covering it", () => {
+    const target = { x: 400, y: 740, w: 150, h: 140 }; // a card in hand
     const { left, top } = placeBubble(target, SIZE, VIEW, []);
     const bubble = { x: left, y: top, ...SIZE };
     expect(overlaps(bubble, target)).toBe(false);
     expect(top + SIZE.h).toBeLessThanOrEqual(target.y); // au-dessus de la main
   });
 
-  it("évite les cartes à cliquer quand une autre position est libre", () => {
-    const target = { x: 300, y: 450, w: 700, h: 170 }; // votre champ de bataille
-    const attackers = { x: 500, y: 200, w: 260, h: 150 }; // les attaquants adverses, juste au-dessus
+  it("avoids the cards to click when another position is free", () => {
+    const target = { x: 300, y: 450, w: 700, h: 170 }; // your battlefield
+    const attackers = { x: 500, y: 200, w: 260, h: 150 }; // the opposing attackers, just above
     const { left, top } = placeBubble(target, SIZE, VIEW, [{ r: attackers, weight: 1 }]);
     const bubble = { x: left, y: top, ...SIZE };
     expect(overlaps(bubble, target)).toBe(false);
     expect(overlaps(bubble, attackers)).toBe(false);
   });
 
-  it("reste dans l'écran", () => {
+  it("stays on screen", () => {
     const target = { x: 1450, y: 5, w: 40, h: 40 };
     const { left, top } = placeBubble(target, SIZE, VIEW, []);
     expect(left).toBeGreaterThanOrEqual(12);
@@ -32,7 +32,7 @@ describe("placeBubble", () => {
     expect(top + SIZE.h).toBeLessThanOrEqual(VIEW.h - 12);
   });
 
-  it("sans cible, recouvre le moins possible une fenêtre de choix", () => {
+  it("with no target, covers a choice window as little as possible", () => {
     const modal = { x: 30, y: 120, w: 1100, h: 630 };
     const buttons = { x: 930, y: 690, w: 180, h: 40 };
     const { left, top } = placeBubble(null, SIZE, VIEW, [
@@ -41,6 +41,6 @@ describe("placeBubble", () => {
     ]);
     const bubble = { x: left, y: top, ...SIZE };
     expect(overlaps(bubble, buttons)).toBe(false);
-    expect(left).toBeGreaterThan(1000); // sur le bord droit (barre latérale)
+    expect(left).toBeGreaterThan(1000); // on the right edge (sidebar)
   });
 });

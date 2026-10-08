@@ -3,29 +3,29 @@ import { fx, ref, spell, target, triggered, when } from "../src/dsl";
 import { act, customCard, idOf, idsOf, passAccepting, passBoth, passUntil, scenario } from "./helpers";
 
 const KILL = customCard({
-  name: "Meurtre",
+  name: "Test Murder",
   typeLine: "Instant",
   types: ["Instant"],
   spell: spell([target.creature()], [fx.destroy(ref.target())]),
 });
-/** « Chaque fois qu'une autre créature que vous contrôlez meurt, vous gagnez 1 point de vie. » */
+/** "Whenever another creature you control dies, you gain 1 life." */
 const WATCHER = customCard({
-  name: "Veilleur",
+  name: "Watcher",
   power: 1,
   toughness: 1,
   abilities: [triggered(when.dies({ types: ["Creature"], controller: "you", other: true }), [fx.gainLife(1)])],
 });
-/** « Au début de chaque étape de fin, vous gagnez 1 point de vie. » */
+/** "At the beginning of each end step, you gain 1 life." */
 const CLOCK = customCard({
-  name: "Horloge",
+  name: "Clock",
   power: 0,
   toughness: 1,
   abilities: [triggered(when.eachEndStep, [fx.gainLife(1)])],
 });
 
-/** « Chaque fois qu'une autre créature que vous contrôlez meurt, vous pouvez gagner 1 PV. Faites ceci une seule fois par tour. » */
+/** "Whenever another creature you control dies, you may gain 1 life. Do this only once each turn." */
 const ONCE_WATCHER = customCard({
-  name: "Veilleur sobre",
+  name: "Sober Watcher",
   power: 1,
   toughness: 1,
   abilities: [
@@ -40,12 +40,12 @@ const ONCE_WATCHER = customCard({
 const cast = (s: ReturnType<typeof scenario>, p: string, name: string, targets?: Record<string, string[]>) =>
   act(s, p, { type: "cast", card: idOf(s, p, "hand", name), targets });
 
-describe("capacités déclenchées", () => {
-  it("arrivée en jeu avec cible : Viashino Pyromancer (le contrôleur choisit le joueur)", () => {
+describe("triggered abilities", () => {
+  it("enters with a target: Viashino Pyromancer (the controller chooses the player)", () => {
     let s = scenario({ p1: { battlefield: ["Mountain", "Mountain"], hand: ["Viashino Pyromancer"] } });
     s = cast(s, "p1", "Viashino Pyromancer");
     s = passBoth(s);
-    // La capacité cible « un joueur » : deux choix possibles, la question est posée (suggestion : l'adversaire).
+    // The ability targets "a player": two possible choices, the question is asked (suggestion: the opponent).
     const p = s.pending;
     expect(p?.kind === "choice" && p.request.intent).toBe("triggerTarget");
     expect(p?.kind === "choice" && p.request.suggested).toEqual(["p2"]);
@@ -55,27 +55,27 @@ describe("capacités déclenchées", () => {
     expect(s.players.p2?.life).toBe(18);
   });
 
-  it("arrivée et mort : Pelakka Wurm fait gagner 7 puis piocher", () => {
+  it("enters and dies: Pelakka Wurm gains 7 then draws", () => {
     let s = scenario({
       p1: { battlefield: Array(7).fill("Forest"), hand: ["Pelakka Wurm"] },
       p2: { battlefield: ["Swamp", "Swamp"], hand: [KILL] },
     });
     s = cast(s, "p1", "Pelakka Wurm");
-    s = passBoth(s); // le Wurm arrive, son déclenchement va sur la pile
+    s = passBoth(s); // the Wurm enters, its trigger goes on the stack
     s = passBoth(s);
     expect(s.players.p1?.life).toBe(27);
     const wurm = idOf(s, "p1", "battlefield", "Pelakka Wurm");
     s = act(s, "p1", { type: "pass" });
-    s = act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Meurtre"), targets: { t: [wurm] } });
-    s = passBoth(s); // Meurtre : le Wurm meurt, « piochez une carte » se déclenche
+    s = act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Test Murder"), targets: { t: [wurm] } });
+    s = passBoth(s); // Test Murder: the Wurm dies, "draw a card" triggers
     expect(s.stack).toHaveLength(1);
     const hand = s.players.p1?.hand.length ?? 0;
     s = passBoth(s);
     expect(s.players.p1?.hand.length).toBe(hand + 1);
   });
 
-  it("regard en arrière : deux morts simultanées déclenchent le veilleur mort en même temps", () => {
-    // Les blessures marquées sont mortelles : les deux créatures meurent par la même action basée sur l'état.
+  it("leaves-the-battlefield look back: two simultaneous deaths trigger the dead watcher at the same time", () => {
+    // The marked damage is lethal: both creatures die from the same state-based action.
     let s = scenario({
       p1: {
         battlefield: [
@@ -88,7 +88,7 @@ describe("capacités déclenchées", () => {
     expect(s.players.p1?.life).toBe(21);
   });
 
-  it("« faites ceci une seule fois par tour » : deux déclenchements sur la pile, le second ne fait rien une fois l'effet fait", () => {
+  it('"do this only once each turn": two triggers on the stack, the second does nothing once the effect is done', () => {
     let s = scenario({
       p1: {
         battlefield: [ONCE_WATCHER, { name: "Bear Cub", damage: 2 }, { name: "Llanowar Elves", damage: 1 }],
@@ -98,7 +98,7 @@ describe("capacités déclenchées", () => {
     expect(s.players.p1?.life).toBe(21);
   });
 
-  it("raid : Gorehorn Raider ne se déclenche que si l'on a attaqué", () => {
+  it("raid: Gorehorn Raider only triggers if you attacked", () => {
     let s = scenario({ p1: { battlefield: Array(5).fill("Mountain"), hand: ["Gorehorn Raider"] } });
     s = cast(s, "p1", "Gorehorn Raider");
     s = passBoth(s);
@@ -106,7 +106,7 @@ describe("capacités déclenchées", () => {
     expect(s.pending?.kind).toBe("priority");
 
     let t = scenario({ step: "main2", p1: { battlefield: Array(5).fill("Mountain"), hand: ["Gorehorn Raider"] } });
-    // Raid : une attaque ce tour-ci (journal du tour).
+    // Raid: an attack this turn (turn log).
     t = {
       ...t,
       turnLog: [...t.turnLog, { e: "attack", player: "p1", defender: "p2", types: ["Creature"], subtypes: [] }],
@@ -114,16 +114,16 @@ describe("capacités déclenchées", () => {
     };
     t = cast(t, "p1", "Gorehorn Raider");
     t = passBoth(t);
-    expect(t.pending?.kind).toBe("choice"); // cible de « 2 blessures à n'importe quelle cible »
+    expect(t.pending?.kind).toBe("choice"); // target of "2 damage to any target"
     t = act(t, "p1", { type: "choose", values: ["p2"] });
     t = passBoth(t);
     expect(t.players.p2?.life).toBe(18);
   });
 
-  it("sort lancé : Guttersnipe inflige 2 avant même la résolution du sort", () => {
+  it("spell cast: Guttersnipe deals 2 before the spell even resolves", () => {
     let s = scenario({ p1: { battlefield: ["Mountain", "Guttersnipe"], hand: ["Burst Lightning"] } });
     s = cast(s, "p1", "Burst Lightning", { t: ["p2"] });
-    // Le déclenchement se met sur la pile au-dessus de Burst Lightning.
+    // The trigger goes on the stack above Burst Lightning.
     expect(s.stack.map((x) => x.kind)).toEqual(["spell", "ability"]);
     s = passBoth(s);
     expect(s.players.p2?.life).toBe(18);
@@ -131,14 +131,14 @@ describe("capacités déclenchées", () => {
     expect(s.players.p2?.life).toBe(16);
   });
 
-  it("landfall : Elfsworn Giant crée un jeton quand on joue un terrain", () => {
+  it("landfall: Elfsworn Giant creates a token when a land is played", () => {
     let s = scenario({ p1: { battlefield: ["Elfsworn Giant"], hand: ["Forest"] } });
     s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Forest") });
     s = passBoth(s);
     expect(idsOf(s, "p1", "battlefield", "Elf Warrior")).toHaveLength(1);
   });
 
-  it("plusieurs déclenchements d'un joueur : il choisit leur ordre", () => {
+  it("several triggers for one player: they choose their order", () => {
     let s = scenario({
       p1: { battlefield: ["Forest", "Forest", "Forest", "Impact Tremors", "Impact Tremors"], hand: ["Bear Cub"] },
     });
@@ -153,7 +153,7 @@ describe("capacités déclenchées", () => {
     expect(s.players.p2?.life).toBe(18);
   });
 
-  it("APNAP : les déclenchements du joueur actif vont sur la pile en premier et se résolvent en dernier", () => {
+  it("APNAP: the active player's triggers go on the stack first and resolve last", () => {
     let s = scenario({ step: "main2", p1: { battlefield: [CLOCK] }, p2: { battlefield: [CLOCK] } });
     s = passUntil(s, (x) => x.turn.step === "end" && x.stack.length === 2);
     expect(s.stack.map((x) => x.controller)).toEqual(["p1", "p2"]);
@@ -162,23 +162,23 @@ describe("capacités déclenchées", () => {
     expect(s.players.p1?.life).toBe(20);
   });
 
-  it("603.4 : une condition « si… » redevenue fausse à la résolution annule l'effet", () => {
+  it('603.4: an "if" condition that becomes false on resolution cancels the effect', () => {
     let s = scenario({
       p1: { battlefield: ["Forest", "Forest", "Llanowar Elves"], hand: ["Dwynen's Elite"] },
       p2: { battlefield: ["Mountain"], hand: ["Burst Lightning"] },
     });
     s = cast(s, "p1", "Dwynen's Elite");
-    s = passBoth(s); // l'Élite arrive ; on contrôle un autre elfe : le déclenchement va sur la pile
+    s = passBoth(s); // the Elite enters; you control another elf: the trigger goes on the stack
     expect(s.stack).toHaveLength(1);
     const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
     s = act(s, "p1", { type: "pass" });
     s = act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Burst Lightning"), targets: { t: [elves] } });
-    s = passBoth(s); // les elfes meurent
-    s = passBoth(s); // le déclenchement se résout : plus d'autre elfe, pas de jeton
+    s = passBoth(s); // the elves die
+    s = passBoth(s); // the trigger resolves: no other elf left, no token
     expect(idsOf(s, "p1", "battlefield", "Elf Warrior")).toHaveLength(0);
   });
 
-  it("condition fausse au déclenchement : rien ne se déclenche (Searslicer sans attaque)", () => {
+  it("false condition on trigger: nothing triggers (Searslicer without an attack)", () => {
     let s = scenario({ step: "main2", p1: { battlefield: ["Searslicer Goblin"] } });
     s = passUntil(s, (x) => x.turn.active === "p2");
     expect(idsOf(s, "p1", "battlefield", "Goblin")).toHaveLength(0);

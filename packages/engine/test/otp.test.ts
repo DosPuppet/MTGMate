@@ -1,4 +1,4 @@
-/** Breaking News (OTP) : tests de règles des cartes (PLAN-G). */
+/** Breaking News (OTP): card rules tests (PLAN-G). */
 import { describe, expect, it } from "vitest";
 import { dealDamage, destroy, gainLife, loseLife } from "../src/actions";
 import { fx, ref, spell, target } from "../src/dsl";
@@ -32,18 +32,18 @@ const castOption = (s: S, card: string, player = "p1") =>
   legalActions(s, player).find((a) => a.type === "cast" && a.card === card);
 
 describe("Breaking News", () => {
-  describe("Escalade (702.120) : Collective Defiance", () => {
-    it("un mode au coût normal ; chaque mode en plus coûte {1}", () => {
+  describe("Escalate (702.120): Collective Defiance", () => {
+    it("one mode at normal cost; each extra mode costs {1}", () => {
       const s = scenario({
         p1: { battlefield: lands("Mountain", 4), hand: ["Collective Defiance"] },
         p2: { battlefield: ["Bear Cub"] },
       });
       const opt = castOption(s, idOf(s, "p1", "hand", "Collective Defiance"));
-      // Quatre Montagnes : un mode ({1}{R}{R}) ou deux ({1}{R}{R} + {1}) ; pas les trois.
+      // Four Mountains: one mode ({1}{R}{R}) or two ({1}{R}{R} + {1}); not all three.
       expect(opt?.type === "cast" && opt.modes.map((m) => m.label?.split(" + ").length)).toEqual([1, 1, 2, 1, 2, 2]);
     });
 
-    it("deux modes : 4 blessures à la créature et 3 à l'adversaire", () => {
+    it("two modes: 4 damage to the creature and 3 to the opponent", () => {
       let s = scenario({
         p1: { battlefield: lands("Mountain", 4), hand: ["Collective Defiance"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -61,7 +61,7 @@ describe("Breaking News", () => {
       expect(s.battlefield.filter((id) => nameOf(s, id) === "Mountain" && s.objects[id]?.tapped)).toHaveLength(4);
     });
 
-    it("le joueur ciblé défausse sa main, puis pioche autant de cartes", () => {
+    it("the targeted player discards their hand, then draws that many cards", () => {
       let s = scenario({
         p1: { battlefield: lands("Mountain", 3), hand: ["Collective Defiance"] },
         p2: { hand: ["Bear Cub", "Bear Cub", "Shock"], library: lands("Forest", 5) },
@@ -74,8 +74,8 @@ describe("Breaking News", () => {
     });
   });
 
-  describe("Fendre (702.148) : Fierce Retribution", () => {
-    it("pour {1}{W}, seulement une créature attaquante ; fendu pour {5}{W}, n'importe quelle créature", () => {
+  describe("Cleave (702.148): Fierce Retribution", () => {
+    it("for {1}{W}, only an attacking creature; cleaved for {5}{W}, any creature", () => {
       let s = scenario({
         p1: { battlefield: lands("Plains", 6), hand: ["Fierce Retribution"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -83,7 +83,7 @@ describe("Breaking News", () => {
       const card = idOf(s, "p1", "hand", "Fierce Retribution");
       const bear = idOf(s, "p2", "battlefield", "Bear Cub");
       const opt = castOption(s, card);
-      // Aucune créature n'attaque : seul le mode fendu a une cible.
+      // No creature attacks: only the cleaved mode has a target.
       expect(opt?.type === "cast" && opt.modes.map((m) => plainText(m.label ?? ""))).toEqual(["Cleave — {5}{W}"]);
       expect(() => act(s, "p1", { type: "cast", card, mode: 0, targets: { t: [bear] } })).toThrow();
       s = settle(act(s, "p1", { type: "cast", card, mode: 1, targets: { t: [bear] } }));
@@ -91,7 +91,7 @@ describe("Breaking News", () => {
       expect(s.battlefield.filter((id) => nameOf(s, id) === "Plains" && s.objects[id]?.tapped)).toHaveLength(6);
     });
 
-    it("pour {1}{W}, détruit la créature qui attaque", () => {
+    it("for {1}{W}, destroys the attacking creature", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: lands("Plains", 2), hand: ["Fierce Retribution"] },
@@ -106,7 +106,7 @@ describe("Breaking News", () => {
   });
 
   describe("Skewer the Critics", () => {
-    it("spectacle {R} après une perte de points de vie adverse ; 3 blessures à n'importe quelle cible", () => {
+    it("spectacle {R} after an opponent loses life; 3 damage to any target", () => {
       let s = scenario({ p1: { battlefield: lands("Mountain", 1), hand: ["Skewer the Critics"] } });
       const card = idOf(s, "p1", "hand", "Skewer the Critics");
       expect(castOption(s, card)).toBeUndefined();
@@ -116,18 +116,18 @@ describe("Breaking News", () => {
     });
   });
 
-  describe("G6 : Breaking News", () => {
+  describe("G6: Breaking News", () => {
     const castIt = (s: S, name: string, extra: object = {}, player = "p1") =>
       act(s, player, { type: "cast", card: idOf(s, player, "hand", name), ...extra });
     const spellOn = (s: S) => s.stack[s.stack.length - 1]?.id as string;
-    /** p2 lance un sort, puis p1 reçoit la priorité. */
+    /** p2 casts a spell, then p1 gets priority. */
     const opponentCasts = (s: S, name: string, extra: object = {}) => act(castIt(s, name, extra, "p2"), "p2", { type: "pass" });
     const enchantTarget = (s: S, name: string) => {
       const opt = castOption(s, idOf(s, "p1", "hand", name));
       return opt?.type === "cast" ? (opt.modes[0]?.targets[0]?.id as string) : "";
     };
 
-    it("Journey to Nowhere : la créature exilée revient quand l'enchantement part", () => {
+    it("Journey to Nowhere: the exiled creature returns when the enchantment leaves", () => {
       let s = scenario({
         p1: { battlefield: lands("Plains", 2), hand: ["Journey to Nowhere"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -141,12 +141,12 @@ describe("Breaking News", () => {
       expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
     });
 
-    it("Leyline Binding : {1} de moins par type de terrain de base parmi vos terrains", () => {
+    it("Leyline Binding: {1} less per basic land type among your lands", () => {
       const s = scenario({ p1: { battlefield: ["Plains", "Island", "Forest", "Swamp"], hand: ["Leyline Binding"] } });
       expect(castOption(s, idOf(s, "p1", "hand", "Leyline Binding"))).toBeDefined();
     });
 
-    it("Pariah : les blessures qui vous seraient infligées le sont à la créature enchantée", () => {
+    it("Pariah: damage that would be dealt to you is dealt to the enchanted creature instead", () => {
       let s = scenario({ p1: { battlefield: ["Bear Cub", ...lands("Plains", 3)], hand: ["Pariah"] } });
       const cub = idOf(s, "p1", "battlefield", "Bear Cub");
       s = settle(castIt(s, "Pariah", { targets: { [enchantTarget(s, "Pariah")]: [cub] } }));
@@ -155,7 +155,7 @@ describe("Breaking News", () => {
       expect(s.objects[cub]?.damage).toBe(2);
     });
 
-    it("Path to Exile : la créature est exilée ; son contrôleur peut chercher un terrain de base, engagé", () => {
+    it("Path to Exile: the creature is exiled; its controller may search for a basic land, tapped", () => {
       let s = scenario({
         p1: { battlefield: ["Plains"], hand: ["Path to Exile"] },
         p2: { battlefield: ["Bear Cub"], library: ["Forest", "Bear Cub"] },
@@ -166,7 +166,7 @@ describe("Breaking News", () => {
       expect(idsOf(s, "p2", "battlefield", "Forest")).toHaveLength(1);
     });
 
-    it("Archive Trap : gratuite si un adversaire a cherché dans sa bibliothèque ce tour-ci", () => {
+    it("Archive Trap: free if an opponent searched their library this turn", () => {
       const s = scenario({ p1: { hand: ["Archive Trap"] }, p2: { library: lands("Forest", 20) } });
       expect(castOption(s, idOf(s, "p1", "hand", "Archive Trap"))).toBeUndefined();
       logTurnEvent(s, { e: "search", player: "p2" });
@@ -178,7 +178,7 @@ describe("Breaking News", () => {
       t = s;
     });
 
-    it("Mana Drain : contrecarre ; {C} autant que la valeur de mana du sort à votre prochaine phase principale", () => {
+    it("Mana Drain: counters; {C} equal to the spell's mana value at your next main phase", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: lands("Island", 2), hand: ["Mana Drain"], library: lands("Island", 5) },
@@ -194,7 +194,7 @@ describe("Breaking News", () => {
       expect(s.players.p1?.manaPool.C).toBe(7);
     });
 
-    it("Thoughtseize : vous choisissez une carte non-terrain de sa main ; vous perdez 2 PV", () => {
+    it("Thoughtseize: you choose a nonland card from their hand; you lose 2 life", () => {
       let s = scenario({
         p1: { battlefield: ["Swamp"], hand: ["Thoughtseize"] },
         p2: { hand: ["Forest", "Shivan Dragon", "Shock"] },
@@ -203,7 +203,7 @@ describe("Breaking News", () => {
       expect([idsOf(s, "p2", "graveyard", "Shivan Dragon").length, s.players.p1?.life]).toEqual([1, 18]);
     });
 
-    it("Crackle with Power : 5X blessures à chacune de X cibles au plus", () => {
+    it("Crackle with Power: 5X damage to each of up to X targets", () => {
       let s = scenario({
         p1: { battlefield: lands("Mountain", 8), hand: ["Crackle with Power"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -212,20 +212,20 @@ describe("Breaking News", () => {
       expect([s.players.p2?.life, idsOf(s, "p2", "graveyard", "Bear Cub").length]).toEqual([10, 1]);
     });
 
-    it("Fling : blessures égales à la force de la créature sacrifiée", () => {
+    it("Fling: damage equal to the sacrificed creature's power", () => {
       let s = scenario({ p1: { battlefield: [...lands("Mountain", 2), "Shivan Dragon"], hand: ["Fling"] } });
       s = settle(castIt(s, "Fling", { targets: { t: ["p2"] }, sacrifice: [idOf(s, "p1", "battlefield", "Shivan Dragon")] }));
       expect(s.players.p2?.life).toBe(15);
     });
 
-    it("Skullcrack : personne ne gagne de PV ce tour-ci ; 3 blessures", () => {
+    it("Skullcrack: nobody gains life this turn; 3 damage", () => {
       let s = scenario({ p1: { battlefield: lands("Mountain", 2), hand: ["Skullcrack"] } });
       s = settle(castIt(s, "Skullcrack", { targets: { t: ["p2"] } }));
       gainLife(s, "p2", 5);
       expect(s.players.p2?.life).toBe(17);
     });
 
-    it("Primal Command : deux modes au choix", () => {
+    it("Primal Command: two modes of your choice", () => {
       let s = scenario({
         p1: { battlefield: lands("Forest", 5), hand: ["Primal Command"], library: ["Bear Cub", "Forest"] },
         p2: { battlefield: ["Ghostly Prison"] },
@@ -242,7 +242,7 @@ describe("Breaking News", () => {
       expect([s.players.p1?.life, idsOf(s, "p1", "hand", "Bear Cub").length]).toEqual([27, 1]);
     });
 
-    it("Back for More : la créature revient, puis se bat contre une créature adverse", () => {
+    it("Back for More: the creature returns, then fights an opposing creature", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Forest", 5), "Swamp"], hand: ["Back for More"], graveyard: ["Shivan Dragon"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -254,7 +254,7 @@ describe("Breaking News", () => {
       expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
     });
 
-    it("Crime // Punishment : Punishment détruit les artefacts, créatures et enchantements de valeur de mana X", () => {
+    it("Crime // Punishment: Punishment destroys artifacts, creatures and enchantments with mana value X", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Forest", 3), "Swamp"], hand: ["Crime // Punishment"] },
         p2: { battlefield: ["Bear Cub", "Llanowar Elves", "Ghostly Prison"] },
@@ -270,7 +270,7 @@ describe("Breaking News", () => {
       ).toEqual(["Ghostly Prison", "Llanowar Elves"]);
     });
 
-    it("Decimate : un artefact, une créature, un enchantement et un terrain", () => {
+    it("Decimate: an artifact, a creature, an enchantment and a land", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Mountain", 2), ...lands("Forest", 2)], hand: ["Decimate"] },
         p2: { battlefield: ["Mana Crypt", "Bear Cub", "Ghostly Prison", "Plains"] },
@@ -282,7 +282,7 @@ describe("Breaking News", () => {
       expect(s.players.p2?.graveyard).toHaveLength(4);
     });
 
-    it("Detention Sphere : exile le permanent ciblé et ses homonymes, jusqu'à son départ", () => {
+    it("Detention Sphere: exiles the targeted permanent and its namesakes, until it leaves", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Plains", 2), "Island"], hand: ["Detention Sphere"] },
         p2: { battlefield: ["Bear Cub", "Bear Cub", "Llanowar Elves"] },
@@ -295,7 +295,7 @@ describe("Breaking News", () => {
       expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(2);
     });
 
-    it("Ionize : contrecarre et 2 blessures au contrôleur du sort", () => {
+    it("Ionize: counters and 2 damage to the spell's controller", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: [...lands("Island", 2), "Mountain"], hand: ["Ionize"] },
@@ -306,7 +306,7 @@ describe("Breaking News", () => {
       expect([s.players.p2?.life, idsOf(s, "p2", "graveyard", "Bear Cub").length]).toEqual([18, 1]);
     });
 
-    it("Oko : +1, l'artefact ou la créature ciblé devient un Élan vert 3/3 sans capacités", () => {
+    it("Oko: +1, the targeted artifact or creature becomes a green 3/3 Elk with no abilities", () => {
       let s = scenario({
         p1: { battlefield: [{ name: "Oko, Thief of Crowns", counters: { loyalty: 4 } }] },
         p2: { battlefield: ["Shivan Dragon"] },
@@ -328,7 +328,7 @@ describe("Breaking News", () => {
       expect([c.power, c.toughness, c.subtypes, c.colors, c.keywords.includes("flying")]).toEqual([3, 3, ["Elk"], ["G"], false]);
     });
 
-    it("Villainous Wealth : l'adversaire exile X cartes ; vous lancez gratuitement celles de valeur de mana X ou moins", () => {
+    it("Villainous Wealth: the opponent exiles X cards; you cast for free those with mana value X or less", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Forest", 3), "Island", "Swamp"], hand: ["Villainous Wealth"] },
         p2: { library: ["Bear Cub", "Shivan Dragon", "Forest"] },
@@ -340,7 +340,7 @@ describe("Breaking News", () => {
       expect(s.battlefield.some((id) => nameOf(s, id) === "Bear Cub" && s.objects[id]?.controller === "p1")).toBe(true);
     });
 
-    it("Voidslime : contrecarre une capacité déclenchée", () => {
+    it("Voidslime: counters a triggered ability", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: ["Soul Warden", ...lands("Island", 2), "Forest"], hand: ["Voidslime"] },
@@ -353,7 +353,7 @@ describe("Breaking News", () => {
       expect(s.players.p1?.life).toBe(20);
     });
 
-    it("Mindslaver : vous contrôlez le prochain tour du joueur ciblé", () => {
+    it("Mindslaver: you control the targeted player's next turn", () => {
       let s = scenario({ p1: { battlefield: ["Mindslaver", ...lands("Plains", 4)] } });
       const slaver = idOf(s, "p1", "battlefield", "Mindslaver");
       const ab = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === slaver);
@@ -369,8 +369,8 @@ describe("Breaking News", () => {
       expect(decider(s)).toBe("p1");
     });
   });
-  describe("G4e : règles de joueur", () => {
-    it("Surgical Extraction : une carte de cimetière (pas un terrain de base) et ses homonymes, exilées", () => {
+  describe("G4e: player rules", () => {
+    it("Surgical Extraction: a card in a graveyard (not a basic land) and its namesakes, exiled", () => {
       let s = scenario({
         p1: { hand: ["Surgical Extraction"] },
         p2: { graveyard: ["Shock", "Forest"], hand: ["Shock"], library: ["Shock", "Mountain"] },
@@ -389,8 +389,8 @@ describe("Breaking News", () => {
       expect(s.players.p2?.hand).toHaveLength(0);
     });
   });
-  describe("G4e : combat", () => {
-    it("Fell the Mighty : détruit les créatures de force supérieure à celle de la cible", () => {
+  describe("G4e: combat", () => {
+    it("Fell the Mighty: destroys creatures with power greater than the target's", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Plains", 5), "Llanowar Elves"], hand: ["Fell the Mighty"] },
         p2: { battlefield: ["Bear Cub", "Shivan Dragon"] },
@@ -402,7 +402,7 @@ describe("Breaking News", () => {
       expect(idsOf(s, "p2", "graveyard", "Shivan Dragon")).toHaveLength(1);
     });
 
-    it("Ride Down : détruit le bloqueur ; les créatures qu'il bloquait gagnent le piétinement", () => {
+    it("Ride Down: destroys the blocker; the creatures it was blocking gain trample", () => {
       let s = scenario({
         p1: { battlefield: ["Bear Cub", "Mountain", "Plains"], hand: ["Ride Down"] },
         p2: { battlefield: ["Llanowar Elves"] },
@@ -419,7 +419,7 @@ describe("Breaking News", () => {
       expect(s.players.p2?.life).toBe(18);
     });
 
-    it("Outlaws' Merriment : à votre entretien, un des trois jetons Humain, au hasard", () => {
+    it("Outlaws' Merriment: at your upkeep, one of the three Human tokens, at random", () => {
       let s = scenario({ active: "p2", p1: { battlefield: ["Outlaws' Merriment"] } });
       s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1");
       const humans = s.battlefield.filter((id) =>
@@ -429,10 +429,10 @@ describe("Breaking News", () => {
       expect(chars(s, humans[0] as string).keywords).toContain("haste");
     });
   });
-  describe("G4e : lancer autrement", () => {
-    it("Terminal Agony : folie, défaussée elle va en exil et se lance pour son coût de folie", () => {
+  describe("G4e: casting otherwise", () => {
+    it("Terminal Agony: madness, discarded it goes to exile and is cast for its madness cost", () => {
       const discarder = customCard({
-        name: "Défausse de test",
+        name: "Test discard",
         types: ["Sorcery"],
         typeLine: "Sorcery",
         spell: spell([], [fx.discard(1)]),
@@ -441,7 +441,7 @@ describe("Breaking News", () => {
         p1: { battlefield: ["Swamp", "Mountain"], hand: [discarder, "Terminal Agony"] },
         p2: { battlefield: ["Bear Cub"] },
       });
-      s = untilCastNow(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Défausse de test") }));
+      s = untilCastNow(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Test discard") }));
       const agony = castNowOf(s)?.cards[0] as string;
       expect(s.objects[agony]?.zone).toBe("exile");
       const cub = idOf(s, "p2", "battlefield", "Bear Cub");
@@ -450,7 +450,7 @@ describe("Breaking News", () => {
       expect(idsOf(s, "p1", "graveyard", "Terminal Agony")).toHaveLength(1);
     });
 
-    it("Commandeer : en exilant deux cartes bleues, gagnez le contrôle d'un sort non-créature et changez sa cible", () => {
+    it("Commandeer: by exiling two blue cards, gain control of a noncreature spell and change its target", () => {
       const blue = (name: string) => customCard({ name, types: ["Instant"], typeLine: "Instant", colors: ["U"] });
       let s = scenario({
         active: "p2",
@@ -469,8 +469,8 @@ describe("Breaking News", () => {
       expect(s.players.p1?.hand).toHaveLength(0);
     });
   });
-  describe("G4e : bibliothèque et pioche", () => {
-    it("Grindstone : le joueur meule deux cartes, et recommence tant qu'elles partagent une couleur", () => {
+  describe("G4e: library and drawing", () => {
+    it("Grindstone: the player mills two cards, and repeats while they share a color", () => {
       let s = scenario({
         p1: { battlefield: ["Grindstone", ...lands("Mountain", 3)] },
         p2: { library: ["Shock", "Lightning Strike", "Bear Cub", "Shivan Dragon", "Forest"] },
@@ -487,8 +487,8 @@ describe("Breaking News", () => {
       expect(s.players.p2?.library.map((id) => nameOf(s, id))).toEqual(["Forest"]);
     });
   });
-  describe("G4e : exil et copies", () => {
-    it("Fractured Identity : exile le permanent ; chaque autre joueur en crée une copie", () => {
+  describe("G4e: exile and copies", () => {
+    it("Fractured Identity: exiles the permanent; each other player creates a copy of it", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Plains", 3), ...lands("Island", 2)], hand: ["Fractured Identity"] },
         p2: { battlefield: ["Shivan Dragon"] },
@@ -500,7 +500,7 @@ describe("Breaking News", () => {
       expect(copy && s.objects[copy]?.controller).toBe("p1");
     });
 
-    it("Unlicensed Hearse : exile jusqu'à deux cartes d'un cimetière ; F/E égales aux cartes exilées avec lui", () => {
+    it("Unlicensed Hearse: exiles up to two cards from a graveyard; P/T equal to the cards exiled with it", () => {
       let s = scenario({ p1: { battlefield: ["Unlicensed Hearse"] }, p2: { graveyard: ["Shock", "Bear Cub"] } });
       const hearse = idOf(s, "p1", "battlefield", "Unlicensed Hearse");
       expect(chars(s, hearse).power).toBe(0);
@@ -511,7 +511,7 @@ describe("Breaking News", () => {
       expect(chars(s, hearse).toughness).toBe(2);
     });
 
-    it("Unlicensed Hearse : les deux cartes viennent d'un même cimetière", () => {
+    it("Unlicensed Hearse: both cards come from the same graveyard", () => {
       const s = scenario({
         p1: { battlefield: ["Unlicensed Hearse"], graveyard: ["Opt"] },
         p2: { graveyard: ["Shock"] },
@@ -521,7 +521,7 @@ describe("Breaking News", () => {
       expect(() => act(s, "p1", { type: "activate", source: hearse, ability: 0, targets: { t: both } })).toThrow();
     });
 
-    it("Indomitable Creativity : détruit X artefacts ou créatures ; leur contrôleur révèle jusqu'à un artefact ou une créature et le met en jeu", () => {
+    it("Indomitable Creativity: destroys X artifacts or creatures; their controller reveals up to one artifact or creature and puts it onto the battlefield", () => {
       let s = scenario({
         p1: { battlefield: lands("Mountain", 4), hand: ["Indomitable Creativity"] },
         p2: { battlefield: ["Bear Cub"], library: ["Forest", "Shivan Dragon", "Island"] },
@@ -535,8 +535,8 @@ describe("Breaking News", () => {
       expect(exiled(s, "Forest")).toHaveLength(1);
     });
 
-    it("Indomitable Creativity : c'est le contrôleur du permanent détruit qui révèle, pas son propriétaire", () => {
-      // Votre Bear Cub contrôlé par p2.
+    it("Indomitable Creativity: it's the controller of the destroyed permanent who reveals, not its owner", () => {
+      // Your Bear Cub controlled by p2.
       let s = scenario({
         p1: {
           battlefield: [...lands("Mountain", 4), "Bear Cub"],
@@ -558,7 +558,7 @@ describe("Breaking News", () => {
   });
 });
 
-/** p2 attaque p1 avec la créature, puis p1 reçoit la priorité à la déclaration des attaquants. */
+/** p2 attacks p1 with the creature, then p1 gets priority at declare attackers. */
 function attackWith(s: S, id: string): S {
   let cur = s;
   for (let i = 0; i < 50 && cur.pending?.kind !== "declareAttackers"; i++) {
@@ -575,8 +575,8 @@ function attackWith(s: S, id: string): S {
   return cur;
 }
 
-describe("Rééditions, PLAN-A A4a", () => {
-  it("Commandeer : « vous pouvez choisir de nouvelles cibles » pour un sort à plusieurs cibles", () => {
+describe("Reprints, PLAN-A A4a", () => {
+  it('Commandeer: "you may choose new targets" for a spell with several targets', () => {
     const blue = (name: string) => customCard({ name, types: ["Instant"], typeLine: "Instant", colors: ["U"] });
     const twinBolt = customCard({
       name: "Test Twin Bolt",
@@ -605,7 +605,7 @@ describe("Rééditions, PLAN-A A4a", () => {
         return asked.length === 1 ? [dragon] : [angel];
       },
     );
-    // Une question par mot « cible », la cible d'origine proposée avec les autres.
+    // One question per word "target", the original target offered along with the others.
     expect(asked).toHaveLength(2);
     expect(asked[0]).toEqual(expect.arrayContaining([elves, dragon, angel]));
     expect(idsOf(s, "p1", "battlefield", "Llanowar Elves")).toHaveLength(1);

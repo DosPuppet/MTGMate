@@ -1,6 +1,6 @@
 /**
- * Commander (pseudo-ensemble EDH, PLAN-E, E10) : tests de règles des Vampires du deck d'Edgar Markov, d'après leur texte
- * Oracle (créatures, New Blood, Olivia's Wrath, Pact of the Serpent, Sorin, Imperious Bloodlord), et de l'ascension.
+ * Commander (EDH pseudo-set, PLAN-E, E10): rules tests for the Vampires of Edgar Markov's deck, from their Oracle
+ * text (creatures, New Blood, Olivia's Wrath, Pact of the Serpent, Sorin, Imperious Bloodlord), and for the city's blessing.
  */
 import { card } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
@@ -32,10 +32,10 @@ const DIRE_MOON = "Vampire of the Dire Moon";
 const KEEPER = "Bloodline Keeper // Lord of Lineage";
 const GROOM = "Edgar, Charmed Groom // Edgar Markov's Coffin";
 
-/** Active la capacité de `source` dont le libellé contient `label`. */
+/** Activates the ability of `source` whose label contains `label`. */
 const activateLabel = (s: S, player: PlayerId, source: string, label: string, extra: object = {}) => {
   const a = legalActions(s, player).find((x) => x.type === "activate" && x.source === source && x.label?.includes(label));
-  if (a?.type !== "activate") throw new Error(`capacité introuvable : ${label}`);
+  if (a?.type !== "activate") throw new Error(`ability not found: ${label}`);
   return act(s, player, { type: "activate", source, ability: a.ability, ...extra });
 };
 const hasActivation = (s: S, player: PlayerId, source: string, label: string) =>
@@ -45,22 +45,22 @@ const tokensOf = (s: S, player: PlayerId) =>
   s.battlefield.filter((id) => s.objects[id]?.isToken && s.objects[id]?.controller === player);
 const life = (s: S, p: PlayerId) => s.players[p]?.life;
 const handSize = (s: S, p: PlayerId) => s.players[p]?.hand.length ?? 0;
-/** « Vous pouvez » : non. */
+/** "You may": no. */
 const sayNo: Answer = (req) => (req.intent === "may" ? [0] : undefined);
-/** « Vous pouvez » : oui ; pour les cibles et les choix d'objets, `want` s'il fait partie des options. */
+/** "You may": yes; for targets and object choices, `want` if it is among the options. */
 const yesPicking =
   (want: string[]): Answer =>
   (req) =>
     req.intent === "may" ? [1] : picking(want)(req);
-/** Fait passer la partie au début de la prochaine phase principale de p1 (entretien et pioche résolus). */
+/** Moves the game to the start of p1's next main phase (upkeep and draw resolved). */
 const toNextMain = (s: S) => {
   const turn = s.turn.number;
   return advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number > turn);
 };
 
-describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
-  describe("aristocrates : sacrifices et morts", () => {
-    it("Viscera Seer sacrifie Blood Artist lui-même : il se déclenche (le joueur ciblé perd 1 PV, vous en gagnez 1), puis regard 1", () => {
+describe("Commander (EDH): Edgar Markov's Vampires", () => {
+  describe("aristocrats: sacrifices and deaths", () => {
+    it("Viscera Seer sacrifices Blood Artist itself: it triggers (the targeted player loses 1 life, you gain 1), then scry 1", () => {
       let s = scenario({ p1: { battlefield: ["Blood Artist", "Viscera Seer"] } });
       const artist = idOf(s, "p1", "battlefield", "Blood Artist");
       s = activateLabel(s, "p1", idOf(s, "p1", "battlefield", "Viscera Seer"), "scry", { sacrifice: [artist] });
@@ -69,7 +69,7 @@ describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
       expect([life(s, "p1"), life(s, "p2")]).toEqual([21, 19]);
     });
 
-    it("Blood Artist : la mort d'une créature adverse le déclenche aussi", () => {
+    it("Blood Artist: the death of an opposing creature triggers it too", () => {
       let s = scenario({
         p1: { battlefield: ["Blood Artist", "Mountain"], hand: ["Shock"] },
         p2: { battlefield: ["Savannah Lions"] },
@@ -79,7 +79,7 @@ describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
       expect([life(s, "p1"), life(s, "p2")]).toEqual([21, 19]);
     });
 
-    it("Cordial Vampire : une créature meurt, un marqueur +1/+1 sur chaque Vampire que vous contrôlez (pas les autres)", () => {
+    it("Cordial Vampire: a creature dies, a +1/+1 counter on each Vampire you control (not the others)", () => {
       let s = scenario({
         p1: { battlefield: ["Cordial Vampire", "Viscera Seer", "Savannah Lions", "Llanowar Elves"] },
         p2: { battlefield: [DIRE_MOON] },
@@ -94,7 +94,7 @@ describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
       expect(s.objects[idOf(s, "p2", "battlefield", DIRE_MOON)]?.counters["+1/+1"] ?? 0).toBe(0);
     });
 
-    it("Cruel Celebrant : une de vos créatures meurt, chaque adversaire perd 1 PV et vous en gagnez 1 ; une créature adverse, rien", () => {
+    it("Cruel Celebrant: one of your creatures dies, each opponent loses 1 life and you gain 1; an opposing creature, nothing", () => {
       let s = scenario({
         players: 3,
         p1: { battlefield: ["Cruel Celebrant", "Viscera Seer", "Savannah Lions", "Mountain"], hand: ["Shock"] },
@@ -111,7 +111,7 @@ describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
       expect([life(s, "p1"), life(s, "p2"), life(s, "p3")]).toEqual([21, 19, 19]);
     });
 
-    it("Indulgent Aristocrat : {2}, sacrifiez une créature (elle-même comprise) : un marqueur +1/+1 sur chaque Vampire", () => {
+    it("Indulgent Aristocrat: {2}, sacrifice a creature (itself included): a +1/+1 counter on each Vampire", () => {
       let s = scenario({ p1: { battlefield: ["Indulgent Aristocrat", DIRE_MOON, "Savannah Lions", ...lands("Plains", 2)] } });
       const aristocrat = idOf(s, "p1", "battlefield", "Indulgent Aristocrat");
       s = activateLabel(s, "p1", aristocrat, "+1/+1 on each", { sacrifice: [idOf(s, "p1", "battlefield", "Savannah Lions")] });
@@ -121,7 +121,7 @@ describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
       expect(card("Indulgent Aristocrat").keywords).toContain("lifelink");
     });
 
-    it("Elenda : +1/+1 à chaque autre créature qui meurt ; à sa mort, autant de Vampires 1/1 blancs avec le lien de vie que sa force", () => {
+    it("Elenda: +1/+1 for each other creature that dies; when it dies, as many 1/1 white Vampire tokens with lifelink as its power", () => {
       let s = scenario({ p1: { battlefield: ["Elenda, the Dusk Rose", "Viscera Seer", "Savannah Lions"] } });
       const elenda = idOf(s, "p1", "battlefield", "Elenda, the Dusk Rose");
       const seer = idOf(s, "p1", "battlefield", "Viscera Seer");
@@ -134,7 +134,7 @@ describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
       expect(chars(s, tokens[0] as string).keywords).toContain("lifelink");
     });
 
-    it("Yahenni : +1/+1 quand une créature adverse meurt (pas les vôtres) ; sacrifiez une autre créature : indestructible", () => {
+    it("Yahenni: +1/+1 when an opposing creature dies (not yours); sacrifice another creature: indestructible", () => {
       let s = scenario({
         p1: { battlefield: ["Yahenni, Undying Partisan", "Savannah Lions", "Mountain"], hand: ["Shock"] },
         p2: { battlefield: ["Llanowar Elves"] },
@@ -147,13 +147,13 @@ describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
       );
       expect(s.objects[yahenni]?.counters["+1/+1"]).toBe(1);
       expect(chars(s, yahenni).keywords).toContain("indestructible");
-      // « Une autre créature » : Yahenni ne peut pas se sacrifier lui-même.
+      // "Another creature": Yahenni cannot sacrifice itself.
       expect(hasActivation(s, "p1", yahenni, "indestructible")).toBe(false);
     });
   });
 
-  describe("seigneurs et grandes capacités", () => {
-    it("Legion Lieutenant, Markov Baron, Stromkirk Captain, Edgar, Charmed Groom : +1/+1 à vos autres Vampires seulement ; l'initiative du Captain", () => {
+  describe("lords and big abilities", () => {
+    it("Legion Lieutenant, Markov Baron, Stromkirk Captain, Edgar, Charmed Groom: +1/+1 to your other Vampires only; the Captain's initiative", () => {
       const s = scenario({
         p1: { battlefield: ["Legion Lieutenant", "Markov Baron", "Stromkirk Captain", GROOM, DIRE_MOON, "Savannah Lions"] },
         p2: { battlefield: [DIRE_MOON] },
@@ -161,7 +161,7 @@ describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
       const moon = idOf(s, "p1", "battlefield", DIRE_MOON);
       expect(pt(s, moon)).toEqual([5, 5]);
       expect(chars(s, moon).keywords).toContain("firstStrike");
-      // Chacun reçoit le bonus des trois autres.
+      // Each gets the bonus from the other three.
       expect(pt(s, idOf(s, "p1", "battlefield", "Legion Lieutenant"))).toEqual([5, 5]);
       expect(pt(s, idOf(s, "p1", "battlefield", "Savannah Lions"))).toEqual([2, 1]);
       expect(pt(s, idOf(s, "p2", "battlefield", DIRE_MOON))).toEqual([1, 1]);
@@ -169,7 +169,7 @@ describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
       expect(card("Markov Baron").madness).toBeDefined();
     });
 
-    it("Bloodline Keeper : {T} crée un Vampire 2/2 volant ; {B} : transformation seulement avec cinq Vampires ; Lord of Lineage donne +2/+2", () => {
+    it("Bloodline Keeper: {T} creates a 2/2 flying Vampire; {B}: transform only with five Vampires; Lord of Lineage gives +2/+2", () => {
       let s = scenario({ p1: { battlefield: [KEEPER, "Swamp", DIRE_MOON] } });
       const keeper = idOf(s, "p1", "battlefield", KEEPER);
       s = settle(activateLabel(s, "p1", keeper, "token"));
@@ -177,7 +177,7 @@ describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
       expect(pt(s, token)).toEqual([2, 2]);
       expect(chars(s, token).keywords).toContain("flying");
       expect(chars(s, token).subtypes).toEqual(["Vampire"]);
-      // Trois Vampires : pas de transformation.
+      // Three Vampires: no transformation.
       expect(hasActivation(s, "p1", keeper, "Transform")).toBe(false);
 
       s = scenario({ p1: { battlefield: [KEEPER, "Swamp", ...Array(4).fill(DIRE_MOON)] } });
@@ -186,11 +186,11 @@ describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
       expect(chars(s, keeper2).name).toBe("Lord of Lineage");
       expect(pt(s, keeper2)).toEqual([5, 5]);
       expect(pt(s, idOf(s, "p1", "battlefield", DIRE_MOON))).toEqual([3, 3]);
-      // Le verso a aussi « {T} : créez un Vampire 2/2 volant ».
+      // The back face also has "{T}: Create a 2/2 black Vampire creature token with flying."
       expect(hasActivation(s, "p1", keeper2, "token")).toBe(true);
     });
 
-    it("Captivating Vampire : +1/+1 aux autres Vampires ; engagez cinq Vampires (lui compris, même arrivé ce tour-ci) : contrôlez la créature ciblée, qui devient un Vampire", () => {
+    it("Captivating Vampire: +1/+1 to other Vampires; tap five Vampires (itself included, even if it came this turn): gain control of the targeted creature, which becomes a Vampire", () => {
       let s = scenario({
         p1: { battlefield: [{ name: "Captivating Vampire", sick: true }, ...Array(4).fill(DIRE_MOON)] },
         p2: { battlefield: ["Savannah Lions"] },
@@ -201,13 +201,13 @@ describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
       s = settle(activateLabel(s, "p1", captivating, "gain control", { targets: { t: [lions] } }));
       expect(s.objects[lions]?.controller).toBe("p1");
       expect(chars(s, lions).subtypes).toContain("Vampire");
-      // Devenu Vampire, il reçoit le +1/+1.
+      // Now a Vampire, it gets the +1/+1.
       expect(pt(s, lions)).toEqual([3, 2]);
       expect(idsOf(s, "p1", "battlefield", DIRE_MOON).every((id) => s.objects[id]?.tapped)).toBe(true);
       expect(s.objects[captivating]?.tapped).toBe(true);
     });
 
-    it("Captivating Vampire : pas d'activation avec seulement quatre Vampires dégagés", () => {
+    it("Captivating Vampire: no activation with only four untapped Vampires", () => {
       const s = scenario({
         p1: { battlefield: ["Captivating Vampire", ...Array(3).fill(DIRE_MOON), { name: DIRE_MOON, tapped: true }] },
         p2: { battlefield: ["Savannah Lions"] },
@@ -215,7 +215,7 @@ describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
       expect(hasActivation(s, "p1", idOf(s, "p1", "battlefield", "Captivating Vampire"), "gain control")).toBe(false);
     });
 
-    it("Knight of the Ebon Legion : {2}{B} +3/+3 et contact mortel ; à votre étape de fin, +1/+1 si un joueur a perdu 4 PV ou plus ce tour-ci", () => {
+    it("Knight of the Ebon Legion: {2}{B} +3/+3 and deathtouch; at your end step, +1/+1 if a player lost 4 or more life this turn", () => {
       let s = scenario({ p1: { battlefield: ["Knight of the Ebon Legion", ...lands("Swamp", 3)] } });
       const knight = idOf(s, "p1", "battlefield", "Knight of the Ebon Legion");
       s = settle(activateLabel(s, "p1", knight, "+3/+3"));
@@ -227,7 +227,7 @@ describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
       expect(s.objects[knight]?.counters["+1/+1"]).toBe(1);
     });
 
-    it("Knight of the Ebon Legion : pas de marqueur si personne n'a perdu 4 PV", () => {
+    it("Knight of the Ebon Legion: no counter if nobody lost 4 life", () => {
       let s = scenario({ p1: { battlefield: ["Knight of the Ebon Legion"] } });
       const knight = idOf(s, "p1", "battlefield", "Knight of the Ebon Legion");
       s = throughCombat(attack(s, [knight]));
@@ -236,7 +236,7 @@ describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
       expect(s.objects[knight]?.counters["+1/+1"] ?? 0).toBe(0);
     });
 
-    it("Master of Dark Rites : {T}, sacrifiez une autre créature : {B}{B}{B} pour des sorts de Vampire, de Clerc ou de Démon seulement", () => {
+    it("Master of Dark Rites: {T}, sacrifice another creature: {B}{B}{B} for Vampire, Cleric or Demon spells only", () => {
       let s = scenario({
         p1: { battlefield: ["Master of Dark Rites", "Savannah Lions"], hand: [DIRE_MOON, "Murder"] },
         p2: { battlefield: ["Llanowar Elves"] },
@@ -249,7 +249,7 @@ describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
       expect(castable(s, "p1", idOf(s, "p1", "hand", "Murder"))).toBe(false);
     });
 
-    it("Vito : quand vous gagnez des PV, l'adversaire ciblé en perd autant ; {3}{B}{B} : vos créatures gagnent le lien de vie", () => {
+    it("Vito: when you gain life, the targeted opponent loses that much; {3}{B}{B}: your creatures gain lifelink", () => {
       let s = scenario({ p1: { battlefield: ["Vito, Thorn of the Dusk Rose", ...lands("Swamp", 5)] } });
       const vito = idOf(s, "p1", "battlefield", "Vito, Thorn of the Dusk Rose");
       s = settle(activateLabel(s, "p1", vito, "lifelink"));
@@ -258,7 +258,7 @@ describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
       expect([life(s, "p1"), life(s, "p2")]).toEqual([21, 18]);
     });
 
-    it("Sorin, Imperious Bloodlord : +1 contact mortel et lien de vie, et un marqueur si c'est un Vampire (pas sinon)", () => {
+    it("Sorin, Imperious Bloodlord: +1 deathtouch and lifelink, and a counter if it is a Vampire (not otherwise)", () => {
       let s = scenario({ p1: { battlefield: ["Sorin, Imperious Bloodlord", DIRE_MOON, "Savannah Lions"] } });
       const sorin = idOf(s, "p1", "battlefield", "Sorin, Imperious Bloodlord");
       const moon = idOf(s, "p1", "battlefield", DIRE_MOON);
@@ -276,7 +276,7 @@ describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
       expect(t.objects[lions]?.counters["+1/+1"] ?? 0).toBe(0);
     });
 
-    it("Sorin : +1 sacrifiez un Vampire, quand vous le faites 3 blessures à n'importe quelle cible et 3 PV ; −3 un Vampire de la main", () => {
+    it("Sorin: +1 sacrifice a Vampire, when you do 3 damage to any target and 3 life; −3 a Vampire from hand", () => {
       let s = scenario({ p1: { battlefield: ["Sorin, Imperious Bloodlord", DIRE_MOON], hand: ["Malakir Bloodwitch"] } });
       const sorin = idOf(s, "p1", "battlefield", "Sorin, Imperious Bloodlord");
       s = settle(activateLabel(s, "p1", sorin, "3 damage"), yesPicking(["p2", idOf(s, "p1", "battlefield", DIRE_MOON)]));
@@ -292,24 +292,24 @@ describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
           return pickNamed(cur, req, "Malakir Bloodwitch");
         },
       );
-      // Seules les cartes de créature Vampire sont proposées.
+      // Only Vampire creature cards are offered.
       expect(offered[0]).toEqual(["Malakir Bloodwitch"]);
       expect(idsOf(t, "p1", "battlefield", "Malakir Bloodwitch")).toHaveLength(1);
       expect(idsOf(t, "p1", "hand", "Savannah Lions")).toHaveLength(1);
-      // L'arrivée de la Bloodwitch se déclenche : un Vampire, chaque adversaire perd 1 PV.
+      // The Bloodwitch's arrival triggers: a Vampire, each opponent loses 1 life.
       expect(life(t, "p2")).toBe(19);
     });
   });
 
-  describe("arrivées", () => {
-    it("Champion of Dusk : piochez X cartes et perdez X PV, X étant le nombre de Vampires que vous contrôlez (lui compris)", () => {
+  describe("enters", () => {
+    it("Champion of Dusk: draw X cards and lose X life, X being the number of Vampires you control (itself included)", () => {
       let s = scenario({ p1: { battlefield: [...Array(3).fill(DIRE_MOON), ...lands("Swamp", 5)], hand: ["Champion of Dusk"] } });
       s = settle(cast(s, "p1", "Champion of Dusk"));
       expect(handSize(s, "p1")).toBe(4);
       expect(life(s, "p1")).toBe(16);
     });
 
-    it("Malakir Bloodwitch : chaque adversaire perd 1 PV par Vampire que vous contrôlez ; vous gagnez le total perdu ; protection contre le blanc", () => {
+    it("Malakir Bloodwitch: each opponent loses 1 life per Vampire you control; you gain the total lost; protection from white", () => {
       let s = scenario({
         players: 3,
         p1: { battlefield: [DIRE_MOON, DIRE_MOON, ...lands("Swamp", 5)], hand: ["Malakir Bloodwitch"] },
@@ -321,7 +321,7 @@ describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
       expect(chars(s, witch).keywords).toContain("flying");
     });
 
-    it("Forerunner of the Legion : cherchez un Vampire, mis au-dessus de la bibliothèque ; un autre Vampire arrive : +1/+1 à la créature ciblée", () => {
+    it("Forerunner of the Legion: search for a Vampire, put on top of the library; another Vampire enters: +1/+1 to the targeted creature", () => {
       let s = scenario({
         p1: {
           battlefield: lands("Plains", 3),
@@ -340,7 +340,7 @@ describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
       expect(pt(t, forerunner)).toEqual([3, 3]);
     });
 
-    it("Forerunner of the Legion : vous pouvez ne pas chercher (la bibliothèque reste dans l'ordre)", () => {
+    it("Forerunner of the Legion: you may choose not to search (the library stays in order)", () => {
       let s = scenario({
         p1: { battlefield: lands("Plains", 3), hand: ["Forerunner of the Legion"], library: ["Forest", DIRE_MOON] },
       });
@@ -348,7 +348,7 @@ describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
       expect(nameOf(s, s.players.p1?.library[0] ?? "")).toBe("Forest");
     });
 
-    it("Vampire Socialite : si un adversaire a perdu des PV ce tour-ci, +1/+1 sur chaque autre Vampire, et vos autres Vampires arrivent avec un marqueur de plus", () => {
+    it("Vampire Socialite: if an opponent lost life this turn, +1/+1 on each other Vampire, and your other Vampires enter with an additional counter", () => {
       let s = scenario({
         p1: {
           battlefield: [DIRE_MOON, "Mountain", "Mountain", "Swamp", "Swamp"],
@@ -366,7 +366,7 @@ describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
       expect(s.objects[second]?.counters["+1/+1"]).toBe(1);
     });
 
-    it("Vampire Socialite : sans perte de PV adverse ce tour-ci, ni marqueur à l'arrivée ni marqueur de plus", () => {
+    it("Vampire Socialite: with no opposing life loss this turn, neither a counter on entering nor an additional counter", () => {
       let s = scenario({
         p1: { battlefield: [DIRE_MOON, "Mountain", "Swamp", "Swamp"], hand: ["Vampire Socialite", DIRE_MOON] },
       });
@@ -376,7 +376,7 @@ describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
       expect(card("Vampire Socialite").keywords).toContain("menace");
     });
 
-    it("Welcoming Vampire : des créatures de force 2 ou moins arrivent sous votre contrôle : piochez, une seule fois par tour", () => {
+    it("Welcoming Vampire: creatures with power 2 or less enter under your control: draw, once each turn", () => {
       let s = scenario({ p1: { battlefield: ["Welcoming Vampire", ...lands("Swamp", 2)], hand: [DIRE_MOON, DIRE_MOON] } });
       s = settle(cast(s, "p1", DIRE_MOON));
       expect(handSize(s, "p1")).toBe(2);
@@ -384,7 +384,7 @@ describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
       expect(handSize(s, "p1")).toBe(1);
     });
 
-    it("Charismatic Conqueror : un artefact ou une créature adverse arrive dégagé ; s'il n'est pas engagé, vous créez un Vampire 1/1 blanc avec le lien de vie", () => {
+    it("Charismatic Conqueror: an opposing artifact or creature enters untapped; if it is not tapped, you create a 1/1 white Vampire with lifelink", () => {
       const start = () =>
         scenario({
           active: "p2",
@@ -403,17 +403,17 @@ describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
     });
   });
 
-  describe("attaques", () => {
-    it("Drana : en blessant un joueur (initiative), un marqueur +1/+1 sur chaque créature attaquante, avant les blessures normales", () => {
+  describe("attacks", () => {
+    it("Drana: dealing damage to a player (first strike), a +1/+1 counter on each attacking creature, before regular damage", () => {
       let s = scenario({ p1: { battlefield: ["Drana, Liberator of Malakir", "Savannah Lions"] } });
       const lions = idOf(s, "p1", "battlefield", "Savannah Lions");
       s = throughCombat(attack(s, [idOf(s, "p1", "battlefield", "Drana, Liberator of Malakir"), lions]));
       expect(s.objects[lions]?.counters["+1/+1"]).toBe(1);
-      // Drana 2 (initiative), puis les Lions 3/2.
+      // Drana 2 (first strike), then the 3/2 Lions.
       expect(life(s, "p2")).toBe(15);
     });
 
-    it("Mavren Fein : des Vampires non-jetons attaquent : un seul Vampire 1/1 blanc avec le lien de vie", () => {
+    it("Mavren Fein: nontoken Vampires attack: a single 1/1 white Vampire with lifelink", () => {
       let s = scenario({ p1: { battlefield: ["Mavren Fein, Dusk Apostle", DIRE_MOON, "Savannah Lions"] } });
       s = settleNoBlocks(
         attack(s, [idOf(s, "p1", "battlefield", "Mavren Fein, Dusk Apostle"), idOf(s, "p1", "battlefield", DIRE_MOON)]),
@@ -424,16 +424,16 @@ describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
       expect(tokensOf(t, "p1")).toEqual([]);
     });
 
-    it("Sanctum Seeker : chaque Vampire qui attaque : chaque adversaire perd 1 PV et vous en gagnez 1", () => {
+    it("Sanctum Seeker: each Vampire that attacks: each opponent loses 1 life and you gain 1", () => {
       let s = scenario({ p1: { battlefield: ["Sanctum Seeker", "Legion Lieutenant"] } });
       s = throughCombat(
         attack(s, [idOf(s, "p1", "battlefield", "Sanctum Seeker"), idOf(s, "p1", "battlefield", "Legion Lieutenant")]),
       );
-      // Drain 2, puis 4 + 2 blessures de combat.
+      // Drain 2, then 4 + 2 combat damage.
       expect([life(s, "p1"), life(s, "p2")]).toEqual([22, 12]);
     });
 
-    it("Clavileño : quand vous attaquez, un Vampire attaquant non-Démon devient un Démon ; à sa mort, piochez et un Vampire Démon 4/3 volant engagé", () => {
+    it("Clavileño: when you attack, an attacking non-Demon Vampire becomes a Demon; when it dies, draw and a tapped 4/3 flying Vampire Demon", () => {
       let s = scenario({ p1: { battlefield: ["Clavileño, First of the Blessed", DIRE_MOON, "Mountain"], hand: ["Shock"] } });
       const moon = idOf(s, "p1", "battlefield", DIRE_MOON);
       s = throughCombat(attack(s, [moon]));
@@ -447,7 +447,7 @@ describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
       expect(s.objects[demon]?.tapped).toBe(true);
     });
 
-    it("Clavileño : un Vampire qui est déjà un Démon n'est pas une cible", () => {
+    it("Clavileño: a Vampire that is already a Demon is not a target", () => {
       let s = scenario({ p1: { battlefield: ["Clavileño, First of the Blessed", "Savannah Lions"] } });
       s = throughCombat(attack(s, [idOf(s, "p1", "battlefield", "Savannah Lions")]));
       expect(chars(s, idOf(s, "p1", "battlefield", "Savannah Lions")).subtypes).not.toContain("Demon");
@@ -455,7 +455,7 @@ describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
   });
 
   describe("Edgar, Charmed Groom // Edgar Markov's Coffin", () => {
-    it("quand Edgar meurt, il revient transformé ; le Cercueil crée un Vampire 1/1 blanc et noir avec le lien de vie et prend un marqueur de lignée", () => {
+    it("when Edgar dies, it returns transformed; the Coffin creates a 1/1 white and black Vampire with lifelink and takes a bloodline counter", () => {
       let s = scenario({ p1: { battlefield: [GROOM, "Viscera Seer"] } });
       s = settle(
         activateLabel(s, "p1", idOf(s, "p1", "battlefield", "Viscera Seer"), "scry", {
@@ -472,7 +472,7 @@ describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
       expect(chars(s, token).keywords).toContain("lifelink");
     });
 
-    it("au troisième marqueur de lignée, ils sont retirés et le Cercueil se transforme en Edgar", () => {
+    it("at the third bloodline counter, they are removed and the Coffin transforms into Edgar", () => {
       let s = scenario({ p1: { battlefield: [GROOM, "Viscera Seer"] } });
       s = settle(
         activateLabel(s, "p1", idOf(s, "p1", "battlefield", "Viscera Seer"), "scry", {
@@ -484,13 +484,13 @@ describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
       s = toNextMain(s);
       expect(chars(s, coffin).name).toMatch(/^Edgar, Charmed Groom/);
       expect(s.objects[coffin]?.counters.bloodline ?? 0).toBe(0);
-      // Edgar donne +1/+1 aux autres Vampires, dont le jeton créé à cet entretien.
+      // Edgar gives +1/+1 to the other Vampires, including the token created at this upkeep.
       expect(pt(s, tokensOf(s, "p1")[0] as string)).toEqual([2, 2]);
     });
   });
 
-  describe("ascension (702.131) : Twilight Prophet", () => {
-    it("avec dix permanents, vous recevez la bénédiction de la cité ; à votre entretien, la carte du dessus en main et drain de sa valeur de mana", () => {
+  describe("ascend (702.131): Twilight Prophet", () => {
+    it("with ten permanents, you get the city's blessing; at your upkeep, the top card to hand and drain of its mana value", () => {
       let s = scenario({
         players: 3,
         p1: { battlefield: ["Twilight Prophet", ...lands("Swamp", 9)], library: ["Champion of Dusk", "Forest", "Forest"] },
@@ -502,7 +502,7 @@ describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
       expect([life(s, "p1"), life(s, "p2"), life(s, "p3")]).toEqual([25, 15, 15]);
     });
 
-    it("avec neuf permanents, pas de bénédiction ni de drain ; la bénédiction reste après la perte de permanents", () => {
+    it("with nine permanents, no blessing or drain; the blessing stays after losing permanents", () => {
       let s = scenario({
         p1: { battlefield: ["Twilight Prophet", ...lands("Swamp", 8)], library: ["Champion of Dusk", "Forest"] },
       });
@@ -522,8 +522,8 @@ describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
     });
   });
 
-  describe("sorts", () => {
-    it("New Blood : en coût additionnel, engagez un Vampire dégagé ; contrôlez la créature ciblée, qui devient un Vampire (approximation du changement de texte)", () => {
+  describe("spells", () => {
+    it("New Blood: as an additional cost, tap an untapped Vampire; gain control of the targeted creature, which becomes a Vampire (approximation of the text change)", () => {
       let s = scenario({
         p1: { battlefield: [DIRE_MOON, ...lands("Swamp", 4)], hand: ["New Blood"] },
         p2: { battlefield: ["Savannah Lions"] },
@@ -535,7 +535,7 @@ describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
       expect(s.objects[idOf(s, "p1", "battlefield", DIRE_MOON)]?.tapped).toBe(true);
     });
 
-    it("New Blood : sans Vampire dégagé, pas de lancer", () => {
+    it("New Blood: without an untapped Vampire, no casting", () => {
       const s = scenario({
         p1: { battlefield: [{ name: DIRE_MOON, tapped: true }, ...lands("Swamp", 4)], hand: ["New Blood"] },
         p2: { battlefield: ["Savannah Lions"] },
@@ -543,7 +543,7 @@ describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
       expect(castable(s, "p1", idOf(s, "p1", "hand", "New Blood"))).toBe(false);
     });
 
-    it("Olivia's Wrath : chaque créature non-Vampire gagne −X/−X, X étant le nombre de Vampires que vous contrôlez", () => {
+    it("Olivia's Wrath: each non-Vampire creature gets −X/−X, X being the number of Vampires you control", () => {
       let s = scenario({
         p1: { battlefield: [DIRE_MOON, DIRE_MOON, "Savannah Lions", ...lands("Swamp", 5)], hand: ["Olivia's Wrath"] },
         p2: { battlefield: [DIRE_MOON, "Llanowar Elves", "Charismatic Conqueror"] },
@@ -556,7 +556,7 @@ describe("Commander (EDH) : les Vampires d'Edgar Markov", () => {
       expect(idsOf(s, "p2", "battlefield", "Charismatic Conqueror")).toHaveLength(1);
     });
 
-    it("Pact of the Serpent : choisissez un type ; le joueur ciblé pioche X cartes et perd X PV (ses créatures de ce type)", () => {
+    it("Pact of the Serpent: choose a type; the targeted player draws X cards and loses X life (its creatures of that type)", () => {
       let s = scenario({
         p1: { battlefield: [DIRE_MOON, ...lands("Swamp", 3)], hand: ["Pact of the Serpent"] },
         p2: { battlefield: [DIRE_MOON, DIRE_MOON, "Savannah Lions"] },

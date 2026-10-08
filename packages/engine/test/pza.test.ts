@@ -1,4 +1,4 @@
-/** Source Material (PZA) : tests de règles des cartes (PLAN-G). */
+/** Source Material (PZA): card rules tests (PLAN-G). */
 import { describe, expect, it } from "vitest";
 import { drawCards } from "../src/actions";
 import { legalActions } from "../src/legal";
@@ -16,8 +16,8 @@ const CONSTRUCT = customCard({
 });
 
 describe("Source Material", () => {
-  describe("Modulaire (702.43) : Arcbound Ravager", () => {
-    it("arrive avec un marqueur ; sacrifier un artefact en ajoute un ; en mourant, ses marqueurs vont sur une créature-artefact", () => {
+  describe("Modular (702.43): Arcbound Ravager", () => {
+    it("enters with a counter; sacrificing an artifact adds one; when it dies, its counters go onto an artifact creature", () => {
       let s = scenario({ p1: { battlefield: [...lands("Plains", 2), ARTIFACT, CONSTRUCT], hand: ["Arcbound Ravager"] } });
       s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Arcbound Ravager") }));
       const ravager = idOf(s, "p1", "battlefield", "Arcbound Ravager");
@@ -33,7 +33,7 @@ describe("Source Material", () => {
         }),
       );
       expect(s.objects[ravager]?.counters["+1/+1"]).toBe(2);
-      // Ravager se sacrifie lui-même : ses deux marqueurs vont sur la créature-artefact.
+      // Ravager sacrifices itself: its two counters go onto the artifact creature.
       const construct = idOf(s, "p1", "battlefield", "Test Construct");
       s = settle(
         act(s, "p1", {
@@ -50,8 +50,8 @@ describe("Source Material", () => {
     });
   });
 
-  describe("Greffe (702.58) : Cytoplast Manipulator", () => {
-    it("arrive avec deux marqueurs ; une autre créature arrive : un marqueur peut y être déplacé", () => {
+  describe("Graft (702.58): Cytoplast Manipulator", () => {
+    it("enters with two counters; another creature enters: a counter can be moved onto it", () => {
       let s = scenario({
         p1: {
           battlefield: [{ name: "Cytoplast Manipulator", counters: { "+1/+1": 2 } }, ...lands("Forest", 2)],
@@ -67,7 +67,7 @@ describe("Source Material", () => {
       expect(s.objects[bear]?.counters["+1/+1"]).toBe(1);
     });
 
-    it("{U}, {T} : contrôle d'une créature avec un marqueur +1/+1", () => {
+    it("{U}, {T}: gain control of a creature with a +1/+1 counter", () => {
       let s = scenario({
         p1: { battlefield: [{ name: "Cytoplast Manipulator", counters: { "+1/+1": 2 } }, "Island"] },
         p2: { battlefield: [{ name: "Bear Cub", counters: { "+1/+1": 1 } }, "Llanowar Elves"] },
@@ -75,7 +75,7 @@ describe("Source Material", () => {
       const cyto = idOf(s, "p1", "battlefield", "Cytoplast Manipulator");
       const bear = idOf(s, "p2", "battlefield", "Bear Cub");
       const ab = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === cyto);
-      // Les créatures avec un marqueur +1/+1, la sienne comprise ; pas les Elfes.
+      // Creatures with a +1/+1 counter, its own included; not the Elves.
       expect(ab?.type === "activate" && ab.targets[0]?.legal).toEqual([cyto, bear]);
       s = settle(
         act(s, "p1", {
@@ -86,20 +86,20 @@ describe("Source Material", () => {
         }),
       );
       expect(s.objects[bear]?.controller).toBe("p1");
-      // Le Manipulator quitte le champ de bataille : la créature revient aussitôt à son propriétaire (seul effet de
-      // contrôle en jeu, retiré avec la source).
+      // The Manipulator leaves the battlefield: the creature goes back to its owner at once (the only control
+      // effect in play, removed with the source).
       moveObject(s, cyto, "exile");
       expect(s.objects[bear]?.controller).toBe("p2");
     });
   });
 
-  describe("G9 : Source Material", () => {
+  describe("G9: Source Material", () => {
     const equip = (s: ReturnType<typeof scenario>, eq: string, creature: string) => {
       (s.objects[eq] as { attachedTo?: string }).attachedTo = creature;
       s.version += 1;
     };
 
-    it("Teleportation Circle : à votre étape de fin, un de vos artefacts ou créatures est exilé puis revient", () => {
+    it("Teleportation Circle: at your end step, one of your artifacts or creatures is exiled, then returns", () => {
       let s = scenario({ p1: { battlefield: ["Teleportation Circle", { name: "Bear Cub", counters: { "+1/+1": 2 } }] } });
       const cub = idOf(s, "p1", "battlefield", "Bear Cub");
       s = advanceUntil(s, (x) => x.pending?.kind === "choice" || x.turn.active === "p2", 200);
@@ -109,12 +109,12 @@ describe("Source Material", () => {
       expect(s.objects[back[0] as string]?.counters["+1/+1"] ?? 0).toBe(0);
     });
 
-    it("Rhythm of the Wild : vos sorts de créature ne peuvent pas être contrecarrés", () => {
+    it("Rhythm of the Wild: your creature spells can't be countered", () => {
       const s = scenario({ p1: { battlefield: ["Rhythm of the Wild"] } });
       expect(playerStatic(s, "p1", "uncounterable")).toBe(true);
     });
 
-    it("Metallic Mimic : vos autres créatures du type choisi arrivent avec un marqueur +1/+1", () => {
+    it("Metallic Mimic: your other creatures of the chosen type enter with a +1/+1 counter", () => {
       let s = scenario({ p1: { battlefield: lands("Forest", 4), hand: ["Metallic Mimic", "Bear Cub"] } });
       s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Metallic Mimic") }), (req) =>
         req.type === "pick" && req.options.includes("Bear") ? ["Bear"] : undefined,
@@ -124,7 +124,7 @@ describe("Source Material", () => {
       expect(chars(s, idOf(s, "p1", "battlefield", "Metallic Mimic")).subtypes).toContain("Bear");
     });
 
-    it("Umezawa's Jitte : deux marqueurs en blessant au combat ; un marqueur retiré donne 2 PV", () => {
+    it("Umezawa's Jitte: two counters when dealing combat damage; a removed counter gives 2 life", () => {
       let s = scenario({ p1: { battlefield: ["Bear Cub", "Umezawa's Jitte"] } });
       const cub = idOf(s, "p1", "battlefield", "Bear Cub");
       const jitte = idOf(s, "p1", "battlefield", "Umezawa's Jitte");
@@ -136,7 +136,7 @@ describe("Source Material", () => {
       expect([s.players.p1?.life, s.objects[jitte]?.counters.charge]).toEqual([22, 1]);
     });
 
-    it("Shadowspear : {1}, les permanents adverses perdent la défense talismanique et l'indestructible", () => {
+    it("Shadowspear: {1}, opposing permanents lose hexproof and indestructible", () => {
       let s = scenario({ p1: { battlefield: ["Shadowspear", "Plains"] }, p2: { battlefield: ["Carnage Tyrant"] } });
       const spear = idOf(s, "p1", "battlefield", "Shadowspear");
       const ab = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === spear && !a.label?.startsWith("Equip"));
@@ -144,7 +144,7 @@ describe("Source Material", () => {
       expect(chars(s, idOf(s, "p2", "battlefield", "Carnage Tyrant")).keywords).not.toContain("hexproof");
     });
 
-    it("All Will Be One : vous mettez des marqueurs, autant de blessures", () => {
+    it("All Will Be One: you put counters, as much damage", () => {
       let s = scenario({
         p1: { battlefield: ["All Will Be One", "Bear Cub", ...lands("Forest", 2)], hand: ["Hardened Scales"] },
       });
@@ -153,8 +153,8 @@ describe("Source Material", () => {
       expect(s.players.p2?.life).toBe(17);
     });
   });
-  describe("G4e : combat", () => {
-    it("Waves of Aggression : dégage les attaquants, un combat et une phase principale de plus ; retrace", () => {
+  describe("G4e: combat", () => {
+    it("Waves of Aggression: untaps the attackers, an extra combat and main phase; retrace", () => {
       let s = scenario({ p1: { battlefield: ["Bear Cub", ...lands("Mountain", 5)], hand: ["Waves of Aggression"] } });
       const cub = idOf(s, "p1", "battlefield", "Bear Cub");
       s = throughCombat(attack(s, [cub]));
@@ -164,7 +164,7 @@ describe("Source Material", () => {
       s = throughCombat(attack(s, [cub]));
       expect(s.players.p2?.life).toBe(16);
       expect(s.turn.active).toBe("p1");
-      // Retrace : depuis le cimetière en défaussant une carte de terrain.
+      // Retrace: from the graveyard, discarding a land card.
       const r = scenario({ p1: { battlefield: lands("Mountain", 5), graveyard: ["Waves of Aggression"], hand: ["Bear Cub"] } });
       const waves = idOf(r, "p1", "graveyard", "Waves of Aggression");
       expect(legalActions(r, "p1").some((a) => a.type === "cast" && a.card === waves)).toBe(false);
@@ -173,8 +173,8 @@ describe("Source Material", () => {
       expect(legalActions(q, "p1").some((a) => a.type === "cast" && a.card === w2)).toBe(true);
     });
   });
-  describe("G4e : bibliothèque et pioche", () => {
-    it("Trouble in Pairs : deuxième sort ou deuxième pioche d'un adversaire, vous piochez ; ses tours supplémentaires sont passés", () => {
+  describe("G4e: library and drawing", () => {
+    it("Trouble in Pairs: an opponent's second spell or second draw, you draw; their extra turns are skipped", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: ["Trouble in Pairs"], library: lands("Plains", 5) },
@@ -192,8 +192,8 @@ describe("Source Material", () => {
       expect(s.turn.active).toBe("p1");
     });
   });
-  describe("G4e : dernières cartes (2)", () => {
-    it("Plague of Vermin : chaque joueur paie des PV et crée autant de Rats", () => {
+  describe("G4e: last cards (2)", () => {
+    it("Plague of Vermin: each player pays life and creates that many Rats", () => {
       let s = scenario({ p1: { battlefield: lands("Swamp", 7), hand: ["Plague of Vermin"] } });
       s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Plague of Vermin") }), (req, player) =>
         req.type === "number" ? [player === "p1" ? 3 : 2] : undefined,
@@ -206,8 +206,8 @@ describe("Source Material", () => {
   });
 });
 
-describe("Source Material : approximations levées (PLAN-H, H2c)", () => {
-  it("Plague of Vermin : à plusieurs, chaque joueur paie à son tour (en commençant par vous) et crée autant de Rats", () => {
+describe("Source Material: approximations lifted (PLAN-H, H2c)", () => {
+  it("Plague of Vermin: in multiplayer, each player pays in turn (starting with you) and creates that many Rats", () => {
     let s = scenario({ players: 3, p1: { battlefield: lands("Swamp", 7), hand: ["Plague of Vermin"] } });
     const payers: string[] = [];
     const paid: Record<string, number> = { p1: 3, p2: 2, p3: 1 };
@@ -222,8 +222,8 @@ describe("Source Material : approximations levées (PLAN-H, H2c)", () => {
   });
 });
 
-describe("joueur attaqué (PLAN-H, lot H5)", () => {
-  it("Trouble in Pairs : « vous attaque avec deux créatures ou plus » — celles qui attaquent vos planeswalkers ne comptent pas", () => {
+describe("attacked player (PLAN-H, lot H5)", () => {
+  it('Trouble in Pairs: "you attack with two or more creatures" — those attacking your planeswalkers don\'t count', () => {
     const run = (elvesAtWalker: boolean) => {
       let s = scenario({
         p1: { battlefield: ["Bear Cub", "Llanowar Elves"] },

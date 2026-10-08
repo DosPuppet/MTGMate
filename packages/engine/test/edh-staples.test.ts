@@ -1,7 +1,7 @@
 /**
- * Commander (pseudo-ensemble EDH, PLAN-E, E9) : tests de règles des sorts communs et des moteurs des decks Commander
- * (texte Oracle). Protection du joueur contre tout et total de PV qui ne peut pas changer (Teferi's Protection, The One
- * Ring), tuteurs, contresorts, destructions de masse, verso terrain d'une carte modale, doublement de jetons, drain.
+ * Commander (EDH pseudo-set, PLAN-E, E9): rules tests of the common spells and engines of the Commander decks
+ * (Oracle text). Player protection from everything and life total that cannot change (Teferi's Protection, The One
+ * Ring), tutors, counterspells, board wipes, land back face of a modal card, token doubling, drain.
  */
 import { describe, expect, it } from "vitest";
 import * as dsl from "../src/dsl";
@@ -30,7 +30,7 @@ import {
 const { fx, ref, target } = dsl;
 const SINK = "Sink into Stupor // Soporific Springs";
 
-/** Rituel de test à {0} (cartes du moteur, pas du catalogue). */
+/** Test ritual costing {0} (engine cards, not from the catalog). */
 const sorcery = (name: string, spell: CardDef["spell"]): CardDef =>
   customCard({ name, typeLine: "Sorcery", types: ["Sorcery"], spell });
 const DRAIN = sorcery("Ponction d'essai", dsl.spell([], [fx.loseLife(3, ref.eachOpponent)]));
@@ -47,31 +47,31 @@ const activateOption = (s: GameState, player: PlayerId, source: ObjectId) =>
   legalActions(s, player).find(
     (a): a is Extract<ActionOption, { type: "activate" }> => a.type === "activate" && a.source === source,
   );
-/** Active la (première) capacité proposée de cette source. */
+/** Activates the (first) offered ability of this source. */
 function activate(s: GameState, player: PlayerId, source: ObjectId, targets?: Record<string, string[]>): GameState {
   const o = activateOption(s, player, source);
-  if (!o) throw new Error("aucune capacité à activer");
+  if (!o) throw new Error("no ability to activate");
   return act(s, player, { type: "activate", source, ability: o.ability, targets });
 }
 const tokens = (s: GameState, player: PlayerId, name: string) =>
   s.battlefield.filter((id) => s.objects[id]?.isToken && s.objects[id]?.controller === player && nameOf(s, id) === name);
 const handNames = (s: GameState, player: PlayerId) => namesIn(s, s.players[player]?.hand).sort();
-/** Choisit le mode dont le libellé est donné (capacité déclenchée modale). */
+/** Chooses the mode whose label is given (modal triggered ability). */
 const modeNamed = (label: string) => (req: ChoiceRequest) =>
   req.type === "pick" && req.intent === "triggerMode"
     ? Object.entries(req.labels ?? {})
         .filter(([, l]) => plainText(l) === label)
         .map(([k]) => k)
     : undefined;
-/** p2 lance un Shock sur p1, puis p1 a la priorité. */
+/** p2 casts a Shock on p1, then p1 has priority. */
 const shockP1 = (s: GameState) => {
   const t = act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Shock"), targets: { t: ["p1"] } });
   return act(t, "p2", { type: "pass" });
 };
 
-describe("Commander (EDH) : sorts communs et moteurs (E9)", () => {
+describe("Commander (EDH): common spells and engines (E9)", () => {
   describe("Teferi's Protection", () => {
-    it("jusqu'à votre prochain tour : ni ciblé, ni blessé, ni perte ni gain de PV ; vos permanents sortent de phase ; exilé", () => {
+    it("until your next turn: can't be targeted, damaged, nor lose or gain life; your permanents phase out; exiled", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: [...lands("Plains", 3), "Bear Cub"], hand: ["Teferi's Protection"] },
@@ -83,7 +83,7 @@ describe("Commander (EDH) : sorts communs et moteurs (E9)", () => {
       expect(exiled(s, "Teferi's Protection")).toHaveLength(1);
       expect(s.objects[bear]?.zone).toBe("phasedOut");
       expect(s.battlefield.filter((id) => s.objects[id]?.controller === "p1")).toEqual([]);
-      // Protection contre tout : pas de cible (même pour ses propres sorts), blessures prévenues.
+      // Protection from everything: no target (even for its own spells), damage prevented.
       expect(playerProtectedFrom(s, "p1", "p2")).toBe(true);
       expect(playerProtectedFrom(s, "p1", "p1")).toBe(true);
       expect(() => act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Shock"), targets: { t: ["p1"] } })).toThrow();
@@ -91,7 +91,7 @@ describe("Commander (EDH) : sorts communs et moteurs (E9)", () => {
         s = settle(act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", name) }));
       expect(s.players.p1?.life).toBe(20);
       expect(s.players.p2?.life).toBe(23);
-      // Les créatures peuvent toujours attaquer ce joueur ; les blessures de combat sont prévenues.
+      // Creatures can still attack this player; combat damage is prevented.
       s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
       s = act(s, "p2", {
         type: "declareAttackers",
@@ -99,19 +99,19 @@ describe("Commander (EDH) : sorts communs et moteurs (E9)", () => {
       });
       s = throughCombat(s);
       expect(s.players.p1?.life).toBe(20);
-      // Au prochain tour de p1 : retour en phase (avant le dégagement), fin de la protection.
+      // On p1's next turn: phase back in (before untap), protection ends.
       s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1");
       expect(s.objects[bear]?.zone).toBe("battlefield");
       expect(playerProtectedFrom(s, "p1", "p2")).toBe(false);
       expect(payableLife(s, "p1")).toBe(20);
     });
 
-    it("« votre total de PV ne peut pas changer » : aucun paiement de PV au-delà de 0 (119.8)", () => {
+    it("'your life total can't change': no life payment beyond 0 (119.8)", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Plains", 3), ...lands("Swamp", 6)], hand: ["Teferi's Protection", "Toxic Deluge"] },
         p2: { battlefield: ["Bear Cub"] },
       });
-      // Le mana des Marais reste dans la réserve quand ils sortent de phase.
+      // The Swamps' mana stays in the pool when they phase out.
       for (const swamp of idsOf(s, "p1", "battlefield", "Swamp"))
         s = act(s, "p1", { type: "tapForMana", source: swamp, ability: 0 });
       s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Teferi's Protection") }));
@@ -125,13 +125,13 @@ describe("Commander (EDH) : sorts communs et moteurs (E9)", () => {
   });
 
   describe("The One Ring", () => {
-    it("lancé : protection contre tout jusqu'à votre prochain tour ; indestructible", () => {
+    it("cast: protection from everything until your next turn; indestructible", () => {
       let s = scenario({ p1: { battlefield: lands("Island", 4), hand: ["The One Ring"] } });
       s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "The One Ring") }));
       const ring = idOf(s, "p1", "battlefield", "The One Ring");
       expect(chars(s, ring).keywords).toContain("indestructible");
       expect(playerProtectedFrom(s, "p1", "p2")).toBe(true);
-      // Pas la règle « votre total de PV ne peut pas changer » : payer des PV reste possible.
+      // Not the "your life total can't change" rule: paying life remains possible.
       expect(payableLife(s, "p1")).toBe(20);
       s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
       expect(playerProtectedFrom(s, "p1", "p2")).toBe(true);
@@ -139,7 +139,7 @@ describe("Commander (EDH) : sorts communs et moteurs (E9)", () => {
       expect(playerProtectedFrom(s, "p1", "p2")).toBe(false);
     });
 
-    it("mis sur le champ de bataille sans être lancé : pas de protection", () => {
+    it("put onto the battlefield without being cast: no protection", () => {
       let s = scenario({ p1: { graveyard: ["The One Ring"], hand: [REANIMATE] } });
       const ring = idOf(s, "p1", "graveyard", "The One Ring");
       s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", REANIMATE.name), targets: { t: [ring] } }));
@@ -147,7 +147,7 @@ describe("Commander (EDH) : sorts communs et moteurs (E9)", () => {
       expect(playerProtectedFrom(s, "p1", "p2")).toBe(false);
     });
 
-    it("{T} : un marqueur de fardeau, puis une carte par marqueur ; à l'entretien, 1 PV perdu par marqueur", () => {
+    it("{T}: a burden counter, then a card per counter; at upkeep, 1 life lost per counter", () => {
       let s = scenario({ p1: { battlefield: ["The One Ring"], library: lands("Island", 12) } });
       const ring = idOf(s, "p1", "battlefield", "The One Ring");
       s = settle(activate(s, "p1", ring));
@@ -163,7 +163,7 @@ describe("Commander (EDH) : sorts communs et moteurs (E9)", () => {
   });
 
   describe("tuteurs", () => {
-    it("Demonic Tutor : n'importe quelle carte de la bibliothèque en main", () => {
+    it("Demonic Tutor: any card from the library into hand", () => {
       let s = scenario({
         p1: { battlefield: lands("Swamp", 2), hand: ["Demonic Tutor"], library: ["Forest", "Forest", "Shock"] },
       });
@@ -172,7 +172,7 @@ describe("Commander (EDH) : sorts communs et moteurs (E9)", () => {
       expect(handNames(s, "p1")).toEqual(["Shock"]);
     });
 
-    it("Enlightened Tutor : seulement un artefact ou un enchantement, mis sur le dessus après le mélange", () => {
+    it("Enlightened Tutor: only an artifact or an enchantment, put on top after the shuffle", () => {
       let s = scenario({
         p1: { battlefield: ["Plains"], hand: ["Enlightened Tutor"], library: ["Bear Cub", "Forest", "Sanguine Bond", "Forest"] },
       });
@@ -189,7 +189,7 @@ describe("Commander (EDH) : sorts communs et moteurs (E9)", () => {
   });
 
   describe("contresorts", () => {
-    it("Force of Negation : hors de votre tour, une carte bleue exilée de la main ; le sort contrecarré est exilé", () => {
+    it("Force of Negation: outside your turn, a blue card exiled from hand; the countered spell is exiled", () => {
       let s = scenario({
         active: "p2",
         p1: { hand: ["Force of Negation", "Opt"] },
@@ -205,13 +205,13 @@ describe("Commander (EDH) : sorts communs et moteurs (E9)", () => {
       expect(idsOf(s, "p2", "graveyard", "Shock")).toEqual([]);
     });
 
-    it("Force of Negation : pendant votre tour, seulement pour son coût de mana", () => {
+    it("Force of Negation: during your turn, only for its mana cost", () => {
       let s = scenario({ p1: { battlefield: ["Mountain"], hand: ["Force of Negation", "Opt", "Shock"] } });
       s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Shock"), targets: { t: ["p2"] } });
       expect(castOptions(s, "p1", idOf(s, "p1", "hand", "Force of Negation")).some((o) => o.altAvailable)).toBe(false);
     });
 
-    it("Rewind : contrecarre un sort et dégage jusqu'à quatre terrains", () => {
+    it("Rewind: counters a spell and untaps up to four lands", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: lands("Island", 4), hand: ["Rewind"] },
@@ -226,7 +226,7 @@ describe("Commander (EDH) : sorts communs et moteurs (E9)", () => {
       expect(idsOf(s, "p1", "battlefield", "Island").every((id) => !s.objects[id]?.tapped)).toBe(true);
     });
 
-    it("Unwind : seulement un sort non-créature ; dégage jusqu'à trois terrains", () => {
+    it("Unwind: only a noncreature spell; untaps up to three lands", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: lands("Island", 3), hand: ["Unwind"] },
@@ -245,7 +245,7 @@ describe("Commander (EDH) : sorts communs et moteurs (E9)", () => {
   });
 
   describe("destructions", () => {
-    it("Snuff Out : 4 PV au lieu du mana si vous contrôlez un Marais ; créature non-noire seulement", () => {
+    it("Snuff Out: 4 life instead of mana if you control a Swamp; nonblack creature only", () => {
       let s = scenario({
         p1: { battlefield: ["Swamp"], hand: ["Snuff Out"] },
         p2: { battlefield: ["Bear Cub", "Vampire of the Dire Moon"] },
@@ -265,12 +265,12 @@ describe("Commander (EDH) : sorts communs et moteurs (E9)", () => {
       expect(s.players.p1?.life).toBe(16);
       expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
       expect(s.objects[idOf(s, "p1", "battlefield", "Swamp")]?.tapped).toBe(false);
-      // Sans Marais : pas de coût alternatif.
+      // Without a Swamp: no alternative cost.
       const t = scenario({ p1: { battlefield: lands("Plains", 4), hand: ["Snuff Out"] }, p2: { battlefield: ["Bear Cub"] } });
       expect(castOptions(t, "p1", idOf(t, "p1", "hand", "Snuff Out")).some((o) => o.altAvailable)).toBe(false);
     });
 
-    it("Vindicate : détruit n'importe quel permanent, terrain compris", () => {
+    it("Vindicate: destroys any permanent, lands included", () => {
       let s = scenario({
         p1: { battlefield: ["Plains", "Swamp", "Mountain"], hand: ["Vindicate"] },
         p2: { battlefield: ["Forest"] },
@@ -285,7 +285,7 @@ describe("Commander (EDH) : sorts communs et moteurs (E9)", () => {
       expect(idsOf(s, "p2", "graveyard", "Forest")).toHaveLength(1);
     });
 
-    it("Damn : une créature ciblée pour {B}{B} ; surchargé pour {2}{W}{W}, chaque créature", () => {
+    it("Damn: one targeted creature for {B}{B}; overloaded for {2}{W}{W}, each creature", () => {
       let s = scenario({
         p1: { battlefield: lands("Swamp", 2), hand: ["Damn"] },
         p2: { battlefield: ["Bear Cub", "Savannah Lions"] },
@@ -307,7 +307,7 @@ describe("Commander (EDH) : sorts communs et moteurs (E9)", () => {
       expect(t.battlefield.filter((id) => chars(t, id).types.includes("Creature"))).toEqual([]);
     });
 
-    it("Toxic Deluge : payer X PV en coût additionnel ; toutes les créatures -X/-X", () => {
+    it("Toxic Deluge: pay X life as an additional cost; all creatures -X/-X", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Swamp", 3), "Vampire Nighthawk"], hand: ["Toxic Deluge"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -319,7 +319,7 @@ describe("Commander (EDH) : sorts communs et moteurs (E9)", () => {
       expect([chars(s, hawk).power, chars(s, hawk).toughness]).toEqual([0, 1]);
     });
 
-    it("Farewell : un ou plusieurs modes (créatures et cimetières : les artefacts et enchantements restent)", () => {
+    it("Farewell: one or more modes (creatures and graveyards: artifacts and enchantments stay)", () => {
       let s = scenario({
         p1: { battlefield: lands("Plains", 6), hand: ["Farewell"], graveyard: ["Opt"] },
         p2: { battlefield: ["Bear Cub", "Goblin Firebomb", "Sanguine Bond"], graveyard: ["Shock"] },
@@ -334,13 +334,13 @@ describe("Commander (EDH) : sorts communs et moteurs (E9)", () => {
       expect(exiled(s, "Opt")).toHaveLength(1);
       expect(idsOf(s, "p2", "battlefield", "Goblin Firebomb")).toHaveLength(1);
       expect(idsOf(s, "p2", "battlefield", "Sanguine Bond")).toHaveLength(1);
-      // Farewell rejoint le cimetière après avoir exilé les cimetières.
+      // Farewell joins the graveyard after exiling the graveyards.
       expect(idsOf(s, "p1", "graveyard", "Farewell")).toHaveLength(1);
     });
   });
 
-  describe("pioche et tempo", () => {
-    it("Frantic Search : piochez deux cartes, défaussez-en deux, dégagez jusqu'à trois terrains", () => {
+  describe("draw and tempo", () => {
+    it("Frantic Search: draw two cards, discard two, untap up to three lands", () => {
       let s = scenario({
         p1: { battlefield: lands("Island", 3), hand: ["Frantic Search", "Bear Cub", "Shock"], library: lands("Forest", 5) },
       });
@@ -350,7 +350,7 @@ describe("Commander (EDH) : sorts communs et moteurs (E9)", () => {
       expect(idsOf(s, "p1", "battlefield", "Island").every((id) => !s.objects[id]?.tapped)).toBe(true);
     });
 
-    it("Village Rites : une créature sacrifiée en coût additionnel ; piochez deux cartes", () => {
+    it("Village Rites: a creature sacrificed as an additional cost; draw two cards", () => {
       const none = scenario({ p1: { battlefield: ["Swamp"], hand: ["Village Rites"] } });
       expect(castOptions(none, "p1", idOf(none, "p1", "hand", "Village Rites"))).toEqual([]);
       let s = scenario({ p1: { battlefield: ["Swamp", "Bear Cub"], hand: ["Village Rites"] } });
@@ -360,7 +360,7 @@ describe("Commander (EDH) : sorts communs et moteurs (E9)", () => {
       expect(s.players.p1?.hand).toHaveLength(2);
     });
 
-    it("Sink into Stupor : renvoie un sort ou un permanent non-terrain adverse dans la main de son propriétaire", () => {
+    it("Sink into Stupor: returns an opposing spell or nonland permanent to its owner's hand", () => {
       let s = scenario({
         active: "p2",
         p1: { battlefield: lands("Island", 3), hand: [SINK] },
@@ -381,7 +381,7 @@ describe("Commander (EDH) : sorts communs et moteurs (E9)", () => {
       expect(handNames(t, "p2")).toEqual(["Bear Cub"]);
     });
 
-    it("Soporific Springs : le verso se joue comme terrain ; 3 PV pour qu'il arrive dégagé ; {T} : {U}", () => {
+    it("Soporific Springs: the back face is played as a land; 3 life for it to enter untapped; {T}: {U}", () => {
       let s = scenario({ p1: { hand: [SINK] } });
       const card = idOf(s, "p1", "hand", SINK);
       const plays = legalActions(s, "p1").filter((a) => a.type === "playLand" && a.card === card);
@@ -398,7 +398,7 @@ describe("Commander (EDH) : sorts communs et moteurs (E9)", () => {
       expect(t.players.p1?.life).toBe(20);
     });
 
-    it("Black Market Connections : à votre première phase principale, un ou plusieurs modes", () => {
+    it("Black Market Connections: at your first main phase, one or more modes", () => {
       let s = scenario({ step: "upkeep", p1: { battlefield: ["Black Market Connections"], library: lands("Swamp", 5) } });
       s = advanceUntil(s, (x) => x.pending?.kind === "choice");
       expect(s.turn.step).toBe("main1");
@@ -408,13 +408,13 @@ describe("Commander (EDH) : sorts communs et moteurs (E9)", () => {
       const shifter = tokens(s, "p1", "Shapeshifter")[0] as string;
       expect([chars(s, shifter).power, chars(s, shifter).toughness]).toEqual([3, 2]);
       expect(chars(s, shifter).keywords).toContain("changeling");
-      // Une carte de l'étape de pioche, une du mode.
+      // One card from the draw step, one from the mode.
       expect(s.players.p1?.hand).toHaveLength(2);
     });
   });
 
-  describe("artefacts et enchantements", () => {
-    it("Skullclamp : +1/-1 ; la créature équipée meurt, piochez deux cartes", () => {
+  describe("artifacts and enchantments", () => {
+    it("Skullclamp: +1/-1 ; the equipped creature dies, draw two cards", () => {
       let s = scenario({ p1: { battlefield: ["Skullclamp", "Llanowar Elves", "Mountain"] } });
       const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
       s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Skullclamp"), { t: [elves] }));
@@ -422,7 +422,7 @@ describe("Commander (EDH) : sorts communs et moteurs (E9)", () => {
       expect(s.players.p1?.hand).toHaveLength(2);
     });
 
-    it("Phyrexian Altar : sacrifiez une créature, un mana de n'importe quelle couleur", () => {
+    it("Phyrexian Altar: sacrifice a creature, one mana of any color", () => {
       let s = scenario({ p1: { battlefield: ["Phyrexian Altar", "Bear Cub"] } });
       s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Phyrexian Altar")));
       expect(idsOf(s, "p1", "graveyard", "Bear Cub")).toHaveLength(1);
@@ -430,11 +430,11 @@ describe("Commander (EDH) : sorts communs et moteurs (E9)", () => {
       expect(Object.values(pool).reduce((a, b) => a + b, 0)).toBe(1);
     });
 
-    it("Herald's Horn : vos sorts de créature du type choisi coûtent {1} de moins ; à l'entretien, la carte du dessus en main", () => {
+    it("Herald's Horn: your creature spells of the chosen type cost {1} less; at upkeep, the top card into hand", () => {
       let s = scenario({ p1: { battlefield: lands("Plains", 3), hand: ["Herald's Horn"] } });
       s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Herald's Horn") }), () => ["Vampire"]);
       expect(s.objects[idOf(s, "p1", "battlefield", "Herald's Horn")]?.chosen).toMatchObject({ creatureType: "Vampire" });
-      // Deux Marais suffisent pour Vampire Nighthawk ({1}{B}{B}), pas pour Bear Cub ({1}{G}) qui n'est pas un Vampire.
+      // Two Swamps suffice for Vampire Nighthawk ({1}{B}{B}), not for Bear Cub ({1}{G}) which is not a Vampire.
       let t = scenario({
         p1: {
           battlefield: ["Herald's Horn", ...lands("Swamp", 2)],
@@ -452,7 +452,7 @@ describe("Commander (EDH) : sorts communs et moteurs (E9)", () => {
       expect(handNames(t, "p1")).toContain("Vampire of the Dire Moon");
     });
 
-    it("Vanquisher's Banner : vos créatures du type choisi +1/+1 ; un sort de ce type lancé, piochez une carte", () => {
+    it("Vanquisher's Banner: your creatures of the chosen type +1/+1; a spell of that type cast, draw a card", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Swamp", 6), "Vampire Nighthawk", "Bear Cub"],
@@ -466,13 +466,13 @@ describe("Commander (EDH) : sorts communs et moteurs (E9)", () => {
       expect(s.players.p1?.hand).toHaveLength(1);
     });
 
-    it("Anointed Procession : deux fois plus de jetons créés par un effet sous votre contrôle", () => {
+    it("Anointed Procession: twice as many tokens created by an effect under your control", () => {
       let s = scenario({ p1: { battlefield: [...lands("Mountain", 2), "Anointed Procession"], hand: ["Dragon Fodder"] } });
       s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Dragon Fodder") }));
       expect(tokens(s, "p1", "Goblin")).toHaveLength(4);
     });
 
-    it("Anointed Procession et l'éminence d'Edgar Markov : deux Vampires par sort de Vampire", () => {
+    it("Anointed Procession and Edgar Markov's eminence: two Vampires per Vampire spell", () => {
       let s = scenario({
         p1: { command: ["Edgar Markov"], battlefield: ["Swamp", "Anointed Procession"], hand: ["Vampire of the Dire Moon"] },
       });
@@ -480,14 +480,14 @@ describe("Commander (EDH) : sorts communs et moteurs (E9)", () => {
       expect(tokens(s, "p1", "Vampire")).toHaveLength(2);
     });
 
-    it("Exquisite Blood : un adversaire perd des PV, vous en gagnez autant", () => {
+    it("Exquisite Blood: an opponent loses life, you gain as much", () => {
       let s = scenario({ p1: { battlefield: ["Exquisite Blood"], hand: [DRAIN] } });
       s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", DRAIN.name) }));
       expect(s.players.p2?.life).toBe(17);
       expect(s.players.p1?.life).toBe(23);
     });
 
-    it("Exquisite Blood et Sanguine Bond : la boucle s'arrête quand l'adversaire perd la partie", () => {
+    it("Exquisite Blood and Sanguine Bond: the loop stops when the opponent loses the game", () => {
       let s = scenario({
         p1: { battlefield: ["Exquisite Blood", "Sanguine Bond", "Forest"], hand: ["Sami's Curiosity"] },
         p2: { life: 7 },
@@ -497,7 +497,7 @@ describe("Commander (EDH) : sorts communs et moteurs (E9)", () => {
       expect(s.winner).toBe("p1");
     });
 
-    it("Exquisite Blood et Sanguine Bond à trois : la boucle passe à l'adversaire suivant jusqu'à la victoire", () => {
+    it("Exquisite Blood and Sanguine Bond with three players: the loop moves on to the next opponent until the win", () => {
       let s = scenario({
         players: 3,
         p1: { battlefield: ["Exquisite Blood", "Sanguine Bond", "Forest"], hand: ["Sami's Curiosity"] },
@@ -510,7 +510,7 @@ describe("Commander (EDH) : sorts communs et moteurs (E9)", () => {
       expect(s.winner).toBe("p1");
     });
 
-    it("Blade of the Bloodchief : une créature meurt, un marqueur +1/+1 sur la créature équipée, deux sur un Vampire", () => {
+    it("Blade of the Bloodchief: a creature dies, a +1/+1 counter on the equipped creature, two on a Vampire", () => {
       for (const [host, n] of [
         ["Bear Cub", 1],
         ["Vampire Nighthawk", 2],

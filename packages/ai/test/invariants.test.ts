@@ -1,24 +1,24 @@
 /**
- * `checkInvariants` (fuzz et fumée) : chaque contrôle détecte bien l'incohérence qu'il vise.
+ * `checkInvariants` (fuzz and smoke): each check detects the inconsistency it targets.
  */
 import { chars, type GameState } from "@mtgx/engine";
 import { describe, expect, it } from "vitest";
 import { idOf, scenario } from "../../engine/test/helpers";
 import { checkInvariants } from "../src/selfplay";
 
-/** Nombre de cartes de chaque joueur, pour que seul le défaut introduit soit signalé. */
+/** Number of cards of each player, so only the introduced defect is reported. */
 const sizes = (s: GameState) =>
   Object.fromEntries(s.playerOrder.map((p) => [p, Object.values(s.objects).filter((o) => o.owner === p && !o.isToken).length]));
 
 describe("checkInvariants", () => {
   const base = () => scenario({ p1: { battlefield: ["Bear Cub"] }, p2: { battlefield: ["Bear Cub"] } });
 
-  it("un état cohérent ne signale rien", () => {
+  it("a consistent state reports nothing", () => {
     const s = base();
     expect(checkInvariants(s, sizes(s))).toEqual([]);
   });
 
-  it("une valeur non sérialisable en JSON est signalée avec son chemin", () => {
+  it("a value not serializable to JSON is reported with its path", () => {
     const s = base();
     const n = sizes(s);
     (s.players.p1 as unknown as Record<string, unknown>).x = [1, new Map()];
@@ -28,7 +28,7 @@ describe("checkInvariants", () => {
     expect(checkInvariants(s, n).join("\n")).toContain("state.players.p1.life = NaN");
   });
 
-  it("un cache des caractéristiques périmé (bump oublié) est signalé, champ par champ", () => {
+  it("a stale characteristics cache (forgotten bump) is reported, field by field", () => {
     const s = base();
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     chars(s, bear);
@@ -36,7 +36,7 @@ describe("checkInvariants", () => {
     expect(checkInvariants(s, sizes(s))).toEqual([expect.stringMatching(/stale characteristics cache \(power, toughness\)/)]);
   });
 
-  it("un contrôle périmé (aucun effet ne justifie le contrôleur actuel) est signalé", () => {
+  it("a stale control (no effect justifies the current controller) is reported", () => {
     const s = base();
     const bear = idOf(s, "p2", "battlefield", "Bear Cub");
     s.objects[bear]!.baseController = "p2";

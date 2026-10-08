@@ -1,7 +1,7 @@
 /**
- * Chaque leçon du tutoriel est rejouée sans navigateur : partie mise en scène, adversaire scripté, et pour chaque étape
- * la décision qu'elle attend (déduite de `allow`). Toutes les étapes doivent se terminer dans l'ordre : sinon,
- * un joueur qui suit le guide resterait bloqué.
+ * Each tutorial lesson is replayed without a browser: staged game, scripted opponent, and for each step
+ * the decision it expects (deduced from `allow`). All the steps must finish in order: otherwise,
+ * a player following the guide would be stuck.
  */
 import { heuristicAgent } from "@mtgx/ai";
 import { card } from "@mtgx/cards";
@@ -11,31 +11,31 @@ import { buildScenario, YOU } from "../src/scenario";
 import { LESSONS } from "../src/tutorial/lessons";
 import { type Ctx, inGraveyard, lifeOf, matches, onField, solve } from "../src/tutorial/runtime";
 
-/** Ce qu'affirment les textes des leçons sur l'issue de la partie. */
+/** What the lesson texts claim about the outcome of the game. */
 const OUTCOMES: Record<string, (c: Ctx) => void> = {
   mana: (c) => {
     for (const n of ["Llanowar Elves", "Savannah Lions", "Bear Cub"]) expect(onField(n)(c), n).toBe(true);
   },
-  attaque: (c) => {
+  attack: (c) => {
     expect(lifeOf(c, "opponent")).toBe(18);
     expect(inGraveyard("Savannah Lions")(c)).toBe(true);
     expect(inGraveyard("Swab Goblin", "opponent")(c)).toBe(true);
   },
-  blocage: (c) => {
+  block: (c) => {
     expect(lifeOf(c, "you")).toBe(18);
     expect(inGraveyard("Bear Cub")(c)).toBe(true);
     expect(inGraveyard("Goblin Boarders", "opponent")(c)).toBe(true);
   },
-  sorts: (c) => expect(c.view.winner).toBe(c.view.viewer),
-  pile: (c) => {
+  spells: (c) => expect(c.view.winner).toBe(c.view.viewer),
+  stack: (c) => {
     expect(onField("Bear Cub")(c) && onField("Savannah Lions")(c)).toBe(true);
     expect(inGraveyard("Goblin Boarders", "opponent")(c)).toBe(true);
   },
-  capacites: (c) => {
+  abilities: (c) => {
     expect(lifeOf(c, "you")).toBe(22);
     expect(lifeOf(c, "opponent")).toBe(14);
   },
-  partie: (c) => expect(c.view.over).toBe(true),
+  game: (c) => expect(c.view.over).toBe(true),
 };
 
 async function play(lessonId: string): Promise<Ctx> {
@@ -60,14 +60,14 @@ async function play(lessonId: string): Promise<Ctx> {
   const ctx = (): Ctx => ({ view: view as unknown as GameView, events: last, hovered });
   const human = heuristicAgent();
   for (const [i, step] of lesson.steps.entries()) {
-    const where = `${lessonId}, étape ${i + 1}`;
+    const where = `${lessonId}, step ${i + 1}`;
     if (step.settings) host.setSettings(YOU, step.settings);
     if (step.next) continue;
     for (let n = 0; ; n++) {
-      if (n > (step.free ? 3000 : 20)) throw new Error(`${where} : l'étape ne se termine pas`);
+      if (n > (step.free ? 3000 : 20)) throw new Error(`${where}: the step doesn't finish`);
       const c = ctx();
       if (step.until?.(c)) break;
-      if (c.view.over) throw new Error(`${where} : partie terminée avant la fin de l'étape`);
+      if (c.view.over) throw new Error(`${where}: game over before the end of the step`);
       if (step.free) {
         const err = await host.submitHuman(YOU, human(host.state, YOU));
         if (err) throw new Error(`${where} : ${err}`);
@@ -76,17 +76,17 @@ async function play(lessonId: string): Promise<Ctx> {
       const allow = (step.allow ?? []).find((a) => solve(a, c.view));
       const intent = allow ? solve(allow, c.view) : null;
       if (!allow || !intent) {
-        // Étape de survol : le joueur survole la carte désignée.
+        // Hover step: the player hovers the designated card.
         const t = step.target;
         if (typeof t === "object" && hovered !== t.card) {
           hovered = t.card;
           continue;
         }
         throw new Error(
-          `${where} : rien à faire (décision en attente : ${JSON.stringify(c.view.pending)}, tour ${c.view.turn.number} ${c.view.turn.step}, main ${c.view.hand.map((o) => o.name)})`,
+          `${where}: nothing to do (pending decision: ${JSON.stringify(c.view.pending)}, turn ${c.view.turn.number} ${c.view.turn.step}, hand ${c.view.hand.map((o) => o.name)})`,
         );
       }
-      // La décision déduite doit passer la garde du guidage.
+      // The deduced decision must pass the guidance guard.
       expect(matches(allow, intent, c.view), where).toBe(true);
       if (intent.type === "endTurn") {
         host.setSettings(YOU, { passUntilTurn: c.view.turn.number });
@@ -102,13 +102,13 @@ async function play(lessonId: string): Promise<Ctx> {
 
 describe("tutoriel", () => {
   for (const lesson of LESSONS) {
-    it(`leçon « ${lesson.title} » : toutes les étapes se terminent`, async () => {
+    it(`lesson "${lesson.title}": all the steps finish`, async () => {
       const end = await play(lesson.id);
       OUTCOMES[lesson.id]?.(end);
     });
   }
 
-  it("les ids des leçons sont uniques", () => {
+  it("lesson ids are unique", () => {
     expect(new Set(LESSONS.map((l) => l.id)).size).toBe(LESSONS.length);
   });
 });

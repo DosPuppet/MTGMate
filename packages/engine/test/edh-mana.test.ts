@@ -1,7 +1,7 @@
 /**
- * Commander (pseudo-ensemble EDH, PLAN-E) : tests de règles de la base de mana commune des decks Commander (E8) :
- * terrains douloureux et talismans, terrains à contrôle, « deux terrains de base », Triomes, fetchs, terrains
- * légendaires, terrains filtres et restreints, rocs de mana, « pas de taille maximale de main ».
+ * Commander (EDH pseudo-set, PLAN-E): rules tests for the shared mana base of the Commander decks (E8):
+ * pain lands and talismans, check lands, "two basic lands", Triomes, fetch lands, legendary
+ * lands, filter and restricted lands, mana rocks, "no maximum hand size".
  */
 import { describe, expect, it } from "vitest";
 import { chars } from "../src/layers";
@@ -23,7 +23,7 @@ const tapped = (s: S, name: string) => s.objects[idOf(s, "p1", "battlefield", na
 const produced = (s: S, player: PlayerId, name: string) =>
   [...new Set(manaAbilitiesOf(s, idOf(s, player, "battlefield", name)).flatMap((m) => m.produce))].sort();
 const pool = (s: S) => s.players.p1?.manaPool;
-/** Indice de la capacité activée (ou du cycle) proposée pour l'objet. */
+/** Index of the activated ability (or cycling) offered for the object. */
 const activation = (s: S, source: string, player: PlayerId = "p1") => {
   const a = legalActions(s, player).find((x) => x.type === "activate" && x.source === source);
   return a?.type === "activate" ? a.ability : undefined;
@@ -31,9 +31,9 @@ const activation = (s: S, source: string, player: PlayerId = "p1") => {
 const tokens = (s: S, name: string) =>
   s.battlefield.filter((id) => s.objects[id]?.isToken && s.objects[id]?.controller === "p1" && nameOf(s, id) === name);
 
-describe("Commander (EDH) : base de mana", () => {
-  describe("terrains douloureux et talismans", () => {
-    it("Adarkar Wastes, Caves of Koilos, Underground River : {C} sans contrepartie, une couleur pour 1 blessure", () => {
+describe("Commander (EDH): mana base", () => {
+  describe("pain lands and talismans", () => {
+    it("Adarkar Wastes, Caves of Koilos, Underground River: {C} at no cost, one color for 1 damage", () => {
       let s = scenario({ p1: { battlefield: ["Adarkar Wastes", "Caves of Koilos", "Underground River"] } });
       s = tapMana(s, "Adarkar Wastes", 0);
       expect([pool(s)?.C, s.players.p1?.life]).toEqual([1, 20]);
@@ -44,7 +44,7 @@ describe("Commander (EDH) : base de mana", () => {
       expect(produced(s, "p1", "Adarkar Wastes")).toEqual(["C", "U", "W"]);
     });
 
-    it("Talisman of Dominance, of Hierarchy, of Progress : {C}, ou une couleur et 1 blessure de l'artefact", () => {
+    it("Talisman of Dominance, of Hierarchy, of Progress: {C}, or one color and 1 damage from the artifact", () => {
       let s = scenario({
         p1: { battlefield: ["Talisman of Dominance", "Talisman of Hierarchy", "Talisman of Progress"] },
       });
@@ -57,15 +57,15 @@ describe("Commander (EDH) : base de mana", () => {
       expect([pool(s)?.U, pool(s)?.C, pool(s)?.W, s.players.p1?.life]).toEqual([1, 1, 1, 18]);
     });
 
-    it("Sol Ring : {C}{C}", () => {
+    it("Sol Ring: {C}{C}", () => {
       let s = scenario({ p1: { battlefield: ["Sol Ring"] } });
       s = tapMana(s, "Sol Ring");
       expect(pool(s)?.C).toBe(2);
     });
   });
 
-  describe("terrains à contrôle", () => {
-    it("Glacial Fortress, Isolated Chapel : engagés sans Plaine ni autre type nommé, dégagés sinon", () => {
+  describe("check lands", () => {
+    it("Glacial Fortress, Isolated Chapel: tapped without a Plains or other named type, untapped otherwise", () => {
       let s = scenario({ p1: { battlefield: ["Forest"], hand: ["Glacial Fortress"] } });
       s = playLand(s, "Glacial Fortress");
       expect(tapped(s, "Glacial Fortress")).toBe(true);
@@ -76,7 +76,7 @@ describe("Commander (EDH) : base de mana", () => {
       expect(produced(t, "p1", "Isolated Chapel")).toEqual(["B", "W"]);
     });
 
-    it("Dragonskull Summit, Drowned Catacomb : un type de terrain non de base compte (Triome) ; celui d'un adversaire non", () => {
+    it("Dragonskull Summit, Drowned Catacomb: a nonbasic land type counts (Triome); an opponent's does not", () => {
       let s = scenario({ p1: { battlefield: ["Savai Triome"], hand: ["Dragonskull Summit"] } });
       s = playLand(s, "Dragonskull Summit");
       expect(tapped(s, "Dragonskull Summit")).toBe(false);
@@ -87,8 +87,8 @@ describe("Commander (EDH) : base de mana", () => {
     });
   });
 
-  describe("« deux terrains de base ou plus », Triomes, terrains tricolores", () => {
-    it("Prairie Stream, Sunken Hollow : engagés avec un seul terrain de base, dégagés avec deux ; types de base", () => {
+  describe('"two or more basic lands", Triomes, three-color lands', () => {
+    it("Prairie Stream, Sunken Hollow: tapped with a single basic land, untapped with two; basic types", () => {
       let s = scenario({ p1: { battlefield: ["Plains", "Savai Triome"], hand: ["Prairie Stream"] } });
       s = playLand(s, "Prairie Stream");
       expect(tapped(s, "Prairie Stream")).toBe(true);
@@ -99,7 +99,7 @@ describe("Commander (EDH) : base de mana", () => {
       expect(produced(t, "p1", "Sunken Hollow")).toEqual(["B", "U"]);
     });
 
-    it("Savai Triome, Raffine's Tower, Arcane Sanctum : arrivent engagés ; trois couleurs ; cycle {3}", () => {
+    it("Savai Triome, Raffine's Tower, Arcane Sanctum: enter tapped; three colors; cycling {3}", () => {
       let s = scenario({ p1: { hand: ["Savai Triome", "Arcane Sanctum"] } });
       s = playLand(s, "Savai Triome");
       expect(tapped(s, "Savai Triome")).toBe(true);
@@ -108,7 +108,7 @@ describe("Commander (EDH) : base de mana", () => {
       s = playLand(s, "Arcane Sanctum");
       expect(tapped(s, "Arcane Sanctum")).toBe(true);
       expect(produced(s, "p1", "Arcane Sanctum")).toEqual(["B", "U", "W"]);
-      // Cycle {3} : défaussez Raffine's Tower, piochez une carte.
+      // Cycling {3}: discard Raffine's Tower, draw a card.
       let c = scenario({ p1: { battlefield: lands("Island", 3), hand: ["Raffine's Tower"], library: ["Plains"] } });
       const tower = idOf(c, "p1", "hand", "Raffine's Tower");
       const ability = activation(c, tower);
@@ -119,8 +119,8 @@ describe("Commander (EDH) : base de mana", () => {
     });
   });
 
-  describe("fetchs", () => {
-    it("Bloodstained Mire, Flooded Strand, Polluted Delta : {T}, 1 PV, sacrifice : une carte de l'un des deux types", () => {
+  describe("fetch lands", () => {
+    it("Bloodstained Mire, Flooded Strand, Polluted Delta: {T}, 1 life, sacrifice: a card of one of the two types", () => {
       let s = scenario({
         p1: { battlefield: ["Polluted Delta"], library: ["Forest", "Savai Triome", "Island"] },
       });
@@ -132,12 +132,12 @@ describe("Commander (EDH) : base de mana", () => {
         offered = req.options.map((id) => nameOf(s, id) as string).sort();
         return req.options.filter((id) => nameOf(s, id) === "Savai Triome");
       });
-      // La Triome est un Marais : elle peut être cherchée ; la Forêt non.
+      // The Triome is a Swamp: it can be searched for; the Forest cannot.
       expect(offered).toEqual(["Island", "Savai Triome"]);
       expect(s.players.p1?.life).toBe(19);
       expect(idsOf(s, "p1", "graveyard", "Polluted Delta")).toHaveLength(1);
       expect(idsOf(s, "p1", "battlefield", "Savai Triome")).toHaveLength(1);
-      // La carte cherchée arrive dégagée, même une Triome (« arrive engagée » est son propre remplacement).
+      // The searched card enters untapped, even a Triome ("enters tapped" is its own replacement).
       for (const [land, a, b] of [
         ["Bloodstained Mire", "Swamp", "Mountain"],
         ["Flooded Strand", "Plains", "Island"],
@@ -155,8 +155,8 @@ describe("Commander (EDH) : base de mana", () => {
     });
   });
 
-  describe("terrains légendaires", () => {
-    it("Urborg, Tomb of Yawgmoth : chaque terrain, adverse compris, est aussi un Marais", () => {
+  describe("legendary lands", () => {
+    it("Urborg, Tomb of Yawgmoth: each land, opponents' included, is also a Swamp", () => {
       const s = scenario({ p1: { battlefield: ["Urborg, Tomb of Yawgmoth", "Forest"] }, p2: { battlefield: ["Plains"] } });
       expect(chars(s, idOf(s, "p1", "battlefield", "Forest")).subtypes).toEqual(["Forest", "Swamp"]);
       expect(produced(s, "p1", "Forest")).toEqual(["B", "G"]);
@@ -164,13 +164,13 @@ describe("Commander (EDH) : base de mana", () => {
       expect(produced(s, "p2", "Plains")).toEqual(["B", "W"]);
     });
 
-    it("Otawara, Soaring City : {U} ; canalisation depuis la main, {1} de moins par créature légendaire", () => {
+    it("Otawara, Soaring City: {U}; channel from hand, {1} less per legendary creature", () => {
       let s = scenario({
         p1: { battlefield: ["Arahbo, the First Fang", "Island", "Island"], hand: ["Otawara, Soaring City"] },
         p2: { battlefield: ["Bear Cub"] },
       });
       const ota = idOf(s, "p1", "hand", "Otawara, Soaring City");
-      // {3}{U} moins {1} (une créature légendaire) : deux Îles ne suffisent pas.
+      // {3}{U} minus {1} (one legendary creature): two Islands are not enough.
       expect(canActivate(s, "p1", ota)).toBe(false);
       s = scenario({
         p1: {
@@ -185,12 +185,12 @@ describe("Commander (EDH) : base de mana", () => {
       s = settle(s);
       expect(idsOf(s, "p2", "hand", "Bear Cub")).toHaveLength(1);
       expect(idsOf(s, "p1", "graveyard", "Otawara, Soaring City")).toHaveLength(1);
-      // Terrain : {U}.
+      // Land: {U}.
       const t = scenario({ p1: { battlefield: ["Otawara, Soaring City"] } });
       expect(produced(t, "p1", "Otawara, Soaring City")).toEqual(["U"]);
     });
 
-    it("Phyrexian Tower : {C}, ou {T} et sacrifier une créature : {B}{B}", () => {
+    it("Phyrexian Tower: {C}, or {T} and sacrifice a creature: {B}{B}", () => {
       let s = scenario({ p1: { battlefield: ["Phyrexian Tower"] } });
       const tower = idOf(s, "p1", "battlefield", "Phyrexian Tower");
       expect(produced(s, "p1", "Phyrexian Tower")).toEqual(["C"]);
@@ -204,15 +204,15 @@ describe("Commander (EDH) : base de mana", () => {
     });
   });
 
-  describe("terrains à capacité", () => {
-    it("Bojuka Bog : arrive engagé, exile le cimetière du joueur ciblé ; {B}", () => {
+  describe("lands with abilities", () => {
+    it("Bojuka Bog: enters tapped, exiles the targeted player's graveyard; {B}", () => {
       let s = scenario({
         p1: { hand: ["Bojuka Bog"], graveyard: ["Shock"] },
         p2: { graveyard: ["Bear Cub", "Savannah Lions"] },
       });
       s = playLand(s, "Bojuka Bog");
       s = settle(s, (req) => (req.type === "pick" && req.options.includes("p2") ? ["p2"] : undefined));
-      if (s.stack.length || s.pending?.kind !== "priority") throw new Error("déclenchement non résolu");
+      if (s.stack.length || s.pending?.kind !== "priority") throw new Error("trigger not resolved");
       expect(s.players.p2?.graveyard).toEqual([]);
       expect(s.exile.map((id) => nameOf(s, id)).sort()).toEqual(["Bear Cub", "Savannah Lions"]);
       expect(idsOf(s, "p1", "graveyard", "Shock")).toHaveLength(1);
@@ -220,23 +220,23 @@ describe("Commander (EDH) : base de mana", () => {
       expect(produced(s, "p1", "Bojuka Bog")).toEqual(["B"]);
     });
 
-    it("Sunken Ruins : {C} ; {U/B}, {T} : {U}{U}, {U}{B} ou {B}{B}", () => {
+    it("Sunken Ruins: {C}; {U/B}, {T}: {U}{U}, {U}{B} or {B}{B}", () => {
       let s = scenario({ p1: { battlefield: ["Sunken Ruins", "Swamp"] } });
       const ruins = idOf(s, "p1", "battlefield", "Sunken Ruins");
       s = act(s, "p1", { type: "activate", source: ruins, ability: activation(s, ruins) as number });
-      // Répartition des deux mana entre {U} et {B} : ici {U}{B}.
+      // Split of the two mana between {U} and {B}: here {U}{B}.
       expect(s.pending).toMatchObject({ kind: "choice", request: { type: "divide", among: ["U", "B"], total: 2 } });
       s = act(s, "p1", { type: "choose", values: [1, 1] });
       expect([pool(s)?.U, pool(s)?.B]).toEqual([1, 1]);
       expect(tapped(s, "Swamp")).toBe(true);
-      // Sans autre source : le coût {U/B} ne peut pas être payé par Sunken Ruins elle-même.
+      // Without another source: the {U/B} cost cannot be paid by Sunken Ruins itself.
       const t = scenario({ p1: { battlefield: ["Sunken Ruins"] } });
       expect(canActivate(t, "p1", idOf(t, "p1", "battlefield", "Sunken Ruins"))).toBe(false);
     });
 
-    it("Unclaimed Territory : le mana de couleur ne sert qu'aux sorts de créature du type choisi", () => {
+    it("Unclaimed Territory: colored mana only pays for creature spells of the chosen type", () => {
       const hand = ["Unclaimed Territory", "Vampire of the Dire Moon", "Savannah Lions"];
-      // Le type est choisi en jouant le terrain (614.12).
+      // The type is chosen when playing the land (614.12).
       for (const [type, vampire, lions] of [
         ["Vampire", true, false],
         ["Cat", false, true],
@@ -244,16 +244,16 @@ describe("Commander (EDH) : base de mana", () => {
         let s = scenario({ p1: { hand } });
         s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Unclaimed Territory"), chosen: type });
         expect(s.objects[idOf(s, "p1", "battlefield", "Unclaimed Territory")]?.chosen?.creatureType).toBe(type);
-        // {C} ne paie ni {B} ni {W} : seul le mana de couleur, réservé au type choisi, le permet.
+        // {C} pays neither {B} nor {W}: only the colored mana, reserved for the chosen type, allows it.
         expect(castable(s, "p1", idOf(s, "p1", "hand", "Vampire of the Dire Moon"))).toBe(vampire);
         expect(castable(s, "p1", idOf(s, "p1", "hand", "Savannah Lions"))).toBe(lions);
       }
-      // Pas pour un sort non-créature : Shock reste impayable.
+      // Not for a noncreature spell: Shock stays unpayable.
       const t = scenario({ p1: { battlefield: ["Unclaimed Territory"], hand: ["Shock"] } });
       expect(castable(t, "p1", idOf(t, "p1", "hand", "Shock"))).toBe(false);
     });
 
-    it("Voldaren Estate : 1 PV pour un mana réservé aux sorts de Vampire ; jeton Sang, {1} de moins par Vampire", () => {
+    it("Voldaren Estate: 1 damage for mana reserved for Vampire spells; Blood token, {1} less per Vampire", () => {
       let s = scenario({
         p1: { battlefield: ["Voldaren Estate"], hand: ["Vampire of the Dire Moon", "Savannah Lions"] },
       });
@@ -261,7 +261,7 @@ describe("Commander (EDH) : base de mana", () => {
       expect(castable(s, "p1", idOf(s, "p1", "hand", "Savannah Lions"))).toBe(false);
       s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Vampire of the Dire Moon") });
       expect(s.players.p1?.life).toBe(19);
-      // {5}, {T} moins deux Vampires : trois Marais suffisent.
+      // {5}, {T} minus two Vampires: three Swamps are enough.
       let b = scenario({
         p1: {
           battlefield: ["Voldaren Estate", "Vampire of the Dire Moon", "Edgar Markov", ...lands("Swamp", 4)],
@@ -273,7 +273,7 @@ describe("Commander (EDH) : base de mana", () => {
       b = settle(act(b, "p1", { type: "activate", source: estate, ability: activation(b, estate) as number }));
       expect(tokens(b, "Blood")).toHaveLength(1);
       expect(b.battlefield.filter((id) => nameOf(b, id) === "Swamp" && b.objects[id]?.tapped)).toHaveLength(3);
-      // Sang : {1}, {T}, défaussez une carte, sacrifiez ce jeton : piochez une carte.
+      // Blood: {1}, {T}, discard a card, sacrifice this token: draw a card.
       const blood = tokens(b, "Blood")[0] as string;
       b = settle(act(b, "p1", { type: "activate", source: blood, ability: 0 }));
       expect(idsOf(b, "p1", "graveyard", "Shock")).toHaveLength(1);
@@ -282,8 +282,8 @@ describe("Commander (EDH) : base de mana", () => {
     });
   });
 
-  describe("artefacts", () => {
-    it("Relic of Legends : {T}, ou engager une créature légendaire dégagée (même arrivée ce tour-ci)", () => {
+  describe("artifacts", () => {
+    it("Relic of Legends: {T}, or tap an untapped legendary creature (even one that entered this turn)", () => {
       let s = scenario({
         p1: { battlefield: ["Relic of Legends", { name: "Edgar Markov", sick: true }, "Savannah Lions"] },
       });
@@ -294,18 +294,18 @@ describe("Commander (EDH) : base de mana", () => {
       expect(tapped(s, "Savannah Lions")).toBe(false);
       s = tapMana(s, "Relic of Legends", 0, "U");
       expect(pool(s)?.U).toBe(1);
-      // Sans créature légendaire dégagée, la seconde capacité n'est pas disponible.
+      // Without an untapped legendary creature, the second ability is not available.
       const t = scenario({ p1: { battlefield: ["Relic of Legends", "Savannah Lions"], hand: ["Bear Cub"] } });
       expect(() => tapMana(t, "Relic of Legends", 1, "R")).toThrow();
       expect(castable(t, "p1", idOf(t, "p1", "hand", "Bear Cub"))).toBe(false);
-      // Le paiement automatique engage la créature légendaire : deux mana pour Bear Cub.
+      // Automatic payment taps the legendary creature: two mana for Bear Cub.
       let u = scenario({ p1: { battlefield: ["Relic of Legends", "Edgar Markov"], hand: ["Bear Cub"] } });
       expect(castable(u, "p1", idOf(u, "p1", "hand", "Bear Cub"))).toBe(true);
       u = act(u, "p1", { type: "cast", card: idOf(u, "p1", "hand", "Bear Cub") });
       expect([tapped(u, "Relic of Legends"), tapped(u, "Edgar Markov")]).toEqual([true, true]);
     });
 
-    it("Reliquary Tower, Thought Vessel, Decanter of Endless Water : pas de taille maximale de main", () => {
+    it("Reliquary Tower, Thought Vessel, Decanter of Endless Water: no maximum hand size", () => {
       for (const source of ["Reliquary Tower", "Thought Vessel", "Decanter of Endless Water"]) {
         let s = scenario({ p1: { battlefield: [source], hand: lands("Plains", 9) } });
         s = advanceUntil(s, (x) => x.turn.active === "p2");
@@ -315,7 +315,7 @@ describe("Commander (EDH) : base de mana", () => {
       expect(produced(s, "p1", "Decanter of Endless Water")).toEqual(["B", "G", "R", "U", "W"]);
       s = tapMana(s, "Thought Vessel");
       expect(pool(s)?.C).toBe(1);
-      // Témoin : sans eux, la main est ramenée à sept cartes.
+      // Control: without them, the hand is brought back to seven cards.
       let c = scenario({ p1: { hand: lands("Plains", 9) } });
       c = advanceUntil(c, (x) => x.turn.active === "p2");
       expect(c.players.p1?.hand).toHaveLength(7);

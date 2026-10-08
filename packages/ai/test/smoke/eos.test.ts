@@ -1,4 +1,4 @@
-/** Test de fumée : Stellar Sights (rééditions, « Sans limite »). */
+/** Smoke test: Stellar Sights (reprints, "Unlimited"). */
 import { smokeTest } from "./harness";
 
 smokeTest(["EOS"]);

@@ -1,4 +1,4 @@
-/** Illustrations personnelles (/art/, tools/custom-art.ts) : fichiers du dossier préparé seulement, en-têtes de cache. */
+/** Custom artwork (/art/, tools/custom-art.ts): only files from the prepared folder, cache headers. */
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -28,7 +28,7 @@ afterAll(async () => {
 });
 
 describe("illustrations personnelles", () => {
-  it("sert le manifeste (jamais en cache) et les images (cache long)", async () => {
+  it("serves the manifest (never cached) and the images (long cache)", async () => {
     const m = await fetch(`${base}/art/manifest.json`);
     expect(m.status).toBe(200);
     expect(m.headers.get("content-type")).toBe("application/json");
@@ -41,13 +41,13 @@ describe("illustrations personnelles", () => {
     expect(new Uint8Array(await img.arrayBuffer())).toHaveLength(4);
   });
 
-  it("refuse tout ce qui n'est pas un fichier du dossier", async () => {
+  it("refuses anything that is not a file of the folder", async () => {
     for (const path of ["/art/absente.webp", "/art/../secret.json", "/art/%2e%2e/secret.json", "/art/x.png", "/art/"])
       expect((await fetch(`${base}${path}`)).status, path).toBe(404);
     expect((await fetch(`${base}/art/manifest.json`, { method: "POST" })).status).toBe(405);
   });
 
-  it("sans dossier : 404 (pas d'illustrations personnelles)", async () => {
+  it("without a folder: 404 (no custom artwork)", async () => {
     expect((await fetch(`http://127.0.0.1:${none.port}/art/manifest.json`)).status).toBe(404);
   });
 });

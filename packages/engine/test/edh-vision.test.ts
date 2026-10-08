@@ -1,6 +1,6 @@
 /**
- * Commander (pseudo-ensemble EDH) : tests de règles du deck « Weight of the World » (The Vision, incolore), et des cartes de réserve du jeu de proxys. Artefacts qui
- * se dégagent, Équipements, terrains d'Urza, sorts et créatures incolores, trois Ugin et Karn, Living Legacy.
+ * Commander (EDH pseudo-set): rules tests of the "Weight of the World" deck (The Vision, colorless), and of the proxy set's reserve cards. Artifacts that
+ * untap, Equipment, Urza's lands, colorless spells and creatures, three Ugin and Karn, Living Legacy.
  */
 import { describe, expect, it } from "vitest";
 import { bump, chars, snapshot } from "../src/layers";
@@ -29,7 +29,7 @@ import {
 } from "./helpers";
 
 type S = GameState;
-/** Fait d'un objet un commandant (déjà sur le champ de bataille). */
+/** Makes an object a commander (already on the battlefield). */
 function makeCommander(s: S, id: ObjectId): S {
   const o = s.objects[id];
   if (!o) throw new Error("objet introuvable");
@@ -44,19 +44,19 @@ const activations = (s: S, p: PlayerId, source: ObjectId) =>
   legalActions(s, p).filter(
     (a): a is Extract<ActionOption, { type: "activate" }> => a.type === "activate" && a.source === source,
   );
-/** Active la capacité de rang `index` (dans la définition) de cette source. */
+/** Activates the ability at rank `index` (in the definition) of this source. */
 const activate = (s: S, p: PlayerId, source: ObjectId, index?: number, extra: object = {}) => {
   const o = activations(s, p, source).find((a) => index === undefined || a.ability === index);
-  if (!o) throw new Error(`pas de capacité ${index ?? ""} pour ${nameOf(s, source)}`);
+  if (!o) throw new Error(`no ability ${index ?? ""} for ${nameOf(s, source)}`);
   return act(s, p, { type: "activate", source, ability: o.ability, ...extra } as never);
 };
-/** Engage la source pour du mana (la première capacité de mana proposée, ou celle de rang `ability`). */
+/** Taps the source for mana (the first mana ability offered, or the one at rank `ability`). */
 const tapMana = (s: S, name: string, ability?: number, color?: string, player: PlayerId = "p1") => {
   const source = idOf(s, player, "battlefield", name);
   const o = legalActions(s, player).find(
     (a) => a.type === "tapForMana" && a.source === source && (ability === undefined || a.ability === ability),
   );
-  if (o?.type !== "tapForMana") throw new Error(`pas de mana pour ${name}`);
+  if (o?.type !== "tapForMana") throw new Error(`no mana for ${name}`);
   return act(s, player, { type: "tapForMana", source, ability: o.ability, ...(color ? { color } : {}) } as never);
 };
 const pool = (s: S, p: PlayerId = "p1") => s.players[p]?.manaPool;
@@ -64,43 +64,43 @@ const handNames = (s: S, p: PlayerId) => namesIn(s, s.players[p]?.hand).sort();
 const tokens = (s: S, name: string, p: PlayerId = "p1") =>
   s.battlefield.filter((id) => s.objects[id]?.isToken && s.objects[id]?.controller === p && nameOf(s, id) === name);
 const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
-/** Choisit le mode dont le libellé est donné (sort modal ou capacité déclenchée modale). */
+/** Chooses the mode with the given label (modal spell or modal triggered ability). */
 const modeNamed = (label: string) => (req: ChoiceRequest) =>
   req.type === "pick" && req.intent === "triggerMode"
     ? Object.entries(req.labels ?? {})
         .filter(([, l]) => plainText(l) === label)
         .map(([k]) => k)
     : undefined;
-/** Rang du mode d'un sort dont le libellé est donné. */
+/** Rank of the mode of a spell with the given label. */
 const spellMode = (s: S, p: PlayerId, card: string, label: string) => {
   const m = legalActions(s, p)
     .flatMap((a) => (a.type === "cast" && a.card === card ? a.modes : []))
     .find((x) => plainText(x.label ?? "") === label);
-  if (!m) throw new Error(`pas de mode « ${label} »`);
+  if (!m) throw new Error(`no mode "${label}"`);
   return m.index;
 };
-/** L'option de lancer de la carte (modes, cibles, gratuité). */
+/** The cast option of the card (modes, targets, free). */
 const castOption = (s: S, p: PlayerId, card: string) => {
   const o = legalActions(s, p).find((a) => a.type === "cast" && a.card === card);
   return o?.type === "cast" ? o : undefined;
 };
 
-/** Active la capacité dont le libellé commence ainsi (capacités de loyauté : « +1 », « −3 »…). */
+/** Activates the ability whose label starts this way (loyalty abilities: "+1", "−3"…). */
 const activateLabeled = (s: S, p: PlayerId, source: ObjectId, prefix: string, extra: object = {}) => {
   const o = activations(s, p, source).find((a) => plainText(a.label ?? "").startsWith(prefix));
-  if (!o) throw new Error(`pas de capacité « ${prefix} » pour ${nameOf(s, source)}`);
+  if (!o) throw new Error(`no ability "${prefix}" for ${nameOf(s, source)}`);
   return act(s, p, { type: "activate", source, ability: o.ability, ...extra } as never);
 };
-/** Active la capacité d'Équiper (la première proposée, ou celle dont le libellé commence ainsi) sur la créature. */
+/** Activates the Equip ability (the first offered, or the one whose label starts this way) on the creature. */
 const equip = (s: S, equipment: string, creature: ObjectId, label = "Equip", p: PlayerId = "p1") => {
   const source = idOf(s, p, "battlefield", equipment);
   const o = activations(s, p, source).find(
     (a) => plainText(a.label ?? "").startsWith(label) && a.targets[0]?.legal.includes(creature),
   );
-  if (!o) throw new Error(`pas d'Équiper « ${label} » pour ${equipment}`);
+  if (!o) throw new Error(`no Equip "${label}" for ${equipment}`);
   return settle(act(s, p, { type: "activate", source, ability: o.ability, targets: { t: [creature] } } as never));
 };
-/** Les créatures que la capacité d'Équiper de ce libellé peut viser. */
+/** The creatures that the Equip ability with this label can target. */
 const equipTargets = (s: S, equipment: string, label: string, p: PlayerId = "p1") =>
   namesIn(
     s,
@@ -110,35 +110,35 @@ const equipTargets = (s: S, equipment: string, label: string, p: PlayerId = "p1"
 
 describe("The Vision (EDH)", () => {
   describe("artefacts", () => {
-    it("Basalt Monolith : {C}{C}{C}, ne se dégage pas lors de votre étape de dégagement, {3} : dégagez-le", () => {
+    it("Basalt Monolith: {C}{C}{C}, doesn't untap during your untap step, {3}: untap it", () => {
       let s = scenario({ p1: { battlefield: ["Basalt Monolith", ...lands("Wastes", 3)] } });
       s = tapMana(s, "Basalt Monolith");
       expect(pool(s)?.C).toBe(3);
       const monolith = idOf(s, "p1", "battlefield", "Basalt Monolith");
-      // {3} : dégagez-le (payé avec le mana qu'il vient de produire).
+      // {3}: untap it (paid with the mana it just produced).
       s = settle(activate(s, "p1", monolith, 2));
       expect(s.objects[monolith]?.tapped).toBe(false);
       s = tapMana(s, "Basalt Monolith");
-      // Le tour suivant de p1 : il reste engagé.
+      // p1's next turn: it stays tapped.
       s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number > 3);
       expect(s.objects[monolith]?.tapped).toBe(true);
     });
 
-    it("Cloud Key : les sorts du type choisi coûtent {1} de moins", () => {
+    it("Cloud Key: spells of the chosen type cost {1} less", () => {
       let s = scenario({ p1: { hand: ["Cloud Key", "Sol Ring", "Shock"], battlefield: lands("Wastes", 3) } });
       s = settle(castIt(s, "p1", "Cloud Key"), (req) =>
         req.type === "pick" && req.options.includes("Artifact") ? ["Artifact"] : undefined,
       );
       expect(s.objects[idOf(s, "p1", "battlefield", "Cloud Key")]?.chosen?.mode).toBe("Artifact");
-      // Sol Ring ({1}) ne coûte plus rien : lançable sans terrain dégagé.
+      // Sol Ring ({1}) costs nothing now: castable with no untapped land.
       expect(castable(s, "p1", idOf(s, "p1", "hand", "Sol Ring"))).toBe(true);
       s = settle(castIt(s, "p1", "Sol Ring"));
       expect(idsOf(s, "p1", "battlefield", "Sol Ring")).toHaveLength(1);
-      // Shock (éphémère, rouge) n'est pas concerné : pas de mana rouge, pas de réduction.
+      // Shock (instant, red) isn't affected: no red mana, no reduction.
       expect(castable(s, "p1", idOf(s, "p1", "hand", "Shock"))).toBe(false);
     });
 
-    it("Darksteel Forge : vos artefacts ont l'indestructible", () => {
+    it("Darksteel Forge: your artifacts have indestructible", () => {
       let s = scenario({
         p1: { battlefield: ["Darksteel Forge", "Sol Ring"] },
         p2: { hand: ["Vindicate"], battlefield: ["Plains", "Swamp", "Swamp"] },
@@ -150,20 +150,20 @@ describe("The Vision (EDH)", () => {
       expect(s.objects[ring]?.zone).toBe("battlefield");
     });
 
-    it("Darksteel Monolith : une fois par tour, un sort incolore de votre main sans payer son coût de mana", () => {
+    it("Darksteel Monolith: once each turn, a colorless spell from your hand without paying its mana cost", () => {
       let s = scenario({ p1: { battlefield: ["Darksteel Monolith"], hand: ["Basalt Monolith", "Mox Opal", "Shock"] } });
       const basalt = idOf(s, "p1", "hand", "Basalt Monolith");
       expect(castOption(s, "p1", basalt)?.freeAvailable).toBe(true);
       expect(castable(s, "p1", idOf(s, "p1", "hand", "Shock"))).toBe(false);
       s = settle(castIt(s, "p1", "Basalt Monolith", { free: true }));
       expect(idsOf(s, "p1", "battlefield", "Basalt Monolith")).toHaveLength(1);
-      // Une fois par tour : Mox Opal ({0}) reste lançable normalement, mais plus gratuitement par la permission.
+      // Once each turn: Mox Opal ({0}) can still be cast normally, but no longer for free through the permission.
       const mox = idOf(s, "p1", "hand", "Mox Opal");
       expect(castOption(s, "p1", mox)?.freeAvailable).toBeFalsy();
       expect(castable(s, "p1", mox)).toBe(true);
     });
 
-    it("Forsaken Monument : +2/+2 à vos créatures incolores, un {C} de plus par permanent engagé pour {C}, 2 PV par sort incolore", () => {
+    it("Forsaken Monument: +2/+2 to your colorless creatures, an additional {C} for each permanent tapped for {C}, 2 life per colorless spell", () => {
       let s = scenario({
         p1: { battlefield: ["Forsaken Monument", "Sol Ring", "Shimmer Myr", "Bear Cub", "Command Tower"], hand: ["Mox Opal"] },
       });
@@ -175,13 +175,13 @@ describe("The Vision (EDH)", () => {
       expect(s.players.p1?.life).toBe(22);
     });
 
-    it("Gerrard's Hourglass Pendant : les tours supplémentaires sont passés ; les permanents morts ce tour-ci reviennent engagés", () => {
+    it("Gerrard's Hourglass Pendant: extra turns are skipped; permanents that died this turn return tapped", () => {
       let s = scenario({
         p1: { battlefield: ["Gerrard's Hourglass Pendant", "Bear Cub", ...lands("Wastes", 4)], graveyard: ["Sol Ring"] },
         p2: { hand: ["Shock"], battlefield: ["Mountain"] },
       });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-      // Bear Cub meurt ce tour-ci ; Sol Ring était déjà au cimetière.
+      // Bear Cub dies this turn; Sol Ring was already in the graveyard.
       s = act(s, "p1", { type: "pass" });
       s = settle(castIt(s, "p2", "Shock", { targets: { t: [bear] } }));
       expect(idsOf(s, "p1", "graveyard", "Bear Cub")).toHaveLength(1);
@@ -192,7 +192,7 @@ describe("The Vision (EDH)", () => {
       expect(s.exile.some((id) => nameOf(s, id) === "Gerrard's Hourglass Pendant")).toBe(true);
     });
 
-    it("Liquimetal Torque : le permanent non-terrain ciblé devient un artefact jusqu'à la fin du tour", () => {
+    it("Liquimetal Torque: the targeted nonland permanent becomes an artifact until end of turn", () => {
       let s = scenario({ p1: { battlefield: ["Liquimetal Torque"] }, p2: { battlefield: ["Bear Cub"] } });
       const bear = idOf(s, "p2", "battlefield", "Bear Cub");
       s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Liquimetal Torque"), 1, { targets: { t: [bear] } }));
@@ -201,7 +201,7 @@ describe("The Vision (EDH)", () => {
       expect(chars(s, bear).types).not.toContain("Artifact");
     });
 
-    it("Manifold Key : dégage un autre artefact ; rend une créature imblocable ce tour-ci", () => {
+    it("Manifold Key: untaps another artifact; makes a creature unblockable this turn", () => {
       let s = scenario({
         p1: { battlefield: ["Manifold Key", { name: "Sol Ring", tapped: true }, "Bear Cub", ...lands("Wastes", 4)] },
       });
@@ -216,7 +216,7 @@ describe("The Vision (EDH)", () => {
       expect(chars(t, bear).keywords).toContain("unblockable");
     });
 
-    it("Moonsilver Key : cherche un artefact avec une capacité de mana ou un terrain de base", () => {
+    it("Moonsilver Key: searches for an artifact with a mana ability or a basic land", () => {
       let s = scenario({
         p1: {
           battlefield: ["Moonsilver Key", "Wastes"],
@@ -231,7 +231,7 @@ describe("The Vision (EDH)", () => {
       expect(offered.sort()).toEqual(["Sol Ring", "Wastes"]);
     });
 
-    it("Mox Opal : métallurgie, un mana de n'importe quelle couleur avec trois artefacts", () => {
+    it("Mox Opal: metalcraft, one mana of any color with three artifacts", () => {
       const s = scenario({ p1: { battlefield: ["Mox Opal", "Sol Ring"] } });
       const mox = idOf(s, "p1", "battlefield", "Mox Opal");
       expect(legalActions(s, "p1").some((a) => a.type === "tapForMana" && a.source === mox)).toBe(false);
@@ -240,20 +240,20 @@ describe("The Vision (EDH)", () => {
       expect(pool(u)?.R).toBe(1);
     });
 
-    it("Mystic Forge : lance des sorts d'artefact et incolores du dessus ; {T}, 1 PV : exile la carte du dessus", () => {
+    it("Mystic Forge: casts artifact and colorless spells from the top; {T}, 1 life: exile the top card", () => {
       let s = scenario({ p1: { battlefield: ["Mystic Forge", "Wastes"], library: ["Sol Ring", "Shock", "Bear Cub"] } });
       const ring = s.players.p1?.library[0] as string;
       expect(castable(s, "p1", ring)).toBe(true);
       s = settle(act(s, "p1", { type: "cast", card: ring } as never));
       expect(idsOf(s, "p1", "battlefield", "Sol Ring")).toHaveLength(1);
-      // Shock au-dessus : ni artefact ni incolore.
+      // Shock on top: neither artifact nor colorless.
       expect(castable(s, "p1", s.players.p1?.library[0] as string)).toBe(false);
       s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Mystic Forge")));
       expect(s.players.p1?.life).toBe(19);
       expect(s.exile.some((id) => nameOf(s, id) === "Shock")).toBe(true);
     });
 
-    it("Nevinyrral's Disk : arrive engagé ; détruit tous les artefacts, créatures et enchantements", () => {
+    it("Nevinyrral's Disk: enters tapped; destroys all artifacts, creatures and enchantments", () => {
       let s = scenario({
         p1: { hand: ["Nevinyrral's Disk"], battlefield: [...lands("Wastes", 5), "Sol Ring", "Bear Cub"] },
         p2: { battlefield: ["Bear Cub", "Mountain"] },
@@ -266,7 +266,7 @@ describe("The Vision (EDH)", () => {
       expect(s.battlefield.map((id) => nameOf(s, id)).sort()).toEqual([...lands("Wastes", 5), "Mountain"].sort());
     });
 
-    it("The Mightstone and Weakstone : piochez deux cartes ou −5/−5 ; {C}{C} pour les sorts d'artefact", () => {
+    it("The Mightstone and Weakstone: draw two cards or -5/-5; {C}{C} for artifact spells", () => {
       let s = scenario({ p1: { hand: ["The Mightstone and Weakstone"], battlefield: lands("Wastes", 5) } });
       s = settle(castIt(s, "p1", "The Mightstone and Weakstone"), modeNamed("Draw two cards"));
       expect(s.players.p1?.hand).toHaveLength(2);
@@ -276,14 +276,14 @@ describe("The Vision (EDH)", () => {
       });
       t = settle(castIt(t, "p1", "The Mightstone and Weakstone"), modeNamed("Target creature gets −5/−5"));
       expect(idsOf(t, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
-      // Le mana ne sert qu'aux sorts d'artefact.
+      // The mana can be spent only on artifact spells.
       const u = scenario({ p1: { battlefield: ["The Mightstone and Weakstone"], hand: ["Shock", "Basalt Monolith"] } });
       expect(castable(u, "p1", idOf(u, "p1", "hand", "Basalt Monolith"))).toBe(false);
       const ab = manaAbilitiesOf(u, idOf(u, "p1", "battlefield", "The Mightstone and Weakstone"))[0];
       expect([ab?.amount, ab?.restriction?.spell?.types]).toEqual([2, ["Artifact"]]);
     });
 
-    it("Unwinding Clock : vos artefacts se dégagent pendant l'étape de dégagement des autres joueurs", () => {
+    it("Unwinding Clock: your artifacts untap during other players' untap steps", () => {
       let s = scenario({
         p1: { battlefield: ["Unwinding Clock", { name: "Sol Ring", tapped: true }, { name: "Bear Cub", tapped: true }] },
       });
@@ -292,7 +292,7 @@ describe("The Vision (EDH)", () => {
       expect(s.objects[idOf(s, "p1", "battlefield", "Bear Cub")]?.tapped).toBe(true);
     });
 
-    it("Vedalken Orrery : vous pouvez lancer des sorts comme s'ils avaient le flash", () => {
+    it("Vedalken Orrery: you may cast spells as though they had flash", () => {
       const s = scenario({
         p1: { battlefield: ["Vedalken Orrery", ...lands("Forest", 2)], hand: ["Bear Cub"] },
         active: "p2",
@@ -301,14 +301,14 @@ describe("The Vision (EDH)", () => {
       expect(castable(t, "p1", idOf(t, "p1", "hand", "Bear Cub"))).toBe(true);
     });
 
-    it("Voltaic Key : dégage l'artefact ciblé", () => {
+    it("Voltaic Key: untaps the targeted artifact", () => {
       let s = scenario({ p1: { battlefield: ["Voltaic Key", { name: "Basalt Monolith", tapped: true }, "Wastes"] } });
       const mono = idOf(s, "p1", "battlefield", "Basalt Monolith");
       s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Voltaic Key"), 0, { targets: { t: [mono] } }));
       expect(s.objects[mono]?.tapped).toBe(false);
     });
 
-    it("Fractured Powerstone : {C} ; le dé planaire, hors de Planechase, ne fait rien", () => {
+    it("Fractured Powerstone: {C}; the planar die, outside Planechase, does nothing", () => {
       let s = scenario({ p1: { battlefield: ["Fractured Powerstone"] } });
       const stone = idOf(s, "p1", "battlefield", "Fractured Powerstone");
       expect(activations(s, "p1", stone)).toHaveLength(1);
@@ -316,8 +316,8 @@ describe("The Vision (EDH)", () => {
       expect(s.objects[stone]?.tapped).toBe(true);
     });
   });
-  describe("Équipements", () => {
-    it("Adaptive Omnitool : +1/+1 par artefact ; en attaquant, un artefact parmi les six cartes du dessus", () => {
+  describe("Equipment", () => {
+    it("Adaptive Omnitool: +1/+1 per artifact; when attacking, an artifact among the top six cards", () => {
       let s = scenario({
         p1: {
           battlefield: ["Adaptive Omnitool", "Sol Ring", "Bear Cub", ...lands("Wastes", 3)],
@@ -334,16 +334,16 @@ describe("The Vision (EDH)", () => {
           : undefined,
       );
       expect(handNames(s, "p1")).toEqual(["Basalt Monolith"]);
-      // Mox Opal (septième carte) n'a pas été regardé ; les cinq Forêts vont au-dessous.
+      // Mox Opal (seventh card) wasn't looked at; the five Forests go to the bottom.
       expect(namesIn(s, s.players.p1?.library)[0]).toBe("Mox Opal");
     });
 
-    it("Brotherhood Regalia : garde {2}, Assassin, imblocable ; Équiper une créature légendaire {1} ou Équiper {3}", () => {
+    it("Brotherhood Regalia: ward {2}, Assassin, unblockable; Equip legendary creature {1} or Equip {3}", () => {
       let s = scenario({
         p1: { battlefield: ["Brotherhood Regalia", "Liberator, Urza's Battlethopter", "Bear Cub", "Wastes"] },
       });
       expect(equipTargets(s, "Brotherhood Regalia", "Equip legendary creature")).toEqual(["Liberator, Urza's Battlethopter"]);
-      // Avec un seul mana, seul l'Équiper légendaire {1} est possible.
+      // With a single mana, only the legendary Equip {1} is possible.
       expect(activations(s, "p1", idOf(s, "p1", "battlefield", "Brotherhood Regalia")).map((a) => a.label)).toEqual([
         msg("Equip legendary creature {cost}", { cost: "{1}" }),
       ]);
@@ -354,7 +354,7 @@ describe("The Vision (EDH)", () => {
       expect(chars(s, lib).abilities.some((a) => a.kind === "triggered" && a.ward)).toBe(true);
     });
 
-    it("Champion's Helm : +2/+2 ; défense talismanique seulement si la créature équipée est légendaire", () => {
+    it("Champion's Helm: +2/+2; hexproof only if the equipped creature is legendary", () => {
       let s = scenario({ p1: { battlefield: ["Champion's Helm", "Bear Cub", "Liberator, Urza's Battlethopter", "Wastes"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       s = equip(s, "Champion's Helm", bear);
@@ -366,20 +366,20 @@ describe("The Vision (EDH)", () => {
       expect(chars(s, lib).keywords).toContain("hexproof");
     });
 
-    it("Commander's Plate : +3/+3, protection contre chaque couleur hors de l'identité de votre commandant ; Équiper un commandant {3}", () => {
-      // Commandant incolore (The Vision, dans la zone de commandement) : protection contre les cinq couleurs.
+    it("Commander's Plate: +3/+3, protection from each color outside your commander's identity; Equip commander {3}", () => {
+      // Colorless commander (The Vision, in the command zone): protection from all five colors.
       let s = scenario({
         p1: { command: ["The Vision"], battlefield: ["Commander's Plate", "Bear Cub", ...lands("Wastes", 5)] },
         p2: { battlefield: ["Shivan Dragon", "Serra Angel", "Llanowar Elves"] },
       });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-      // Aucun commandant sur le champ de bataille : seul « Équiper {5} ».
+      // No commander on the battlefield: only "Equip {5}".
       expect(equipTargets(s, "Commander's Plate", "Equip commander")).toEqual([]);
       s = equip(s, "Commander's Plate", bear, "Equip {5}");
       expect(pt(s, bear)).toEqual([5, 5]);
       const from = (x: S, name: string) => protectedFrom(x, bear, snapshot(x, idOf(x, "p2", "battlefield", name)));
       expect([from(s, "Shivan Dragon"), from(s, "Serra Angel"), from(s, "Llanowar Elves")]).toEqual([true, true, true]);
-      // Commandant blanc, noir et rouge (Edgar Markov) : protection contre le bleu et le vert seulement.
+      // White, black and red commander (Edgar Markov): protection from blue and green only.
       let t = scenario({
         p1: { command: ["Edgar Markov"], battlefield: ["Commander's Plate", "Bear Cub", ...lands("Wastes", 5)] },
         p2: { battlefield: ["Shivan Dragon", "Serra Angel", "Llanowar Elves"] },
@@ -388,7 +388,7 @@ describe("The Vision (EDH)", () => {
       expect([from(t, "Shivan Dragon"), from(t, "Serra Angel"), from(t, "Llanowar Elves")]).toEqual([false, false, true]);
     });
 
-    it("Excalibur, Sword of Eden : coûte X de moins (valeur de mana totale de vos permanents historiques) ; Équiper une créature légendaire {2}", () => {
+    it("Excalibur, Sword of Eden: costs X less (total mana value of your historic permanents); Equip legendary creature {2}", () => {
       let s = scenario({
         p1: {
           hand: ["Excalibur, Sword of Eden"],
@@ -401,7 +401,7 @@ describe("The Vision (EDH)", () => {
           ],
         },
       });
-      // 12 − (3 + 9 + 3) : gratuit.
+      // 12 − (3 + 9 + 3): free.
       expect(castable(s, "p1", idOf(s, "p1", "hand", "Excalibur, Sword of Eden"))).toBe(true);
       s = settle(castIt(s, "p1", "Excalibur, Sword of Eden"));
       expect(s.battlefield.every((id) => !s.objects[id]?.tapped)).toBe(true);
@@ -412,7 +412,7 @@ describe("The Vision (EDH)", () => {
       expect(chars(s, lib).keywords).toContain("vigilance");
     });
 
-    it("Hammer of Nazahn : à l'arrivée d'un de vos Équipements (lui compris), vous pouvez l'attacher à une de vos créatures", () => {
+    it("Hammer of Nazahn: when one of your Equipment enters (itself included), you may attach it to one of your creatures", () => {
       let s = scenario({
         p1: { hand: ["Hammer of Nazahn", "Champion's Helm"], battlefield: ["Bear Cub", ...lands("Wastes", 7)] },
       });
@@ -427,7 +427,7 @@ describe("The Vision (EDH)", () => {
       expect(pt(s, bear)).toEqual([6, 4]);
     });
 
-    it("Mithril Coat : à son arrivée, attachée à une créature légendaire que vous contrôlez ; indestructible", () => {
+    it("Mithril Coat: when it enters, attached to a legendary creature you control; indestructible", () => {
       let s = scenario({
         p1: { hand: ["Mithril Coat"], battlefield: ["Bear Cub", "Liberator, Urza's Battlethopter", ...lands("Wastes", 3)] },
       });
@@ -437,7 +437,7 @@ describe("The Vision (EDH)", () => {
       expect(chars(s, lib).keywords).toContain("indestructible");
     });
 
-    it("Nettlecyst : arme vivante ; +1/+1 par artefact et/ou enchantement que vous contrôlez", () => {
+    it("Nettlecyst: living weapon; +1/+1 per artifact and/or enchantment you control", () => {
       let s = scenario({ p1: { hand: ["Nettlecyst"], battlefield: ["Sol Ring", "Wastes"] } });
       s = settle(castIt(s, "p1", "Nettlecyst"));
       const [germ] = tokens(s, "Phyrexian Germ");
@@ -446,7 +446,7 @@ describe("The Vision (EDH)", () => {
       expect(chars(s, germ ?? "").colors).toEqual(["B"]);
     });
 
-    it("Silver Shroud Costume : attaché à l'arrivée, défense totale jusqu'à la fin du tour ; la créature équipée est imblocable", () => {
+    it("Silver Shroud Costume: attached when it enters, shroud until end of turn; the equipped creature is unblockable", () => {
       let s = scenario({ p1: { hand: ["Silver Shroud Costume"], battlefield: ["Bear Cub", ...lands("Wastes", 2)] } });
       s = settle(castIt(s, "p1", "Silver Shroud Costume"));
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -456,7 +456,7 @@ describe("The Vision (EDH)", () => {
       expect(chars(s, bear).keywords).toContain("unblockable");
     });
 
-    it("Sword of Feast and Famine : protection contre le noir et le vert ; le joueur blessé défausse, vous dégagez vos terrains", () => {
+    it("Sword of Feast and Famine: protection from black and green; the damaged player discards, you untap your lands", () => {
       let s = scenario({
         p1: { battlefield: ["Sword of Feast and Famine", "Bear Cub", ...lands("Wastes", 2)] },
         p2: { hand: ["Shock", "Forest"] },
@@ -472,7 +472,7 @@ describe("The Vision (EDH)", () => {
       expect(idsOf(s, "p1", "battlefield", "Wastes").every((id) => !s.objects[id]?.tapped)).toBe(true);
     });
 
-    it("Sword of Truth and Justice : un marqueur +1/+1 sur une de vos créatures, puis proliférez", () => {
+    it("Sword of Truth and Justice: a +1/+1 counter on one of your creatures, then proliferate", () => {
       let s = scenario({
         p1: {
           battlefield: [
@@ -487,13 +487,13 @@ describe("The Vision (EDH)", () => {
       s = equip(s, "Sword of Truth and Justice", bear);
       s = attack(s, [bear]);
       s = throughCombat(s);
-      // Un marqueur sur Bear Cub, puis prolifération : Bear Cub et Karn.
+      // A counter on Bear Cub, then proliferate: Bear Cub and Karn.
       expect(s.objects[bear]?.counters["+1/+1"]).toBe(2);
       expect(s.objects[idOf(s, "p1", "battlefield", "Karn, Living Legacy")]?.counters.loyalty).toBe(5);
     });
   });
   describe("planeswalkers", () => {
-    it("Karn, Living Legacy : +1 un Powerstone engagé ; −1 payez X, une des X cartes du dessus en main", () => {
+    it("Karn, Living Legacy: +1 a tapped Powerstone; −1 pay X, one of the top X cards to hand", () => {
       let s = scenario({
         p1: {
           battlefield: ["Karn, Living Legacy", ...lands("Wastes", 3)],
@@ -506,7 +506,7 @@ describe("The Vision (EDH)", () => {
       expect(s.objects[stone ?? ""]?.tapped).toBe(true);
       expect(s.objects[karn]?.counters.loyalty).toBe(5);
       s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number > 3);
-      // Pioche : Forest. Payez 3 : Sol Ring, Mox Opal, Bear Cub ; Mox Opal en main, le reste au-dessous.
+      // Draw: Forest. Pay 3: Sol Ring, Mox Opal, Bear Cub; Mox Opal to hand, the rest on the bottom.
       s = settle(activate(s, "p1", karn, 1), (req, _p, cur) =>
         req.type === "number" && req.intent === "payX"
           ? [3]
@@ -519,29 +519,29 @@ describe("The Vision (EDH)", () => {
       expect(s.players.p1?.library).toHaveLength(3);
     });
 
-    it("Karn, Living Legacy : −7, emblème « engagez un artefact dégagé : 1 blessure à n'importe quelle cible »", () => {
+    it('Karn, Living Legacy: −7, emblem "tap an untapped artifact: 1 damage to any target"', () => {
       let s = scenario({
         p1: { battlefield: [{ name: "Karn, Living Legacy", counters: { loyalty: 7 } }, "Sol Ring", "Basalt Monolith"] },
       });
       s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Karn, Living Legacy"), 2));
       const emblem = s.players.p1?.command[0] as string;
       expect(s.objects[emblem]?.isToken).toBe(true);
-      // La capacité de l'emblème s'active depuis la zone de commandement, une fois par artefact dégagé.
+      // The emblem's ability is activated from the command zone, once per untapped artifact.
       s = settle(activate(s, "p1", emblem, 0, { targets: { t: ["p2"] } }));
       s = settle(activate(s, "p1", emblem, 0, { targets: { t: ["p2"] } }));
       expect(s.players.p2?.life).toBe(18);
       expect(idsOf(s, "p1", "battlefield", "Sol Ring").every((id) => s.objects[id]?.tapped)).toBe(true);
       expect(canActivate(s, "p1", emblem)).toBe(false);
-      // Un adversaire ne peut pas l'activer.
+      // An opponent can't activate it.
       expect(canActivate(s, "p2", emblem)).toBe(false);
     });
 
-    it("Ugin, the Ineffable : sorts incolores à {2} de moins ; +1 exile face cachée et un Esprit 2/2 ; la carte va en main quand il part", () => {
+    it("Ugin, the Ineffable: colorless spells cost {2} less; +1 exile face down and a 2/2 Spirit; the card goes to hand when it leaves", () => {
       let s = scenario({
         p1: { battlefield: ["Ugin, the Ineffable", "Wastes"], hand: ["Basalt Monolith"], library: ["Sol Ring", "Forest"] },
         p2: { hand: ["Shock"], battlefield: ["Mountain"] },
       });
-      // Basalt Monolith ({3}) pour un seul mana.
+      // Basalt Monolith ({3}) for a single mana.
       expect(castable(s, "p1", idOf(s, "p1", "hand", "Basalt Monolith"))).toBe(true);
       s = settle(activateLabeled(s, "p1", idOf(s, "p1", "battlefield", "Ugin, the Ineffable"), "+1"));
       const exiledRing = s.exile.find((id) => nameOf(s, id) === "Sol Ring") as string;
@@ -554,7 +554,7 @@ describe("The Vision (EDH)", () => {
       expect(handNames(s, "p1")).toEqual(["Basalt Monolith", "Sol Ring"]);
     });
 
-    it("Ugin, the Ineffable : −3 détruit un permanent d'une ou plusieurs couleurs", () => {
+    it("Ugin, the Ineffable: −3 destroys a permanent that's one or more colors", () => {
       const s = scenario({
         p1: { battlefield: ["Ugin, the Ineffable"] },
         p2: { battlefield: ["Bear Cub", "Sol Ring", "Forest"] },
@@ -565,7 +565,7 @@ describe("The Vision (EDH)", () => {
       expect(namesIn(s, legal)).toEqual(["Bear Cub"]);
     });
 
-    it("Ugin, the Spirit Dragon : −X exile chaque permanent coloré de valeur de mana X ou moins ; −10", () => {
+    it("Ugin, the Spirit Dragon: −X exiles each colored permanent with mana value X or less; −10", () => {
       let s = scenario({
         p1: { battlefield: ["Ugin, the Spirit Dragon", "Savannah Lions"] },
         p2: { battlefield: ["Bear Cub", "Shivan Dragon", "Sol Ring", "Forest"] },
@@ -586,14 +586,14 @@ describe("The Vision (EDH)", () => {
       });
       t = settle(activate(t, "p1", idOf(t, "p1", "battlefield", "Ugin, the Spirit Dragon"), 2));
       expect(t.players.p1?.life).toBe(27);
-      // Toutes les cartes de permanent piochées (six) vont sur le champ de bataille ; Shock reste en main.
+      // All the permanent cards drawn (six) go to the battlefield; Shock stays in hand.
       expect(handNames(t, "p1")).toEqual(["Shock"]);
       expect(idsOf(t, "p1", "battlefield", "Basalt Monolith")).toHaveLength(1);
     });
   });
 
-  describe("créatures", () => {
-    it("Glaring Fleshraker : un Rejeton par sort incolore ; 1 blessure à chaque adversaire par autre créature incolore qui arrive", () => {
+  describe("creatures", () => {
+    it("Glaring Fleshraker: an Eldrazi Spawn per colorless spell; 1 damage to each opponent per other colorless creature that enters", () => {
       let s = scenario({
         players: 3,
         p1: { battlefield: ["Glaring Fleshraker"], hand: ["Mox Opal"] },
@@ -602,12 +602,12 @@ describe("The Vision (EDH)", () => {
       const [spawn] = tokens(s, "Eldrazi Spawn");
       expect(pt(s, spawn ?? "")).toEqual([0, 1]);
       expect([s.players.p2?.life, s.players.p3?.life]).toEqual([19, 19]);
-      // Le Rejeton : « sacrifiez ce jeton : ajoutez {C} ».
+      // The Spawn: "sacrifice this token: add {C}".
       s = act(s, "p1", { type: "tapForMana", source: spawn, ability: 0 } as never);
       expect(pool(s)?.C).toBe(1);
     });
 
-    it("Liberator, Urza's Battlethopter : flash pour les sorts incolores et d'artefact ; un marqueur si le mana dépensé dépasse sa force", () => {
+    it("Liberator, Urza's Battlethopter: flash for colorless and artifact spells; a counter if the mana spent exceeds its power", () => {
       let s = scenario({
         p1: { battlefield: ["Liberator, Urza's Battlethopter", ...lands("Wastes", 4)], hand: ["Sol Ring", "Basalt Monolith"] },
         active: "p2",
@@ -617,13 +617,13 @@ describe("The Vision (EDH)", () => {
       const lib = idOf(s, "p1", "battlefield", "Liberator, Urza's Battlethopter");
       s = passAccepting(castIt(s, "p1", "Sol Ring"), (x) => x.stack.length === 0);
       expect(s.objects[lib]?.counters["+1/+1"] ?? 0).toBe(0);
-      // Pile vide : la priorité revient au joueur actif (p2), qui passe.
+      // Empty stack: priority returns to the active player (p2), who passes.
       s = act(s, "p2", { type: "pass" });
       s = passAccepting(castIt(s, "p1", "Basalt Monolith"), (x) => x.stack.length === 0);
       expect(s.objects[lib]?.counters["+1/+1"]).toBe(1);
     });
 
-    it("Scrap Trawler : quand un de vos artefacts va au cimetière, une carte d'artefact de valeur de mana inférieure revient en main", () => {
+    it("Scrap Trawler: when one of your artifacts goes to the graveyard, an artifact card with lesser mana value returns to hand", () => {
       let s = scenario({
         p1: { battlefield: ["Scrap Trawler", "Basalt Monolith"], graveyard: ["Sol Ring", "Darksteel Forge", "Basalt Monolith"] },
         p2: { hand: ["Vindicate"], battlefield: ["Plains", "Swamp", "Swamp"] },
@@ -631,9 +631,9 @@ describe("The Vision (EDH)", () => {
       });
       const mono = idOf(s, "p1", "battlefield", "Basalt Monolith");
       s = settle(castIt(s, "p2", "Vindicate", { targets: { t: [mono] } }));
-      // Valeur de mana inférieure à 3 : seul Sol Ring (ni Darksteel Forge ni l'autre Basalt Monolith).
+      // Mana value less than 3: only Sol Ring (neither Darksteel Forge nor the other Basalt Monolith).
       expect(handNames(s, "p1")).toEqual(["Sol Ring"]);
-      // Sans carte de valeur de mana inférieure, rien ne revient ; Scrap Trawler qui meurt compte aussi (3 : Sol Ring).
+      // Without a card with lesser mana value, nothing returns; Scrap Trawler dying counts too (3: Sol Ring).
       let t = scenario({
         p1: { battlefield: ["Scrap Trawler"], graveyard: ["Darksteel Forge", "Sol Ring"] },
         p2: { hand: ["Vindicate"], battlefield: ["Plains", "Swamp", "Swamp"] },
@@ -643,7 +643,7 @@ describe("The Vision (EDH)", () => {
       expect(handNames(t, "p1")).toEqual(["Sol Ring"]);
     });
 
-    it("Shimmer Myr : vos sorts d'artefact ont le flash", () => {
+    it("Shimmer Myr: your artifact spells have flash", () => {
       let s = scenario({
         p1: { battlefield: ["Shimmer Myr", ...lands("Forest", 3)], hand: ["Sol Ring", "Bear Cub"] },
         active: "p2",
@@ -653,7 +653,7 @@ describe("The Vision (EDH)", () => {
       expect(castable(s, "p1", idOf(s, "p1", "hand", "Bear Cub"))).toBe(false);
     });
 
-    it("Skittering Cicada : flash pour les sorts incolores ; piétinement et +X/+X (X : la valeur de mana du sort)", () => {
+    it("Skittering Cicada: flash for colorless spells; trample and +X/+X (X: the spell's mana value)", () => {
       let s = scenario({ p1: { battlefield: ["Skittering Cicada", ...lands("Wastes", 3)], hand: ["Basalt Monolith"] } });
       const cicada = idOf(s, "p1", "battlefield", "Skittering Cicada");
       s = settle(castIt(s, "p1", "Basalt Monolith"));
@@ -661,20 +661,20 @@ describe("The Vision (EDH)", () => {
       expect(chars(s, cicada).keywords).toContain("trample");
     });
 
-    it("Wandering Archaic : un adversaire lance un éphémère ; il paie {2}, sinon vous pouvez le copier", () => {
+    it("Wandering Archaic: an opponent casts an instant or sorcery; they pay {2}, otherwise you may copy it", () => {
       const start = () =>
         scenario({
           p1: { battlefield: ["Wandering Archaic // Explore the Vastlands"] },
           p2: { hand: ["Shock"], battlefield: lands("Mountain", 3) },
           active: "p2",
         });
-      // L'adversaire ne paie pas : la copie vise p2.
+      // The opponent doesn't pay: the copy targets p2.
       let s = start();
       s = settle(castIt(s, "p2", "Shock", { targets: { t: ["p1"] } }), (req, p) =>
         req.intent === "unlessPay" || (req.type === "yesNo" && p === "p2") ? [0] : picking(["p2"])(req),
       );
       expect([s.players.p1?.life, s.players.p2?.life]).toEqual([18, 18]);
-      // L'adversaire paie {2} : pas de copie.
+      // The opponent pays {2}: no copy.
       let t = start();
       t = settle(castIt(t, "p2", "Shock", { targets: { t: ["p1"] } }), (req, p) =>
         req.intent === "unlessPay" || (req.type === "yesNo" && p === "p2") ? [1] : undefined,
@@ -682,7 +682,7 @@ describe("The Vision (EDH)", () => {
       expect([t.players.p1?.life, t.players.p2?.life]).toEqual([18, 20]);
     });
 
-    it("Explore the Vastlands : chaque joueur prend un terrain et/ou un éphémère ou rituel parmi ses cinq cartes du dessus, et gagne 3 PV", () => {
+    it("Explore the Vastlands: each player takes a land and/or an instant or sorcery from their top five cards, and gains 3 life", () => {
       let s = scenario({
         players: 3,
         p1: {
@@ -701,18 +701,18 @@ describe("The Vision (EDH)", () => {
         if (req.type === "pick" && req.intent === "lookAtTop") asked.push(p);
         return undefined;
       });
-      // Chaque joueur choisit lui-même (p3 n'a ni terrain ni éphémère parmi ses cinq cartes).
+      // Each player chooses for themselves (p3 has neither a land nor an instant among their five cards).
       expect(asked).toEqual(["p1", "p1", "p2"]);
       expect(handNames(s, "p1")).toEqual(["Forest", "Shock"]);
       expect(handNames(s, "p2")).toEqual(["Shock"]);
       expect(handNames(s, "p3")).toEqual([]);
       expect([s.players.p1?.life, s.players.p2?.life, s.players.p3?.life]).toEqual([23, 23, 23]);
-      // Les autres cartes regardées vont au-dessous : p1 garde Vindicate (sixième) au-dessus.
+      // The other cards looked at go to the bottom: p1 keeps Vindicate (sixth) on top.
       expect(namesIn(s, s.players.p1?.library)[0]).toBe("Vindicate");
     });
   });
   describe("sorts", () => {
-    it("All Is Dust : chaque joueur sacrifie ses permanents d'une ou plusieurs couleurs", () => {
+    it("All Is Dust: each player sacrifices their permanents that are one or more colors", () => {
       let s = scenario({
         players: 3,
         p1: { hand: ["All Is Dust"], battlefield: [...lands("Wastes", 7), "Sol Ring", "Savannah Lions"] },
@@ -726,7 +726,7 @@ describe("The Vision (EDH)", () => {
       expect(idsOf(s, "p3", "graveyard", "Shivan Dragon")).toHaveLength(1);
     });
 
-    it("Desecrate Reality : jusqu'à un permanent de valeur de mana paire par adversaire ; adamant, un permanent impair revient", () => {
+    it("Desecrate Reality: up to one even-mana-value permanent per opponent; adamant, an odd one returns", () => {
       let s = scenario({
         players: 3,
         p1: {
@@ -739,15 +739,15 @@ describe("The Vision (EDH)", () => {
       });
       const card = idOf(s, "p1", "hand", "Desecrate Reality");
       const spec = castOption(s, "p1", card)?.modes[0]?.targets[0];
-      // Valeur de mana paire (0 compris) : Bear Cub (2), Shivan Dragon (6), Forest (0), Mox Opal (0) ; pas Llanowar Elves (1).
+      // Even mana value (0 included): Bear Cub (2), Shivan Dragon (6), Forest (0), Mox Opal (0); not Llanowar Elves (1).
       expect(namesIn(s, spec?.legal).sort()).toEqual(["Bear Cub", "Forest", "Mox Opal", "Shivan Dragon"]);
       const dragon = idOf(s, "p2", "battlefield", "Shivan Dragon");
       const mox = idOf(s, "p3", "battlefield", "Mox Opal");
-      // Deux cibles du même adversaire : refusé.
+      // Two targets of the same opponent: refused.
       expect(() =>
         castIt(s, "p1", "Desecrate Reality", { targets: { t: [dragon, idOf(s, "p2", "battlefield", "Forest")] } }),
       ).toThrow();
-      // Sept mana incolore dépensé : adamant ; une carte de permanent de valeur de mana impaire revient (Basalt Monolith ou Sol Ring).
+      // Seven colorless mana spent: adamant; an odd-mana-value permanent card returns (Basalt Monolith or Sol Ring).
       s = settle(castIt(s, "p1", "Desecrate Reality", { targets: { t: [dragon, mox] } }), (req, _p, cur) =>
         req.type === "pick" && req.options.some((id) => nameOf(cur, id) === "Basalt Monolith")
           ? req.options.filter((id) => nameOf(cur, id) === "Basalt Monolith")
@@ -755,7 +755,7 @@ describe("The Vision (EDH)", () => {
       );
       expect(s.exile.map((id) => nameOf(s, id)).sort()).toEqual(["Mox Opal", "Shivan Dragon"]);
       expect(idsOf(s, "p1", "battlefield", "Basalt Monolith")).toHaveLength(1);
-      // Sans trois mana incolore dépensé : rien ne revient.
+      // Without three colorless mana spent: nothing returns.
       let t = scenario({
         p1: { hand: ["Desecrate Reality"], battlefield: lands("Forest", 7), graveyard: ["Sol Ring"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -764,24 +764,24 @@ describe("The Vision (EDH)", () => {
       expect(idsOf(t, "p1", "graveyard", "Sol Ring")).toHaveLength(1);
     });
 
-    it("Echoes of Eternity : chaque sort incolore est copié ; les capacités déclenchées de vos permanents incolores se déclenchent une fois de plus", () => {
+    it("Echoes of Eternity: each colorless spell is copied; triggered abilities of your colorless permanents trigger an additional time", () => {
       let s = scenario({
         p1: { battlefield: ["Echoes of Eternity", "Glaring Fleshraker"], hand: ["Mox Opal"] },
       });
       s = settle(castIt(s, "p1", "Mox Opal"));
-      // La copie de Mox Opal devient un jeton (707.10) ; la règle des légendes en garde un seul.
+      // The Mox Opal copy becomes a token (707.10); the legend rule keeps only one.
       expect(s.battlefield.filter((id) => nameOf(s, id) === "Mox Opal").length).toBeGreaterThanOrEqual(1);
       expect(s.players.p1?.graveyard.length ?? 0).toBeLessThanOrEqual(1);
-      // Fleshraker : deux Rejetons (déclenchement doublé), chacun inflige 1 blessure deux fois.
+      // Fleshraker: two Spawn (doubled trigger), each deals 1 damage twice.
       expect(tokens(s, "Eldrazi Spawn")).toHaveLength(2);
       expect(s.players.p2?.life).toBe(16);
-      // Un sort coloré n'est ni copié ni compté.
+      // A colored spell is neither copied nor counted.
       let t = scenario({ p1: { battlefield: ["Echoes of Eternity", "Forest", "Forest"], hand: ["Bear Cub"] } });
       t = settle(castIt(t, "p1", "Bear Cub"));
       expect(idsOf(t, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
     });
 
-    it("Eldrazi Confluence : choisissez trois modes, le même plusieurs fois", () => {
+    it("Eldrazi Confluence: choose three modes, the same one several times", () => {
       let s = scenario({
         p1: { hand: ["Eldrazi Confluence"], battlefield: lands("Wastes", 4) },
         p2: { battlefield: ["Bear Cub"] },
@@ -793,7 +793,7 @@ describe("The Vision (EDH)", () => {
       expect(three).toBeDefined();
       s = settle(castIt(s, "p1", "Eldrazi Confluence", { mode: spellMode(s, "p1", card, three as string) }));
       expect(tokens(s, "Eldrazi Scion")).toHaveLength(3);
-      // +3/−3 deux fois sur Bear Cub (elle meurt) et un clignotement d'un permanent.
+      // +3/−3 twice on Bear Cub (it dies) and a blink of a permanent.
       let t = scenario({
         p1: { hand: ["Eldrazi Confluence"], battlefield: [...lands("Wastes", 4), "Sol Ring"] },
         p2: { battlefield: ["Bear Cub", "Shivan Dragon"] },
@@ -812,7 +812,7 @@ describe("The Vision (EDH)", () => {
       expect([back !== dragon, t.objects[back]?.tapped]).toEqual([true, true]);
     });
 
-    it("Eldritch Immunity : protection contre chaque couleur pour une créature ; surcharge, pour toutes les vôtres", () => {
+    it("Eldritch Immunity: protection from each color for one creature; overload, for all of yours", () => {
       let s = scenario({ p1: { hand: ["Eldritch Immunity"], battlefield: ["Wastes", "Bear Cub", "Savannah Lions"] } });
       const card = idOf(s, "p1", "hand", "Eldritch Immunity");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -828,7 +828,7 @@ describe("The Vision (EDH)", () => {
         expect(chars(t, idOf(t, "p1", "battlefield", n)).protections).toHaveLength(1);
     });
 
-    it("Kozilek's Command : choisissez deux — Rejetons, regard X puis pioche, exil d'une créature de valeur de mana X ou moins, cartes de cimetières", () => {
+    it("Kozilek's Command: choose two — Spawn, scry X then draw, exile a creature with mana value X or less, cards from graveyards", () => {
       let s = scenario({
         p1: { hand: ["Kozilek's Command"], battlefield: lands("Wastes", 4) },
         p2: { battlefield: ["Bear Cub", "Shivan Dragon"], graveyard: ["Sol Ring", "Shock", "Forest"] },
@@ -836,7 +836,7 @@ describe("The Vision (EDH)", () => {
       const card = idOf(s, "p1", "hand", "Kozilek's Command");
       const label = "A player creates X 0/1 Eldrazi Spawn + Exile a creature with mana value X or less";
       const bear = idOf(s, "p2", "battlefield", "Bear Cub");
-      // X = 2 : Shivan Dragon (6) n'est pas une cible légale.
+      // X = 2: Shivan Dragon (6) is not a legal target.
       expect(() =>
         castIt(s, "p1", "Kozilek's Command", {
           x: 2,
@@ -853,7 +853,7 @@ describe("The Vision (EDH)", () => {
       );
       expect(tokens(s, "Eldrazi Spawn")).toHaveLength(2);
       expect(s.exile.map((id) => nameOf(s, id))).toEqual(["Bear Cub"]);
-      // Regard X puis pioche, et jusqu'à X cartes de cimetières exilées.
+      // Scry X then draw, and up to X cards from graveyards exiled.
       let t = scenario({
         p1: { hand: ["Kozilek's Command"], battlefield: lands("Wastes", 4) },
         p2: { graveyard: ["Sol Ring", "Shock", "Forest"] },
@@ -871,7 +871,7 @@ describe("The Vision (EDH)", () => {
       expect(t.players.p2?.graveyard).toHaveLength(1);
     });
 
-    it("Null Elemental Blast : contrecarre un sort multicolore ou détruit un permanent multicolore", () => {
+    it("Null Elemental Blast: counters a multicolored spell or destroys a multicolored permanent", () => {
       let s = scenario({
         p1: { hand: ["Null Elemental Blast"], battlefield: ["Wastes"] },
         p2: { battlefield: ["Trygon Predator", "Bear Cub"] },
@@ -886,7 +886,7 @@ describe("The Vision (EDH)", () => {
         }),
       );
       expect(idsOf(s, "p2", "graveyard", "Trygon Predator")).toHaveLength(1);
-      // Contre un sort multicolore (Vindicate).
+      // Against a multicolored spell (Vindicate).
       let t = scenario({
         p1: { hand: ["Null Elemental Blast"], battlefield: ["Wastes", "Sol Ring"] },
         p2: { hand: ["Vindicate"], battlefield: ["Plains", "Swamp", "Swamp"] },
@@ -910,14 +910,14 @@ describe("The Vision (EDH)", () => {
     const playLand = (s: S, name: string, extra: object = {}) =>
       act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", name), ...extra } as never);
 
-    it("Abstergo Entertainment : {1}, {T} un mana de n'importe quelle couleur ; une carte historique revient, puis tous les cimetières sont exilés", () => {
+    it("Abstergo Entertainment: {1}, {T} one mana of any color; a historic card returns, then all graveyards are exiled", () => {
       let s = scenario({
         p1: { battlefield: ["Abstergo Entertainment", ...lands("Wastes", 4)], graveyard: ["Sol Ring", "Bear Cub"] },
         p2: { graveyard: ["Shock", "Liberator, Urza's Battlethopter"] },
       });
       const abstergo = idOf(s, "p1", "battlefield", "Abstergo Entertainment");
       const spec = activations(s, "p1", abstergo).find((a) => a.label?.startsWith("A historic card"))?.targets[0];
-      // Seulement de votre cimetière, et historique : Sol Ring (pas Bear Cub, ni la créature légendaire de l'adversaire).
+      // Only from your graveyard, and historic: Sol Ring (not Bear Cub, nor the opponent's legendary creature).
       expect(namesIn(s, spec?.legal)).toEqual(["Sol Ring"]);
       s = settle(
         activateLabeled(s, "p1", abstergo, "A historic card", { targets: { t: [idOf(s, "p1", "graveyard", "Sol Ring")] } }),
@@ -932,7 +932,7 @@ describe("The Vision (EDH)", () => {
       ]);
     });
 
-    it("Buried Ruin : {2}, {T}, sacrifiez-le : une carte d'artefact de votre cimetière revient en main", () => {
+    it("Buried Ruin: {2}, {T}, sacrifice it: an artifact card from your graveyard returns to hand", () => {
       let s = scenario({ p1: { battlefield: ["Buried Ruin", "Wastes", "Wastes"], graveyard: ["Sol Ring", "Bear Cub"] } });
       s = settle(
         activate(s, "p1", idOf(s, "p1", "battlefield", "Buried Ruin"), undefined, {
@@ -943,7 +943,7 @@ describe("The Vision (EDH)", () => {
       expect(idsOf(s, "p1", "graveyard", "Buried Ruin")).toHaveLength(1);
     });
 
-    it("Emergence Zone : {1}, {T}, sacrifiez-le : vous pouvez lancer des sorts comme s'ils avaient le flash ce tour-ci", () => {
+    it("Emergence Zone: {1}, {T}, sacrifice it: you may cast spells as though they had flash this turn", () => {
       let s = scenario({
         p1: { battlefield: ["Emergence Zone", "Forest", "Forest", "Forest"], hand: ["Bear Cub"] },
         active: "p2",
@@ -955,7 +955,7 @@ describe("The Vision (EDH)", () => {
       expect(castable(s, "p1", idOf(s, "p1", "hand", "Bear Cub"))).toBe(true);
     });
 
-    it("Terrains d'Urza : Mine et Power Plant {C}{C}, Tower {C}{C}{C} avec les deux autres ; Planar Nexus a chaque type de terrain non de base", () => {
+    it("Urza's lands: Mine and Power Plant {C}{C}, Tower {C}{C}{C} with the other two; Planar Nexus has every nonbasic land type", () => {
       let s = scenario({ p1: { battlefield: ["Urza's Mine", "Urza's Tower"] } });
       s = tapMana(s, "Urza's Mine");
       s = tapMana(s, "Urza's Tower");
@@ -963,7 +963,7 @@ describe("The Vision (EDH)", () => {
       let t = scenario({ p1: { battlefield: ["Urza's Mine", "Urza's Power Plant", "Urza's Tower"] } });
       for (const n of ["Urza's Mine", "Urza's Power Plant", "Urza's Tower"]) t = tapMana(t, n);
       expect(pool(t)?.C).toBe(7);
-      // Planar Nexus est une Mine et une Centrale : Urza's Tower produit {C}{C}{C}.
+      // Planar Nexus is a Mine and a Power Plant: Urza's Tower produces {C}{C}{C}.
       let u = scenario({ p1: { battlefield: ["Planar Nexus", "Urza's Tower"] } });
       expect(chars(u, idOf(u, "p1", "battlefield", "Planar Nexus")).subtypes).toEqual(
         expect.arrayContaining(["Mine", "Power-Plant", "Tower", "Urza's", "Cave", "Sphere", "Desert", "Gate"]),
@@ -973,7 +973,7 @@ describe("The Vision (EDH)", () => {
       expect(pool(u)?.C).toBe(3);
     });
 
-    it("Urza's Workshop : métallurgie, {C} pour chaque terrain d'Urza", () => {
+    it("Urza's Workshop: metalcraft, {C} for each Urza's land", () => {
       const s = scenario({ p1: { battlefield: ["Urza's Workshop", "Urza's Mine", "Planar Nexus", "Sol Ring", "Mox Opal"] } });
       const shop = idOf(s, "p1", "battlefield", "Urza's Workshop");
       expect(legalActions(s, "p1").some((a) => a.type === "tapForMana" && a.source === shop && a.ability === 1)).toBe(false);
@@ -983,13 +983,13 @@ describe("The Vision (EDH)", () => {
       expect(pool(tapMana(t, "Urza's Workshop", 1))?.C).toBe(3);
     });
 
-    it("Urza's Cave : {3}, {T}, sacrifiez-le : une carte de terrain mise sur le champ de bataille engagée", () => {
+    it("Urza's Cave: {3}, {T}, sacrifice it: a land card put onto the battlefield tapped", () => {
       let s = scenario({ p1: { battlefield: ["Urza's Cave", ...lands("Wastes", 3)], library: ["Bear Cub", "Urza's Tower"] } });
       s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Urza's Cave")));
       expect(s.objects[idOf(s, "p1", "battlefield", "Urza's Tower")]?.tapped).toBe(true);
     });
 
-    it("Urza's Saga : I gagne {T} : {C} ; II gagne la capacité de Construction ; III cherche un artefact au coût {0} ou {1}, puis il est sacrifié", () => {
+    it("Urza's Saga: I gains {T}: {C}; II gains the Construct ability; III searches for an artifact with cost {0} or {1}, then it's sacrificed", () => {
       let s = scenario({
         p1: {
           hand: ["Urza's Saga"],
@@ -1014,7 +1014,7 @@ describe("The Vision (EDH)", () => {
       expect(s.objects[saga]?.counters.lore).toBe(2);
       s = settle(activateLabeled(s, "p1", saga, "A 0/0 Construct artifact creature token"));
       const [construct] = tokens(s, "Construct");
-      // Sol Ring, la Construction : deux artefacts.
+      // Sol Ring, the Construct: two artifacts.
       expect(pt(s, construct ?? "")).toEqual([2, 2]);
       let offered: (string | undefined)[] = [];
       s = advanceUntil(
@@ -1024,14 +1024,14 @@ describe("The Vision (EDH)", () => {
       );
       const req = s.pending?.kind === "choice" ? s.pending.request : undefined;
       offered = req?.type === "pick" ? namesIn(s, req.options) : [];
-      // Coût de mana {0} ou {1} : Mox Opal ; ni Darksteel Citadel (pas de coût de mana) ni Basalt Monolith.
+      // Mana cost {0} or {1}: Mox Opal; neither Darksteel Citadel (no mana cost) nor Basalt Monolith.
       expect(offered).toEqual(["Mox Opal"]);
       s = settle(s);
       expect(idsOf(s, "p1", "battlefield", "Mox Opal")).toHaveLength(1);
       expect(idsOf(s, "p1", "graveyard", "Urza's Saga")).toHaveLength(1);
     });
 
-    it("Sanctum of Ugin : un sort incolore de valeur de mana 7 ou plus ; vous pouvez le sacrifier pour chercher une créature incolore", () => {
+    it("Sanctum of Ugin: a colorless spell with mana value 7 or greater; you may sacrifice it to search for a colorless creature", () => {
       let s = scenario({
         p1: {
           battlefield: ["Sanctum of Ugin", ...lands("Wastes", 9)],
@@ -1049,34 +1049,34 @@ describe("The Vision (EDH)", () => {
       expect(idsOf(s, "p1", "graveyard", "Sanctum of Ugin")).toHaveLength(1);
     });
 
-    it("Scorched Ruins : il faut sacrifier deux terrains dégagés pour qu'il arrive ; sinon il va au cimetière ; {C}{C}{C}{C}", () => {
+    it("Scorched Ruins: two untapped lands must be sacrificed for it to enter; otherwise it goes to the graveyard; {C}{C}{C}{C}", () => {
       let s = scenario({ p1: { hand: ["Scorched Ruins"], battlefield: ["Wastes", "Wastes", { name: "Forest", tapped: true }] } });
       s = playLand(s, "Scorched Ruins");
       expect(idsOf(s, "p1", "battlefield", "Scorched Ruins")).toHaveLength(1);
       expect(idsOf(s, "p1", "graveyard", "Wastes")).toHaveLength(2);
       s = tapMana(s, "Scorched Ruins");
       expect(pool(s)?.C).toBe(4);
-      // Un seul terrain dégagé : au cimetière.
+      // A single untapped land: to the graveyard.
       let t = scenario({ p1: { hand: ["Scorched Ruins"], battlefield: ["Wastes", { name: "Forest", tapped: true }] } });
       t = settle(playLand(t, "Scorched Ruins"));
       expect(idsOf(t, "p1", "graveyard", "Scorched Ruins")).toHaveLength(1);
       expect(idsOf(t, "p1", "battlefield", "Wastes")).toHaveLength(1);
     });
 
-    it("Shrine of the Forsaken Gods : {C}{C} pour les sorts incolores, avec sept terrains ou plus", () => {
+    it("Shrine of the Forsaken Gods: {C}{C} for colorless spells, with seven or more lands", () => {
       const s = scenario({ p1: { battlefield: ["Shrine of the Forsaken Gods", ...lands("Forest", 5)] } });
       const shrine = idOf(s, "p1", "battlefield", "Shrine of the Forsaken Gods");
       expect(legalActions(s, "p1").filter((a) => a.type === "tapForMana" && a.source === shrine)).toHaveLength(1);
       const t = scenario({ p1: { battlefield: ["Shrine of the Forsaken Gods", ...lands("Forest", 6)], hand: ["Shock"] } });
       const u = tapMana(t, "Shrine of the Forsaken Gods", 1);
-      // Mana restreint (sorts incolores seulement) : réserve à part.
+      // Restricted mana (colorless spells only): separate pool.
       expect(u.players.p1?.restrictedMana?.filter((m) => m.type === "C")).toHaveLength(2);
       expect(manaAbilitiesOf(t, idOf(t, "p1", "battlefield", "Shrine of the Forsaken Gods"))[1]?.restriction?.spell).toEqual({
         colorCount: 0,
       });
     });
 
-    it("The Grey Havens : regard 1 en arrivant ; un mana d'une couleur parmi les cartes de créature légendaire de votre cimetière", () => {
+    it("The Grey Havens: scry 1 when it enters; one mana of a color among the legendary creature cards in your graveyard", () => {
       let s = scenario({
         p1: { hand: ["The Grey Havens"], graveyard: ["Edgar Markov", "Bear Cub", "Shivan Dragon"] },
       });
@@ -1088,11 +1088,11 @@ describe("The Vision (EDH)", () => {
       expect(asked).toContain("scry");
       const havens = idOf(s, "p1", "battlefield", "The Grey Havens");
       const colors = [...new Set(manaAbilitiesOf(s, havens).flatMap((m) => m.produce))].sort();
-      // Edgar Markov (blanc, noir, rouge) ; ni Bear Cub ni Shivan Dragon (non légendaires).
+      // Edgar Markov (white, black, red); neither Bear Cub nor Shivan Dragon (nonlegendary).
       expect(colors).toEqual(["B", "C", "R", "W"]);
     });
 
-    it("The Mycosynth Gardens : {X}, {T} : devient une copie d'un artefact non-jeton de valeur de mana X que vous contrôlez", () => {
+    it("The Mycosynth Gardens: {X}, {T}: becomes a copy of a nontoken artifact with mana value X that you control", () => {
       let s = scenario({ p1: { battlefield: ["The Mycosynth Gardens", "Sol Ring", "Wastes"] } });
       const gardens = idOf(s, "p1", "battlefield", "The Mycosynth Gardens");
       const ring = idOf(s, "p1", "battlefield", "Sol Ring");
@@ -1102,7 +1102,7 @@ describe("The Vision (EDH)", () => {
       expect(chars(s, gardens).types).toEqual(["Artifact"]);
     });
 
-    it("Vesuva : vous pouvez le faire arriver engagé comme une copie d'un terrain", () => {
+    it("Vesuva: you may have it enter tapped as a copy of a land", () => {
       let s = scenario({ p1: { hand: ["Vesuva"], battlefield: ["Urza's Tower"] }, p2: { battlefield: ["Urza's Mine"] } });
       const mine = idOf(s, "p2", "battlefield", "Urza's Mine");
       s = settle(playLand(s, "Vesuva", { chosen: mine }));
@@ -1111,30 +1111,30 @@ describe("The Vision (EDH)", () => {
       expect(s.objects[vesuva]?.tapped).toBe(true);
     });
 
-    it("War Room : {3}, {T}, payez autant de PV que de couleurs dans l'identité de vos commandants : piochez une carte", () => {
+    it("War Room: {3}, {T}, pay life equal to the number of colors in your commanders' color identity: draw a card", () => {
       let s = scenario({ p1: { command: ["The Vision"], battlefield: ["War Room", ...lands("Wastes", 3)] } });
       s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "War Room")));
       expect([s.players.p1?.life, s.players.p1?.hand.length]).toEqual([20, 1]);
       let t = scenario({ p1: { command: ["Edgar Markov"], battlefield: ["War Room", ...lands("Wastes", 3)] } });
       t = settle(activate(t, "p1", idOf(t, "p1", "battlefield", "War Room")));
       expect([t.players.p1?.life, t.players.p1?.hand.length]).toEqual([17, 1]);
-      // Pas assez de PV : la capacité n'est pas proposée.
+      // Not enough life: the ability isn't offered.
       const u = scenario({ p1: { life: 2, command: ["Edgar Markov"], battlefield: ["War Room", ...lands("Wastes", 3)] } });
       expect(canActivate(u, "p1", idOf(u, "p1", "battlefield", "War Room"))).toBe(false);
     });
 
-    it("Witch's Clinic : {2}, {T} : le commandant ciblé gagne le lien de vie jusqu'à la fin du tour", () => {
+    it("Witch's Clinic: {2}, {T}: the targeted commander gains lifelink until end of turn", () => {
       let s = scenario({
         p1: { battlefield: ["Witch's Clinic", "Wastes", "Wastes", "Bear Cub", "The Vision"] },
         p2: { battlefield: ["Shivan Dragon"] },
       });
       const clinic = idOf(s, "p1", "battlefield", "Witch's Clinic");
-      // Aucun commandant : aucune cible.
+      // No commander: no target.
       expect(canActivate(s, "p1", clinic)).toBe(false);
       const vision = idOf(s, "p1", "battlefield", "The Vision");
       const dragon = idOf(s, "p2", "battlefield", "Shivan Dragon");
       s = makeCommander(makeCommander(s, vision), dragon);
-      // Un commandant, le sien ou celui d'un adversaire ; pas Bear Cub.
+      // One commander, yours or an opponent's; not Bear Cub.
       const legal = activations(s, "p1", clinic)[0]?.targets[0]?.legal;
       expect(namesIn(s, legal).sort()).toEqual(["Shivan Dragon", "The Vision"]);
       s = settle(activate(s, "p1", clinic, undefined, { targets: { t: [vision] } }));
@@ -1142,8 +1142,8 @@ describe("The Vision (EDH)", () => {
     });
   });
 
-  describe("liste « Weight of the World » et réserve du jeu de proxys", () => {
-    it("Candelabra of Tawnos : {X}, {T} : dégagez exactement X terrains ciblés", () => {
+  describe('"Weight of the World" list and proxy set reserve', () => {
+    it("Candelabra of Tawnos: {X}, {T}: untap exactly X targeted lands", () => {
       let s = scenario({ p1: { battlefield: ["Candelabra of Tawnos", ...lands("Wastes", 4)] } });
       const candelabra = idOf(s, "p1", "battlefield", "Candelabra of Tawnos");
       const [a, b, c, d] = idsOf(s, "p1", "battlefield", "Wastes") as [string, string, string, string];
@@ -1155,7 +1155,7 @@ describe("The Vision (EDH)", () => {
       expect(s.objects[candelabra]?.tapped).toBe(true);
     });
 
-    it("Null Brooch : {2}, {T}, défaussez votre main : contrecarrez un sort non-créature (pas un sort de créature)", () => {
+    it("Null Brooch: {2}, {T}, discard your hand: counter a noncreature spell (not a creature spell)", () => {
       let s = scenario({
         p1: { battlefield: ["Null Brooch", ...lands("Wastes", 2)], hand: ["Bear Cub", "Forest"] },
         p2: { hand: ["Shock", "Bear Cub"], battlefield: lands("Mountain", 2).concat(lands("Forest", 2)) },
@@ -1176,7 +1176,7 @@ describe("The Vision (EDH)", () => {
       expect(idsOf(s, "p2", "graveyard", "Shock")).toHaveLength(1);
     });
 
-    it("Mishra's Workshop : {C}{C}{C} à dépenser seulement pour des sorts d'artefact", () => {
+    it("Mishra's Workshop: {C}{C}{C} to be spent only on artifact spells", () => {
       const s = scenario({
         p1: { battlefield: ["Mishra's Workshop"], hand: ["Palladium Myr", "Glaring Fleshraker"] },
       });
@@ -1186,16 +1186,16 @@ describe("The Vision (EDH)", () => {
       expect(t.players.p1?.restrictedMana).toHaveLength(3);
     });
 
-    it("Palladium Myr : {T} : {C}{C} ; Foundry Inspector : vos sorts d'artefact coûtent {1} de moins", () => {
+    it("Palladium Myr: {T}: {C}{C}; Foundry Inspector: your artifact spells cost {1} less", () => {
       let s = scenario({ p1: { battlefield: ["Palladium Myr", "Foundry Inspector"], hand: ["Sol Ring", "Bear Cub"] } });
-      // Sol Ring ({1}) ne coûte rien ; Bear Cub, qui n'est pas un artefact, coûte toujours {1}{G}.
+      // Sol Ring ({1}) costs nothing; Bear Cub, which isn't an artifact, still costs {1}{G}.
       expect(castable(s, "p1", idOf(s, "p1", "hand", "Sol Ring"))).toBe(true);
       s = tapMana(s, "Palladium Myr");
       expect(pool(s)?.C).toBe(2);
       expect(castable(s, "p1", idOf(s, "p1", "hand", "Bear Cub"))).toBe(false);
     });
 
-    it("Eldrazi Conscription : +10/+10, piétinement et annihilateur 2", () => {
+    it("Eldrazi Conscription: +10/+10, trample and annihilator 2", () => {
       let s = scenario({
         p1: { battlefield: ["Bear Cub", ...lands("Wastes", 8)], hand: ["Eldrazi Conscription"] },
         p2: { battlefield: ["Forest", "Sol Ring", "Savannah Lions"] },
@@ -1205,12 +1205,12 @@ describe("The Vision (EDH)", () => {
       expect(pt(s, bear)).toEqual([12, 12]);
       expect(chars(s, bear).keywords).toContain("trample");
       s = throughCombat(attack(s, [bear]));
-      // Le joueur défenseur sacrifie deux de ses trois permanents, puis prend 12 blessures (aucun bloqueur).
+      // The defending player sacrifices two of their three permanents, then takes 12 damage (no blockers).
       expect(s.battlefield.filter((id) => s.objects[id]?.controller === "p2")).toHaveLength(1);
       expect(s.players.p2?.life).toBe(8);
     });
 
-    it("Portal to Phyrexia : chaque adversaire sacrifie trois créatures ; à votre entretien, une créature d'un cimetière vous revient, Phyrexian en plus", () => {
+    it("Portal to Phyrexia: each opponent sacrifices three creatures; at your upkeep, a creature from a graveyard returns to you, plus Phyrexian", () => {
       let s = scenario({
         players: 3,
         p1: { battlefield: lands("Wastes", 9), hand: ["Portal to Phyrexia"] },
@@ -1228,7 +1228,7 @@ describe("The Vision (EDH)", () => {
       expect(chars(s, mine[0] as string).subtypes).toContain("Phyrexian");
     });
 
-    it("508.1f-h : une créature qui attaque est engagée avant la taxe d'attaque ; sacrifiée pour la payer, elle quitte le combat", () => {
+    it("508.1f-h: an attacking creature is tapped before the attack tax; sacrificed to pay it, it leaves combat", () => {
       let s = scenario({
         p1: { battlefield: ["Glaring Fleshraker", "Wastes"], hand: ["Mox Opal"] },
         p2: { battlefield: ["Ghostly Prison"] },
@@ -1236,12 +1236,12 @@ describe("The Vision (EDH)", () => {
       s = settle(castIt(s, "p1", "Mox Opal"));
       const [spawn] = tokens(s, "Eldrazi Spawn") as [string];
       s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers" && x.turn.active === "p1" && x.turn.number > 3);
-      // {2} de taxe pour le Rejeton : le Terrain vague et le Rejeton lui-même (« sacrifiez ce jeton : ajoutez {C} »).
+      // {2} tax for the Spawn: the Wastes and the Spawn itself ("sacrifice this token: add {C}").
       s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: spawn, defender: "p2" }] });
       expect(s.objects[spawn]).toBeUndefined();
       expect(s.combat?.attackers ?? []).toEqual([]);
       expect(s.objects[idOf(s, "p1", "battlefield", "Wastes")]?.tapped).toBe(true);
-      // Une créature sans vigilance qui attaque est engagée avant le paiement : elle ne peut pas payer sa propre taxe.
+      // A creature without vigilance that attacks is tapped before payment: it can't pay its own tax.
       let t = scenario({
         p1: { battlefield: ["Llanowar Elves", "Forest"] },
         p2: { battlefield: ["Ghostly Prison"] },
@@ -1253,7 +1253,7 @@ describe("The Vision (EDH)", () => {
       );
     });
 
-    it("Super State : base 9/9, vol, initiative, piétinement, célérité ; ses blessures de combat à un adversaire touchent aussi les autres", () => {
+    it("Super State: base 9/9, flying, first strike, trample, haste; its combat damage to an opponent also hits the others", () => {
       let s = scenario({
         players: 3,
         p1: { battlefield: ["Bear Cub", ...lands("Wastes", 7)], hand: ["Super State"] },

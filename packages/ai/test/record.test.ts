@@ -1,4 +1,4 @@
-/** Enregistrement et rejeu d'une partie (`engine/src/record.ts`) : même graine + mêmes décisions = même partie. */
+/** Recording and replay of a game (`engine/src/record.ts`): same seed + same decisions = same game. */
 import { buildDeck, card, deckById } from "@mtgx/cards";
 import {
   CHECKPOINT_EVERY,
@@ -15,8 +15,8 @@ import {
 import { describe, expect, it } from "vitest";
 import { heuristicAgent, randomAgent } from "../src";
 
-describe("enregistrement et rejeu", () => {
-  it("une partie jouée par GameHost se rejoue à l'identique, jusqu'à l'état final", async () => {
+describe("recording and replay", () => {
+  it("a game played by GameHost replays identically, up to the final state", async () => {
     const { state, events, record } = createRecordedGame({
       seed: 1234,
       players: [
@@ -28,20 +28,20 @@ describe("enregistrement et rejeu", () => {
     await host.run();
     expect(host.state.over).toBe(true);
     expect(record.decisions.length).toBeGreaterThan(50);
-    // L'enregistrement passe par JSON (fichier, disque du serveur) sans perte.
+    // The recording goes through JSON (file, server disk) without loss.
     const copy = JSON.parse(JSON.stringify(record));
     expect(isGameRecord(copy)).toBe(true);
     const replayed = replayGame(copy, card);
     expect(replayed.state).toEqual(host.state);
-    // États intermédiaires : un par décision, le dernier identique.
+    // Intermediate states: one per decision, the last one identical.
     const states = replayStates(copy, card);
     expect(states).toHaveLength(record.decisions.length + 1);
     expect(states.at(-1)).toEqual(host.state);
     expect(replayGame(copy, card, 10).state).toEqual(states[10]);
   }, 60_000);
 
-  it("PLAN-H H9 : les choix « en arrivant » (copies, types, terrains, Mox Diamond) se rejouent à l'identique", async () => {
-    // Des cartes à choix « en arrivant » des deux côtés : la partie rejouée (décisions seules) retrouve l'état final.
+  it('PLAN-H H9: "as it enters" choices (copies, types, lands, Mox Diamond) replay identically', async () => {
+    // Cards with "as it enters" choices on both sides: the replayed game (decisions only) reaches the final state.
     const main: [number, string][] = [
       [6, "Island"],
       [6, "Mountain"],
@@ -86,7 +86,7 @@ describe("enregistrement et rejeu", () => {
     return { record: JSON.parse(JSON.stringify(record)), final: host.state };
   }
 
-  it("version des règles et points de contrôle : le rejeu vérifié retrouve chaque empreinte", async () => {
+  it("rules version and checkpoints: the verified replay finds every fingerprint", async () => {
     const { record, final } = await recorded();
     expect(record.rules).toBe(RULES_VERSION);
     const n = record.decisions.length;
@@ -101,7 +101,7 @@ describe("enregistrement et rejeu", () => {
     expect(outcomeHash(checked.state)).toBe(outcomeHash(final));
   }, 60_000);
 
-  it("rejeu vérifié : une empreinte fausse arrête au point de contrôle précédent ; une décision refusée, juste avant elle", async () => {
+  it("verified replay: a wrong fingerprint stops at the previous checkpoint; a rejected decision, just before it", async () => {
     const { record } = await recorded();
     const cps = record.checkpoints ?? [];
     expect(cps.length).toBeGreaterThan(2);
@@ -119,7 +119,7 @@ describe("enregistrement et rejeu", () => {
     expect(r2.applied).toBe(30);
   }, 60_000);
 
-  it("sauvegarde locale (checkpointEvery: 1) : une empreinte par décision, l'écart est trouvé à la décision près", async () => {
+  it("local save (checkpointEvery: 1): one fingerprint per decision, the divergence is found to the exact decision", async () => {
     const { state, events, record } = createRecordedGame({
       seed: 99,
       players: [
@@ -143,7 +143,7 @@ describe("enregistrement et rejeu", () => {
     expect(r.applied).toBe(39);
   }, 60_000);
 
-  it("l'empreinte ne dépend ni des identifiants, ni de la version du cache, ni du hasard", async () => {
+  it("the fingerprint depends on neither ids, nor the cache version, nor chance", async () => {
     const { final } = await recorded();
     const other = structuredClone(final);
     other.version += 7;
@@ -156,7 +156,7 @@ describe("enregistrement et rejeu", () => {
     expect(outcomeHash(other)).not.toBe(outcomeHash(final));
   }, 60_000);
 
-  it("refuse un fichier qui n'est pas un enregistrement", () => {
+  it("rejects a file that is not a recording", () => {
     expect(isGameRecord({ format: "autre" })).toBe(false);
     expect(isGameRecord(null)).toBe(false);
   });

@@ -1,4 +1,4 @@
-/** Journal des événements du tour (`turnlog.ts`) : enregistrement par le moteur et requêtes des cartes. */
+/** Turn event log (`turnlog.ts`): recording by the engine and card queries. */
 import { describe, expect, it } from "vitest";
 import { dealDamage, sacrifice, sourceFromObject } from "../src/actions";
 import { announceDiscard, moveDiscarded } from "../src/effects";
@@ -8,8 +8,8 @@ import { countersPutThisTurn, countTurnEvents, objectDidThisTurn, objectTurnEven
 import type { TurnLogQuery } from "../src/types";
 import { act, advanceUntil, canActivate, idOf, passBoth, scenario } from "./helpers";
 
-describe("journal du tour", () => {
-  it("filtre : un champ propre à l'objet dans `not` ou `anyOf` est évalué (« une créature qui n'a pas attaqué ce tour-ci »)", () => {
+describe("turn log", () => {
+  it('filter: an object-specific field in `not` or `anyOf` is evaluated ("a creature that didn\'t attack this turn")', () => {
     const s = scenario({ p1: { battlefield: ["Bear Cub", "Savannah Lions"] } });
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
     const lions = idOf(s, "p1", "battlefield", "Savannah Lions");
@@ -22,7 +22,7 @@ describe("journal du tour", () => {
     expect(matchesObjectFilter(s, "p1", lions, attackedOrLions)).toBe(true);
   });
 
-  it("créatures adverses exilées depuis le champ de bataille (Vren)", () => {
+  it("opposing creatures exiled from the battlefield (Vren)", () => {
     const s = scenario({ p1: { battlefield: ["Bear Cub"] }, p2: { battlefield: ["Bear Cub", "Forest"] } });
     moveObject(s, idOf(s, "p2", "battlefield", "Bear Cub"), "exile");
     moveObject(s, idOf(s, "p2", "battlefield", "Forest"), "exile");
@@ -32,7 +32,7 @@ describe("journal du tour", () => {
     expect(countTurnEvents(s, q, "p2")).toBe(1);
   });
 
-  it("Nourriture sacrifiée, sort lancé depuis la main", () => {
+  it("Food sacrificed, spell cast from hand", () => {
     let s = scenario({ p1: { battlefield: ["Forest"], hand: ["Llanowar Elves"] } });
     expect(countTurnEvents(s, { event: "cast", who: "you", fromZone: "hand" }, "p1")).toBe(0);
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Llanowar Elves") });
@@ -44,7 +44,7 @@ describe("journal du tour", () => {
     expect(countTurnEvents(t, { event: "sacrifice", who: "you", subtype: "Food" }, "p1")).toBe(0);
   });
 
-  it("blessures de combat par joueur (le plus grand total) et sources", () => {
+  it("combat damage per player (the greatest total) and sources", () => {
     const s = scenario({ p1: { battlefield: ["Shivan Dragon", "Bear Cub"] } });
     const dragon = sourceFromObject(s, idOf(s, "p1", "battlefield", "Shivan Dragon"));
     const cub = sourceFromObject(s, idOf(s, "p1", "battlefield", "Bear Cub"));
@@ -57,19 +57,19 @@ describe("journal du tour", () => {
     expect(countTurnEvents(s, { event: "damage", combat: false, who: "you", sum: true }, "p1")).toBe(3);
   });
 
-  it("le journal repart de zéro au tour suivant", () => {
+  it("the log resets at the next turn", () => {
     let s = scenario({ p1: { battlefield: ["Bear Cub"] } });
     moveObject(s, idOf(s, "p1", "battlefield", "Bear Cub"), "graveyard");
     expect(s.turnLog.length).toBeGreaterThan(0);
     const turn = s.turn.number;
     s = advanceUntil(s, (x) => x.turn.number === turn + 1 && x.turn.step === "upkeep");
-    // La pioche du nouveau tour n'y figure pas (bibliothèque → main : information cachée).
+    // The new turn's draw isn't in it (library → hand: hidden information).
     expect(s.turnLog).toEqual([]);
   });
 
-  // PLAN-H H11 : les anciens champs « ce tour-ci » de l'objet sont des entrées du journal avec son identifiant ; un objet
-  // qui change de zone est un nouvel objet (400.7), sans les entrées de l'ancien.
-  it("606.3 : une capacité de loyauté par tour ; revenu sur le champ de bataille, c'est un nouvel objet (400.7)", () => {
+  // PLAN-H H11: the former "this turn" object fields are log entries keyed by its identifier; an object
+  // that changes zone is a new object (400.7), without the old one's entries.
+  it("606.3: one loyalty ability per turn; back on the battlefield, it's a new object (400.7)", () => {
     let s = scenario({ p1: { battlefield: ["Ajani, Caller of the Pride", "Bear Cub"] } });
     const ajani = idOf(s, "p1", "battlefield", "Ajani, Caller of the Pride");
     s = act(s, "p1", { type: "activate", source: ajani, ability: 0, targets: { t: [idOf(s, "p1", "battlefield", "Bear Cub")] } });
@@ -80,7 +80,7 @@ describe("journal du tour", () => {
     expect(canActivate(s, "p1", back)).toBe(true);
   });
 
-  it("marqueurs mis ce tour-ci, par joueur et par sorte ; engagements ; défausse (chaos)", () => {
+  it("counters put this turn, per player and per kind; taps; discard (chaos)", () => {
     const s = scenario({ p1: { battlefield: ["Bear Cub"], hand: ["Forest"] } });
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     expect(countersPutThisTurn(s, bear)).toEqual([]);

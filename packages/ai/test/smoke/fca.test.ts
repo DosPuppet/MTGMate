@@ -1,4 +1,4 @@
-/** Test de fumée : Through the Ages (rééditions, « Sans limite »). */
+/** Smoke test: Through the Ages (reprints, "Unlimited"). */
 import { smokeTest } from "./harness";
 
 smokeTest(["FCA"]);

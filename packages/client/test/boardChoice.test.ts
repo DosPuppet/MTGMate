@@ -6,7 +6,7 @@ const perm = (id: string, controller: string) => ({ id, controller }) as unknown
 const pick = (over: Partial<PickRequest> = {}): ChoiceRequest => ({
   type: "pick",
   intent: "other",
-  prompt: "Choisissez jusqu'à deux créatures",
+  prompt: "Choose up to two creatures",
   options: ["a", "b"],
   min: 0,
   max: 2,
@@ -23,17 +23,17 @@ const view = (request: ChoiceRequest, over: Partial<GameView> = {}) =>
     ...over,
   }) as unknown as GameView;
 
-describe("choix sur le plateau", () => {
-  it("se fait sur le plateau quand toutes les options sont des permanents (des deux camps)", () => {
+describe("choice on the board", () => {
+  it("is made on the board when all options are permanents (of both sides)", () => {
     expect(boardPick(view(pick()))?.options).toEqual(["a", "b"]);
   });
 
-  it("accepte des joueurs parmi les options, pas des cartes hors du champ de bataille", () => {
+  it("accepts players among the options, not cards outside the battlefield", () => {
     expect(boardPick(view(pick({ options: ["a", "p2"] })))).not.toBeNull();
     expect(boardPick(view(pick({ options: ["a", "gy1"] })))).toBeNull();
   });
 
-  it("garde la fenêtre pour un choix entre joueurs seuls, des libellés ou la décision d'un autre joueur", () => {
+  it("keeps the window for a choice between players only, labels, or another player's decision", () => {
     expect(boardPick(view(pick({ options: ["p1", "p2"] })))).toBeNull();
     expect(boardPick(view(pick({ labels: { a: "Mode A" } })))).toBeNull();
     const v = view(pick());
@@ -41,7 +41,7 @@ describe("choix sur le plateau", () => {
     expect(boardPick(view({ type: "yesNo", intent: "other", prompt: "?", suggested: [1] }))).toBeNull();
   });
 
-  it("sélectionne, retire et respecte le maximum", () => {
+  it("selects, removes and respects the maximum", () => {
     const req = pick() as PickRequest;
     expect(togglePick(req, [], "a")).toEqual(["a"]);
     expect(togglePick(req, ["a"], "b")).toEqual(["a", "b"]);
@@ -52,18 +52,18 @@ describe("choix sur le plateau", () => {
     expect(pickValid(req, [])).toBe(true);
   });
 
-  it("montre la carte qui se résout comme source de l'effet", () => {
+  it("shows the resolving card as the effect's source", () => {
     expect(choiceSource(view(pick()))?.face.name).toBe("Growth");
   });
 
-  it("retire de la consigne le rappel de sa source", () => {
-    const source = { face: { name: "Felidar Savior" } as CardFace, effect: "marqueurs +1/+1" };
-    expect(shortPrompt("Felidar Savior — marqueurs +1/+1 : choisissez une cible", source)).toBe("choisissez une cible");
-    expect(shortPrompt("Felidar Savior : choisissez", { face: source.face })).toBe("choisissez");
-    expect(shortPrompt("Sacrifiez 2 permanents", source)).toBe("Sacrifiez 2 permanents");
+  it("removes the reminder of its source from the prompt", () => {
+    const source = { face: { name: "Felidar Savior" } as CardFace, effect: "+1/+1 counters" };
+    expect(shortPrompt("Felidar Savior — +1/+1 counters : choose a target", source)).toBe("choose a target");
+    expect(shortPrompt("Felidar Savior: choose", { face: source.face })).toBe("choose");
+    expect(shortPrompt("Sacrifice two permanents", source)).toBe("Sacrifice two permanents");
   });
 
-  it("montre la carte du déclenchement dont on choisit les cibles", () => {
+  it("shows the card of the trigger whose targets are being chosen", () => {
     const v = view(pick());
     const pending = { ...v.pending, purpose: { kind: "triggerTarget" }, source: { face: { name: "Elf" }, effect: "ETB" } };
     expect(choiceSource({ ...v, pending } as unknown as GameView)?.face.name).toBe("Elf");

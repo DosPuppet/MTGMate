@@ -16,10 +16,10 @@ import {
 
 const index = new CardIndex(CARDS);
 
-describe("lecture des decklists", () => {
-  it("format MTGA : sections, nom du deck, codes de set", () => {
+describe("reading decklists", () => {
+  it("MTGA format: sections, deck name, set codes", () => {
     const text = `About
-Name Elfes pressés
+Name Rushed Elves
 
 Deck
 4 Llanowar Elves (FDN) 227
@@ -30,7 +30,7 @@ Sideboard
 2 Broken Wings (FDN) 99
 `;
     const d = parseDeckList(text, index);
-    expect(d.name).toBe("Elfes pressés");
+    expect(d.name).toBe("Rushed Elves");
     expect(d.main).toEqual([
       [4, "Llanowar Elves"],
       [20, "Forest"],
@@ -40,7 +40,7 @@ Sideboard
     expect(d.issues.filter((i) => i.kind !== "unimplemented")).toEqual([]);
   });
 
-  it("format MTGO : « 4x », préfixe SB:, réserve après une ligne vide", () => {
+  it('MTGO format: "4x", SB: prefix, sideboard after a blank line', () => {
     const d = parseDeckList("4x Llanowar Elves\n20 Forest\nSB: 1 Giant Growth\n\n2 Broken Wings\n", index);
     expect(d.main).toEqual([
       [4, "Llanowar Elves"],
@@ -52,7 +52,7 @@ Sideboard
     ]);
   });
 
-  it("noms français, casse et accents indifférents ; lignes en double additionnées", () => {
+  it("French names, case and accents ignored; duplicate lines added up", () => {
     const d = parseDeckList("2 ELFES DE LLANOWAR\n2 elfes de llanowar\n3 Croissance gigantesque\n10 foret", index);
     expect(d.main).toEqual([
       [4, "Llanowar Elves"],
@@ -61,7 +61,7 @@ Sideboard
     ]);
   });
 
-  it("carte inconnue : erreur avec suggestion ; ligne illisible signalée", () => {
+  it("unknown card: error with suggestion; unreadable line reported", () => {
     const d = parseDeckList("4 Llanowar Elfs\nbonjour\n// commentaire\n", index);
     expect(d.main).toEqual([]);
     expect(d.issues.map((i) => [i.line, i.kind, i.suggestion])).toEqual([
@@ -70,7 +70,7 @@ Sideboard
     ]);
   });
 
-  it("section Commander (PLAN-E) : le commandant à part ; marque *CMDR* de Moxfield ; section Compagnon ignorée", () => {
+  it("Commander section (PLAN-E): the commander apart; Moxfield's *CMDR* mark; Companion section ignored", () => {
     const d = parseDeckList("Commander\n1 Llanowar Elves\n\nDeck\n4 Forest", index);
     expect(d.commander).toEqual([[1, "Llanowar Elves"]]);
     expect(d.main).toEqual([[4, "Forest"]]);
@@ -81,17 +81,17 @@ Sideboard
     const companion = parseDeckList("Companion\n1 Llanowar Elves\nDeck\n4 Forest", index);
     expect(companion.main).toEqual([[4, "Forest"]]);
     expect(companion.issues[0]?.kind).toBe("ignored");
-    // Aller-retour : l'export écrit la section Commander en premier.
+    // Round trip: the export writes the Commander section first.
     const text = serializeDeckList({ commander: d.commander, main: d.main }, CARDS);
     expect(text).toMatch(/^Commander\n1 Llanowar Elves \(FDN\) \d+\n\nDeck\n4 Forest/);
     expect(parseDeckList(text, index).commander).toEqual(d.commander);
   });
 });
 
-describe("export des decklists", () => {
+describe("decklist export", () => {
   const deck = DECKS.find((d) => d.id === "welcome-green")!;
 
-  it("aller-retour MTGA : relire l'export redonne le même deck", () => {
+  it("MTGA round trip: reading the export back gives the same deck", () => {
     const text = serializeDeckList({ ...deck, sideboard: [[2, "Broken Wings"]] }, CARDS);
     expect(text).toMatch(/^About\nName .+\n\nDeck\n\d+ Forest \(FDN\) \d+/);
     const back = parseDeckList(text, index);
@@ -100,16 +100,16 @@ describe("export des decklists", () => {
     expect(back.sideboard).toEqual([[2, "Broken Wings"]]);
   });
 
-  it("aller-retour en texte simple avec les noms français", () => {
+  it("plain text round trip with the French names", () => {
     const text = serializeDeckList(deck, CARDS, { format: "plain", lang: "fr" });
     expect(text).toContain("Elfes de Llanowar");
     expect(parseDeckList(text, index).main).toEqual(deck.main);
   });
 });
 
-describe("règles de construction", () => {
-  it("les decks préconstruits sont légaux et jouables (les decks Commander, une fois leurs cartes faites)", () => {
-    // Préconstruits Commander (PLAN-E) jouables : à la fin de leurs lots de cartes (E11 Edgar, E12 Y'shtola).
+describe("construction rules", () => {
+  it("the preconstructed decks are legal and playable (the Commander decks, once their cards are done)", () => {
+    // Playable Commander preconstructed decks (PLAN-E): at the end of their card lots (E11 Edgar, E12 Y'shtola).
     const commanderPlayable: string[] = [
       "cmd-edgar-markov",
       "cmd-yshtola",
@@ -133,25 +133,25 @@ describe("règles de construction", () => {
       const welcome = d.id.startsWith("welcome-");
       const v = validateDeck(d, CARDS);
       expect(v, d.id).toMatchObject({ legal: true, playable: true, welcome });
-      // 40 cartes pour un deck de bienvenue ; 60 au moins sinon (4c Control du méta en a 61).
+      // 40 cards for a welcome deck; at least 60 otherwise (the meta's 4c Control has 61).
       if (welcome) expect(v.mainCount, d.id).toBe(40);
       else expect(v.mainCount, d.id).toBeGreaterThanOrEqual(60);
     }
   });
 
-  it("un deck de bienvenue (40 cartes) se joue tel quel, pas une copie modifiée", () => {
+  it("a welcome deck (40 cards) is played as is, not a modified copy", () => {
     const d = DECKS.find((x) => x.id === "welcome-red")!;
-    // Même liste, dans un autre ordre et découpée autrement : reconnue.
+    // Same list, in another order and split differently: recognized.
     const [first, ...rest] = d.main;
     const split: DeckEntries = [...rest.reverse(), [first![0] - 1, first![1]], [1, first![1]]];
     expect(validateDeck({ main: split }, CARDS)).toMatchObject({ legal: true, welcome: true, minMain: 40 });
-    // Une carte changée : les 60 cartes minimum s'appliquent.
+    // One card changed: the 60-card minimum applies.
     const changed: [number, string][] = d.main.map(([n, name]) => [n, name === "Shivan Dragon" ? "Serra Angel" : name]);
     expect(validateDeck({ main: changed }, CARDS)).toMatchObject({ legal: false, welcome: false, minMain: 60 });
     expect(validateDeck({ main: changed }, CARDS).errors.map(plainText)).toContain("The deck has 40 cards (minimum 60)");
   });
 
-  it("60 cartes minimum, 4 exemplaires maximum sauf terrains de base, réserve de 15", () => {
+  it("60 cards minimum, 4 copies maximum except basic lands, 15-card sideboard", () => {
     const v = validateDeck(
       {
         main: [
@@ -170,7 +170,7 @@ describe("règles de construction", () => {
     ]);
   });
 
-  it("les exemplaires du deck et de la réserve s'additionnent", () => {
+  it("copies in the deck and the sideboard add up", () => {
     const v = validateDeck(
       {
         main: [
@@ -184,7 +184,7 @@ describe("règles de construction", () => {
     expect(v.errors.map(plainText)).toEqual(["Giant Growth: 5 copies (maximum 4)"]);
   });
 
-  it("une carte pas encore gérée rend le deck non jouable, sans le rendre illégal", () => {
+  it("a card not yet implemented makes the deck unplayable, without making it illegal", () => {
     const unimplemented = { ...CARDS["Shivan Dragon"]!, name: "Carte fictive", implemented: false };
     const v = validateDeck(
       {
@@ -200,8 +200,8 @@ describe("règles de construction", () => {
   });
 });
 
-describe("réserve", () => {
-  it("une carte non gérée en réserve n'empêche pas de jouer", () => {
+describe("sideboard", () => {
+  it("an unimplemented card in the sideboard does not prevent playing", () => {
     const unimplemented = { ...CARDS["Shivan Dragon"]!, name: "Carte fictive", implemented: false };
     const v = validateDeck(
       { main: [[60, "Forest"]], sideboard: [[1, unimplemented.name]] },
@@ -212,7 +212,7 @@ describe("réserve", () => {
   });
 });
 
-describe("légalité en Standard", () => {
+describe("legality in Standard", () => {
   const withCard = (legalities: Record<string, string> | undefined) => {
     const c = { ...CARDS["Shivan Dragon"]!, name: "Carte fictive", legalities } as (typeof CARDS)[string];
     return { ...CARDS, [c.name]: c };
@@ -225,14 +225,14 @@ describe("légalité en Standard", () => {
     sideboard: where === "side" ? ([[1, "Carte fictive"]] as [number, string][]) : [],
   });
 
-  it("les cartes des extensions couvertes sont légales en Standard, sauf les 13 bannies (légalités Scryfall)", () => {
-    // Les ensembles de rééditions (PLAN-G) et le pseudo-ensemble Commander (PLAN-E) sont hors Standard : vérifiés à part.
+  it("the cards of the covered sets are legal in Standard, except the 13 banned ones (Scryfall legalities)", () => {
+    // The reprint sets (PLAN-G) and the Commander pseudo-set (PLAN-E) are outside Standard: checked separately.
     const reprints = new Set(SETS.filter((s) => s.reprint || s.byName).map((s) => s.code));
     const cards = Object.values(CARDS).filter((c) => !c.isToken && !reprints.has(c.set ?? ""));
     expect(cards.filter((c) => c.set === "FDN")).toHaveLength(517);
-    // Reality Fracture : 285 cartes, dont 6 réimpressions de Foundations (terrains de base, Unsummon).
+    // Reality Fracture: 285 cards, including 6 reprints of Foundations (basic lands, Unsummon).
     expect(cards.filter((c) => c.set === "FRA")).toHaveLength(279);
-    // Hors Standard : exactement les 13 cartes bannies (à revérifier à chaque annonce de bannissement).
+    // Outside Standard: exactly the 13 banned cards (to recheck at each ban announcement).
     expect(cards.filter((c) => c.legalities?.standard !== "legal" && c.legalities?.standard !== "banned")).toEqual([]);
     expect(
       cards
@@ -256,7 +256,7 @@ describe("légalité en Standard", () => {
     ]);
   });
 
-  it("carte à préparer : la créature et son sort, et le nom « Créature // Sort » à l'import", () => {
+  it('prepare card: the creature and its spell, and the "Creature // Spell" name on import', () => {
     const angel = CARDS["Blossom-Blessed Angel"];
     expect(angel?.prepareFace).toMatchObject({ name: "Seed Suture", typeLine: "Sorcery", manaCost: "{G/W}" });
     expect(angel?.types).toEqual(["Creature"]);
@@ -264,7 +264,7 @@ describe("légalité en Standard", () => {
     expect(d.main).toEqual([[2, "Blossom-Blessed Angel"]]);
   });
 
-  it("une carte bannie rend le deck illégal, même en réserve", () => {
+  it("a banned card makes the deck illegal, even in the sideboard", () => {
     const cards = withCard({ standard: "banned" });
     for (const where of ["main", "side"] as const) {
       const v = validateDeck(deck(where), cards);
@@ -273,14 +273,14 @@ describe("légalité en Standard", () => {
     }
   });
 
-  it("sans limite : toute carte du catalogue, quelle que soit sa légalité ; les règles de construction restent", () => {
+  it("unlimited: any card of the catalog, whatever its legality; the construction rules remain", () => {
     for (const legalities of [{ standard: "banned" }, { standard: "not_legal" }, undefined]) {
       for (const where of ["main", "side"] as const) {
         const v = validateDeck(deck(where), withCard(legalities), "unlimited");
         expect(v).toMatchObject({ format: "unlimited", legal: true, errors: [] });
       }
     }
-    // 60 cartes minimum, 4 exemplaires au plus.
+    // 60 cards minimum, 4 copies at most.
     const five = validateDeck(
       {
         main: [
@@ -292,7 +292,7 @@ describe("légalité en Standard", () => {
       "unlimited",
     );
     expect(five.errors.map(plainText)).toEqual(["Carte fictive: 5 copies (maximum 4)"]);
-    // Une carte assemblée ne se met toujours pas dans un deck.
+    // An assembled card still cannot be put in a deck.
     const meld = Object.values(CARDS).find((c) => c.meldResult);
     if (meld)
       expect(
@@ -307,14 +307,14 @@ describe("légalité en Standard", () => {
           "unlimited",
         ).legal,
       ).toBe(false);
-    // L'échange de réserve d'un match sans limite garde la carte bannie.
+    // The sideboard swap of an unlimited match keeps the banned card.
     expect(sideboardSwapError(deck("side"), deck("side"), withCard({ standard: "banned" }), "unlimited")).toBeNull();
     expect(plainText(sideboardSwapError(deck("side"), deck("side"), withCard({ standard: "banned" })) ?? "")).toBe(
       "Carte fictive is banned in Standard",
     );
   });
 
-  it("rééditions (PLAN-G) : aucune n'est légale en Standard, toutes se jouent en « Sans limite », sans carte propre au Commander", () => {
+  it('reprints (PLAN-G): none is legal in Standard, all are playable in "Unlimited", with no Commander-only card', () => {
     const reprints = SETS.filter((s) => s.reprint);
     expect(reprints.map((s) => s.code)).toEqual(["SPG", "EOS", "WOT", "OTP", "FCA", "SOA", "PZA", "REX"]);
     const codes = new Set(reprints.map((s) => s.code));
@@ -322,11 +322,11 @@ describe("légalité en Standard", () => {
     expect(cards.length).toBeGreaterThan(400);
     expect(cards.filter((c) => c.legalities?.standard === "legal").map((c) => c.name)).toEqual([]);
     for (const c of cards) expect(legalityIssue(c, "unlimited"), c.name).toBeUndefined();
-    // Une carte écartée des rééditions peut venir d'un deck Commander (pseudo-ensemble EDH, PLAN-E), jamais d'une réédition.
+    // A card set aside from the reprints may come from a Commander deck (EDH pseudo-set, PLAN-E), never from a reprint.
     for (const name of Object.keys(EXCLUDED_REPRINTS)) expect(CARDS[name]?.set ?? "EDH", name).toBe("EDH");
   });
 
-  it("une carte hors Standard ou sans légalité connue rend le deck illégal", () => {
+  it("a card outside Standard or with no known legality makes the deck illegal", () => {
     expect(validateDeck(deck("main"), withCard({ standard: "not_legal" })).errors.map(plainText)).toEqual([
       "Carte fictive is not legal in Standard",
     ]);
@@ -335,7 +335,7 @@ describe("légalité en Standard", () => {
     ]);
   });
 
-  it("l'import signale les cartes illégales", () => {
+  it("the import flags illegal cards", () => {
     const cards = withCard({ standard: "banned" });
     const d = parseDeckList("1 Carte fictive\n59 Forest", new CardIndex(cards));
     expect(d.main).toHaveLength(2);
@@ -345,8 +345,8 @@ describe("légalité en Standard", () => {
   });
 });
 
-describe("cartes à plusieurs faces (lot 0.3)", () => {
-  it("chaque face a sa définition ; la carte porte le recto, ou la réunion des moitiés d'une carte scindée", () => {
+describe("multi-faced cards (lot 0.3)", () => {
+  it("each face has its definition; the card carries the front face, or the union of the halves of a split card", () => {
     const adventure = CARDS["Riling Dawnbreaker // Signaling Roar"];
     expect(adventure?.layout).toBe("adventure");
     expect(adventure?.faceDefs?.map((f) => [f.name, f.types])).toEqual([
@@ -362,7 +362,7 @@ describe("cartes à plusieurs faces (lot 0.3)", () => {
     expect(dfc?.faceDefs?.[1]?.image).not.toBe(dfc?.image);
   });
 
-  it("decklists : le recto seul (MTGA) ou « A/B » (MTGO) ; export du recto, nom complet pour une carte scindée", () => {
+  it('decklists: the front face alone (MTGA) or "A/B" (MTGO); export of the front face, full name for a split card', () => {
     const index = new CardIndex(CARDS);
     expect(index.find("Riling Dawnbreaker")).toBe("Riling Dawnbreaker // Signaling Roar");
     expect(index.find("Cease/Desist")).toBe("Cease // Desist");

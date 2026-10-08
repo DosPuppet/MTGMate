@@ -1,7 +1,7 @@
 /**
- * Commander (pseudo-ensemble EDH) : tests de règles du préconstruit « Multiverse Reforged » (Reality Fracture). Monarque,
- * toxique, piles séparées par l'adversaire, restriction d'attaque de Jace, protection d'un joueur contre un type de carte,
- * effets « jusqu'au prochain tour de ce joueur », révélations dans la bibliothèque d'un autre joueur, incuber.
+ * Commander (EDH pseudo-set): rules tests of the "Multiverse Reforged" preconstructed deck (Reality Fracture). Monarch,
+ * toxic, piles split by the opponent, Jace's attack restriction, a player's protection from a card type,
+ * "until that player's next turn" effects, reveals from another player's library, incubate.
  */
 import { card } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
@@ -34,7 +34,7 @@ const castIt = (s: GameState, p: PlayerId, name: string, extra: object = {}) =>
   act(s, p, { type: "cast", card: idOf(s, p, "hand", name), ...extra } as never);
 const toTurnOf = (s: GameState, p: PlayerId, step = "main1") =>
   advanceUntil(s, (x) => x.turn.active === p && x.turn.step === step && x.pending?.kind === "priority", 600);
-/** p2 attaque p1 avec ces créatures. */
+/** p2 attacks p1 with these creatures. */
 const p2Attacks = (s: GameState, ids: string[]) => {
   const cur = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers" && x.pending.player === "p2", 100);
   return act(cur, "p2", { type: "declareAttackers", attackers: ids.map((id) => ({ id, defender: "p1" })) });
@@ -42,13 +42,13 @@ const p2Attacks = (s: GameState, ids: string[]) => {
 const activate = (s: GameState, p: PlayerId, name: string, extra: object = {}) => {
   const source = idOf(s, p, "battlefield", name);
   const o = legalActions(s, p).find((a) => a.type === "activate" && a.source === source);
-  if (o?.type !== "activate") throw new Error(`pas de capacité pour ${name}`);
+  if (o?.type !== "activate") throw new Error(`no ability for ${name}`);
   return act(s, p, { type: "activate", source, ability: o.ability, ...extra } as never);
 };
 
 describe("Multiverse Reforged (EDH)", () => {
-  describe("monarque", () => {
-    it("Tamiyo vous fait monarque ; le monarque pioche au début de son étape de fin", () => {
+  describe("monarch", () => {
+    it("Tamiyo makes you the monarch; the monarch draws at the beginning of their end step", () => {
       let s = scenario({
         p1: {
           battlefield: lands("Plains", 3).concat(lands("Mountain", 3)),
@@ -60,14 +60,14 @@ describe("Multiverse Reforged (EDH)", () => {
       expect(s.monarch).toBe("p1");
       const h = hand(s, "p1");
       s = advanceUntil(s, (x) => x.turn.step === "end" && x.pending?.kind === "priority", 600);
-      // 724.2 : capacité déclenchée du monarque, sur la pile au début de son étape de fin.
+      // 724.2: the monarch's triggered ability, on the stack at the beginning of their end step.
       expect(s.stack.map((x) => [x.sourceDefId, x.controller])).toEqual([["rules:monarch", "p1"]]);
       expect(hand(s, "p1")).toBe(h);
       s = passBoth(s);
       expect(hand(s, "p1")).toBe(h + 1);
     });
 
-    it("le monarque : « ce joueur pioche », même s'il a cessé d'être le monarque avant la résolution ; vue de la pile", () => {
+    it('the monarch: "that player draws", even if they stopped being the monarch before resolution; stack view', () => {
       let s = scenario({ p1: { library: Array(5).fill("Opt") }, p2: { library: Array(5).fill("Opt") } });
       s.monarch = "p1";
       s = advanceUntil(s, (x) => x.turn.step === "end" && x.pending?.kind === "priority", 600);
@@ -79,26 +79,26 @@ describe("Multiverse Reforged (EDH)", () => {
       expect([hand(s, "p1"), hand(s, "p2")]).toEqual([h1 + 1, h2]);
     });
 
-    it("le monarque ne pioche pas à l'étape de fin d'un autre joueur", () => {
+    it("the monarch does not draw at another player's end step", () => {
       let s = scenario({ active: "p2", p1: { library: Array(5).fill("Opt") }, p2: { library: Array(5).fill("Opt") } });
       s.monarch = "p1";
       s = advanceUntil(s, (x) => x.turn.step === "end" && x.pending?.kind === "priority", 600);
       expect(s.stack).toEqual([]);
     });
 
-    it("une créature qui blesse le monarque au combat fait de son contrôleur le monarque", () => {
+    it("a creature that deals combat damage to the monarch makes its controller the monarch", () => {
       let s = scenario({ active: "p2", p1: {}, p2: { battlefield: ["Bear Cub"] } });
       s.monarch = "p1";
       s = throughCombat(p2Attacks(s, [idOf(s, "p2", "battlefield", "Bear Cub")]));
       expect(s.monarch).toBe("p2");
     });
 
-    it("724.2 : le transfert passe par la pile, contrôlé par le monarque ; il ne change qu'à la résolution", () => {
+    it("724.2: the transfer goes on the stack, controlled by the monarch; it changes only on resolution", () => {
       let s = scenario({ active: "p2", p1: {}, p2: { battlefield: ["Bear Cub", "Bear Cub"] } });
       s.monarch = "p1";
       s = p2Attacks(s, idsOf(s, "p2", "battlefield", "Bear Cub"));
       s = advanceUntil(s, (x) => x.stack.length > 0 || x.turn.step === "main2", 300);
-      // Une capacité par créature qui a blessé le monarque.
+      // One ability per creature that dealt damage to the monarch.
       expect(s.stack.map((x) => [x.sourceDefId, x.controller])).toEqual([
         ["rules:monarchSteal", "p1"],
         ["rules:monarchSteal", "p1"],
@@ -110,7 +110,7 @@ describe("Multiverse Reforged (EDH)", () => {
       expect(s.monarch).toBe("p2");
     });
 
-    it("Tamiyo : des créatures blessent le monarque qui la contrôle : engagées, un marqueur d'étourdissement chacune", () => {
+    it("Tamiyo: creatures damage the monarch who controls her: tapped, one stun counter each", () => {
       let s = scenario({ active: "p2", p1: { battlefield: ["Tamiyo, Upriser Crowned"] }, p2: { battlefield: ["Bear Cub"] } });
       s.monarch = "p1";
       const bear = idOf(s, "p2", "battlefield", "Bear Cub");
@@ -120,8 +120,8 @@ describe("Multiverse Reforged (EDH)", () => {
     });
   });
 
-  describe("toxique et corrompu", () => {
-    it("Mite phyrexian (toxique 1) : un marqueur poison en plus des blessures ; Skrelv's Hive, corrompu : lien de vie", () => {
+  describe("toxic and corrupted", () => {
+    it("Phyrexian Mite (toxic 1): a poison counter on top of the damage; Skrelv's Hive, corrupted: lifelink", () => {
       let s = scenario({ active: "p2", p1: { battlefield: ["Skrelv's Hive"] } });
       s = toTurnOf(s, "p1", "main1");
       const mite = tokens(s, "p1", "Phyrexian Mite")[0] ?? "";
@@ -141,8 +141,8 @@ describe("Multiverse Reforged (EDH)", () => {
     });
   });
 
-  describe("sorts", () => {
-    it("Fact or Fiction : l'adversaire sépare les cinq cartes, vous choisissez votre pile", () => {
+  describe("spells", () => {
+    it("Fact or Fiction: the opponent splits the five cards, you choose your pile", () => {
       let s = scenario({
         p1: { battlefield: lands("Island", 4), hand: ["Fact or Fiction"], library: ["Opt", "Opt", "Shock", "Shock", "Bear Cub"] },
       });
@@ -165,7 +165,7 @@ describe("Multiverse Reforged (EDH)", () => {
       expect(s.players.p1?.graveyard.length).toBe(2);
     });
 
-    it("Fact or Fiction (trois joueurs) : vous choisissez l'adversaire qui sépare les cartes", () => {
+    it("Fact or Fiction (three players): you choose the opponent who splits the cards", () => {
       let s = scenario({
         players: 3,
         p1: { battlefield: lands("Island", 4), hand: ["Fact or Fiction"], library: ["Opt", "Opt", "Shock", "Shock", "Bear Cub"] },
@@ -189,19 +189,19 @@ describe("Multiverse Reforged (EDH)", () => {
       expect(hand(s, "p1")).toBe(4);
     });
 
-    it("Teferi's Reproach : protection et PV figés jusqu'au prochain tour de l'adversaire ; ses non-terrains disparaissent", () => {
+    it("Teferi's Reproach: protection and life frozen until the opponent's next turn; their nonlands disappear", () => {
       let s = scenario({
         p1: { battlefield: lands("Plains", 3), hand: ["Teferi's Reproach"] },
         p2: { battlefield: ["Bear Cub", "Forest"] },
       });
       s = settle(castIt(s, "p1", "Teferi's Reproach", { targets: { t: ["p2"] } }));
       expect(onField(s, "p2", "Bear Cub")).toBe(0);
-      // Le tour de l'adversaire : l'effet prend fin au début de son tour (avant son étape de dégagement, la créature revient).
+      // The opponent's turn: the effect ends at the beginning of their turn (before their untap step, the creature comes back).
       s = toTurnOf(s, "p2", "main1");
       expect(onField(s, "p2", "Bear Cub")).toBe(1);
     });
 
-    it("Martial Coup : X ≥ 5 crée X Soldats et détruit toutes les autres créatures", () => {
+    it("Martial Coup: X >= 5 creates X Soldiers and destroys all other creatures", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Plains", 7), "Bear Cub"], hand: ["Martial Coup"] },
         p2: { battlefield: ["Bear Cub"] },
@@ -211,7 +211,7 @@ describe("Multiverse Reforged (EDH)", () => {
       expect(onField(s, "p1", "Bear Cub") + onField(s, "p2", "Bear Cub")).toBe(0);
     });
 
-    it("Sunfall : exile toutes les créatures et incube X ; l'Incubateur devient une créature Phyrexian avec ses marqueurs", () => {
+    it("Sunfall: exiles all creatures and incubates X; the Incubator becomes a Phyrexian creature with its counters", () => {
       let s = scenario({
         p1: { battlefield: lands("Plains", 7), hand: ["Sunfall"] },
         p2: { battlefield: ["Bear Cub", "Savannah Lions"] },
@@ -224,7 +224,7 @@ describe("Multiverse Reforged (EDH)", () => {
       expect(chars(s, inc).power).toBe(2);
     });
 
-    it("Mass Polymorph : vos créatures exilées, autant de cartes de créature de la bibliothèque arrivent", () => {
+    it("Mass Polymorph: your creatures exiled, that many creature cards from the library enter", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Island", 6), "Bear Cub", "Savannah Lions"],
@@ -239,8 +239,8 @@ describe("Multiverse Reforged (EDH)", () => {
     });
   });
 
-  describe("créatures", () => {
-    it("Nissa, Leyline Tamer : la première accalmie de chaque tour révèle une créature, pas la deuxième, et de nouveau au tour suivant", () => {
+  describe("creatures", () => {
+    it("Nissa, Leyline Tamer: the first landfall each turn reveals a creature, not the second, and again the next turn", () => {
       let s = scenario({
         p1: {
           battlefield: ["Nissa, Leyline Tamer"],
@@ -251,11 +251,11 @@ describe("Multiverse Reforged (EDH)", () => {
       });
       s = settle(act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Forest") } as never));
       expect(onField(s, "p1", "Bear Cub")).toBe(1);
-      // Deuxième terrain du tour (permis par un effet ici simulé) : la créature n'est pas révélée.
+      // Second land of the turn (allowed by an effect simulated here): the creature is not revealed.
       s.turn.landsPlayed = 0;
       s = settle(act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Plains") } as never));
       expect(onField(s, "p1", "Savannah Lions")).toBe(0);
-      // Au tour suivant de p1, la première accalmie révèle de nouveau une créature.
+      // On p1's next turn, the first landfall reveals a creature again.
       s = toTurnOf(s, "p2");
       s = toTurnOf(s, "p1");
       const land = idsOf(s, "p1", "hand", "Island")[0] ?? "";
@@ -263,7 +263,7 @@ describe("Multiverse Reforged (EDH)", () => {
       expect(onField(s, "p1", "Savannah Lions")).toBe(1);
     });
 
-    it("Jace, Multiverse Architect : l'adversaire qui ne paie pas {2} ne peut pas attaquer vos Jace ce tour-ci", () => {
+    it("Jace, Multiverse Architect: an opponent who doesn't pay {2} can't attack your Jaces this turn", () => {
       let s = scenario({ active: "p2", p1: { battlefield: ["Jace, Multiverse Architect"] }, p2: { battlefield: ["Bear Cub"] } });
       s = advanceUntil(
         s,
@@ -277,7 +277,7 @@ describe("Multiverse Reforged (EDH)", () => {
       expect(attackableDefenders(s, "p2")).toContain("p1");
     });
 
-    it("Serra's Emissary : vous et vos créatures avez la protection contre le type de carte choisi", () => {
+    it("Serra's Emissary: you and your creatures have protection from the chosen card type", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Plains", 7), "Bear Cub"], hand: ["Serra's Emissary"] },
         p2: { battlefield: ["Mountain", "Bear Cub"], hand: ["Shock"] },
@@ -291,24 +291,24 @@ describe("Multiverse Reforged (EDH)", () => {
       const legal = opt?.type === "cast" ? (opt.modes[0]?.targets[0]?.legal ?? []) : [];
       expect(legal).not.toContain("p1");
       expect(legal).not.toContain(idOf(s, "p1", "battlefield", "Serra's Emissary"));
-      // Les autres créatures que vous contrôlez sont protégées du type choisi par l'Émissaire (pas par elles-mêmes) ;
-      // celles de l'adversaire ne le sont pas.
+      // The other creatures you control are protected from the type chosen by the Emissary (not by themselves);
+      // the opponent's are not.
       expect(legal).not.toContain(idOf(s, "p1", "battlefield", "Bear Cub"));
       expect(legal).toContain(idOf(s, "p2", "battlefield", "Bear Cub"));
       expect(legal).toContain("p2");
     });
 
-    it("Niv-Mizzet, Ghost Counsel : vous gagnez des PV, payez-en autant pour piocher autant", () => {
+    it("Niv-Mizzet, Ghost Counsel: you gain life, pay as much to draw as many cards", () => {
       let s = scenario({ p1: { battlefield: ["Niv-Mizzet, Ghost Counsel"], library: Array(3).fill("Opt") } });
       const niv = idOf(s, "p1", "battlefield", "Niv-Mizzet, Ghost Counsel");
       s = act(s, "p1", { type: "activate", source: niv, ability: 1 } as never);
       s = settle(s, (req) => (req.type === "yesNo" ? [1] : undefined));
-      // Chaque adversaire perd 1, vous gagnez 1 ; puis 1 PV payé, une carte piochée.
+      // Each opponent loses 1, you gain 1; then 1 life paid, one card drawn.
       expect(life(s, "p1")).toBe(20);
       expect(hand(s, "p1")).toBe(1);
     });
 
-    it("Omnath, Locus of the Void : +1/+1 par mana inutilisé ; accalmie : {C}{C}", () => {
+    it("Omnath, Locus of the Void: +1/+1 per unused mana; landfall: {C}{C}", () => {
       let s = scenario({ p1: { battlefield: ["Omnath, Locus of the Void"], hand: ["Forest"] } });
       const omnath = idOf(s, "p1", "battlefield", "Omnath, Locus of the Void");
       expect(chars(s, omnath).power).toBe(6);
@@ -317,7 +317,7 @@ describe("Multiverse Reforged (EDH)", () => {
       expect(chars(s, omnath).power).toBe(8);
     });
 
-    it("Avacyn, Angel of Horror : une créature non-jeton qui meurt revient au début de la prochaine étape de fin", () => {
+    it("Avacyn, Angel of Horror: a nontoken creature that dies comes back at the beginning of the next end step", () => {
       let s = scenario({
         p1: { battlefield: ["Avacyn, Angel of Horror", "Bear Cub"] },
         p2: { battlefield: lands("Mountain", 1), hand: ["Shock"] },
@@ -330,7 +330,7 @@ describe("Multiverse Reforged (EDH)", () => {
       expect(onField(s, "p1", "Bear Cub")).toBe(1);
     });
 
-    it("Jhoira : l'adversaire révèle jusqu'à un permanent historique, qui arrive sous votre contrôle ; vous perdez sa valeur de mana", () => {
+    it("Jhoira: the opponent reveals up to one historic permanent, which enters under your control; you lose life equal to its mana value", () => {
       let s = scenario({
         p1: { battlefield: lands("Swamp", 6), hand: ["Jhoira, Weatherlight Corsair"] },
         p2: { library: ["Opt", "Sol Ring", "Opt"] },
@@ -342,7 +342,7 @@ describe("Multiverse Reforged (EDH)", () => {
       expect(life(s, "p1")).toBe(19);
     });
 
-    it("Archfiend of Despair : vos adversaires ne gagnent pas de PV ; à l'étape de fin, ils perdent autant qu'ils ont perdu", () => {
+    it("Archfiend of Despair: your opponents don't gain life; at the end step, they lose as much as they lost", () => {
       let s = scenario({ p1: { battlefield: ["Archfiend of Despair", "Mountain"], hand: ["Shock"] } });
       s = settle(castIt(s, "p1", "Shock", { targets: { t: ["p2"] } }));
       s = advanceUntil(s, (x) => x.turn.step === "end" && x.pending?.kind === "priority", 600);
@@ -350,11 +350,11 @@ describe("Multiverse Reforged (EDH)", () => {
       expect(life(s, "p2")).toBe(16);
     });
 
-    it("Darksteel Angel : vos créatures ne reçoivent pas de marqueurs -1/-1", () => {
+    it("Darksteel Angel: your creatures don't get -1/-1 counters", () => {
       expect(card("Darksteel Angel").keywords).toEqual(expect.arrayContaining(["flying", "indestructible"]));
     });
 
-    it("Dack Fayden : une créature par adversaire arrive, provoquée (doit attaquer), sous le contrôle de cet adversaire", () => {
+    it("Dack Fayden: one creature per opponent enters, goaded (must attack), under that opponent's control", () => {
       let s = scenario({
         p1: { battlefield: lands("Plains", 6), hand: ["Dack Fayden, Helping Hand"], library: ["Opt", "Bear Cub", "Opt"] },
       });
@@ -362,13 +362,13 @@ describe("Multiverse Reforged (EDH)", () => {
       const bear = s.battlefield.find((id) => nameOf(s, id) === "Bear Cub") ?? "";
       expect(s.objects[bear]?.controller).toBe("p2");
       expect(chars(s, bear).blockRules.map((r) => r.goadedBy)).toEqual(["p1"]);
-      // En duel, elle attaque p1 (le seul adversaire) si possible.
+      // In a duel, it attacks p1 (the only opponent) if possible.
       s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers" && x.pending.player === "p2", 100);
       expect(() => act(s, "p2", { type: "declareAttackers", attackers: [] })).toThrow();
       expect(() => act(s, "p2", { type: "declareAttackers", attackers: [{ id: bear, defender: "p1" }] })).not.toThrow();
     });
 
-    it("Dack Fayden à trois : chaque créature, provoquée pour toujours, attaque un autre joueur que vous si possible", () => {
+    it("Dack Fayden with three players: each creature, goaded forever, attacks a player other than you if possible", () => {
       let s = scenario({
         players: 3,
         p1: {
@@ -382,7 +382,7 @@ describe("Multiverse Reforged (EDH)", () => {
       const lions = s.battlefield.find((id) => nameOf(s, id) === "Savannah Lions") ?? "";
       const p2Gets = s.objects[bear]?.controller === "p2" ? bear : lions;
       expect([s.objects[bear]?.controller, s.objects[lions]?.controller].sort()).toEqual(["p2", "p3"]);
-      // Deux tours plus tard (p2 puis p3, puis encore p2), toujours provoquée.
+      // Two turns later (p2, then p3, then p2 again), still goaded.
       for (let round = 0; round < 2; round++) {
         s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers" && x.pending.player === "p2", 600);
         const no = (d: string) => act(s, "p2", { type: "declareAttackers", attackers: [{ id: p2Gets, defender: d }] });
@@ -391,7 +391,7 @@ describe("Multiverse Reforged (EDH)", () => {
       }
     });
 
-    it("Proteus Staff : la créature au-dessous de la bibliothèque ; son contrôleur révèle jusqu'à une créature et la met en jeu", () => {
+    it("Proteus Staff: the creature underneath the library; its controller reveals until a creature and puts it onto the battlefield", () => {
       let s = scenario({
         p1: { battlefield: ["Proteus Staff", ...lands("Island", 3)] },
         p2: { battlefield: ["Bear Cub"], library: ["Opt", "Savannah Lions"] },
@@ -403,7 +403,7 @@ describe("Multiverse Reforged (EDH)", () => {
   });
 
   describe("Cursed Mirror (PLAN-H H9)", () => {
-    it("en arrivant, copie d'une créature jusqu'à la fin du tour, avec la célérité ; ses capacités d'arrivée se déclenchent", () => {
+    it("as it enters, copies a creature until end of turn, with haste; its enter abilities trigger", () => {
       let s = scenario({
         p1: { battlefield: lands("Mountain", 3), hand: ["Cursed Mirror"] },
         p2: { battlefield: ["Burglar Rat"], hand: ["Opt"] },
@@ -414,23 +414,23 @@ describe("Multiverse Reforged (EDH)", () => {
       expect(chars(s, mirror).name).toBe("Burglar Rat");
       expect(chars(s, mirror).types).toEqual(["Creature"]);
       expect(chars(s, mirror).keywords).toContain("haste");
-      // Il est arrivé en Burglar Rat : « quand cette créature arrive, chaque adversaire défausse une carte ».
+      // It entered as Burglar Rat: "when this creature enters, each opponent discards a card".
       expect(hand(s, "p2")).toBe(0);
-      // Au nettoyage, la copie prend fin : c'est de nouveau un artefact qui produit {R}.
+      // At cleanup, the copy ends: it's an artifact again that produces {R}.
       s = toTurnOf(s, "p2");
       expect(chars(s, mirror).name).toBe("Cursed Mirror");
       expect(chars(s, mirror).types).toEqual(["Artifact"]);
     });
 
-    it("« vous pouvez » : sans copie, il arrive en artefact", () => {
+    it('"you may": with no copy, it enters as an artifact', () => {
       let s = scenario({ p1: { battlefield: lands("Mountain", 3), hand: ["Cursed Mirror"] }, p2: { battlefield: ["Bear Cub"] } });
       s = settle(castIt(s, "p1", "Cursed Mirror"), (req) => (req.type === "pick" && req.min === 0 ? [] : undefined));
       expect(chars(s, idOf(s, "p1", "battlefield", "Cursed Mirror")).name).toBe("Cursed Mirror");
     });
   });
 
-  describe("Gingerbrute et Venser", () => {
-    it("Ginger : monarque à l'arrivée ; à chaque entretien, si vous êtes le monarque, un Gingerbrute", () => {
+  describe("Gingerbrute and Venser", () => {
+    it("Ginger: monarch on enter; at each upkeep, if you are the monarch, a Gingerbrute", () => {
       let s = scenario({ p1: { battlefield: lands("Wastes", 6), hand: ["Ginger, Queen of Sweets"] } });
       s = settle(castIt(s, "p1", "Ginger, Queen of Sweets"));
       expect(s.monarch).toBe("p1");
@@ -438,7 +438,7 @@ describe("Multiverse Reforged (EDH)", () => {
       expect(tokens(s, "p1", "Gingerbrute")).toHaveLength(1);
     });
 
-    it("Venser : deux jetons copies d'un permanent adverse, avec la célérité", () => {
+    it("Venser: two token copies of a permanent an opponent controls, with haste", () => {
       let s = scenario({
         p1: { battlefield: lands("Mountain", 6), hand: ["Venser, Fervent Forger"] },
         p2: { battlefield: ["Gigantosaurus"] },

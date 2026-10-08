@@ -1,4 +1,4 @@
-/** Test de fumée : Mystical Archive (rééditions, « Sans limite »). */
+/** Smoke test: Mystical Archive (reprints, "Unlimited"). */
 import { smokeTest } from "./harness";
 
 smokeTest(["SOA"]);

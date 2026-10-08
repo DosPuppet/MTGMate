@@ -1,4 +1,4 @@
-/** Test de fumée : Special Guests (rééditions, « Sans limite »). */
+/** Smoke test: Special Guests (reprints, "Unlimited"). */
 import { smokeTest } from "./harness";
 
 smokeTest(["SPG"]);

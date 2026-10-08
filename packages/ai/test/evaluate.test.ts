@@ -1,5 +1,5 @@
 /**
- * Évaluation v2 : les Auras, Équipements et renforts comptent par leur effet durable sur les créatures.
+ * Evaluation v2: Auras, Equipment and pump spells count for their lasting effect on creatures.
  */
 import { type Agent, fallbackDecision, type GameState, type PlayerId, submit } from "@mtgx/engine";
 import { describe, expect, it } from "vitest";
@@ -7,13 +7,13 @@ import { idOf, passUntil, scenario } from "../../engine/test/helpers";
 import { aiAgent, heuristicAgent } from "../src";
 
 const LEVELS: [string, Agent][] = [
-  ["moyen", heuristicAgent()],
-  ["élevé", aiAgent("expert", { seed: 1, budget: { iterations: 60 } })],
+  ["medium", heuristicAgent()],
+  ["high", aiAgent("expert", { seed: 1, budget: { iterations: 60 } })],
 ];
 
 /**
- * L'IA joue son tour entier (phases principales et combat ; l'adversaire passe et ne bloque pas) ;
- * renvoie l'état à la fin de son tour.
+ * The AI plays its whole turn (main phases and combat; the opponent passes and does not block);
+ * returns the state at the end of its turn.
  */
 function playTurn(s: GameState, ai: Agent, me: PlayerId): GameState {
   let cur = s;
@@ -25,9 +25,9 @@ function playTurn(s: GameState, ai: Agent, me: PlayerId): GameState {
   return cur;
 }
 
-describe("évaluation v2", () => {
+describe("evaluation v2", () => {
   for (const [name, ai] of LEVELS) {
-    it(`${name} : Pacifisme sur la plus grosse menace`, () => {
+    it(`${name} : Pacifism on the biggest threat`, () => {
       const s = scenario({
         p1: { battlefield: ["Plains", "Plains"], hand: ["Pacifism"] },
         p2: { battlefield: ["Bear Cub", "Fire Elemental"] },
@@ -38,7 +38,7 @@ describe("évaluation v2", () => {
       expect(target).toBe(idOf(s, "p2", "battlefield", "Fire Elemental"));
     });
 
-    it(`${name} : lance un Équipement et équipe une créature pendant son tour`, () => {
+    it(`${name} : casts an Equipment and equips a creature during its turn`, () => {
       const s = scenario({ p1: { battlefield: ["Plains", "Plains", "Plains", "Plains", "Bear Cub"], hand: ["Goldvein Pick"] } });
       const after = playTurn(s, ai, "p1");
       const pick = after.battlefield.find((id) => after.defs[after.objects[id]?.defId ?? ""]?.name === "Goldvein Pick");
@@ -47,12 +47,12 @@ describe("évaluation v2", () => {
     });
   }
 
-  it("ne lance pas un renfort temporaire en phase principale sans raison", () => {
+  it("does not cast a temporary pump spell in the main phase for no reason", () => {
     const s = scenario({ p1: { battlefield: ["Mountain", "Mountain", "Bear Cub"], hand: ["Bulk Up"] } });
     expect(heuristicAgent()(s, "p1").type).toBe("pass");
   });
 
-  it("utilise un renfort temporaire pour gagner un combat", () => {
+  it("uses a temporary pump spell to win a combat", () => {
     let s = scenario({
       active: "p2",
       p1: { battlefield: ["Mountain", "Mountain", "Bear Cub"], hand: ["Sure Strike"] },

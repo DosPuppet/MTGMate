@@ -1,4 +1,4 @@
-/** Test de fumée : Bloomburrow. */
+/** Smoke test: Bloomburrow. */
 import { smokeTest } from "./harness";
 
 smokeTest(["BLB"]);

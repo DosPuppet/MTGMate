@@ -1,5 +1,5 @@
 /**
- * Mécaniques communes à plusieurs extensions Standard (lot 0.9) : exploration, connivence, monture, jetons Indice et Carte.
+ * Mechanics shared by several Standard sets (lot 0.9): explore, connive, mount, Clue and Map tokens.
  */
 import { type RawCard, TOKEN_SPECS, toCardDef } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
@@ -21,7 +21,7 @@ const resolution = (controller: string, sourceId = "none") => ({
 });
 
 describe("explorer (701.44)", () => {
-  it("un terrain révélé va en main ; sinon, un marqueur +1/+1 et la carte peut aller au cimetière", () => {
+  it("a revealed land goes to hand; otherwise a +1/+1 counter and the card may go to the graveyard", () => {
     const s = scenario({ p1: { battlefield: ["Bear Cub"], library: ["Forest", "Giant Growth", "Forest"] } });
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     const hand = s.players.p1?.hand.length ?? 0;
@@ -42,7 +42,7 @@ describe("explorer (701.44)", () => {
 });
 
 describe("connivence (701.50)", () => {
-  it("piocher, défausser ; une carte non-terrain défaussée donne un marqueur +1/+1", () => {
+  it("draw, discard; a discarded nonland card gives a +1/+1 counter", () => {
     const s = scenario({ p1: { battlefield: ["Bear Cub"], hand: ["Giant Growth"], library: ["Forest"] } });
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     const r = resolution("p1");
@@ -58,7 +58,7 @@ describe("connivence (701.50)", () => {
 describe("monture (702.171)", () => {
   const MOUNT = toCardDef(
     {
-      name: "Monture de test",
+      name: "Test Mount",
       number: "1",
       rarity: "common",
       manaCost: "{1}{W}",
@@ -78,7 +78,7 @@ describe("monture (702.171)", () => {
     "TST",
   );
 
-  it("« Monture 2 » engage d'autres créatures de force 2 ou plus ; la Monture est montée ce tour-ci", () => {
+  it('"Mount 2" taps other creatures with power 2 or more; the Mount is saddled this turn', () => {
     let s = scenario({ p1: { battlefield: [MOUNT, "Bear Cub"] } });
     const mount = idOf(s, "p1", "battlefield", MOUNT.name);
     const saddle = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === mount);
@@ -90,8 +90,8 @@ describe("monture (702.171)", () => {
   });
 });
 
-describe("jetons Indice et Carte", () => {
-  it("Indice : {2}, sacrifiez-le : piochez ; Carte : {1}, {T}, sacrifiez-la : une créature explore", () => {
+describe("Clue and Map tokens", () => {
+  it("Clue: {2}, sacrifice it: draw; Map: {1}, {T}, sacrifice it: a creature explores", () => {
     let s: GameState = scenario({
       p1: { battlefield: ["Forest", "Forest", "Forest", "Bear Cub"], library: ["Forest", "Forest"] },
     });
@@ -104,6 +104,6 @@ describe("jetons Indice et Carte", () => {
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     s = act(s, "p1", { type: "activate", source: map as string, ability: 0, targets: { t: [bear] } });
     s = passBoth(s);
-    expect(s.players.p1?.hand.length).toBe(hand + 2); // Forest révélée : en main
+    expect(s.players.p1?.hand.length).toBe(hand + 2); // Forest revealed: in hand
   });
 });

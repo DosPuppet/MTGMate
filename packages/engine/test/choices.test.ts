@@ -13,39 +13,39 @@ const sorcery = (name: string, effects: Parameters<typeof spell>[1], targets: Pa
     spell: spell(targets, effects),
   });
 
-const SCRY2 = sorcery("Présage", [fx.scry(2), fx.draw(1)]);
-const MIND_ROT = sorcery("Pourriture", [fx.discard(2, ref.target())], [target.player("t", "opponent")]);
-const EDICT = sorcery("Édit", [fx.sacrifice(ref.eachOpponent, { types: ["Creature"] })]);
-const MAYBE = sorcery("Peut-être", [fx.may("piocher une carte ?", fx.draw(1)), fx.gainLife(1)]);
-const LEGEND = customCard({ name: "Héros unique", supertypes: ["Legendary"], power: 2, toughness: 2 });
+const SCRY2 = sorcery("Scrying", [fx.scry(2), fx.draw(1)]);
+const MIND_ROT = sorcery("Mind Rot", [fx.discard(2, ref.target())], [target.player("t", "opponent")]);
+const EDICT = sorcery("Edict", [fx.sacrifice(ref.eachOpponent, { types: ["Creature"] })]);
+const MAYBE = sorcery("Maybe", [fx.may("draw a card?", fx.draw(1)), fx.gainLife(1)]);
+const LEGEND = customCard({ name: "Unique Hero", supertypes: ["Legendary"], power: 2, toughness: 2 });
 
-describe("résolution suspendue sur un choix", () => {
-  it("regard 2 : on choisit le dessous, puis l'ordre, puis on pioche", () => {
+describe("resolution suspended on a choice", () => {
+  it("scry 2: you choose the bottom, then the order, then you draw", () => {
     let s = scenario({ p1: { hand: [SCRY2], library: ["Forest", "Bear Cub", "Mountain", "Giant Growth"] } });
     const [forest, bear] = s.players.p1?.library ?? [];
-    s = act(s, "p1", { type: "cast", card: idsOf(s, "p1", "hand", "Présage")[0] as string });
+    s = act(s, "p1", { type: "cast", card: idsOf(s, "p1", "hand", "Scrying")[0] as string });
     s = passBoth(s);
-    // Première question : quelles cartes mettre au-dessous ?
+    // First question: which cards to put on the bottom?
     expect(s.flow).toBe("resolving");
     const p = s.pending;
     expect(p?.kind === "choice" && p.request.type === "pick" && p.request.options).toEqual([forest, bear]);
-    // Le joueur qui choisit voit les cartes cachées ; l'adversaire non.
+    // The choosing player sees the hidden cards; the opponent doesn't.
     const mine = projectView(s, "p1").pending;
     expect(mine?.kind === "choice" && mine.objects?.map((o) => o.name)).toEqual(["Forest", "Bear Cub"]);
     const theirs = projectView(s, "p2").pending;
     expect(theirs?.kind === "choice" && theirs.request).toBeUndefined();
     s = act(s, "p1", { type: "choose", values: [forest as string] });
-    // Une seule carte reste au-dessus : pas de question d'ordre, on pioche l'ours.
+    // Only one card stays on top: no order question, you draw the bear.
     expect(s.pending).toEqual({ kind: "priority", player: "p1" });
     expect(s.players.p1?.hand.map((id) => s.defs[s.objects[id]?.defId ?? ""]?.name)).toEqual(["Bear Cub"]);
     expect(s.players.p1?.library.at(-1)).toBe(forest);
-    expect(idsOf(s, "p1", "graveyard", "Présage")).toHaveLength(1);
+    expect(idsOf(s, "p1", "graveyard", "Scrying")).toHaveLength(1);
   });
 
-  it("regard 2 en gardant tout : question d'ordre", () => {
+  it("scry 2 keeping everything: order question", () => {
     let s = scenario({ p1: { hand: [SCRY2], library: ["Forest", "Bear Cub", "Mountain"] } });
     const [forest, bear] = s.players.p1?.library ?? [];
-    s = act(s, "p1", { type: "cast", card: idsOf(s, "p1", "hand", "Présage")[0] as string });
+    s = act(s, "p1", { type: "cast", card: idsOf(s, "p1", "hand", "Scrying")[0] as string });
     s = passBoth(s);
     s = act(s, "p1", { type: "choose", values: [] });
     const p = s.pending;
@@ -56,17 +56,17 @@ describe("résolution suspendue sur un choix", () => {
     expect(s.players.p1?.library[0]).toBe(forest);
   });
 
-  it("une réponse illégale laisse la question posée", () => {
+  it("an illegal answer leaves the question pending", () => {
     let s = scenario({ p1: { hand: [SCRY2], library: ["Forest", "Bear Cub"] } });
-    s = act(s, "p1", { type: "cast", card: idsOf(s, "p1", "hand", "Présage")[0] as string });
+    s = act(s, "p1", { type: "cast", card: idsOf(s, "p1", "hand", "Scrying")[0] as string });
     s = passBoth(s);
     expect(() => act(s, "p1", { type: "choose", values: ["inexistant"] })).toThrow();
     expect(s.pending?.kind).toBe("choice");
   });
 
-  it("défausse : c'est l'adversaire ciblé qui choisit", () => {
+  it("discard: the targeted opponent chooses", () => {
     let s = scenario({ p1: { hand: [MIND_ROT] }, p2: { hand: ["Forest", "Bear Cub", "Giant Growth"] } });
-    s = act(s, "p1", { type: "cast", card: idsOf(s, "p1", "hand", "Pourriture")[0] as string, targets: { t: ["p2"] } });
+    s = act(s, "p1", { type: "cast", card: idsOf(s, "p1", "hand", "Mind Rot")[0] as string, targets: { t: ["p2"] } });
     s = passBoth(s);
     expect(s.pending?.player).toBe("p2");
     const forest = idOf(s, "p2", "hand", "Forest");
@@ -77,14 +77,14 @@ describe("résolution suspendue sur un choix", () => {
     expect(s.pending).toEqual({ kind: "priority", player: "p1" });
   });
 
-  it("sacrifice : chaque adversaire choisit, sans question s'il n'a qu'une option", () => {
+  it("sacrifice: each opponent chooses, with no question if they have only one option", () => {
     let s = scenario({
       players: 3,
       p1: { hand: [EDICT] },
       p2: { battlefield: ["Bear Cub", "Fire Elemental"] },
       p3: { battlefield: ["Swab Goblin"] },
     });
-    s = act(s, "p1", { type: "cast", card: idsOf(s, "p1", "hand", "Édit")[0] as string });
+    s = act(s, "p1", { type: "cast", card: idsOf(s, "p1", "hand", "Edict")[0] as string });
     for (let i = 0; i < 3; i++) s = act(s, s.pending?.player as string, { type: "pass" });
     expect(s.pending?.player).toBe("p2");
     s = act(s, "p2", { type: "choose", values: [idOf(s, "p2", "battlefield", "Bear Cub")] });
@@ -93,9 +93,9 @@ describe("résolution suspendue sur un choix", () => {
     expect(idsOf(s, "p3", "battlefield", "Swab Goblin")).toHaveLength(0);
   });
 
-  it("« vous pouvez » : refuser saute seulement l'effet optionnel", () => {
+  it('"you may": declining skips only the optional effect', () => {
     let s = scenario({ p1: { hand: [MAYBE] } });
-    s = act(s, "p1", { type: "cast", card: idsOf(s, "p1", "hand", "Peut-être")[0] as string });
+    s = act(s, "p1", { type: "cast", card: idsOf(s, "p1", "hand", "Maybe")[0] as string });
     s = passBoth(s);
     s = act(s, "p1", { type: "choose", values: [0] });
     expect(s.players.p1?.hand).toHaveLength(0);
@@ -103,34 +103,34 @@ describe("résolution suspendue sur un choix", () => {
   });
 });
 
-describe("règle des légendes", () => {
-  it("le joueur choisit la légende qu'il garde", () => {
+describe("legend rule", () => {
+  it("the player chooses the legend they keep", () => {
     let s = scenario({ p1: { battlefield: [LEGEND], hand: [LEGEND] } });
-    const old = idsOf(s, "p1", "battlefield", "Héros unique")[0] as string;
-    s = act(s, "p1", { type: "cast", card: idsOf(s, "p1", "hand", "Héros unique")[0] as string });
+    const old = idsOf(s, "p1", "battlefield", "Unique Hero")[0] as string;
+    s = act(s, "p1", { type: "cast", card: idsOf(s, "p1", "hand", "Unique Hero")[0] as string });
     s = passBoth(s);
     const p = s.pending;
     expect(p?.kind === "choice" && p.request.intent).toBe("legend");
     s = act(s, "p1", { type: "choose", values: [old] });
-    expect(idsOf(s, "p1", "battlefield", "Héros unique")).toEqual([old]);
-    expect(idsOf(s, "p1", "graveyard", "Héros unique")).toHaveLength(1);
+    expect(idsOf(s, "p1", "battlefield", "Unique Hero")).toEqual([old]);
+    expect(idsOf(s, "p1", "graveyard", "Unique Hero")).toHaveLength(1);
     expect(s.pending).toEqual({ kind: "priority", player: "p1" });
   });
 });
 
-describe("Sorte de marqueur retirée choisie par le joueur (lot K6)", () => {
-  const RETRAIT = customCard({
-    name: "Retrait d'essai",
+describe("Counter kind removed chosen by the player (lot K6)", () => {
+  const REMOVAL = customCard({
+    name: "Test Removal",
     typeLine: "Sorcery",
     types: ["Sorcery"],
     spell: spell([target.creature()], [fx.removeCounters(ref.target(), 1)]),
   });
   const run = (answer: string | null) => {
     let s = scenario({
-      p1: { battlefield: [{ name: "Bear Cub", counters: { "+1/+1": 2, stun: 1 } }], hand: [RETRAIT] },
+      p1: { battlefield: [{ name: "Bear Cub", counters: { "+1/+1": 2, stun: 1 } }], hand: [REMOVAL] },
     });
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
-    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", RETRAIT.name), targets: { t: [bear] } });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", REMOVAL.name), targets: { t: [bear] } });
     const asked: string[][] = [];
     for (let i = 0; i < 20 && !(s.stack.length === 0 && s.pending?.kind === "priority"); i++) {
       const p = s.pending;
@@ -143,7 +143,7 @@ describe("Sorte de marqueur retirée choisie par le joueur (lot K6)", () => {
     return { counters: s.objects[bear]?.counters, asked };
   };
 
-  it("deux sortes : la question propose les deux, la suggestion garde l'ordre d'avant (+1/+1 d'abord)", () => {
+  it("two kinds: the question offers both, the suggestion keeps the earlier order (+1/+1 first)", () => {
     const stun = run("stun");
     expect(stun.asked).toEqual([["+1/+1", "stun"]]);
     expect(stun.counters).toEqual({ "+1/+1": 2 });
@@ -151,16 +151,16 @@ describe("Sorte de marqueur retirée choisie par le joueur (lot K6)", () => {
   });
 });
 
-describe("Choix dans une zone : le filtre garde sa valeur de mana maximale (lot K8)", () => {
-  it("« une carte de valeur de mana 2 ou moins de votre cimetière » : les plus chères ne sont pas proposées", () => {
-    const RAPPEL = customCard({
-      name: "Rappel d'essai",
+describe("Choice in a zone: the filter keeps its maximum mana value (lot K8)", () => {
+  it('"a card with mana value 2 or less from your graveyard": the more expensive ones aren\'t offered', () => {
+    const RECALL = customCard({
+      name: "Test Recall",
       typeLine: "Sorcery",
       types: ["Sorcery"],
       spell: spell([], [fx.pickFromZone("graveyard", { maxManaValue: 2 }, { to: "hand" }, { min: 0 })]),
     });
-    let s = scenario({ p1: { hand: [RAPPEL], graveyard: ["Bear Cub", "Serra Angel"] } });
-    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", RAPPEL.name) });
+    let s = scenario({ p1: { hand: [RECALL], graveyard: ["Bear Cub", "Serra Angel"] } });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", RECALL.name) });
     let options: string[] = [];
     for (let i = 0; i < 10 && !(s.stack.length === 0 && s.pending?.kind === "priority"); i++) {
       const p = s.pending;

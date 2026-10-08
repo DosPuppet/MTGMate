@@ -1,4 +1,4 @@
-/** Fichiers du client servis par le serveur : compression (brotli, gzip) et en-têtes de cache. */
+/** Client files served by the server: compression (brotli, gzip) and cache headers. */
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { request } from "node:http";
 import { tmpdir } from "node:os";
@@ -27,8 +27,8 @@ function get(port: number, path: string, encoding?: string): Promise<{ headers: 
   });
 }
 
-describe("fichiers du client", () => {
-  it("politique de contenu (CSP) : scripts du site seulement, images de Scryfall, pas d'encadrement", async () => {
+describe("client files", () => {
+  it("content security policy (CSP): own-site scripts only, Scryfall images, no framing", async () => {
     dir = mkdtempSync(join(tmpdir(), "mtgx-dist-"));
     writeFileSync(join(dir, "index.html"), "<!doctype html><title>Planecircle</title>");
     srv = await startServer({ port: 0, host: "127.0.0.1", staticDir: dir });
@@ -39,7 +39,7 @@ describe("fichiers du client", () => {
     expect(csp).not.toContain("unsafe-eval");
   });
 
-  it("compressés (brotli, sinon gzip), en cache un an pour /assets/, jamais pour index.html", async () => {
+  it("compressed (brotli, else gzip), cached for one year under /assets/, never for index.html", async () => {
     dir = mkdtempSync(join(tmpdir(), "mtgx-dist-"));
     mkdirSync(join(dir, "assets"));
     const js = `export const data = ${JSON.stringify(Array.from({ length: 2000 }, (_, i) => ({ carte: `Carte ${i}` })))};`;
@@ -57,7 +57,7 @@ describe("fichiers du client", () => {
     expect(gz.headers["content-encoding"]).toBe("gzip");
     expect(gunzipSync(gz.body).toString()).toBe(js);
 
-    // En-têtes de sécurité sur les fichiers servis.
+    // Security headers on the served files.
     expect(br.headers["x-content-type-options"]).toBe("nosniff");
     expect(br.headers["x-frame-options"]).toBe("DENY");
 
@@ -69,7 +69,7 @@ describe("fichiers du client", () => {
     expect(html.headers["cache-control"]).toBe("no-cache");
   });
 
-  it("une URL mal encodée répond 400, sans arrêter le serveur", async () => {
+  it("a badly encoded URL answers 400 without stopping the server", async () => {
     dir = mkdtempSync(join(tmpdir(), "mtgx-dist-"));
     writeFileSync(join(dir, "index.html"), "<!doctype html><title>Planecircle</title>");
     srv = await startServer({ port: 0, host: "127.0.0.1", staticDir: dir });

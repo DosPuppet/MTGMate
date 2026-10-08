@@ -1,6 +1,6 @@
 /**
- * Edge of Eternities, lot A : distorsion, vide, Drones, « deuxième sort », sacrifice, blessures de combat groupées,
- * terrains choc.
+ * Edge of Eternities, lot A: warp, void, Drones, "second spell", sacrifice, grouped combat damage,
+ * shock lands.
  */
 import { card, TOKEN_SPECS } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
@@ -43,7 +43,7 @@ const cast = (s: S, p: string, name: string, extra: Record<string, unknown> = {}
 const lands = (name: string, n: number) => Array(n).fill(name) as string[];
 
 describe("distorsion (702.185)", () => {
-  it("lancée pour son coût de distorsion, exilée à l'étape de fin, relancée depuis l'exil un tour suivant", () => {
+  it("cast for its warp cost, exiled at the end step, recast from exile on a later turn", () => {
     let s = scenario({ p1: { battlefield: lands("Mountain", 5), hand: ["Red Tiger Mechan"] } });
     const opts = legalActions(s, "p1").filter((a) => a.type === "cast");
     expect(opts.map((a) => (a.type === "cast" ? !!a.warp : null))).toEqual([false, true]);
@@ -53,7 +53,7 @@ describe("distorsion (702.185)", () => {
     expect(s.objects[tiger]?.cast?.via).toBe("warp");
     expect(s.players.p1?.manaPool.R).toBe(0);
     expect(s.objects[idsOf(s, "p1", "battlefield", "Mountain")[1] as string]?.tapped).toBe(true); // {1}{R}
-    // Étape de fin : exilée ; pas relançable ce tour-ci.
+    // End step: exiled; can't be recast this turn.
     s = advanceUntil(s, (x) => x.turn.step === "cleanup" || x.turn.active === "p2");
     const exiled = s.exile.find((id) => s.objects[id]?.defId === card("Red Tiger Mechan").id) as string;
     expect(exiled).toBeDefined();
@@ -62,7 +62,7 @@ describe("distorsion (702.185)", () => {
     expect(legalActions(s, "p1").some((a) => a.type === "cast" && a.card === exiled && !a.warp)).toBe(true);
   });
 
-  it("vide : un sort lancé avec la distorsion ce tour-ci (Plasma Bolt inflige 3 au lieu de 2)", () => {
+  it("void: a spell cast with warp this turn (Plasma Bolt deals 3 instead of 2)", () => {
     let s = scenario({ p1: { battlefield: lands("Mountain", 5), hand: ["Red Tiger Mechan", "Plasma Bolt"] } });
     s = cast(s, "p1", "Plasma Bolt", { targets: { t: ["p2"] } });
     s = passBoth(s);
@@ -75,7 +75,7 @@ describe("distorsion (702.185)", () => {
     expect(t.players.p2?.life).toBe(17);
   });
 
-  it("Timeline Culler : lançable depuis le cimetière, seulement avec la distorsion (et 2 PV)", () => {
+  it("Timeline Culler: castable from the graveyard, only with warp (and 2 life)", () => {
     const s = scenario({ p1: { battlefield: ["Swamp"], graveyard: ["Timeline Culler"] } });
     const id = idOf(s, "p1", "graveyard", "Timeline Culler");
     const opts = legalActions(s, "p1").filter((a) => a.type === "cast" && a.card === id);
@@ -89,8 +89,8 @@ describe("distorsion (702.185)", () => {
 const DRONE = TOKEN_SPECS.Drone as TokenSpec;
 const LANDER_SPEC = TOKEN_SPECS.Lander as TokenSpec;
 
-describe("mécaniques d'Edge of Eternities", () => {
-  it("Drone : ne peut bloquer que des créatures avec le vol ; « bloquée par une seule créature au plus »", () => {
+describe("Edge of Eternities mechanics", () => {
+  it('Drone: can only block creatures with flying; "can\'t be blocked by more than one creature"', () => {
     const s = scenario({
       p1: { battlefield: ["Bear Cub", "Serra Angel"] },
       p2: { battlefield: ["Station Monitor", "Bear Cub", "Llanowar Elves"] },
@@ -105,13 +105,13 @@ describe("mécaniques d'Edge of Eternities", () => {
     );
     expect(canBlock(s, drone, bear)).toBe(false);
     expect(canBlock(s, drone, angel)).toBe(true);
-    // « Ne peut pas être bloquée par plus d'une créature » (Meltstrider's Resolve).
+    // "Can't be blocked by more than one creature" (Meltstrider's Resolve).
     s.effects.push({
       id: "e",
       timestamp: 999,
       affected: [bear],
       duration: "endOfTurn",
-      addBlockRules: [{ maxBlockers: 1, label: "Bloquée par une seule créature au plus" }],
+      addBlockRules: [{ maxBlockers: 1, label: "Blocked by at most one creature" }],
     });
     s.version += 1;
     const blockers = idsOf(s, "p2", "battlefield", "Bear Cub").concat(idsOf(s, "p2", "battlefield", "Llanowar Elves"));
@@ -124,7 +124,7 @@ describe("mécaniques d'Edge of Eternities", () => {
     ).toThrow();
   });
 
-  it("« votre deuxième sort de chaque tour » (Illvoi Operative) et « si vous avez lancé deux sorts » (Brightspear Zealot)", () => {
+  it('"your second spell each turn" (Illvoi Operative) and "if you\'ve cast two spells" (Brightspear Zealot)', () => {
     let s = scenario({
       p1: { battlefield: [...lands("Island", 4), "Illvoi Operative", "Brightspear Zealot"], hand: ["Opt", "Opt"] },
     });
@@ -136,11 +136,11 @@ describe("mécaniques d'Edge of Eternities", () => {
     expect(chars(s, zealot).power).toBe(2);
     s = cast(s, "p1", "Opt");
     expect(chars(s, zealot).power).toBe(4);
-    s = passBoth(s); // déclencheur de l'Opérative
+    s = passBoth(s); // Operative's trigger
     expect(s.objects[operative]?.counters["+1/+1"]).toBe(1);
   });
 
-  it("« chaque fois que vous sacrifiez » (Lightless Evangel) et le coût de sacrifice", () => {
+  it('"whenever you sacrifice" (Lightless Evangel) and the sacrifice cost', () => {
     let s = scenario({
       p1: { battlefield: ["Lightless Evangel", "Umbral Collar Zealot", "Bear Cub"], library: lands("Swamp", 5) },
     });
@@ -152,7 +152,7 @@ describe("mécaniques d'Edge of Eternities", () => {
     expect(s.objects[idOf(s, "p1", "battlefield", "Lightless Evangel")]?.counters["+1/+1"]).toBe(1);
   });
 
-  it("terrain choc : payer 2 PV (dégagé) ou non (engagé)", () => {
+  it("shock land: pay 2 life (untapped) or not (tapped)", () => {
     const s = scenario({ p1: { hand: ["Stomping Ground"] } });
     const card0 = idOf(s, "p1", "hand", "Stomping Ground");
     const opts = legalActions(s, "p1").filter((a) => a.type === "playLand");
@@ -170,7 +170,7 @@ describe("station (702.184)", () => {
   const stationIndex = (s: S, id: string) =>
     chars(s, id).abilities.findIndex((a) => a.kind === "activated" && a.label === "Station");
 
-  it("engager une autre créature (choisie) : des marqueurs de charge égaux à sa force ; créature et mots-clés au seuil", () => {
+  it("tap another creature (chosen): charge counters equal to its power; creature and keywords at the threshold", () => {
     let s = scenario({ p1: { battlefield: ["Galvanizing Sawship", "Serra Angel", "Bear Cub"] } });
     const ship = idOf(s, "p1", "battlefield", "Galvanizing Sawship");
     const angel = idOf(s, "p1", "battlefield", "Serra Angel");
@@ -185,7 +185,7 @@ describe("station (702.184)", () => {
     expect(chars(s, ship).keywords).toEqual(expect.arrayContaining(["flying", "haste"]));
   });
 
-  it("Tapestry Warden : station selon l'endurance si elle dépasse la force", () => {
+  it("Tapestry Warden: station by toughness if it exceeds power", () => {
     let s = scenario({ p1: { battlefield: ["Galvanizing Sawship", "Tapestry Warden", "Gleaming Barrier"] } });
     const ship = idOf(s, "p1", "battlefield", "Galvanizing Sawship");
     const wall = idOf(s, "p1", "battlefield", "Gleaming Barrier");
@@ -194,7 +194,7 @@ describe("station (702.184)", () => {
     expect(s.objects[ship]?.counters.charge).toBe(chars(s, wall).toughness);
   });
 
-  it("capacités de palier : seulement à partir de N marqueurs (Lumen-Class Frigate, 2+)", () => {
+  it("tier abilities: only from N counters (Lumen-Class Frigate, 2+)", () => {
     let s = scenario({ p1: { battlefield: ["Lumen-Class Frigate", "Llanowar Elves", "Bear Cub"] } });
     const frigate = idOf(s, "p1", "battlefield", "Lumen-Class Frigate");
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -206,13 +206,13 @@ describe("station (702.184)", () => {
       tap: [idOf(s, "p1", "battlefield", "Llanowar Elves")],
     });
     s = passBoth(s);
-    expect(chars(s, bear).power).toBe(2); // 1 marqueur
+    expect(chars(s, bear).power).toBe(2); // 1 counter
     s.objects[frigate]!.counters.charge = 2;
     s.version += 1;
     expect(chars(s, bear).power).toBe(3);
   });
 
-  it("The Eternity Elevator : autant de mana que de marqueurs de charge (palier 20+)", () => {
+  it("The Eternity Elevator: as much mana as charge counters (tier 20+)", () => {
     let s = scenario({ p1: { battlefield: ["The Eternity Elevator"] } });
     const elevator = idOf(s, "p1", "battlefield", "The Eternity Elevator");
     s.objects[elevator]!.counters.charge = 20;
@@ -225,7 +225,7 @@ describe("station (702.184)", () => {
 });
 
 describe("Edge of Eternities, lot C", () => {
-  it("Command Bridge : sacrifiée à moins d'engager un permanent dégagé que vous contrôlez", () => {
+  it("Command Bridge: sacrificed unless you tap an untapped permanent you control", () => {
     const play = (battlefield: string[], answer: (ids: string[], s: S) => string[] | undefined) => {
       let s = scenario({ p1: { battlefield, hand: ["Command Bridge"] } });
       s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Command Bridge") });
@@ -237,7 +237,7 @@ describe("Edge of Eternities, lot C", () => {
       });
       return { s, questions };
     };
-    // Un permanent engagé : elle reste (et arrive engagée).
+    // A tapped permanent: it stays (and enters tapped).
     const kept = play(["Bear Cub", "Forest"], (ids, s) => ids.filter((id) => nameOf(s, id) === "Forest"));
     const bridge = idOf(kept.s, "p1", "battlefield", "Command Bridge");
     expect([kept.s.objects[bridge]?.tapped, kept.s.objects[idOf(kept.s, "p1", "battlefield", "Forest")]?.tapped]).toEqual([
@@ -245,15 +245,15 @@ describe("Edge of Eternities, lot C", () => {
       true,
     ]);
     expect(kept.s.objects[idOf(kept.s, "p1", "battlefield", "Bear Cub")]?.tapped).toBe(false);
-    // Rien d'engagé : elle est sacrifiée.
+    // Nothing tapped: it is sacrificed.
     const declined = play(["Bear Cub"], () => []);
     expect(idsOf(declined.s, "p1", "graveyard", "Command Bridge")).toHaveLength(1);
-    // Aucun permanent dégagé : pas de question, elle est sacrifiée.
+    // No untapped permanent: no question, it is sacrificed.
     const none = play([], () => undefined);
     expect([none.questions, idsOf(none.s, "p1", "graveyard", "Command Bridge").length]).toEqual([0, 1]);
   });
 
-  it("Unravel : piochez seulement si le mana dépensé est inférieur à la valeur de mana (distorsion)", () => {
+  it("Unravel: draw only if the mana spent is less than the mana value (warp)", () => {
     const setup = () =>
       scenario({
         p1: { battlefield: lands("Mountain", 5), hand: ["Red Tiger Mechan"] },
@@ -272,7 +272,7 @@ describe("Edge of Eternities, lot C", () => {
     expect(full.battlefield.some((id) => full.objects[id]?.defId === card("Red Tiger Mechan").id)).toBe(false);
   });
 
-  it("Memorial Vault : exile 1 + la valeur de mana de l'artefact sacrifié, jouables ce tour-ci", () => {
+  it("Memorial Vault: exile 1 + the mana value of the sacrificed artifact, playable this turn", () => {
     let s = scenario({ p1: { battlefield: ["Memorial Vault", "Thaumaton Torpedo"] } });
     const vault = idOf(s, "p1", "battlefield", "Memorial Vault");
     s = act(s, "p1", {
@@ -286,20 +286,20 @@ describe("Edge of Eternities, lot C", () => {
     expect(legalActions(s, "p1").filter((a) => a.type === "playLand")).not.toHaveLength(0);
   });
 
-  it("Thaumaton Torpedo : coûte {3} de moins si vous avez attaqué avec un Vaisseau", () => {
+  it("Thaumaton Torpedo: costs {3} less if you attacked with a Spacecraft", () => {
     const s = scenario({
       p1: { battlefield: ["Thaumaton Torpedo", ...lands("Plains", 3)] },
       p2: { battlefield: ["Bear Cub"] },
     });
     const torpedo = idOf(s, "p1", "battlefield", "Thaumaton Torpedo");
     expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === torpedo)).toBe(false);
-    // Une attaque avec un Vaisseau ce tour-ci (journal du tour).
+    // An attack with a Spacecraft this turn (turn log).
     s.turnLog.push({ e: "attack", player: "p1", defender: "p2", types: ["Artifact"], subtypes: ["Spacecraft"] });
     s.version += 1;
     expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === torpedo)).toBe(true);
   });
 
-  it("Gene Pollinator : engage en plus un autre permanent, de préférence sans capacité de mana", () => {
+  it("Gene Pollinator: also taps another permanent, preferably without a mana ability", () => {
     let s = scenario({ p1: { battlefield: ["Gene Pollinator", "Bear Cub", "Forest"] } });
     const gp = idOf(s, "p1", "battlefield", "Gene Pollinator");
     s = act(s, "p1", { type: "tapForMana", source: gp, ability: 0, color: "U" });
@@ -308,7 +308,7 @@ describe("Edge of Eternities, lot C", () => {
     expect(s.objects[idOf(s, "p1", "battlefield", "Forest")]?.tapped).toBe(false);
   });
 
-  it("Terrapact Intimidator : l'adversaire refuse les Landers, la créature reçoit deux marqueurs", () => {
+  it("Terrapact Intimidator: the opponent declines Landers, the creature gets two counters", () => {
     let s = scenario({ p1: { battlefield: lands("Mountain", 2), hand: ["Terrapact Intimidator"] } });
     s = cast(s, "p1", "Terrapact Intimidator");
     s = passBoth(s);
@@ -318,7 +318,7 @@ describe("Edge of Eternities, lot C", () => {
     expect(s.objects[idOf(s, "p1", "battlefield", "Terrapact Intimidator")]?.counters["+1/+1"]).toBe(2);
   });
 
-  it("Hardlight Containment : exile une créature adverse et donne la garde {1} à l'artefact enchanté", () => {
+  it("Hardlight Containment: exiles an opposing creature and gives ward {1} to the enchanted artifact", () => {
     let s = scenario({
       p1: { battlefield: ["Plains", "Thaumaton Torpedo"], hand: ["Hardlight Containment"] },
       p2: { battlefield: ["Bear Cub"] },
@@ -330,7 +330,7 @@ describe("Edge of Eternities, lot C", () => {
     expect(chars(s, torpedo).abilities.some((a) => a.kind === "triggered" && a.label === "Ward")).toBe(true);
   });
 
-  it("Syr Vondam, Sunstar Exemplar : grandit quand une autre créature meurt ; détruit en mourant avec 4 de force", () => {
+  it("Syr Vondam, Sunstar Exemplar: grows when another creature dies; destroyed on dying with 4 power", () => {
     let s = scenario({
       p1: { battlefield: ["Syr Vondam, Sunstar Exemplar", "Bear Cub", ...lands("Swamp", 10)], hand: ["Vote Out", "Vote Out"] },
       p2: { battlefield: ["Llanowar Elves"] },
@@ -347,7 +347,7 @@ describe("Edge of Eternities, lot C", () => {
     expect(idsOf(s, "p2", "battlefield", "Llanowar Elves")).toHaveLength(0);
   });
 
-  it("Blade of the Swarm : cible une carte exilée avec la distorsion (pas une autre carte exilée)", () => {
+  it("Blade of the Swarm: targets a card exiled with warp (not another exiled card)", () => {
     let s = scenario({
       p1: { battlefield: lands("Swamp", 4), hand: ["Blade of the Swarm"] },
       p2: { graveyard: ["Red Tiger Mechan", "Bear Cub"] },
@@ -364,14 +364,14 @@ describe("Edge of Eternities, lot C", () => {
     const req = s.pending?.kind === "choice" ? s.pending.request : undefined;
     expect(req?.type === "pick" && req.intent).toBe("triggerMode");
     s = act(s, "p1", { type: "choose", values: ["1"] });
-    // Seule cible légale (Bear Cub, sans distorsion, ne l'est pas) : choisie automatiquement.
+    // Only legal target (Bear Cub, without warp, is not one): chosen automatically.
     s = passBoth(s);
     expect(s.exile).not.toContain(tiger);
     const lib = s.players.p2?.library ?? [];
     expect(s.objects[lib[lib.length - 1] as string]?.defId).toBe(card("Red Tiger Mechan").id);
   });
 
-  it("Kav Landseeker : le Lander est sacrifié à l'étape de fin de votre prochain tour", () => {
+  it("Kav Landseeker: the Lander is sacrificed at the end step of your next turn", () => {
     let s = scenario({ p1: { battlefield: lands("Mountain", 4), hand: ["Kav Landseeker"] } });
     s = cast(s, "p1", "Kav Landseeker");
     s = passAccepting(s, (x) => x.stack.length === 0 && idsOf(x, "p1", "battlefield", "Lander").length === 1);
@@ -382,7 +382,7 @@ describe("Edge of Eternities, lot C", () => {
     expect(idsOf(s, "p1", "battlefield", "Lander")).toHaveLength(0);
   });
 
-  it("Weftwalking : le premier sort de chaque joueur pendant son tour peut être lancé sans payer", () => {
+  it("Weftwalking: each player's first spell during their turn can be cast without paying", () => {
     const s = scenario({ p1: { battlefield: ["Weftwalking"], hand: ["Serra Angel", "Bear Cub"] } });
     const casts = legalActions(s, "p1").filter((a) => a.type === "cast");
     expect(casts.length).toBeGreaterThanOrEqual(2);
@@ -391,7 +391,7 @@ describe("Edge of Eternities, lot C", () => {
     expect(legalActions(passBoth(t), "p1").some((a) => a.type === "cast")).toBe(false);
   });
 
-  it("Astelli Reclaimer : VM au plus égale au mana dépensé (distorsion : 3)", () => {
+  it("Astelli Reclaimer: MV at most equal to the mana spent (warp: 3)", () => {
     const setup = () =>
       scenario({
         p1: { battlefield: lands("Plains", 5), hand: ["Astelli Reclaimer"], graveyard: ["Memorial Vault", "Thaumaton Torpedo"] },
@@ -406,7 +406,7 @@ describe("Edge of Eternities, lot C", () => {
 });
 
 describe("Edge of Eternities, lot D", () => {
-  it("The Dominion Bracelet : vous contrôlez l'adversaire pendant son prochain tour (722)", () => {
+  it("The Dominion Bracelet: you control the opponent during their next turn (722)", () => {
     let s = scenario({
       p1: { battlefield: ["The Dominion Bracelet", "Serra Angel", ...lands("Plains", 15)] },
       p2: { hand: ["Bear Cub"], battlefield: lands("Forest", 2) },
@@ -415,12 +415,12 @@ describe("Edge of Eternities, lot D", () => {
     const angel = idOf(s, "p1", "battlefield", "Serra Angel");
     s.objects[bracelet]!.attachedTo = angel;
     s.version += 1;
-    // La capacité est celle de la créature équipée (« Equipped creature … has "{15}, Exile The Dominion Bracelet: …" »).
+    // The ability is the equipped creature's ("Equipped creature ... has "{15}, Exile The Dominion Bracelet: ..."").
     expect(chars(s, bracelet).abilities.some((a) => a.kind === "activated" && a.label?.startsWith("Exile"))).toBe(false);
     const ab = chars(s, angel).abilities.findIndex((a) => a.kind === "activated" && a.label?.startsWith("Exile"));
     expect(ab).toBeGreaterThanOrEqual(0);
     s = act(s, "p1", { type: "activate", source: angel, ability: ab, targets: { t: ["p2"] } });
-    // {15} − 5 (force de l'Ange équipé) = {10} ; le Bracelet est exilé pour payer.
+    // {15} - 5 (power of the equipped Angel) = {10}; the Bracelet is exiled to pay.
     expect(s.battlefield.filter((id) => s.objects[id]?.tapped)).toHaveLength(10);
     expect(exiled(s, "The Dominion Bracelet")).toHaveLength(1);
     s = passBoth(s);
@@ -429,17 +429,17 @@ describe("Edge of Eternities, lot D", () => {
     expect(s.turnControl?.turn).toBe(s.turn.number);
     expect(s.pending?.player).toBe("p2");
     expect(decider(s)).toBe("p1");
-    // La vue du contrôleur : la décision est la sienne, avec la main et les options du joueur contrôlé.
+    // The controller's view: the decision is theirs, with the controlled player's hand and options.
     const view = projectView(s, "p1");
     expect(view.pending?.player).toBe("p1");
     expect(view.controlling).toBe("p2");
     expect(view.hand.map((o) => o.name)).toContain("Bear Cub");
     expect(projectView(s, "p2").pending?.player).toBe("p1");
-    // Le contrôle cesse au tour suivant.
+    // Control ends the following turn.
     const later = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1");
     expect(later.turnControl).toBeUndefined();
     expect(decider(later)).toBe(later.pending?.player);
-    // Le joueur contrôlé ne peut pas décider ; le contrôleur lance le sort du joueur contrôlé.
+    // The controlled player can't decide; the controller casts the controlled player's spell.
     const host = new GameHost(s);
     return host.submitHuman("p2", { type: "pass" }).then(async (err) => {
       expect(err).toBeTruthy();
@@ -451,7 +451,7 @@ describe("Edge of Eternities, lot D", () => {
     });
   });
 
-  it("Famished Worldsire : dévorer 3 (terrains sacrifiés en arrivant)", () => {
+  it("Famished Worldsire: devour 3 (lands sacrificed on entering)", () => {
     let s = scenario({
       p1: { battlefield: lands("Forest", 8), hand: ["Famished Worldsire"], library: lands("Forest", 10) },
     });
@@ -464,7 +464,7 @@ describe("Edge of Eternities, lot D", () => {
     expect(idsOf(s, "p1", "battlefield", "Forest")).toHaveLength(6);
   });
 
-  it("Loading Zone : marqueurs doublés sur vos créatures, pas sur vos autres permanents", () => {
+  it("Loading Zone: counters doubled on your creatures, not on your other permanents", () => {
     const s = scenario({ p1: { battlefield: ["Loading Zone", "Bear Cub", "Thaumaton Torpedo"] } });
     const bear = s.objects[idOf(s, "p1", "battlefield", "Bear Cub")]!;
     const torpedo = s.objects[idOf(s, "p1", "battlefield", "Thaumaton Torpedo")]!;
@@ -474,7 +474,7 @@ describe("Edge of Eternities, lot D", () => {
     expect(torpedo.counters.charge).toBe(1);
   });
 
-  it("Zero Point Ballad : détruit selon X, et renvoie une créature détruite si X ≥ 6", () => {
+  it("Zero Point Ballad: destroys according to X, and returns a destroyed creature if X >= 6", () => {
     let s = scenario({
       p1: { battlefield: lands("Swamp", 7), hand: ["Zero Point Ballad"] },
       p2: { battlefield: ["Serra Angel", "Bear Cub"] },
@@ -488,19 +488,19 @@ describe("Edge of Eternities, lot D", () => {
     ).toHaveLength(1);
   });
 
-  it("Mutinous Massacre : parité de la valeur de mana, puis contrôle de toutes les créatures", () => {
+  it("Mutinous Massacre: mana value parity, then control of all creatures", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Swamp", 4), ...lands("Mountain", 3)], hand: ["Mutinous Massacre"] },
       p2: { battlefield: ["Serra Angel", "Bear Cub", "Llanowar Elves"] },
     });
-    s = cast(s, "p1", "Mutinous Massacre", { mode: 0 }); // impaire : Serra Angel (5), Llanowar Elves (1)
+    s = cast(s, "p1", "Mutinous Massacre", { mode: 0 }); // odd: Serra Angel (5), Llanowar Elves (1)
     s = passBoth(s);
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(0);
     expect(chars(s, bear).keywords).toContain("haste");
   });
 
-  it("Moonlit Meditation : le premier jeton du tour est une copie du permanent enchanté", () => {
+  it("Moonlit Meditation: the first token of the turn is a copy of the enchanted permanent", () => {
     let s = scenario({
       p1: { battlefield: ["Plains", "Island", "Island", "Serra Angel"], hand: ["Moonlit Meditation"] },
     });
@@ -513,7 +513,7 @@ describe("Edge of Eternities, lot D", () => {
     expect(idsOf(s, "p1", "battlefield", "Drone")).toHaveLength(1);
   });
 
-  it("Pinnacle Starcage : exile les VM ≤ 2, puis les met au cimetière contre des Robots", () => {
+  it("Pinnacle Starcage: exiles MV <= 2, then puts them in the graveyard in exchange for Robots", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Plains", 11)], hand: ["Pinnacle Starcage"] },
       p2: { battlefield: ["Bear Cub", "Llanowar Elves", "Serra Angel"] },
@@ -530,7 +530,7 @@ describe("Edge of Eternities, lot D", () => {
     expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(0);
   });
 
-  it("Scout for Survivors : valeur de mana totale 3 au plus", () => {
+  it("Scout for Survivors: total mana value 3 or less", () => {
     const s = scenario({
       p1: {
         battlefield: lands("Plains", 3),
@@ -545,7 +545,7 @@ describe("Edge of Eternities, lot D", () => {
     expect(t.objects[idOf(t, "p1", "battlefield", "Bear Cub")]?.counters["+1/+1"]).toBe(1);
   });
 
-  it("Dyadrine : autant de marqueurs que de mana dépensé ; Bioengineered Future : un par terrain arrivé", () => {
+  it("Dyadrine: as many counters as mana spent; Bioengineered Future: one per land that entered", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Forest", 3), ...lands("Plains", 2)], hand: ["Dyadrine, Synthesis Amalgam"] },
     });
@@ -559,7 +559,7 @@ describe("Edge of Eternities, lot D", () => {
     expect(t.objects[idOf(t, "p1", "battlefield", "Bear Cub")]?.counters["+1/+1"]).toBe(1);
   });
 
-  it("Terminal Velocity : le permanent a la célérité et inflige sa VM à chaque créature en partant", () => {
+  it("Terminal Velocity: the permanent has haste and deals its MV to each creature on leaving", () => {
     let s = scenario({
       p1: { battlefield: lands("Mountain", 6), hand: ["Terminal Velocity", "Serra Angel"] },
       p2: { battlefield: ["Bear Cub", "Serra Angel"] },
@@ -576,12 +576,12 @@ describe("Edge of Eternities, lot D", () => {
   });
 });
 
-describe("cartes jouables hors de la main (vue)", () => {
-  it("Icetill Explorer : les terrains du cimetière sont présentés au bout de la main, et se jouent", () => {
+describe("cards playable from outside the hand (view)", () => {
+  it("Icetill Explorer: graveyard lands are shown at the end of the hand, and can be played", () => {
     let s = scenario({ p1: { battlefield: ["Icetill Explorer"], graveyard: ["Forest", "Bear Cub", "Bulk Up"] } });
     const forest = idOf(s, "p1", "graveyard", "Forest");
     const names = projectView(s, "p1").playableElsewhere.map((c) => [c.name, c.zone]);
-    // Le terrain (Icetill Explorer) et le sort à flashback ; pas la créature sans permission.
+    // The land (Icetill Explorer) and the flashback spell; not the creature without permission.
     expect(names).toEqual(
       expect.arrayContaining([
         ["Forest", "graveyard"],
@@ -589,31 +589,31 @@ describe("cartes jouables hors de la main (vue)", () => {
       ]),
     );
     expect(names.some(([n]) => n === "Bear Cub")).toBe(false);
-    // L'adversaire ne voit pas ces cartes comme jouables pour lui.
+    // The opponent doesn't see these cards as playable for them.
     expect(projectView(s, "p2").playableElsewhere).toHaveLength(0);
     s = act(s, "p1", { type: "playLand", card: forest });
     expect(idsOf(s, "p1", "battlefield", "Forest")).toHaveLength(1);
   });
 });
 
-describe("coût modifié affiché sur les cartes de la main (vue)", () => {
-  it("surcoût, coût normal et flashback : seul un coût différent du coût imprimé est donné", () => {
+describe("modified cost shown on cards in hand (view)", () => {
+  it("extra cost, normal cost and flashback: only a cost different from the printed cost is given", () => {
     const goblin = "Mudbutton Cursetosser";
     let s = scenario({ p1: { hand: [goblin, "Bear Cub"], graveyard: ["Bulk Up"] } });
     let v = projectView(s, "p1");
-    // « Contemplez un Gobelin ou payez {2} » : rien à contempler, {2}{B} (+2).
+    // "Behold a Goblin or pay {2}": nothing to behold, {2}{B} (+2).
     expect(v.hand.find((c) => c.name === goblin)?.castCost).toEqual({ text: "{2}{B}", delta: 2 });
     expect(v.hand.find((c) => c.name === "Bear Cub")?.castCost).toBeUndefined();
     expect(v.playableElsewhere.find((c) => c.name === "Bulk Up")?.castCost).toEqual({ text: "{4}{R}{R}", delta: 4 });
-    // Avec un autre Gobelin en main, le coût imprimé.
+    // With another Goblin in hand, the printed cost.
     s = scenario({ p1: { hand: [goblin, goblin] } });
     v = projectView(s, "p1");
     expect(v.hand.every((c) => c.castCost === undefined)).toBe(true);
   });
 });
 
-describe("Edge of Eternities, cartes du méta (PLAN-C, lot C13)", () => {
-  it("terrains choc (Sacred Foundry, Watery Grave, Godless Shrine, Breeding Pool) : 2 PV ou engagé, deux couleurs", () => {
+describe("Edge of Eternities, meta cards (PLAN-C, lot C13)", () => {
+  it("shock lands (Sacred Foundry, Watery Grave, Godless Shrine, Breeding Pool): 2 life or tapped, two colors", () => {
     const shocks: [string, string[]][] = [
       ["Sacred Foundry", ["R", "W"]],
       ["Watery Grave", ["B", "U"]],
@@ -637,7 +637,7 @@ describe("Edge of Eternities, cartes du méta (PLAN-C, lot C13)", () => {
     }
   });
 
-  it("Seam Rip : exile un permanent non-terrain adverse de VM 2 ou moins jusqu'à son départ", () => {
+  it("Seam Rip: exiles an opposing nonland permanent with MV 2 or less until it leaves", () => {
     let s = scenario({
       p1: { battlefield: ["Plains"], hand: ["Seam Rip"] },
       p2: { battlefield: ["Bear Cub", "Serra Angel", "Forest"] },
@@ -647,7 +647,7 @@ describe("Edge of Eternities, cartes du méta (PLAN-C, lot C13)", () => {
     s = settle(s, picking([bear]));
     expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(0);
     expect(exiled(s, "Bear Cub")).toHaveLength(1);
-    // Serra Angel (VM 5) et la Forêt (terrain) restent.
+    // Serra Angel (MV 5) and the Forest (land) stay.
     expect(idsOf(s, "p2", "battlefield", "Serra Angel")).toHaveLength(1);
     expect(idsOf(s, "p2", "battlefield", "Forest")).toHaveLength(1);
     destroy(s, idOf(s, "p1", "battlefield", "Seam Rip"));
@@ -655,7 +655,7 @@ describe("Edge of Eternities, cartes du méta (PLAN-C, lot C13)", () => {
     expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
   });
 
-  it("Nova Hellkite : vol et célérité ; à l'arrivée, 1 blessure à une créature adverse (lancé avec la distorsion)", () => {
+  it("Nova Hellkite: flying and haste; on entering, 1 damage to an opposing creature (cast with warp)", () => {
     let s = scenario({
       p1: { battlefield: lands("Mountain", 3), hand: ["Nova Hellkite"] },
       p2: { battlefield: ["Llanowar Elves"] },
@@ -667,7 +667,7 @@ describe("Edge of Eternities, cartes du méta (PLAN-C, lot C13)", () => {
     expect(idsOf(s, "p2", "graveyard", "Llanowar Elves")).toHaveLength(1);
   });
 
-  it("Mightform Harmonizer : chaque terrain arrivé double la force d'une créature ciblée jusqu'à la fin du tour", () => {
+  it("Mightform Harmonizer: each land that entered doubles the power of a targeted creature until end of turn", () => {
     let s = scenario({ p1: { battlefield: ["Mightform Harmonizer", "Bear Cub"], hand: ["Forest"] } });
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Forest") });
@@ -678,14 +678,14 @@ describe("Edge of Eternities, cartes du méta (PLAN-C, lot C13)", () => {
     expect(chars(s, bear).power).toBe(2);
   });
 
-  it("Consult the Star Charts : regarde X cartes (X = terrains), en prend une (deux avec le kicker), le reste dessous", () => {
+  it("Consult the Star Charts: looks at X cards (X = lands), takes one (two with kicker), the rest on the bottom", () => {
     const library = ["Opt", "Bear Cub", "Serra Angel", "Llanowar Elves", "Plains", "Island"];
     let s = scenario({ p1: { battlefield: lands("Island", 3), hand: ["Consult the Star Charts"], library } });
     s = cast(s, "p1", "Consult the Star Charts");
     s = settle(s);
     expect(s.players.p1?.hand).toHaveLength(1);
     expect(["Opt", "Bear Cub", "Serra Angel"]).toContain(nameOf(s, s.players.p1?.hand[0] ?? ""));
-    // Les deux autres cartes vues sont passées dessous : Llanowar Elves est sur le dessus.
+    // The other two cards seen go to the bottom: Llanowar Elves is on top.
     expect(nameOf(s, s.players.p1?.library[0] ?? "")).toBe("Llanowar Elves");
     expect(s.players.p1?.library).toHaveLength(5);
     let k = scenario({ p1: { battlefield: lands("Island", 4), hand: ["Consult the Star Charts"], library } });
@@ -695,7 +695,7 @@ describe("Edge of Eternities, cartes du méta (PLAN-C, lot C13)", () => {
     expect(nameOf(k, k.players.p1?.library[0] ?? "")).toBe("Plains");
   });
 
-  it("Quantum Riddler : pioche à l'arrivée, une carte de plus avec une main d'une carte ou moins", () => {
+  it("Quantum Riddler: draws on entering, one more card with a hand of one card or fewer", () => {
     let s = scenario({ p1: { battlefield: lands("Island", 2), hand: ["Quantum Riddler"] } });
     s = cast(s, "p1", "Quantum Riddler", { warp: true });
     s = settle(s);
@@ -707,7 +707,7 @@ describe("Edge of Eternities, cartes du méta (PLAN-C, lot C13)", () => {
     expect(t.players.p1?.hand).toHaveLength(3);
   });
 
-  it("Starfield Shepherd : cherche une Plaine de base ou une créature de VM 1 ou moins", () => {
+  it("Starfield Shepherd: searches for a basic Plains or a creature with MV 1 or less", () => {
     let s = scenario({
       p1: {
         battlefield: lands("Plains", 2),
@@ -727,7 +727,7 @@ describe("Edge of Eternities, cartes du méta (PLAN-C, lot C13)", () => {
     expect(chars(s, idOf(s, "p1", "battlefield", "Starfield Shepherd")).keywords).toContain("flying");
   });
 
-  it("Cryogen Relic : pioche en arrivant et en partant ; sacrifié, un marqueur d'étourdissement sur une créature engagée", () => {
+  it("Cryogen Relic: draws on entering and leaving; sacrificed, a stun counter on a tapped creature", () => {
     let s = scenario({
       p1: { battlefield: lands("Island", 4), hand: ["Cryogen Relic"] },
       p2: { battlefield: [{ name: "Bear Cub", tapped: true }] },
@@ -743,7 +743,7 @@ describe("Edge of Eternities, cartes du méta (PLAN-C, lot C13)", () => {
     expect(s.players.p1?.hand).toHaveLength(2);
   });
 
-  it("Biotech Specialist : crée un Lander ; sacrifier un artefact inflige 2 blessures à un adversaire", () => {
+  it("Biotech Specialist: creates a Lander; sacrificing an artifact deals 2 damage to an opponent", () => {
     let s = scenario({ p1: { battlefield: [...lands("Mountain", 2), ...lands("Forest", 2)], hand: ["Biotech Specialist"] } });
     s = cast(s, "p1", "Biotech Specialist");
     s = settle(s);
@@ -752,11 +752,11 @@ describe("Edge of Eternities, cartes du méta (PLAN-C, lot C13)", () => {
     s = settle(s);
     expect(idsOf(s, "p1", "battlefield", "Lander")).toHaveLength(0);
     expect(s.players.p2?.life).toBe(18);
-    // Le Lander a mis un terrain de base engagé.
+    // The Lander put a tapped basic land.
     expect(idsOf(s, "p1", "battlefield", "Forest")).toHaveLength(3);
   });
 
-  it("Sunset Saboteur : en attaquant, un marqueur +1/+1 sur une créature adverse ; menace", () => {
+  it("Sunset Saboteur: on attacking, a +1/+1 counter on an opposing creature; menace", () => {
     let s = scenario({ p1: { battlefield: ["Sunset Saboteur"] }, p2: { battlefield: ["Bear Cub"] } });
     const sab = idOf(s, "p1", "battlefield", "Sunset Saboteur");
     expect(chars(s, sab).keywords).toContain("menace");
@@ -765,7 +765,7 @@ describe("Edge of Eternities, cartes du méta (PLAN-C, lot C13)", () => {
     expect(s.objects[idOf(s, "p2", "battlefield", "Bear Cub")]?.counters["+1/+1"]).toBe(1);
   });
 
-  it("Sunset Saboteur : garde (défaussez une carte) ; sans carte à défausser, le sort adverse est contrecarré", () => {
+  it("Sunset Saboteur: ward (discard a card); with no card to discard, the opposing spell is countered", () => {
     let s = scenario({
       p1: { battlefield: ["Sunset Saboteur"] },
       p2: { battlefield: ["Mountain"], hand: ["Burst Lightning"] },
@@ -776,7 +776,7 @@ describe("Edge of Eternities, cartes du méta (PLAN-C, lot C13)", () => {
     s = settle(s);
     expect(idsOf(s, "p1", "battlefield", "Sunset Saboteur")).toHaveLength(1);
     expect(idsOf(s, "p2", "graveyard", "Burst Lightning")).toHaveLength(1);
-    // Avec une carte à défausser, l'adversaire paie la garde : le sort se résout.
+    // With a card to discard, the opponent pays the ward: the spell resolves.
     let t = scenario({
       p1: { battlefield: ["Sunset Saboteur"] },
       p2: { battlefield: ["Mountain"], hand: ["Burst Lightning", "Forest"] },
@@ -788,7 +788,7 @@ describe("Edge of Eternities, cartes du méta (PLAN-C, lot C13)", () => {
     expect(namesIn(t, t.players.p2?.graveyard).sort()).toEqual(["Burst Lightning", "Forest"]);
   });
 
-  it("Annul : contrecarre un sort d'artefact ou d'enchantement, pas un sort de créature", () => {
+  it("Annul: counters an artifact or enchantment spell, not a creature spell", () => {
     let s = scenario({
       p1: { battlefield: lands("Island", 2), hand: ["Cryogen Relic"] },
       p2: { battlefield: ["Island"], hand: ["Annul"] },
@@ -807,7 +807,7 @@ describe("Edge of Eternities, cartes du méta (PLAN-C, lot C13)", () => {
     expect(castable(c, "p2", idOf(c, "p2", "hand", "Annul"))).toBe(false);
   });
 
-  it("Haliya, Guided by Light : +1 PV par créature ou artefact arrivé ; pioche à l'étape de fin après 3 PV gagnés", () => {
+  it("Haliya, Guided by Light: +1 life per creature or artifact that entered; draws at the end step after gaining 3 life", () => {
     let s = scenario({
       p1: {
         battlefield: [...lands("Plains", 3), ...lands("Island", 2), "Forest"],
@@ -819,10 +819,10 @@ describe("Edge of Eternities, cartes du méta (PLAN-C, lot C13)", () => {
     s = settle(cast(s, "p1", "Llanowar Elves"));
     s = settle(cast(s, "p1", "Cryogen Relic"));
     expect(s.players.p1?.life).toBe(23);
-    const before = s.players.p1?.hand.length ?? 0; // la carte piochée par la Relique
+    const before = s.players.p1?.hand.length ?? 0; // the card drawn by the Relic
     s = advanceUntil(s, (x) => x.turn.active === "p2");
     expect(s.players.p1?.hand).toHaveLength(before + 1);
-    // Un seul PV gagné : pas de pioche.
+    // Only one life gained: no draw.
     let t = scenario({ p1: { battlefield: lands("Plains", 4), hand: ["Haliya, Guided by Light", "Llanowar Elves"] } });
     t = settle(cast(t, "p1", "Haliya, Guided by Light"));
     t = advanceUntil(t, (x) => x.turn.active === "p2");
@@ -830,7 +830,7 @@ describe("Edge of Eternities, cartes du méta (PLAN-C, lot C13)", () => {
     expect(t.players.p1?.hand).toHaveLength(1);
   });
 
-  it("Meltstrider's Gear : s'attache à l'arrivée à une créature, qui gagne +2/+1 et la portée", () => {
+  it("Meltstrider's Gear: attaches on entering to a creature, which gets +2/+1 and reach", () => {
     let s = scenario({ p1: { battlefield: ["Forest", "Bear Cub"], hand: ["Meltstrider's Gear"] } });
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     s = settle(cast(s, "p1", "Meltstrider's Gear"), picking([bear]));
@@ -840,7 +840,7 @@ describe("Edge of Eternities, cartes du méta (PLAN-C, lot C13)", () => {
     expect(chars(s, bear).keywords).toContain("reach");
   });
 
-  it("Elegy Acolyte : lien de vie ; blessures de combat à un joueur : piochez et perdez 1 PV (une fois par lot)", () => {
+  it("Elegy Acolyte: lifelink; combat damage to a player: draw and lose 1 life (once per batch)", () => {
     let s = scenario({ p1: { battlefield: ["Elegy Acolyte", "Bear Cub"] } });
     const acolyte = idOf(s, "p1", "battlefield", "Elegy Acolyte");
     s = attack(s, [acolyte, idOf(s, "p1", "battlefield", "Bear Cub")]);
@@ -849,12 +849,12 @@ describe("Edge of Eternities, cartes du méta (PLAN-C, lot C13)", () => {
     // +4 (lien de vie) − 1.
     expect(s.players.p1?.life).toBe(23);
     expect(s.players.p1?.hand).toHaveLength(1);
-    // Rien n'a quitté le champ de bataille : pas de Robot.
+    // Nothing left the battlefield: no Robot.
     s = advanceUntil(s, (x) => x.turn.active === "p2");
     expect(idsOf(s, "p1", "battlefield", "Robot")).toHaveLength(0);
   });
 
-  it("Elegy Acolyte : vide, un Robot 2/2 à votre étape de fin si un permanent non-terrain a quitté le champ de bataille", () => {
+  it("Elegy Acolyte: void, a 2/2 Robot at your end step if a nonland permanent left the battlefield", () => {
     let s = scenario({
       p1: { battlefield: ["Elegy Acolyte", "Mountain"], hand: ["Burst Lightning"] },
       p2: { battlefield: ["Bear Cub"] },
@@ -867,7 +867,7 @@ describe("Edge of Eternities, cartes du méta (PLAN-C, lot C13)", () => {
     expect(chars(s, robot as string).types).toEqual(expect.arrayContaining(["Artifact", "Creature"]));
   });
 
-  it("Meltstrider's Resolve : la créature enchantée se bat, gagne +0/+2 et n'est bloquée que par une créature", () => {
+  it("Meltstrider's Resolve: the enchanted creature fights, gets +0/+2 and can only be blocked by one creature", () => {
     let s = scenario({
       p1: { battlefield: ["Forest", "Bear Cub"], hand: ["Meltstrider's Resolve"] },
       p2: { battlefield: ["Llanowar Elves"] },
@@ -882,8 +882,8 @@ describe("Edge of Eternities, cartes du méta (PLAN-C, lot C13)", () => {
   });
 });
 
-describe("« Vous mettez des marqueurs » (lot K2)", () => {
-  it("Terrasymbiosis : seuls les marqueurs +1/+1 que vous mettez sur vos créatures la déclenchent", () => {
+describe('"You put counters" (lot K2)', () => {
+  it("Terrasymbiosis: only the +1/+1 counters you put on your creatures trigger it", () => {
     const setup = (active: PlayerId) =>
       scenario({
         active,
@@ -899,18 +899,18 @@ describe("« Vous mettez des marqueurs » (lot K2)", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Lot K8 (docs/audits/2026-10-03-cartes.md) : cartes mythiques, rares et peu communes sans test de règles.
+// Lot K8 (docs/audits/2026-10-03-cards.md): mythic, rare and uncommon cards without rules tests.
 // ---------------------------------------------------------------------------
 
-/** Active la capacité de `source` dont le libellé contient `label`. */
+/** Activates the ability of `source` whose label contains `label`. */
 const activateNamed = (s: S, source: string, label: string, extra: object = {}, player: PlayerId = "p1") => {
   const a = legalActions(s, player).find((x) => x.type === "activate" && x.source === source && (x.label ?? "").includes(label));
-  if (a?.type !== "activate") throw new Error(`capacité « ${label} » introuvable`);
+  if (a?.type !== "activate") throw new Error(`ability "${label}" not found`);
   return act(s, player, { type: "activate", source, ability: a.ability, ...extra });
 };
 const hasActivation = (s: S, source: string, label: string, player: PlayerId = "p1") =>
   legalActions(s, player).some((x) => x.type === "activate" && x.source === source && (x.label ?? "").includes(label));
-/** Répond oui/non aux questions et choisit les objets voulus. */
+/** Answers yes/no to questions and picks the wanted objects. */
 const answering =
   (opts: { yes?: boolean; pick?: string[]; mode?: number }) =>
   (req: ChoiceRequest): ChoiceValue[] | undefined => {
@@ -920,7 +920,7 @@ const answering =
   };
 const tokensOf = (s: S, player: PlayerId, name: string) =>
   s.battlefield.filter((id) => s.objects[id]?.controller === player && s.objects[id]?.isToken && nameOf(s, id) === name);
-/** Vide : un permanent non-terrain de p2 (Llanowar Elves) quitte le champ de bataille. */
+/** Void: a nonland permanent of p2 (Llanowar Elves) leaves the battlefield. */
 const withVoid = (s: S) => {
   destroy(s, idOf(s, "p2", "battlefield", "Llanowar Elves"));
   return s;
@@ -928,8 +928,8 @@ const withVoid = (s: S) => {
 const lifeOf = (s: S, p: PlayerId) => s.players[p]?.life;
 const handSize = (s: S, p: PlayerId) => s.players[p]?.hand.length ?? 0;
 
-describe("Edge of Eternities, lot K8 : mythiques", () => {
-  it("Adagia, Windswept Bastion : arrive engagée ; à 12+, {3}{W}, {T} : copie légendaire d'un de vos artefacts (rituel)", () => {
+describe("Edge of Eternities, lot K8: mythics", () => {
+  it("Adagia, Windswept Bastion: enters tapped; at 12+, {3}{W}, {T}: legendary copy of one of your artifacts (sorcery speed)", () => {
     let p = scenario({ p1: { hand: ["Adagia, Windswept Bastion"] } });
     p = act(p, "p1", { type: "playLand", card: idOf(p, "p1", "hand", "Adagia, Windswept Bastion") });
     expect(p.objects[idOf(p, "p1", "battlefield", "Adagia, Windswept Bastion")]?.tapped).toBe(true);
@@ -945,7 +945,7 @@ describe("Edge of Eternities, lot K8 : mythiques", () => {
     let s = setup(12);
     const adagia = idOf(s, "p1", "battlefield", "Adagia, Windswept Bastion");
     const torpedo = idOf(s, "p1", "battlefield", "Thaumaton Torpedo");
-    // L'artefact adverse n'est pas une cible légale.
+    // The opposing artifact is not a legal target.
     expect(() =>
       activateNamed(s, adagia, "Legendary copy", { targets: { t: [idOf(s, "p2", "battlefield", "Memorial Vault")] } }),
     ).toThrow();
@@ -954,7 +954,7 @@ describe("Edge of Eternities, lot K8 : mythiques", () => {
     expect(copies).toHaveLength(1);
     expect(chars(s, copies[0] as string).supertypes).toContain("Legendary");
     expect(chars(s, torpedo).supertypes).not.toContain("Legendary");
-    // Seulement comme un rituel : pas tant qu'un sort est sur la pile.
+    // Only at sorcery speed: not while a spell is on the stack.
     let busy = scenario({
       p1: {
         battlefield: [
@@ -971,7 +971,7 @@ describe("Edge of Eternities, lot K8 : mythiques", () => {
     expect(hasActivation(busy, idOf(busy, "p1", "battlefield", "Adagia, Windswept Bastion"), "Legendary copy")).toBe(false);
   });
 
-  it("Alpharael, Stonechosen : vide, en attaquant, le défenseur perd la moitié de ses PV arrondie au supérieur ; sinon rien", () => {
+  it("Alpharael, Stonechosen: void, on attacking, the defender loses half their life rounded up; otherwise nothing", () => {
     const setup = () =>
       scenario({ p1: { battlefield: ["Alpharael, Stonechosen"] }, p2: { life: 15, battlefield: ["Llanowar Elves"] } });
     let s = withVoid(setup());
@@ -982,7 +982,7 @@ describe("Edge of Eternities, lot K8 : mythiques", () => {
     expect(lifeOf(t, "p2")).toBe(15);
   });
 
-  it("Alpharael, Stonechosen : garde — défausser une carte au hasard, sinon le sort adverse est contrecarré", () => {
+  it("Alpharael, Stonechosen: ward - discard a card at random, otherwise the opposing spell is countered", () => {
     let s = scenario({
       p1: { battlefield: ["Alpharael, Stonechosen"] },
       p2: { battlefield: ["Mountain"], hand: ["Shock", "Forest"] },
@@ -995,7 +995,7 @@ describe("Edge of Eternities, lot K8 : mythiques", () => {
     expect(s.objects[alpha]?.damage).toBe(2);
   });
 
-  it("Cosmogrand Zenith : au deuxième sort du tour, deux Soldats 1/1 ou un marqueur sur chacune de vos créatures", () => {
+  it("Cosmogrand Zenith: on the second spell of the turn, two 1/1 Soldiers or a counter on each of your creatures", () => {
     const setup = () =>
       scenario({ p1: { battlefield: ["Cosmogrand Zenith", "Bear Cub", ...lands("Island", 2)], hand: ["Opt", "Opt"] } });
     let s = settle(cast(setup(), "p1", "Opt"));
@@ -1010,8 +1010,8 @@ describe("Edge of Eternities, lot K8 : mythiques", () => {
     expect(tokensOf(t, "p1", "Human Soldier")).toHaveLength(0);
   });
 
-  // Une capacité déclenchée de palier se déclenche même sans capacité déclenchée imprimée (lot K8).
-  it("Dawnsire, Sunstar Dreadnought : à 10+, quand vous attaquez, 100 blessures à jusqu'à une créature", () => {
+  // A tier triggered ability triggers even without a printed triggered ability (lot K8).
+  it("Dawnsire, Sunstar Dreadnought: at 10+, when you attack, 100 damage to up to one creature", () => {
     const setup = (charge: number) =>
       scenario({
         p1: { battlefield: [{ name: "Dawnsire, Sunstar Dreadnought", counters: { charge } }, "Bear Cub"] },
@@ -1026,7 +1026,7 @@ describe("Edge of Eternities, lot K8 : mythiques", () => {
     expect(idsOf(t, "p2", "battlefield", "Serra Angel")).toHaveLength(1);
   });
 
-  it("Dawnsire, Sunstar Dreadnought : pas une créature avant 20 marqueurs ; à 20+, créature 20/20 volante", () => {
+  it("Dawnsire, Sunstar Dreadnought: not a creature before 20 counters; at 20+, a 20/20 flying creature", () => {
     const setup = (charge: number) =>
       scenario({ p1: { battlefield: [{ name: "Dawnsire, Sunstar Dreadnought", counters: { charge } }] } });
     const low = setup(19);
@@ -1038,7 +1038,7 @@ describe("Edge of Eternities, lot K8 : mythiques", () => {
     expect(chars(big, ship).power).toBe(20);
   });
 
-  it("Devastating Onslaught : X copies d'un de vos artefacts ou créatures, avec la célérité, sacrifiées à l'étape de fin", () => {
+  it("Devastating Onslaught: X copies of one of your artifacts or creatures, with haste, sacrificed at the end step", () => {
     let s = scenario({
       p1: { battlefield: ["Bear Cub", ...lands("Mountain", 5)], hand: ["Devastating Onslaught"] },
       p2: { battlefield: ["Serra Angel"] },
@@ -1057,7 +1057,7 @@ describe("Edge of Eternities, lot K8 : mythiques", () => {
     expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
   });
 
-  it("Evendo, Waking Haven : à 12+, {G}, {T} : {G} par créature que vous contrôlez", () => {
+  it("Evendo, Waking Haven: at 12+, {G}, {T}: {G} per creature you control", () => {
     const setup = (charge: number) =>
       scenario({
         p1: { battlefield: [{ name: "Evendo, Waking Haven", counters: { charge } }, "Forest", "Bear Cub", "Llanowar Elves"] },
@@ -1069,7 +1069,7 @@ describe("Edge of Eternities, lot K8 : mythiques", () => {
     expect(s.players.p1?.manaPool.G).toBe(2);
   });
 
-  it("Exalted Sunborn : vol, lien de vie ; vos jetons sont créés en double, pas ceux de l'adversaire", () => {
+  it("Exalted Sunborn: flying, lifelink; your tokens are created twice, not the opponent's", () => {
     let s = scenario({
       p1: { battlefield: ["Exalted Sunborn", ...lands("Plains", 2)], hand: ["Honored Knight-Captain"] },
       p2: { battlefield: ["Exalted Sunborn"] },
@@ -1086,7 +1086,7 @@ describe("Edge of Eternities, lot K8 : mythiques", () => {
     expect(tokensOf(s, "p2", "Drone")).toHaveLength(1);
   });
 
-  it("Kavaron, Memorial World : à 12+, {1}{R}, {T}, sacrifiez un terrain : Robot 2/2, puis vos créatures +1/+0 et la célérité", () => {
+  it("Kavaron, Memorial World: at 12+, {1}{R}, {T}, sacrifice a land: 2/2 Robot, then your creatures get +1/+0 and haste", () => {
     let s = scenario({
       p1: { battlefield: [{ name: "Kavaron, Memorial World", counters: { charge: 12 } }, "Bear Cub", ...lands("Mountain", 3)] },
     });
@@ -1103,7 +1103,7 @@ describe("Edge of Eternities, lot K8 : mythiques", () => {
     expect(chars(s, cub).power).toBe(2);
   });
 
-  it("Ouroboroid : au début de votre combat, X marqueurs sur chacune de vos créatures (X = sa force)", () => {
+  it("Ouroboroid: at the beginning of your combat, X counters on each of your creatures (X = its power)", () => {
     let s = scenario({ p1: { battlefield: ["Ouroboroid", "Bear Cub"] }, p2: { battlefield: ["Serra Angel"] } });
     const ouro = idOf(s, "p1", "battlefield", "Ouroboroid");
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -1111,13 +1111,13 @@ describe("Edge of Eternities, lot K8 : mythiques", () => {
     expect(s.objects[ouro]?.counters["+1/+1"]).toBe(1);
     expect(s.objects[cub]?.counters["+1/+1"]).toBe(1);
     expect(s.objects[idOf(s, "p2", "battlefield", "Serra Angel")]?.counters["+1/+1"] ?? 0).toBe(0);
-    // Au combat suivant, X = 2.
+    // On the following combat, X = 2.
     s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "declareAttackers" && x.turn.number > 3);
     expect(s.objects[ouro]?.counters["+1/+1"]).toBe(3);
     expect(s.objects[cub]?.counters["+1/+1"]).toBe(3);
   });
 
-  it("Sami, Wildcat Captain : double initiative, vigilance ; vos sorts coûtent {1} de moins par artefact", () => {
+  it("Sami, Wildcat Captain: double strike, vigilance; your spells cost {1} less per artifact", () => {
     const setup = (withSami: boolean) =>
       scenario({
         p1: {
@@ -1139,7 +1139,7 @@ describe("Edge of Eternities, lot K8 : mythiques", () => {
     expect(castable(t, "p1", idOf(t, "p1", "hand", "Serra Angel"))).toBe(false);
   });
 
-  it("Sothera, the Supervoid : une de vos créatures meurt, chaque adversaire exile une de ses créatures", () => {
+  it("Sothera, the Supervoid: one of your creatures dies, each opponent exiles one of their creatures", () => {
     let s = scenario({
       p1: { battlefield: ["Sothera, the Supervoid", "Bear Cub", "Llanowar Elves"] },
       p2: { battlefield: ["Serra Angel", "Bear Cub", "Llanowar Elves"] },
@@ -1150,20 +1150,20 @@ describe("Edge of Eternities, lot K8 : mythiques", () => {
       chooser = player;
       return pickNamed(cur, req, "Serra Angel");
     });
-    // L'adversaire choisit la créature qu'il exile.
+    // The opponent chooses the creature they exile.
     expect(chooser).toBe("p2");
     expect(idsOf(s, "p2", "battlefield", "Serra Angel")).toHaveLength(0);
     expect(exiled(s, "Serra Angel")).toHaveLength(1);
-    // Une créature qui meurt chez l'adversaire ne déclenche rien.
+    // A creature that dies on the opponent's side triggers nothing.
     destroy(s, idOf(s, "p2", "battlefield", "Llanowar Elves"));
     s = settle(s);
     expect(s.exile).toHaveLength(1);
-    // Chacun contrôle encore une créature : Sothera reste.
+    // Each controls a creature again: Sothera stays.
     s = advanceUntil(s, (x) => x.turn.active === "p2");
     expect(idsOf(s, "p1", "battlefield", "Sothera, the Supervoid")).toHaveLength(1);
   });
 
-  it("Sothera, the Supervoid : un joueur sans créature, sacrifiez-la et prenez une créature exilée avec deux marqueurs", () => {
+  it("Sothera, the Supervoid: a player with no creature, sacrifice it and take an exiled creature with two counters", () => {
     let s = scenario({
       p1: { battlefield: ["Sothera, the Supervoid", "Bear Cub"] },
       p2: { battlefield: ["Serra Angel", "Llanowar Elves"] },
@@ -1178,7 +1178,7 @@ describe("Edge of Eternities, lot K8 : mythiques", () => {
     expect(s.objects[angel]?.owner).toBe("p2");
   });
 
-  it("Susur Secundi, Void Altar : à 12+, {1}{B}, {T}, 2 PV, sacrifiez une créature : piochez autant que sa force", () => {
+  it("Susur Secundi, Void Altar: at 12+, {1}{B}, {T}, 2 life, sacrifice a creature: draw as many as its power", () => {
     let s = scenario({
       p1: {
         battlefield: [{ name: "Susur Secundi, Void Altar", counters: { charge: 12 } }, "Serra Angel", ...lands("Swamp", 2)],
@@ -1191,7 +1191,7 @@ describe("Edge of Eternities, lot K8 : mythiques", () => {
     expect(handSize(s, "p1")).toBe(4);
   });
 
-  it("Tannuk, Steadfast Second : vos autres créatures ont la célérité ; distorsion {2}{R} pour les artefacts et créatures rouges", () => {
+  it("Tannuk, Steadfast Second: your other creatures have haste; warp {2}{R} for red artifacts and creatures", () => {
     const s = scenario({
       p1: {
         battlefield: ["Tannuk, Steadfast Second", { name: "Bear Cub", sick: true }, ...lands("Mountain", 3)],
@@ -1210,7 +1210,7 @@ describe("Edge of Eternities, lot K8 : mythiques", () => {
     expect(t.battlefield.filter((id) => t.objects[id]?.tapped)).toHaveLength(3);
   });
 
-  it("Tezzeret, Cruel Captain : un loyauté par artefact arrivé ; 0 : dégage, un marqueur seulement sur une créature-artefact", () => {
+  it("Tezzeret, Cruel Captain: a loyalty counter per artifact that entered; 0: untap, a counter only on an artifact creature", () => {
     let s = scenario({
       p1: {
         battlefield: [
@@ -1236,7 +1236,7 @@ describe("Edge of Eternities, lot K8 : mythiques", () => {
     expect(u.objects[harvester]?.counters["+1/+1"]).toBe(1);
   });
 
-  it("Tezzeret, Cruel Captain : −3 cherche un artefact de VM 1 ou moins ; −7 : emblème, trois marqueurs et un Robot 0/0", () => {
+  it("Tezzeret, Cruel Captain: -3 searches for an artifact with MV 1 or less; -7: emblem, three counters and a 0/0 Robot", () => {
     let s = scenario({
       p1: {
         battlefield: [{ name: "Tezzeret, Cruel Captain", counters: { loyalty: 4 } }],
@@ -1257,7 +1257,7 @@ describe("Edge of Eternities, lot K8 : mythiques", () => {
     e = settle(activateNamed(e, idOf(e, "p1", "battlefield", "Tezzeret, Cruel Captain"), "Emblem"));
     expect(idsOf(e, "p1", "battlefield", "Tezzeret, Cruel Captain")).toHaveLength(0);
     const torpedo = idOf(e, "p1", "battlefield", "Thaumaton Torpedo");
-    // Le combat de ce tour-ci.
+    // This turn's combat.
     e = advanceUntil(e, (x) => x.turn.step === "declareAttackers");
     expect(e.objects[torpedo]?.counters["+1/+1"]).toBe(3);
     expect(chars(e, torpedo).types).toContain("Creature");
@@ -1265,11 +1265,11 @@ describe("Edge of Eternities, lot K8 : mythiques", () => {
     expect(chars(e, torpedo).power).toBe(3);
   });
 
-  it("The Endstone : piochez en jouant un terrain ou en lançant un sort ; à votre étape de fin, vos PV deviennent 10", () => {
+  it("The Endstone: draw when playing a land or casting a spell; at your end step, your life becomes 10", () => {
     let s = scenario({ p1: { life: 4, battlefield: ["The Endstone", "Island"], hand: ["Forest", "Opt"] } });
     s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Forest") });
     s = settle(s);
-    expect(handSize(s, "p1")).toBe(2); // Opt + la carte piochée
+    expect(handSize(s, "p1")).toBe(2); // Opt + the drawn card
     s = settle(cast(s, "p1", "Opt"));
     expect(handSize(s, "p1")).toBe(3); // + Endstone + Opt
     s = advanceUntil(s, (x) => x.turn.active === "p2");
@@ -1279,7 +1279,7 @@ describe("Edge of Eternities, lot K8 : mythiques", () => {
     expect(lifeOf(t, "p1")).toBe(10);
   });
 
-  it("The Endstone : la moitié de vos points de vie de départ, arrondie à l'unité supérieure (Commander : 20 ; 25 : 13)", () => {
+  it("The Endstone: half your starting life, rounded up (Commander: 20; 25: 13)", () => {
     const run = (starting: number) => {
       let s = scenario({ p1: { life: 3, battlefield: ["The Endstone"] } });
       (s.players.p1 as { startingLife: number }).startingLife = starting;
@@ -1290,7 +1290,7 @@ describe("Edge of Eternities, lot K8 : mythiques", () => {
     expect(run(25)).toBe(13);
   });
 
-  it("Uthros, Titanic Godcore : à 12+, {U}, {T} : {U} par artefact que vous contrôlez", () => {
+  it("Uthros, Titanic Godcore: at 12+, {U}, {T}: {U} per artifact you control", () => {
     let s = scenario({
       p1: {
         battlefield: [
@@ -1307,7 +1307,7 @@ describe("Edge of Eternities, lot K8 : mythiques", () => {
   });
 });
 
-/** Met une carte du cimetière en exil (préparation d'un test). */
+/** Puts a card from the graveyard into exile (test setup). */
 const graveyardToExile = (s: S, id: string) => {
   const o = s.objects[id];
   if (!o) throw new Error("objet introuvable");
@@ -1318,8 +1318,8 @@ const graveyardToExile = (s: S, id: string) => {
   s.version += 1;
 };
 
-describe("Edge of Eternities, lot K8 : rares (1)", () => {
-  it("Anticausal Vestige : en partant, piochez, puis vous pouvez mettre engagé un permanent de VM ≤ vos terrains", () => {
+describe("Edge of Eternities, lot K8: rares (1)", () => {
+  it("Anticausal Vestige: on leaving, draw, then you may put a permanent with MV <= your lands onto the battlefield tapped", () => {
     let s = scenario({
       p1: {
         battlefield: ["Anticausal Vestige", ...lands("Forest", 3)],
@@ -1338,7 +1338,7 @@ describe("Edge of Eternities, lot K8 : rares (1)", () => {
     expect(namesIn(s, s.players.p1?.hand).sort()).toEqual(["Opt", "Serra Angel", "Shock"]);
   });
 
-  it("Archenemy's Charm : exile une créature ; reprend une ou deux cartes de créature ; deux marqueurs et le lien de vie", () => {
+  it("Archenemy's Charm: exiles a creature; returns one or two creature cards; two counters and lifelink", () => {
     let s = scenario({
       p1: { battlefield: lands("Swamp", 3), hand: ["Archenemy's Charm"] },
       p2: { battlefield: ["Serra Angel"] },
@@ -1349,7 +1349,7 @@ describe("Edge of Eternities, lot K8 : rares (1)", () => {
     const r = scenario({
       p1: { battlefield: lands("Swamp", 3), hand: ["Archenemy's Charm"], graveyard: ["Bear Cub", "Serra Angel", "Shock"] },
     });
-    // Une ou deux cibles : zéro n'est pas permis, un éphémère non plus.
+    // One or two targets: zero is not allowed, nor is an instant.
     expect(() => cast(r, "p1", "Archenemy's Charm", { mode: 1, targets: { t: [] } })).toThrow();
     expect(() =>
       cast(r, "p1", "Archenemy's Charm", { mode: 1, targets: { t: [idOf(r, "p1", "graveyard", "Shock")] } }),
@@ -1370,7 +1370,7 @@ describe("Edge of Eternities, lot K8 : rares (1)", () => {
     expect(chars(c, cub).keywords).not.toContain("lifelink");
   });
 
-  it("Beyond the Quiet : exile toutes les créatures et tous les Vaisseaux, pas les autres permanents", () => {
+  it("Beyond the Quiet: exiles all creatures and all Spacecraft, not the other permanents", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Plains", 5), "Bear Cub", "Galvanizing Sawship"], hand: ["Beyond the Quiet"] },
       p2: { battlefield: ["Serra Angel", "Thaumaton Torpedo"] },
@@ -1381,7 +1381,7 @@ describe("Edge of Eternities, lot K8 : rares (1)", () => {
     expect(idsOf(s, "p1", "battlefield", "Plains")).toHaveLength(5);
   });
 
-  it("Chorale of the Void : la créature enchantée attaque, une créature du cimetière adverse arrive engagée et attaquante", () => {
+  it("Chorale of the Void: the enchanted creature attacks, a creature from the opposing graveyard enters tapped and attacking", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Swamp", 4), "Bear Cub"], hand: ["Chorale of the Void"], graveyard: ["Llanowar Elves"] },
       p2: { graveyard: ["Serra Angel"] },
@@ -1394,7 +1394,7 @@ describe("Edge of Eternities, lot K8 : rares (1)", () => {
       if (req.type === "pick") offered = req.options.map((id) => nameOf(cur, String(id)) ?? "");
       return undefined;
     });
-    // Seule la carte du cimetière adverse est une cible.
+    // Only the card in the opposing graveyard is a target.
     expect(offered).not.toContain("Llanowar Elves");
     const angel = idOf(s, "p1", "battlefield", "Serra Angel");
     expect(s.objects[angel]?.tapped).toBe(true);
@@ -1403,7 +1403,7 @@ describe("Edge of Eternities, lot K8 : rares (1)", () => {
     expect(lifeOf(s, "p2")).toBe(14);
   });
 
-  it("Chorale of the Void : vide — sacrifiée à votre étape de fin sauf si un permanent non-terrain est parti", () => {
+  it("Chorale of the Void: void - sacrificed at your end step unless a nonland permanent left", () => {
     const setup = () =>
       scenario({
         p1: { battlefield: [...lands("Swamp", 4), "Bear Cub"], hand: ["Chorale of the Void"] },
@@ -1419,7 +1419,7 @@ describe("Edge of Eternities, lot K8 : rares (1)", () => {
     expect(idsOf(t, "p1", "battlefield", "Chorale of the Void")).toHaveLength(1);
   });
 
-  it("Cosmogoyf : force égale au nombre de cartes que vous possédez en exil, endurance + 1", () => {
+  it("Cosmogoyf: power equal to the number of cards you own in exile, toughness + 1", () => {
     const s = scenario({
       p1: { battlefield: ["Cosmogoyf"], graveyard: ["Bear Cub", "Shock"] },
       p2: { graveyard: ["Serra Angel"] },
@@ -1430,7 +1430,7 @@ describe("Edge of Eternities, lot K8 : rares (1)", () => {
     expect([chars(s, goyf).power, chars(s, goyf).toughness]).toEqual([2, 3]);
   });
 
-  it("Emissary Escort : +X/+0, X étant la plus grande VM parmi vos autres artefacts", () => {
+  it("Emissary Escort: +X/+0, X being the greatest MV among your other artifacts", () => {
     const s = scenario({
       p1: { battlefield: ["Emissary Escort", "Thaumaton Torpedo", "Memorial Vault"] },
       p2: { battlefield: ["Extinguisher Battleship"] },
@@ -1441,7 +1441,7 @@ describe("Edge of Eternities, lot K8 : rares (1)", () => {
     expect(chars(t, idOf(t, "p1", "battlefield", "Emissary Escort")).power).toBe(0);
   });
 
-  it("Entropic Battlecruiser : à 1+, un adversaire qui défausse perd 3 PV ; à 8+, en attaquant, chaque adversaire défausse (ou perd 3 PV)", () => {
+  it("Entropic Battlecruiser: at 1+, an opponent who discards loses 3 life; at 8+, on attacking, each opponent discards (or loses 3 life)", () => {
     let s = scenario({
       p1: {
         battlefield: [{ name: "Entropic Battlecruiser", counters: { charge: 1 } }, "Swamp", "Swamp"],
@@ -1456,7 +1456,7 @@ describe("Edge of Eternities, lot K8 : rares (1)", () => {
     expect(lifeOf(a, "p2")).toBe(17);
   });
 
-  it("Entropic Battlecruiser : créature à 8 marqueurs, avec le vol et le contact mortel", () => {
+  it("Entropic Battlecruiser: creature at 8 counters, with flying and deathtouch", () => {
     const low = scenario({ p1: { battlefield: [{ name: "Entropic Battlecruiser", counters: { charge: 7 } }] } });
     expect(chars(low, idOf(low, "p1", "battlefield", "Entropic Battlecruiser")).types).not.toContain("Creature");
     const s = scenario({ p1: { battlefield: [{ name: "Entropic Battlecruiser", counters: { charge: 8 } }] } });
@@ -1465,7 +1465,7 @@ describe("Edge of Eternities, lot K8 : rares (1)", () => {
     expect(chars(s, ship).keywords).toEqual(expect.arrayContaining(["flying", "deathtouch"]));
   });
 
-  it("Extinguisher Battleship : détruit un permanent non-créature, puis 4 blessures à chaque créature", () => {
+  it("Extinguisher Battleship: destroys a noncreature permanent, then 4 damage to each creature", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Plains", 8), "Bear Cub"], hand: ["Extinguisher Battleship"] },
       p2: { battlefield: ["Memorial Vault", "Serra Angel", { name: "Emissary Escort" }] },
@@ -1481,9 +1481,9 @@ describe("Edge of Eternities, lot K8 : rares (1)", () => {
     expect(idsOf(s, "p2", "battlefield", "Memorial Vault")).toHaveLength(0);
     expect(idsOf(s, "p2", "battlefield", "Serra Angel")).toHaveLength(0);
     expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(0);
-    // Pas encore une créature : le Vaisseau n'est pas blessé.
+    // Not yet a creature: the Spacecraft is not dealt damage.
     expect(idsOf(s, "p1", "battlefield", "Extinguisher Battleship")).toHaveLength(1);
-    // L'Escorte (0/4 + 0, plus d'autre artefact) meurt aussi.
+    // The Escort (0/4 + 0, no other artifact) dies too.
     expect(idsOf(s, "p2", "battlefield", "Emissary Escort")).toHaveLength(0);
     const big = scenario({ p1: { battlefield: [{ name: "Extinguisher Battleship", counters: { charge: 5 } }] } });
     const ship = idOf(big, "p1", "battlefield", "Extinguisher Battleship");
@@ -1491,7 +1491,7 @@ describe("Edge of Eternities, lot K8 : rares (1)", () => {
     expect(chars(big, ship).keywords).toEqual(expect.arrayContaining(["flying", "trample"]));
   });
 
-  it("Frenzied Baloth : piétinement, célérité ; ni lui ni vos sorts de créature ne peuvent être contrecarrés", () => {
+  it("Frenzied Baloth: trample, haste; neither it nor your creature spells can be countered", () => {
     let s = scenario({
       p1: { battlefield: lands("Forest", 4), hand: ["Frenzied Baloth", "Bear Cub"] },
       p2: { battlefield: lands("Island", 6), hand: ["Unravel", "Unravel"] },
@@ -1510,7 +1510,7 @@ describe("Edge of Eternities, lot K8 : rares (1)", () => {
     expect(idsOf(s, "p2", "graveyard", "Unravel")).toHaveLength(2);
   });
 
-  it("Genemorph Imago : vol ; landfall, une créature ciblée a une F/E de base 3/3 (6/6 avec six terrains) jusqu'à la fin du tour", () => {
+  it("Genemorph Imago: flying; landfall, a targeted creature has base P/T 3/3 (6/6 with six lands) until end of turn", () => {
     let s = scenario({
       p1: { battlefield: ["Genemorph Imago", "Llanowar Elves", ...lands("Forest", 4)], hand: ["Forest", "Island"] },
     });
@@ -1525,7 +1525,7 @@ describe("Edge of Eternities, lot K8 : rares (1)", () => {
     expect([chars(s, elves).power, chars(s, elves).toughness]).toEqual([6, 6]);
   });
 
-  it("Infinite Guideline Station : un Robot engagé par permanent multicolore ; à 12+, en attaquant, une carte par permanent multicolore", () => {
+  it("Infinite Guideline Station: a tapped Robot per multicolored permanent; at 12+, on attacking, a card per multicolored permanent", () => {
     let s = scenario({
       p1: {
         battlefield: ["Plains", "Island", "Swamp", "Mountain", "Forest", "Station Monitor", "Bear Cub"],
@@ -1534,7 +1534,7 @@ describe("Edge of Eternities, lot K8 : rares (1)", () => {
     });
     s = settle(cast(s, "p1", "Infinite Guideline Station"));
     const robots = tokensOf(s, "p1", "Robot");
-    expect(robots).toHaveLength(2); // la Station elle-même et Station Monitor
+    expect(robots).toHaveLength(2); // the Station itself and Station Monitor
     expect(robots.every((id) => s.objects[id]?.tapped)).toBe(true);
     let a = scenario({
       p1: { battlefield: [{ name: "Infinite Guideline Station", counters: { charge: 12 } }, "Station Monitor", "Bear Cub"] },
@@ -1545,7 +1545,7 @@ describe("Edge of Eternities, lot K8 : rares (1)", () => {
     expect(handSize(a, "p1")).toBe(2);
   });
 
-  it("Lightstall Inquisitor : chaque adversaire exile une carte de sa main, jouable en coûtant {1} de plus (terrain engagé)", () => {
+  it("Lightstall Inquisitor: each opponent exiles a card from their hand, playable by paying {1} more (tapped land)", () => {
     let s = scenario({
       p1: { battlefield: ["Plains"], hand: ["Lightstall Inquisitor"] },
       p2: { battlefield: lands("Forest", 3), hand: ["Bear Cub"] },
@@ -1557,7 +1557,7 @@ describe("Edge of Eternities, lot K8 : rares (1)", () => {
     s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
     expect(castable(s, "p2", cub)).toBe(true);
     s = act(s, "p2", { type: "cast", card: cub });
-    // {1}{G} + {1} : trois Forêts engagées.
+    // {1}{G} + {1}: three tapped Forests.
     expect(idsOf(s, "p2", "battlefield", "Forest").filter((id) => s.objects[id]?.tapped)).toHaveLength(3);
     let l = scenario({ p1: { battlefield: ["Plains"], hand: ["Lightstall Inquisitor"] }, p2: { hand: ["Forest"] } });
     l = settle(cast(l, "p1", "Lightstall Inquisitor"));
@@ -1567,7 +1567,7 @@ describe("Edge of Eternities, lot K8 : rares (1)", () => {
     expect(l.objects[idOf(l, "p2", "battlefield", "Forest")]?.tapped).toBe(true);
   });
 
-  it("Mm'menon, the Right Hand : sorts d'artefact du dessus de la bibliothèque ; {U} de vos artefacts pour un sort hors de la main", () => {
+  it("Mm'menon, the Right Hand: artifact spells from the top of the library; {U} from your artifacts for a spell from outside the hand", () => {
     const s = scenario({
       p1: {
         battlefield: ["Mm'menon, the Right Hand", "Memorial Vault"],
@@ -1577,17 +1577,17 @@ describe("Edge of Eternities, lot K8 : rares (1)", () => {
     });
     expect(chars(s, idOf(s, "p1", "battlefield", "Mm'menon, the Right Hand")).keywords).toContain("flying");
     const top = s.players.p1?.library[0] as string;
-    // L'artefact du dessus se lance avec le mana de Memorial Vault ; Opt (de la main) non.
+    // The artifact on top is cast with Memorial Vault's mana; Opt (from hand) is not.
     expect(castable(s, "p1", top)).toBe(true);
     expect(castable(s, "p1", idOf(s, "p1", "hand", "Opt"))).toBe(false);
     let t = act(s, "p1", { type: "cast", card: top });
     t = settle(t);
     expect(idsOf(t, "p1", "battlefield", "Thaumaton Torpedo")).toHaveLength(1);
-    // Bear Cub (pas un artefact) au-dessus : pas lançable.
+    // Bear Cub (not an artifact) on top: not castable.
     expect(castable(t, "p1", t.players.p1?.library[0] as string)).toBe(false);
   });
 
-  it("Pain for All : en arrivant, la créature enchantée inflige sa force à une autre cible ; blessée, autant à chaque adversaire", () => {
+  it("Pain for All: on entering, the enchanted creature deals its power to another target; when dealt damage, as much to each opponent", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Mountain", 3), "Serra Angel"], hand: ["Pain for All"] },
       p2: { battlefield: ["Mountain"], hand: ["Shock"] },
@@ -1606,7 +1606,7 @@ describe("Edge of Eternities, lot K8 : rares (1)", () => {
     expect(lifeOf(s, "p2")).toBe(14);
   });
 
-  it("Pinnacle Emissary : un Drone 1/1 volant à chaque sort d'artefact que vous lancez", () => {
+  it("Pinnacle Emissary: a 1/1 flying Drone for each artifact spell you cast", () => {
     let s = scenario({ p1: { battlefield: ["Pinnacle Emissary", ...lands("Island", 2)], hand: ["Thaumaton Torpedo", "Opt"] } });
     s = settle(cast(s, "p1", "Opt"));
     expect(tokensOf(s, "p1", "Drone")).toHaveLength(0);
@@ -1616,7 +1616,7 @@ describe("Edge of Eternities, lot K8 : rares (1)", () => {
     expect(chars(s, drones[0] as string).keywords).toContain("flying");
   });
 
-  it("Possibility Technician : un Kavu arrive, exilez la carte du dessus, jouable tant que vous contrôlez un Kavu", () => {
+  it("Possibility Technician: a Kavu enters, exile the top card, playable as long as you control a Kavu", () => {
     let s = scenario({
       p1: {
         battlefield: lands("Mountain", 8),
@@ -1630,7 +1630,7 @@ describe("Edge of Eternities, lot K8 : rares (1)", () => {
     expect(castable(s, "p1", shock)).toBe(true);
     s = settle(cast(s, "p1", "Memorial Team Leader"));
     expect(exiled(s, "Opt")).toHaveLength(1);
-    // Une créature non-Kavu ne déclenche rien.
+    // A non-Kavu creature triggers nothing.
     s = settle(cast(s, "p1", "Rust Harvester"));
     expect(exiled(s, "Island")).toHaveLength(0);
     destroy(s, idOf(s, "p1", "battlefield", "Possibility Technician"));
@@ -1640,8 +1640,8 @@ describe("Edge of Eternities, lot K8 : rares (1)", () => {
   });
 });
 
-describe("Edge of Eternities, lot K8 : rares (2)", () => {
-  it("Ragost, Deft Gastronaut : vos artefacts sont des Nourritures ; sacrifiez-en une : 3 blessures ; dégagé après un gain de PV", () => {
+describe("Edge of Eternities, lot K8: rares (2)", () => {
+  it("Ragost, Deft Gastronaut: your artifacts are Foods; sacrifice one: 3 damage; untaps after a life gain", () => {
     let s = scenario({
       p1: { battlefield: ["Ragost, Deft Gastronaut", "Thaumaton Torpedo", "Memorial Vault", ...lands("Plains", 3)] },
     });
@@ -1653,7 +1653,7 @@ describe("Edge of Eternities, lot K8 : rares (2)", () => {
     s = settle(activateNamed(s, ragost, "3 damage", { sacrifice: [idOf(s, "p1", "battlefield", "Memorial Vault")] }));
     expect(lifeOf(s, "p2")).toBe(17);
     expect(s.objects[ragost]?.tapped).toBe(true);
-    // Vous avez gagné des PV ce tour-ci : dégagé à l'étape de fin.
+    // You gained life this turn: untaps at the end step.
     s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
     expect(s.objects[ragost]?.tapped).toBe(false);
     let t = scenario({ p1: { battlefield: ["Ragost, Deft Gastronaut", "Memorial Vault", "Plains"] } });
@@ -1663,7 +1663,7 @@ describe("Edge of Eternities, lot K8 : rares (2)", () => {
     expect(t.objects[r2]?.tapped).toBe(true);
   });
 
-  it("Requiem Monolith : la créature ciblée, blessée, fait piocher et perdre autant à son contrôleur ; 1 blessure s'il le veut", () => {
+  it("Requiem Monolith: the targeted creature, damaged, makes its controller draw and lose that much; 1 damage if they want", () => {
     let s = scenario({
       p1: { battlefield: ["Requiem Monolith", "Serra Angel"] },
       p2: { battlefield: ["Mountain"], hand: ["Shock"] },
@@ -1680,7 +1680,7 @@ describe("Edge of Eternities, lot K8 : rares (2)", () => {
     s = settle(cast(s, "p2", "Shock", { targets: { t: [angel] } }));
     expect(handSize(s, "p1")).toBe(3);
     expect(lifeOf(s, "p1")).toBe(17);
-    // Sur une créature adverse : son contrôleur choisit, et refuse.
+    // On an opposing creature: its controller chooses, and declines.
     let o = scenario({ p1: { battlefield: ["Requiem Monolith"] }, p2: { battlefield: ["Serra Angel"] } });
     let asked: PlayerId | undefined;
     o = settle(
@@ -1697,7 +1697,7 @@ describe("Edge of Eternities, lot K8 : rares (2)", () => {
     expect(handSize(o, "p2")).toBe(0);
   });
 
-  it("Rust Harvester : menace ; {2}, {T}, exilez un artefact du cimetière : marqueur +1/+1, puis blessures égales à sa force", () => {
+  it("Rust Harvester: menace; {2}, {T}, exile an artifact from the graveyard: +1/+1 counter, then damage equal to its power", () => {
     let s = scenario({
       p1: { battlefield: ["Rust Harvester", ...lands("Mountain", 2)], graveyard: ["Thaumaton Torpedo", "Bear Cub"] },
     });
@@ -1711,7 +1711,7 @@ describe("Edge of Eternities, lot K8 : rares (2)", () => {
     expect(hasActivation(t, idOf(t, "p1", "battlefield", "Rust Harvester"), "+1/+1 counter")).toBe(false);
   });
 
-  it("Singularity Rupture : détruit toutes les créatures, puis les joueurs ciblés meulent la moitié de leur bibliothèque (arrondie à l'inférieur)", () => {
+  it("Singularity Rupture: destroys all creatures, then the targeted players mill half their library (rounded down)", () => {
     let s = scenario({
       p1: {
         battlefield: ["Island", ...lands("Swamp", 6), "Bear Cub"],
@@ -1727,7 +1727,7 @@ describe("Edge of Eternities, lot K8 : rares (2)", () => {
     expect(s.players.p1?.library).toHaveLength(6);
   });
 
-  it("Sledge-Class Seedship : à 7+, en attaquant, vous pouvez mettre une créature de votre main sur le champ de bataille", () => {
+  it("Sledge-Class Seedship: at 7+, on attacking, you may put a creature from your hand onto the battlefield", () => {
     let s = scenario({
       p1: { battlefield: [{ name: "Sledge-Class Seedship", counters: { charge: 7 } }], hand: ["Serra Angel", "Shock"] },
     });
@@ -1737,7 +1737,7 @@ describe("Edge of Eternities, lot K8 : rares (2)", () => {
     expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
   });
 
-  it("Sledge-Class Seedship : créature volante à partir de 7 marqueurs", () => {
+  it("Sledge-Class Seedship: flying creature from 7 counters", () => {
     const low = scenario({ p1: { battlefield: [{ name: "Sledge-Class Seedship", counters: { charge: 6 } }] } });
     expect(chars(low, idOf(low, "p1", "battlefield", "Sledge-Class Seedship")).types).not.toContain("Creature");
     const s = scenario({ p1: { battlefield: [{ name: "Sledge-Class Seedship", counters: { charge: 7 } }] } });
@@ -1746,7 +1746,7 @@ describe("Edge of Eternities, lot K8 : rares (2)", () => {
     expect(chars(s, ship).keywords).toContain("flying");
   });
 
-  it("Space-Time Anomaly : le joueur ciblé meule autant de cartes que vos points de vie", () => {
+  it("Space-Time Anomaly: the targeted player mills as many cards as your life total", () => {
     let s = scenario({
       p1: { life: 5, battlefield: ["Plains", "Island", "Plains", "Island"], hand: ["Space-Time Anomaly"] },
       p2: { library: lands("Forest", 9) },
@@ -1756,20 +1756,20 @@ describe("Edge of Eternities, lot K8 : rares (2)", () => {
     expect(s.players.p2?.library).toHaveLength(4);
   });
 
-  it("Starfield Vocalist : une capacité déclenchée par l'arrivée d'un permanent se déclenche une fois de plus, pas les autres", () => {
+  it("Starfield Vocalist: an ability triggered by a permanent entering triggers one more time, not the others", () => {
     let s = scenario({
       p1: {
         battlefield: ["Starfield Vocalist", "Weftstalker Ardent", "Pinnacle Emissary", ...lands("Mountain", 3)],
         hand: ["Rust Harvester", "Shock"],
       },
     });
-    // Rust Harvester : un sort d'artefact (Emissary, pas doublé) puis une arrivée (Ardent, doublé).
+    // Rust Harvester: an artifact spell (Emissary, not doubled) then an entering permanent (Ardent, doubled).
     s = settle(cast(s, "p1", "Rust Harvester"));
     expect(lifeOf(s, "p2")).toBe(16); // Rust Harvester ×2, Drone ×2
     expect(tokensOf(s, "p1", "Drone")).toHaveLength(1);
   });
 
-  it("Starwinder : une de vos créatures inflige des blessures de combat à un joueur, vous pouvez piocher autant de cartes", () => {
+  it("Starwinder: one of your creatures deals combat damage to a player, you may draw that many cards", () => {
     const setup = () => scenario({ p1: { battlefield: ["Starwinder", "Serra Angel"] } });
     let s = setup();
     s = attack(s, [idOf(s, "p1", "battlefield", "Serra Angel")]);
@@ -1781,7 +1781,7 @@ describe("Edge of Eternities, lot K8 : rares (2)", () => {
     expect(handSize(t, "p1")).toBe(0);
   });
 
-  it("Sunstar Chaplain : à votre étape de fin, avec deux créatures engagées, un marqueur sur une de vos créatures", () => {
+  it("Sunstar Chaplain: at your end step, with two tapped creatures, a counter on one of your creatures", () => {
     const setup = (tapped: number) =>
       scenario({
         p1: {
@@ -1800,7 +1800,7 @@ describe("Edge of Eternities, lot K8 : rares (2)", () => {
     expect(t.battlefield.reduce((n, id) => n + (t.objects[id]?.counters["+1/+1"] ?? 0), 0)).toBe(0);
   });
 
-  it("Sunstar Chaplain : {2}, retirez un marqueur +1/+1 d'une de vos créatures : engagez un artefact ou une créature", () => {
+  it("Sunstar Chaplain: {2}, remove a +1/+1 counter from one of your creatures: tap an artifact or creature", () => {
     let s = scenario({
       p1: { battlefield: ["Sunstar Chaplain", { name: "Bear Cub", counters: { "+1/+1": 1 } }, ...lands("Plains", 2)] },
       p2: { battlefield: ["Serra Angel"] },
@@ -1816,7 +1816,7 @@ describe("Edge of Eternities, lot K8 : rares (2)", () => {
     expect(hasActivation(none, idOf(none, "p1", "battlefield", "Sunstar Chaplain"), "Tap")).toBe(false);
   });
 
-  it("Synthesizer Labship : à 2+, au début de votre combat, un autre de vos artefacts devient une créature 2/2 volante", () => {
+  it("Synthesizer Labship: at 2+, at the beginning of your combat, another of your artifacts becomes a 2/2 flying creature", () => {
     let s = scenario({ p1: { battlefield: [{ name: "Synthesizer Labship", counters: { charge: 2 } }, "Thaumaton Torpedo"] } });
     const torpedo = idOf(s, "p1", "battlefield", "Thaumaton Torpedo");
     s = passAccepting(s, (x) => x.turn.step === "declareAttackers" || x.pending?.kind === "declareAttackers");
@@ -1827,7 +1827,7 @@ describe("Edge of Eternities, lot K8 : rares (2)", () => {
     expect(chars(s, torpedo).types).not.toContain("Creature");
   });
 
-  it("Synthesizer Labship : créature avec le vol et la vigilance à partir de 9 marqueurs", () => {
+  it("Synthesizer Labship: creature with flying and vigilance from 9 counters", () => {
     const low = scenario({ p1: { battlefield: [{ name: "Synthesizer Labship", counters: { charge: 8 } }] } });
     expect(chars(low, idOf(low, "p1", "battlefield", "Synthesizer Labship")).types).not.toContain("Creature");
     const s = scenario({ p1: { battlefield: [{ name: "Synthesizer Labship", counters: { charge: 9 } }] } });
@@ -1836,7 +1836,7 @@ describe("Edge of Eternities, lot K8 : rares (2)", () => {
     expect(chars(s, ship).keywords).toEqual(expect.arrayContaining(["flying", "vigilance"]));
   });
 
-  it("The Seriema : cherche une créature légendaire ; à 7+, vos autres créatures légendaires engagées sont indestructibles", () => {
+  it("The Seriema: searches for a legendary creature; at 7+, your other tapped legendary creatures are indestructible", () => {
     let s = scenario({
       p1: {
         battlefield: lands("Plains", 3),
@@ -1871,7 +1871,7 @@ describe("Edge of Eternities, lot K8 : rares (2)", () => {
     expect(chars(u, idOf(u, "p1", "battlefield", "Tannuk, Steadfast Second")).keywords).not.toContain("indestructible");
   });
 
-  it("Thrumming Hivepool : affinité pour les Slivers ; vos Slivers ont la double initiative et la célérité ; deux Slivers à l'entretien", () => {
+  it("Thrumming Hivepool: affinity for Slivers; your Slivers have double strike and haste; two Slivers at upkeep", () => {
     let s = scenario({ p1: { battlefield: ["Thrumming Hivepool"] } });
     s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number > 3);
     const slivers = tokensOf(s, "p1", "Sliver");
@@ -1885,7 +1885,7 @@ describe("Edge of Eternities, lot K8 : rares (2)", () => {
     expect(castable(two, "p1", idOf(two, "p1", "hand", "Thrumming Hivepool"))).toBe(true);
   });
 
-  it("Warmaker Gunship : en arrivant, blessures égales à vos artefacts à une créature adverse ; créature volante à 6+", () => {
+  it("Warmaker Gunship: on entering, damage equal to your artifacts to an opposing creature; flying creature at 6+", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Mountain", 3), "Thaumaton Torpedo"], hand: ["Warmaker Gunship"] },
       p2: { battlefield: ["Bear Cub", "Serra Angel"] },
@@ -1904,19 +1904,19 @@ describe("Edge of Eternities, lot K8 : rares (2)", () => {
     expect(chars(big, ship).keywords).toContain("flying");
   });
 
-  it("Weapons Manufacturing : un artefact non-jeton arrive, un jeton Munitions (2 blessures en partant)", () => {
+  it("Weapons Manufacturing: a nontoken artifact enters, a Munitions token (2 damage on leaving)", () => {
     let s = scenario({ p1: { battlefield: ["Weapons Manufacturing", "Plains"], hand: ["Thaumaton Torpedo"] } });
     s = settle(cast(s, "p1", "Thaumaton Torpedo"));
     const [mun] = tokensOf(s, "p1", "Munitions");
     expect(mun).toBeDefined();
-    // Un jeton d'artefact (les Munitions elles-mêmes) ne déclenche rien.
+    // An artifact token (the Munitions themselves) triggers nothing.
     expect(tokensOf(s, "p1", "Munitions")).toHaveLength(1);
     destroy(s, mun as string);
     s = settle(s, (req) => (req.type === "pick" && req.options.includes("p2") ? ["p2"] : undefined));
     expect(lifeOf(s, "p2")).toBe(18);
   });
 
-  it("Xu-Ifit, Osteoharmonist : {T} : une créature de votre cimetière revient, Squelette sans capacité (rituel)", () => {
+  it("Xu-Ifit, Osteoharmonist: {T}: a creature in your graveyard returns, a Skeleton without abilities (sorcery speed)", () => {
     let s = scenario({
       p1: { battlefield: ["Xu-Ifit, Osteoharmonist"], graveyard: ["Serra Angel"] },
       p2: { graveyard: ["Bear Cub"] },
@@ -1931,8 +1931,8 @@ describe("Edge of Eternities, lot K8 : rares (2)", () => {
   });
 });
 
-describe("Edge of Eternities, lot K8 : peu communes (1)", () => {
-  it("All-Fates Scroll : mana de n'importe quelle couleur ; {7}, {T}, sacrifice : une carte par nom de terrain différent", () => {
+describe("Edge of Eternities, lot K8: uncommons (1)", () => {
+  it("All-Fates Scroll: mana of any color; {7}, {T}, sacrifice: a card per different land name", () => {
     let s = scenario({
       p1: { battlefield: ["All-Fates Scroll", ...lands("Plains", 4), ...lands("Island", 2), ...lands("Forest", 2)] },
     });
@@ -1944,7 +1944,7 @@ describe("Edge of Eternities, lot K8 : peu communes (1)", () => {
     expect(idsOf(s, "p1", "battlefield", "All-Fates Scroll")).toHaveLength(0);
   });
 
-  it("All-Fates Stalker : exile jusqu'à une créature non-Assassin jusqu'à son départ (distorsion : retour à l'étape de fin)", () => {
+  it("All-Fates Stalker: exiles up to one non-Assassin creature until it leaves (warp: returns at the end step)", () => {
     let s = scenario({
       p1: { battlefield: lands("Plains", 2), hand: ["All-Fates Stalker"] },
       p2: { battlefield: ["Serra Angel", "All-Fates Stalker"] },
@@ -1961,7 +1961,7 @@ describe("Edge of Eternities, lot K8 : peu communes (1)", () => {
     expect(idsOf(s, "p2", "battlefield", "Serra Angel")).toHaveLength(1);
   });
 
-  it("Alpharael, Dreaming Acolyte : piochez deux cartes, puis défaussez-en deux, ou une seule carte d'artefact", () => {
+  it("Alpharael, Dreaming Acolyte: draw two cards, then discard two, or a single artifact card", () => {
     const setup = (library: string[]) =>
       scenario({ p1: { battlefield: ["Island", "Swamp", "Plains"], hand: ["Alpharael, Dreaming Acolyte", "Forest"], library } });
     const s = settle(
@@ -1973,14 +1973,14 @@ describe("Edge of Eternities, lot K8 : peu communes (1)", () => {
     let t = settle(cast(setup(["Opt", "Bear Cub", ...lands("Island", 3)]), "p1", "Alpharael, Dreaming Acolyte"));
     expect(t.players.p1?.graveyard).toHaveLength(2);
     expect(handSize(t, "p1")).toBe(1);
-    // Contact mortel pendant votre tour seulement.
+    // Deathtouch during your turn only.
     const alpha = idOf(t, "p1", "battlefield", "Alpharael, Dreaming Acolyte");
     expect(chars(t, alpha).keywords).toContain("deathtouch");
     t = advanceUntil(t, (x) => x.turn.active === "p2");
     expect(chars(t, alpha).keywords).not.toContain("deathtouch");
   });
 
-  it("Atmospheric Greenhouse : un marqueur +1/+1 sur chacune de vos créatures ; créature volante et piétinement à 8+", () => {
+  it("Atmospheric Greenhouse: a +1/+1 counter on each of your creatures; flying and trample creature at 8+", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Forest", 5), "Bear Cub", "Llanowar Elves"], hand: ["Atmospheric Greenhouse"] },
       p2: { battlefield: ["Serra Angel"] },
@@ -1995,7 +1995,7 @@ describe("Edge of Eternities, lot K8 : peu communes (1)", () => {
     expect(chars(big, ship).keywords).toEqual(expect.arrayContaining(["flying", "trample"]));
   });
 
-  it("Atomic Microsizer : +1/+0 ; la créature équipée attaque, une créature ciblée devient 1/1 de base et imblocable", () => {
+  it("Atomic Microsizer: +1/+0; the equipped creature attacks, a targeted creature becomes a base 1/1 and unblockable", () => {
     let s = scenario({
       p1: { battlefield: ["Atomic Microsizer", "Serra Angel", ...lands("Island", 2)] },
       p2: { battlefield: ["Bear Cub"] },
@@ -2011,7 +2011,7 @@ describe("Edge of Eternities, lot K8 : peu communes (1)", () => {
     expect([chars(s, angel).power, chars(s, angel).toughness]).toEqual([5, 4]);
   });
 
-  it("Biomechan Engineer : un Lander en arrivant ; {8} : piochez deux cartes et un Robot 2/2", () => {
+  it("Biomechan Engineer: a Lander on entering; {8}: draw two cards and a 2/2 Robot", () => {
     let s = scenario({ p1: { battlefield: [...lands("Island", 9), "Forest"], hand: ["Biomechan Engineer"] } });
     s = settle(cast(s, "p1", "Biomechan Engineer"));
     expect(tokensOf(s, "p1", "Lander")).toHaveLength(1);
@@ -2020,7 +2020,7 @@ describe("Edge of Eternities, lot K8 : peu communes (1)", () => {
     expect(tokensOf(s, "p1", "Robot")).toHaveLength(1);
   });
 
-  it("Broodguard Elite : arrive avec X marqueurs ; en partant, ses marqueurs vont sur une de vos créatures (distorsion {X}{G})", () => {
+  it("Broodguard Elite: enters with X counters; on leaving, its counters go on one of your creatures (warp {X}{G})", () => {
     let s = scenario({ p1: { battlefield: [...lands("Forest", 4), "Bear Cub"], hand: ["Broodguard Elite"] } });
     s = settle(cast(s, "p1", "Broodguard Elite", { x: 2 }));
     const elite = idOf(s, "p1", "battlefield", "Broodguard Elite");
@@ -2035,7 +2035,7 @@ describe("Edge of Eternities, lot K8 : peu communes (1)", () => {
     expect(w.objects[idOf(w, "p1", "battlefield", "Bear Cub")]?.counters["+1/+1"]).toBe(3);
   });
 
-  it("Bygone Colossus : 9/9 lancé pour sa distorsion {3}", () => {
+  it("Bygone Colossus: 9/9 cast for its warp {3}", () => {
     let s = scenario({ p1: { battlefield: lands("Plains", 3), hand: ["Bygone Colossus"] } });
     s = settle(cast(s, "p1", "Bygone Colossus", { warp: true }));
     const c = idOf(s, "p1", "battlefield", "Bygone Colossus");
@@ -2043,7 +2043,7 @@ describe("Edge of Eternities, lot K8 : peu communes (1)", () => {
     expect(s.objects[c]?.cast?.via).toBe("warp");
   });
 
-  it("Cerebral Download : surveillance X (vos artefacts), puis piochez trois cartes", () => {
+  it("Cerebral Download: surveil X (your artifacts), then draw three cards", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Island", 5), "Thaumaton Torpedo", "Memorial Vault"], hand: ["Cerebral Download"] },
     });
@@ -2056,11 +2056,11 @@ describe("Edge of Eternities, lot K8 : peu communes (1)", () => {
       return undefined;
     });
     expect(seen).toBe(2);
-    expect(s.players.p1?.graveyard).toHaveLength(3); // deux cartes surveillées et le sort
+    expect(s.players.p1?.graveyard).toHaveLength(3); // two surveilled cards and the spell
     expect(handSize(s, "p1")).toBe(3);
   });
 
-  it("Close Encounter : coût additionnel, une créature que vous contrôlez ou une carte de créature distordue que vous possédez en exil", () => {
+  it("Close Encounter: additional cost, a creature you control or a warped creature card you own in exile", () => {
     const s = scenario({
       p1: {
         battlefield: [...lands("Forest", 2), "Bear Cub", "Serra Angel"],
@@ -2071,13 +2071,13 @@ describe("Edge of Eternities, lot K8 : peu communes (1)", () => {
     });
     const card = idOf(s, "p1", "hand", "Close Encounter");
     const angel = idOf(s, "p2", "battlefield", "Serra Angel");
-    // Starwinder exilée par la distorsion ; Bygone Colossus exilée autrement (pas distordue).
+    // Starwinder exiled by warp; Bygone Colossus exiled otherwise (not warped).
     const warped = moveObject(s, idOf(s, "p1", "graveyard", "Starwinder"), "exile") as string;
     (s.objects[warped] as GameObject).exiledVia = { kind: "warp", turn: s.turn.number - 1 };
     moveObject(s, idOf(s, "p1", "graveyard", "Bygone Colossus"), "exile");
     const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === card);
     const pick = opt?.type === "cast" ? opt.picks?.find((p) => p.slot === "behold") : undefined;
-    // Ni la carte de la main, ni la carte exilée sans distorsion ; la créature choisie n'est pas une cible.
+    // Neither the card in hand, nor the exiled card without warp; the chosen creature is not a target.
     expect(namesIn(s, pick?.options).sort()).toEqual(["Bear Cub", "Serra Angel", "Starwinder"]);
     expect(opt?.type === "cast" ? opt.modes[0]?.targets.map((x) => x.id) : []).toEqual(["t"]);
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -2085,11 +2085,11 @@ describe("Edge of Eternities, lot K8 : peu communes (1)", () => {
     expect(t.objects[angel]?.damage).toBe(2);
     const u = settle(act(s, "p1", { type: "cast", card, targets: { t: [angel] }, picks: { behold: [warped] } }));
     expect(idsOf(u, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
-    // La carte choisie reste en exil.
+    // The chosen card stays in exile.
     expect(u.objects[warped]?.zone).toBe("exile");
   });
 
-  it("Codecracker Hound : regardez les deux cartes du dessus, une en main, l'autre au cimetière", () => {
+  it("Codecracker Hound: look at the top two cards, one into hand, the other into the graveyard", () => {
     let s = scenario({
       p1: { battlefield: lands("Island", 3), hand: ["Codecracker Hound"], library: ["Opt", "Bear Cub", "Forest"] },
     });
@@ -2099,7 +2099,7 @@ describe("Edge of Eternities, lot K8 : peu communes (1)", () => {
     expect(namesIn(s, s.players.p1?.library)).toEqual(["Forest"]);
   });
 
-  it("Cut Propulsion : la créature s'inflige sa force ; deux fois plus si elle a le vol", () => {
+  it("Cut Propulsion: the creature deals damage to itself equal to its power; twice as much if it has flying", () => {
     let s = scenario({
       p1: { battlefield: lands("Mountain", 6), hand: ["Cut Propulsion", "Cut Propulsion"] },
       p2: { battlefield: ["Eumidian Terrabotanist", "Mm'menon, Uthros Exile"] },
@@ -2112,7 +2112,7 @@ describe("Edge of Eternities, lot K8 : peu communes (1)", () => {
     expect(s.objects[flier]?.damage).toBe(2);
   });
 
-  it("Dawnstrike Vanguard : lien de vie ; avec deux créatures engagées, un marqueur sur chacune de vos autres créatures", () => {
+  it("Dawnstrike Vanguard: lifelink; with two tapped creatures, a counter on each of your other creatures", () => {
     const setup = (tapped: boolean) =>
       scenario({
         p1: {
@@ -2131,7 +2131,7 @@ describe("Edge of Eternities, lot K8 : peu communes (1)", () => {
     expect(t.objects[idOf(t, "p1", "battlefield", "Bear Cub")]?.counters["+1/+1"] ?? 0).toBe(0);
   });
 
-  it("Debris Field Crusher : 3 blessures à n'importe quelle cible ; à 8+, créature volante et {1}{R} : +2/+0", () => {
+  it("Debris Field Crusher: 3 damage to any target; at 8+, flying creature and {1}{R}: +2/+0", () => {
     let s = scenario({ p1: { battlefield: lands("Mountain", 5), hand: ["Debris Field Crusher"] } });
     s = settle(cast(s, "p1", "Debris Field Crusher"), (req) =>
       req.type === "pick" && req.options.includes("p2") ? ["p2"] : undefined,
@@ -2150,7 +2150,7 @@ describe("Edge of Eternities, lot K8 : peu communes (1)", () => {
     expect(chars(big, ship).power).toBe(3);
   });
 
-  it("Desculpting Blast : renvoie un permanent non-terrain ; s'il attaquait, un Drone 1/1", () => {
+  it("Desculpting Blast: bounces a nonland permanent; if it was attacking, a 1/1 Drone", () => {
     let s = scenario({
       p1: { battlefield: ["Bear Cub"] },
       p2: { battlefield: lands("Island", 4), hand: ["Desculpting Blast", "Desculpting Blast"] },
@@ -2171,7 +2171,7 @@ describe("Edge of Eternities, lot K8 : peu communes (1)", () => {
     expect(tokensOf(t, "p2", "Drone")).toHaveLength(0);
   });
 
-  it("Dual-Sun Adepts : double initiative ; {5} : vos créatures +1/+1 jusqu'à la fin du tour", () => {
+  it("Dual-Sun Adepts: double strike; {5}: your creatures get +1/+1 until end of turn", () => {
     let s = scenario({
       p1: { battlefield: ["Dual-Sun Adepts", "Bear Cub", ...lands("Plains", 5)] },
       p2: { battlefield: ["Serra Angel"] },
@@ -2184,7 +2184,7 @@ describe("Edge of Eternities, lot K8 : peu communes (1)", () => {
     expect(chars(s, idOf(s, "p2", "battlefield", "Serra Angel")).power).toBe(4);
   });
 
-  it("Dual-Sun Technique : double initiative ; piochez si la créature a un marqueur +1/+1", () => {
+  it("Dual-Sun Technique: double strike; draw if the creature has a +1/+1 counter", () => {
     const setup = (counters: number) =>
       scenario({
         p1: {
@@ -2202,8 +2202,8 @@ describe("Edge of Eternities, lot K8 : peu communes (1)", () => {
     expect(handSize(t, "p1")).toBe(0);
   });
 
-  it("Dubious Delicacy : flash, -3/-3 à jusqu'à une créature ; {2}, {T}, sacrifice : +3 PV ou un adversaire perd 3 PV", () => {
-    // Flash : lancée pendant le tour adverse.
+  it("Dubious Delicacy: flash, -3/-3 to up to one creature; {2}, {T}, sacrifice: +3 life or an opponent loses 3 life", () => {
+    // Flash: cast during the opponent's turn.
     let t = scenario({
       active: "p2",
       p1: { battlefield: lands("Swamp", 5), hand: ["Dubious Delicacy"] },
@@ -2223,8 +2223,8 @@ describe("Edge of Eternities, lot K8 : peu communes (1)", () => {
   });
 });
 
-describe("Edge of Eternities, lot K8 : peu communes (2)", () => {
-  it("Edge Rover : portée ; en mourant, chaque joueur crée un Lander", () => {
+describe("Edge of Eternities, lot K8: uncommons (2)", () => {
+  it("Edge Rover: reach; on dying, each player creates a Lander", () => {
     let s = scenario({ p1: { battlefield: ["Edge Rover"] } });
     const rover = idOf(s, "p1", "battlefield", "Edge Rover");
     expect(chars(s, rover).keywords).toContain("reach");
@@ -2234,7 +2234,7 @@ describe("Edge of Eternities, lot K8 : peu communes (2)", () => {
     expect(tokensOf(s, "p2", "Lander")).toHaveLength(1);
   });
 
-  it("Emergency Eject : détruit un permanent non-terrain ; son contrôleur crée un Lander", () => {
+  it("Emergency Eject: destroys a nonland permanent; its controller creates a Lander", () => {
     let s = scenario({
       p1: { battlefield: lands("Plains", 3), hand: ["Emergency Eject"] },
       p2: { battlefield: ["Serra Angel", "Forest"] },
@@ -2246,13 +2246,13 @@ describe("Edge of Eternities, lot K8 : peu communes (2)", () => {
     expect(tokensOf(s, "p1", "Lander")).toHaveLength(0);
   });
 
-  it("Eumidian Terrabotanist : chaque terrain qui arrive sous votre contrôle, +1 PV", () => {
+  it("Eumidian Terrabotanist: each land that enters under your control, +1 life", () => {
     let s = scenario({ p1: { battlefield: ["Eumidian Terrabotanist"], hand: ["Forest"] } });
     s = settle(act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Forest") }));
     expect(lifeOf(s, "p1")).toBe(21);
   });
 
-  it("Eusocial Engineering : landfall, un Robot 2/2 ; distorsion {1}{G}", () => {
+  it("Eusocial Engineering: landfall, a 2/2 Robot; warp {1}{G}", () => {
     let s = scenario({ p1: { battlefield: lands("Forest", 2), hand: ["Eusocial Engineering", "Forest"] } });
     s = settle(cast(s, "p1", "Eusocial Engineering", { warp: true }));
     expect(idsOf(s, "p1", "battlefield", "Eusocial Engineering")).toHaveLength(1);
@@ -2262,7 +2262,7 @@ describe("Edge of Eternities, lot K8 : peu communes (2)", () => {
     expect(idsOf(s, "p1", "battlefield", "Eusocial Engineering")).toHaveLength(0);
   });
 
-  it("Faller's Faithful : détruit jusqu'à une autre créature ; son contrôleur pioche deux cartes si elle n'a pas été blessée", () => {
+  it("Faller's Faithful: destroys up to one other creature; its controller draws two cards if it wasn't dealt damage", () => {
     const setup = (damage: number) =>
       scenario({
         p1: { battlefield: lands("Swamp", 3), hand: ["Faller's Faithful"] },
@@ -2277,7 +2277,7 @@ describe("Edge of Eternities, lot K8 : peu communes (2)", () => {
     expect(handSize(s, "p2")).toBe(0);
   });
 
-  it("Fell Gravship : meulez trois cartes, puis reprenez une carte de créature ou de Vaisseau ; à 8+, vol et lien de vie", () => {
+  it("Fell Gravship: mill three cards, then return a creature or Spacecraft card; at 8+, flying and lifelink", () => {
     let s = scenario({
       p1: {
         battlefield: lands("Swamp", 3),
@@ -2291,7 +2291,7 @@ describe("Edge of Eternities, lot K8 : peu communes (2)", () => {
       if (req.type === "pick") offered = req.options.map((id) => nameOf(cur, String(id)) ?? "");
       return pickNamed(cur, req, "Bear Cub");
     });
-    // Les cartes meulées comptent ; ni l'éphémère ni le terrain.
+    // The milled cards count; neither the instant nor the land.
     expect(offered.sort()).toEqual(["Bear Cub", "Galvanizing Sawship"]);
     expect(namesIn(s, s.players.p1?.hand)).toEqual(["Bear Cub"]);
     expect(namesIn(s, s.players.p1?.graveyard).sort()).toEqual(["Forest", "Galvanizing Sawship", "Opt", "Shock"]);
@@ -2300,7 +2300,7 @@ describe("Edge of Eternities, lot K8 : peu communes (2)", () => {
     expect(chars(big, ship).keywords).toEqual(expect.arrayContaining(["flying", "lifelink"]));
   });
 
-  it("Full Bore : +3/+2 ; le piétinement et la célérité en plus si la créature a été lancée pour sa distorsion", () => {
+  it("Full Bore: +3/+2; trample and haste in addition if the creature was cast for its warp", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Mountain", 4), "Bear Cub"], hand: ["Memorial Team Leader", "Full Bore", "Full Bore"] },
     });
@@ -2311,19 +2311,19 @@ describe("Edge of Eternities, lot K8 : peu communes (2)", () => {
     expect([chars(s, leader).power, chars(s, leader).toughness]).toEqual([7, 5]);
     expect(chars(s, leader).keywords).toEqual(expect.arrayContaining(["trample", "haste"]));
     s = settle(cast(s, "p1", "Full Bore", { targets: { t: [cub] } }));
-    // +3/+2, et +1/+0 du Memorial Team Leader pendant votre tour.
+    // +3/+2, and +1/+0 from Memorial Team Leader during your turn.
     expect([chars(s, cub).power, chars(s, cub).toughness]).toEqual([6, 4]);
     expect(chars(s, cub).keywords).not.toContain("trample");
   });
 
-  it("Gigastorm Titan : coûte {3} de moins si vous avez lancé un autre sort ce tour-ci", () => {
+  it("Gigastorm Titan: costs {3} less if you cast another spell this turn", () => {
     let s = scenario({ p1: { battlefield: lands("Island", 3), hand: ["Gigastorm Titan", "Opt"] } });
     expect(castable(s, "p1", idOf(s, "p1", "hand", "Gigastorm Titan"))).toBe(false);
     s = settle(cast(s, "p1", "Opt"));
     expect(castable(s, "p1", idOf(s, "p1", "hand", "Gigastorm Titan"))).toBe(true);
   });
 
-  it("Glacier Godmaw : piétinement, un Lander ; landfall, vos créatures +1/+1, vigilance et célérité", () => {
+  it("Glacier Godmaw: trample, a Lander; landfall, your creatures get +1/+1, vigilance and haste", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Forest", 7), { name: "Bear Cub", sick: true }], hand: ["Glacier Godmaw", "Forest"] },
       p2: { battlefield: ["Serra Angel"] },
@@ -2339,7 +2339,7 @@ describe("Edge of Eternities, lot K8 : peu communes (2)", () => {
     expect(chars(s, idOf(s, "p2", "battlefield", "Serra Angel")).power).toBe(4);
   });
 
-  it("Haliya, Ascendant Cadet : un marqueur en arrivant ou en attaquant ; une pioche par lot de blessures de combat", () => {
+  it("Haliya, Ascendant Cadet: a counter on entering or attacking; a draw per batch of combat damage", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Plains", 3), "Forest", "Plains", "Bear Cub"], hand: ["Haliya, Ascendant Cadet"] },
     });
@@ -2355,7 +2355,7 @@ describe("Edge of Eternities, lot K8 : peu communes (2)", () => {
     expect(lifeOf(s, "p2")).toBe(13);
   });
 
-  it("Harmonious Grovestrider : F/E égales au nombre de vos terrains ; garde {2}", () => {
+  it("Harmonious Grovestrider: P/T equal to the number of your lands; ward {2}", () => {
     const s = scenario({
       p1: { battlefield: ["Harmonious Grovestrider", ...lands("Forest", 4)] },
       p2: { battlefield: lands("Forest", 6) },
@@ -2365,7 +2365,7 @@ describe("Edge of Eternities, lot K8 : peu communes (2)", () => {
     expect(chars(s, g).abilities.some((a) => a.kind === "triggered" && a.label?.startsWith("Ward"))).toBe(true);
   });
 
-  it("Hemosymbic Mite : engagée, une autre de vos créatures ciblée gagne +X/+X (X = sa force)", () => {
+  it("Hemosymbic Mite: tapped, another targeted creature of yours gets +X/+X (X = its power)", () => {
     let s = scenario({ p1: { battlefield: ["Hemosymbic Mite", "Bear Cub"] } });
     const mite = idOf(s, "p1", "battlefield", "Hemosymbic Mite");
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
@@ -2373,7 +2373,7 @@ describe("Edge of Eternities, lot K8 : peu communes (2)", () => {
     expect([chars(s, cub).power, chars(s, cub).toughness]).toEqual([3, 3]);
   });
 
-  it("Honored Knight-Captain : un Soldat 1/1 ; {4}{W}{W}, sacrifice : un Équipement de la bibliothèque sur le champ de bataille", () => {
+  it("Honored Knight-Captain: a 1/1 Soldier; {4}{W}{W}, sacrifice: an Equipment from the library onto the battlefield", () => {
     let s = scenario({
       p1: {
         battlefield: lands("Plains", 8),
@@ -2393,7 +2393,7 @@ describe("Edge of Eternities, lot K8 : peu communes (2)", () => {
     expect(idsOf(s, "p1", "battlefield", "Honored Knight-Captain")).toHaveLength(0);
   });
 
-  it("Hylderblade : +3/+1 ; vide, à votre étape de fin, il s'attache à une de vos créatures", () => {
+  it("Hylderblade: +3/+1; void, at your end step, it attaches to one of your creatures", () => {
     const setup = () => scenario({ p1: { battlefield: ["Hylderblade", "Bear Cub"] }, p2: { battlefield: ["Llanowar Elves"] } });
     let s = withVoid(setup());
     const blade = idOf(s, "p1", "battlefield", "Hylderblade");
@@ -2406,7 +2406,7 @@ describe("Edge of Eternities, lot K8 : peu communes (2)", () => {
     expect(t.objects[idOf(t, "p1", "battlefield", "Hylderblade")]?.attachedTo).toBeFalsy();
   });
 
-  it("Hymn of the Faller : surveillance 1, piochez, perdez 1 PV ; vide : une carte de plus", () => {
+  it("Hymn of the Faller: surveil 1, draw, lose 1 life; void: one more card", () => {
     const setup = () =>
       scenario({ p1: { battlefield: lands("Swamp", 2), hand: ["Hymn of the Faller"] }, p2: { battlefield: ["Llanowar Elves"] } });
     let s = settle(cast(setup(), "p1", "Hymn of the Faller"));
@@ -2417,7 +2417,7 @@ describe("Edge of Eternities, lot K8 : peu communes (2)", () => {
     expect(lifeOf(s, "p1")).toBe(19);
   });
 
-  it("Illvoi Infiltrator : imblocable si vous avez lancé deux sorts ce tour-ci ; pioche en blessant un joueur", () => {
+  it("Illvoi Infiltrator: unblockable if you've cast two spells this turn; draws on damaging a player", () => {
     let s = scenario({ p1: { battlefield: ["Illvoi Infiltrator", ...lands("Island", 2)], hand: ["Opt", "Opt"] } });
     const inf = idOf(s, "p1", "battlefield", "Illvoi Infiltrator");
     s = settle(cast(s, "p1", "Opt"));
@@ -2430,7 +2430,7 @@ describe("Edge of Eternities, lot K8 : peu communes (2)", () => {
     expect(handSize(s, "p1")).toBe(before + 1);
   });
 
-  it("Interceptor Mechan : vol ; reprend une carte d'artefact ou de créature ; vide : un marqueur à votre étape de fin", () => {
+  it("Interceptor Mechan: flying; returns an artifact or creature card; void: a counter at your end step", () => {
     const setup = () =>
       scenario({
         p1: {
@@ -2451,7 +2451,7 @@ describe("Edge of Eternities, lot K8 : peu communes (2)", () => {
     expect(t.objects[idOf(t, "p1", "battlefield", "Interceptor Mechan")]?.counters["+1/+1"]).toBe(1);
   });
 
-  it("Invasive Maneuvers : 3 blessures, 5 si vous contrôlez un Vaisseau", () => {
+  it("Invasive Maneuvers: 3 damage, 5 if you control a Spacecraft", () => {
     const setup = (ship: boolean) =>
       scenario({
         p1: { battlefield: [...lands("Mountain", 2), ...(ship ? ["Galvanizing Sawship"] : [])], hand: ["Invasive Maneuvers"] },
@@ -2466,8 +2466,8 @@ describe("Edge of Eternities, lot K8 : peu communes (2)", () => {
   });
 });
 
-describe("Edge of Eternities, lot K8 : peu communes (3)", () => {
-  it("Kavaron Harrier : en attaquant, payez {2} pour un Robot engagé et attaquant, sacrifié à la fin du combat", () => {
+describe("Edge of Eternities, lot K8: uncommons (3)", () => {
+  it("Kavaron Harrier: on attacking, pay {2} for a tapped and attacking Robot, sacrificed at end of combat", () => {
     const setup = () => scenario({ p1: { battlefield: ["Kavaron Harrier", ...lands("Mountain", 2)] } });
     let s = setup();
     s = attack(s, [idOf(s, "p1", "battlefield", "Kavaron Harrier")]);
@@ -2484,7 +2484,7 @@ describe("Edge of Eternities, lot K8 : peu communes (3)", () => {
     expect(lifeOf(t, "p2")).toBe(18);
   });
 
-  it("Larval Scoutlander : sacrifiez un terrain ou un Lander pour deux terrains de base engagés ; sinon rien", () => {
+  it("Larval Scoutlander: sacrifice a land or a Lander for two tapped basic lands; otherwise nothing", () => {
     const setup = () =>
       scenario({
         p1: { battlefield: lands("Forest", 4), hand: ["Larval Scoutlander"], library: [...lands("Forest", 3), "Bear Cub"] },
@@ -2506,7 +2506,7 @@ describe("Edge of Eternities, lot K8 : peu communes (3)", () => {
     expect(chars(big, idOf(big, "p1", "battlefield", "Larval Scoutlander")).keywords).toContain("flying");
   });
 
-  it("Lashwhip Predator : coûte {2} de moins si vos adversaires contrôlent trois créatures ou plus ; portée", () => {
+  it("Lashwhip Predator: costs {2} less if your opponents control three or more creatures; reach", () => {
     const setup = (n: number) =>
       scenario({
         p1: { battlefield: lands("Forest", 4), hand: ["Lashwhip Predator"] },
@@ -2519,7 +2519,7 @@ describe("Edge of Eternities, lot K8 : peu communes (3)", () => {
     expect(chars(t, idOf(t, "p1", "battlefield", "Lashwhip Predator")).keywords).toContain("reach");
   });
 
-  it("Lithobraking : un Lander ; si vous sacrifiez un artefact, 2 blessures à chaque créature", () => {
+  it("Lithobraking: a Lander; if you sacrifice an artifact, 2 damage to each creature", () => {
     const setup = () =>
       scenario({
         p1: { battlefield: [...lands("Mountain", 3), "Bear Cub"], hand: ["Lithobraking"] },
@@ -2536,7 +2536,7 @@ describe("Edge of Eternities, lot K8 : peu communes (3)", () => {
     expect(idsOf(t, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
   });
 
-  it("Mechan Assembler : un autre artefact arrive, un Robot 2/2, une seule fois par tour", () => {
+  it("Mechan Assembler: another artifact enters, a 2/2 Robot, only once each turn", () => {
     let s = scenario({
       p1: { battlefield: ["Mechan Assembler", ...lands("Island", 2)], hand: ["Thaumaton Torpedo", "Thaumaton Torpedo"] },
     });
@@ -2546,14 +2546,14 @@ describe("Edge of Eternities, lot K8 : peu communes (3)", () => {
     expect(tokensOf(s, "p1", "Robot")).toHaveLength(1);
   });
 
-  it("Mechan Navigator : chaque fois qu'il devient engagé, piochez puis défaussez une carte", () => {
+  it("Mechan Navigator: whenever it becomes tapped, draw then discard a card", () => {
     let s = scenario({ p1: { battlefield: ["Mechan Navigator"], hand: ["Forest"], library: ["Opt", ...lands("Island", 3)] } });
     s = settle(attack(s, [idOf(s, "p1", "battlefield", "Mechan Navigator")]), (req, _p, cur) => pickNamed(cur, req, "Forest"));
     expect(namesIn(s, s.players.p1?.hand)).toEqual(["Opt"]);
     expect(namesIn(s, s.players.p1?.graveyard)).toEqual(["Forest"]);
   });
 
-  it("Meltstrider Eulogist : une de vos créatures avec un marqueur +1/+1 meurt, piochez", () => {
+  it("Meltstrider Eulogist: one of your creatures with a +1/+1 counter dies, draw", () => {
     let s = scenario({
       p1: { battlefield: ["Meltstrider Eulogist", { name: "Bear Cub", counters: { "+1/+1": 1 } }, "Llanowar Elves"] },
       p2: { battlefield: [{ name: "Serra Angel", counters: { "+1/+1": 1 } }] },
@@ -2567,7 +2567,7 @@ describe("Edge of Eternities, lot K8 : peu communes (3)", () => {
     expect(handSize(s, "p1")).toBe(1);
   });
 
-  it("Memorial Team Leader : pendant votre tour, vos autres créatures +1/+0", () => {
+  it("Memorial Team Leader: during your turn, your other creatures get +1/+0", () => {
     let s = scenario({ p1: { battlefield: ["Memorial Team Leader", "Bear Cub"] }, p2: { battlefield: ["Serra Angel"] } });
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
     expect(chars(s, cub).power).toBe(3);
@@ -2577,7 +2577,7 @@ describe("Edge of Eternities, lot K8 : peu communes (3)", () => {
     expect(chars(s, cub).power).toBe(2);
   });
 
-  it("Mm'menon, Uthros Exile : vol ; un de vos artefacts arrive, un marqueur sur une créature ciblée", () => {
+  it("Mm'menon, Uthros Exile: flying; one of your artifacts enters, a counter on a targeted creature", () => {
     let s = scenario({
       p1: { battlefield: ["Mm'menon, Uthros Exile", "Bear Cub", "Plains"], hand: ["Thaumaton Torpedo"] },
       p2: { battlefield: ["Plains"], hand: ["Thaumaton Torpedo"] },
@@ -2591,7 +2591,7 @@ describe("Edge of Eternities, lot K8 : peu communes (3)", () => {
     expect(s.objects[cub]?.counters["+1/+1"]).toBe(1);
   });
 
-  it("Molecular Modifier : au début de votre combat, une de vos créatures +1/+0 et l'initiative", () => {
+  it("Molecular Modifier: at the beginning of your combat, one of your creatures gets +1/+0 and first strike", () => {
     let s = scenario({ p1: { battlefield: ["Molecular Modifier", "Bear Cub"] } });
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
     s = passAccepting(s, (x) => x.pending?.kind === "declareAttackers");
@@ -2606,7 +2606,7 @@ describe("Edge of Eternities, lot K8 : peu communes (3)", () => {
     expect(chars(t, cub).keywords).not.toContain("firstStrike");
   });
 
-  it("Monoist Circuit-Feeder : vol ; +X/+0 à une de vos créatures et -0/-X à une créature adverse (X = vos artefacts)", () => {
+  it("Monoist Circuit-Feeder: flying; +X/+0 to one of your creatures and -0/-X to an opposing creature (X = your artifacts)", () => {
     let s = scenario({
       p1: { battlefield: [...lands("Swamp", 6), "Bear Cub", "Thaumaton Torpedo"], hand: ["Monoist Circuit-Feeder"] },
       p2: { battlefield: ["Serra Angel"] },
@@ -2619,7 +2619,7 @@ describe("Edge of Eternities, lot K8 : peu communes (3)", () => {
     expect([chars(s, angel).power, chars(s, angel).toughness]).toEqual([4, 2]);
   });
 
-  it("Monoist Sentry : 4/1 avec le défenseur, ne peut pas attaquer", () => {
+  it("Monoist Sentry: 4/1 with defender, can't attack", () => {
     const s = scenario({ p1: { battlefield: ["Monoist Sentry"] } });
     const sentry = idOf(s, "p1", "battlefield", "Monoist Sentry");
     expect(chars(s, sentry).keywords).toContain("defender");
@@ -2627,7 +2627,7 @@ describe("Edge of Eternities, lot K8 : peu communes (3)", () => {
     expect(() => act(t, "p1", { type: "declareAttackers", attackers: [{ id: sentry, defender: "p2" }] })).toThrow();
   });
 
-  it("Mouth of the Storm : vol, garde {2} ; les créatures adverses -3/-0 jusqu'à votre prochain tour", () => {
+  it("Mouth of the Storm: flying, ward {2}; opposing creatures get -3/-0 until your next turn", () => {
     let s = scenario({
       p1: { battlefield: lands("Island", 7), hand: ["Mouth of the Storm"] },
       p2: { battlefield: ["Serra Angel"] },
@@ -2645,7 +2645,7 @@ describe("Edge of Eternities, lot K8 : peu communes (3)", () => {
     expect(chars(s, angel).power).toBe(4);
   });
 
-  it("Pull Through the Weft : jusqu'à deux permanents non-terrains en main, jusqu'à deux terrains sur le champ de bataille engagés", () => {
+  it("Pull Through the Weft: up to two nonland permanents in hand, up to two lands onto the battlefield tapped", () => {
     let s = scenario({
       p1: {
         battlefield: lands("Forest", 5),
@@ -2665,7 +2665,7 @@ describe("Edge of Eternities, lot K8 : peu communes (3)", () => {
     expect(idsOf(s, "p1", "battlefield", "Forest")).toHaveLength(6);
   });
 
-  it("Pulsar Squadron Ace : un Vaisseau des cinq cartes du dessus en main ; sinon un marqueur +1/+1", () => {
+  it("Pulsar Squadron Ace: a Spacecraft from the top five cards into hand; otherwise a +1/+1 counter", () => {
     let s = scenario({
       p1: {
         battlefield: lands("Plains", 2),
@@ -2688,7 +2688,7 @@ describe("Edge of Eternities, lot K8 : peu communes (3)", () => {
     expect(t.objects[idOf(t, "p1", "battlefield", "Pulsar Squadron Ace")]?.counters["+1/+1"]).toBe(1);
   });
 
-  it("Rayblade Trooper : un marqueur en arrivant ; une de vos créatures non-jetons avec un marqueur meurt, un Soldat 1/1", () => {
+  it("Rayblade Trooper: a counter on entering; one of your nontoken creatures with a counter dies, a 1/1 Soldier", () => {
     let s = scenario({ p1: { battlefield: [...lands("Plains", 3), "Bear Cub", "Llanowar Elves"], hand: ["Rayblade Trooper"] } });
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
     s = settle(cast(s, "p1", "Rayblade Trooper"), picking([cub]));
@@ -2700,14 +2700,14 @@ describe("Edge of Eternities, lot K8 : peu communes (3)", () => {
     s = settle(s);
     const [soldier] = tokensOf(s, "p1", "Human Soldier");
     expect(soldier).toBeDefined();
-    // Un jeton avec un marqueur ne compte pas.
+    // A token with a counter doesn't count.
     changeCounters(s, s.objects[soldier as string]!, "+1/+1", 1);
     destroy(s, soldier as string);
     s = settle(s);
     expect(tokensOf(s, "p1", "Human Soldier")).toHaveLength(0);
   });
 
-  it("Remnant Elemental : portée ; landfall, +2/+0 jusqu'à la fin du tour", () => {
+  it("Remnant Elemental: reach; landfall, +2/+0 until end of turn", () => {
     let s = scenario({ p1: { battlefield: ["Remnant Elemental"], hand: ["Mountain"] } });
     const el = idOf(s, "p1", "battlefield", "Remnant Elemental");
     expect(chars(s, el).keywords).toContain("reach");
@@ -2717,7 +2717,7 @@ describe("Edge of Eternities, lot K8 : peu communes (3)", () => {
     expect(chars(s, el).power).toBe(0);
   });
 
-  it("Reroute Systems : un artefact ou une créature indestructible, ou 2 blessures à une créature engagée", () => {
+  it("Reroute Systems: an artifact or creature indestructible, or 2 damage to a tapped creature", () => {
     let s = scenario({ p1: { battlefield: ["Plains", "Bear Cub"], hand: ["Reroute Systems"] } });
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
     s = settle(cast(s, "p1", "Reroute Systems", { mode: 0, targets: { t: [cub] } }));
@@ -2736,8 +2736,8 @@ describe("Edge of Eternities, lot K8 : peu communes (3)", () => {
   });
 });
 
-describe("Edge of Eternities, lot K8 : peu communes (4)", () => {
-  it("Rescue Skiff : renvoie une carte de créature ou d'enchantement de votre cimetière ; créature volante à 10+", () => {
+describe("Edge of Eternities, lot K8: uncommons (4)", () => {
+  it("Rescue Skiff: returns a creature or enchantment card from your graveyard; flying creature at 10+", () => {
     let s = scenario({ p1: { battlefield: lands("Plains", 6), hand: ["Rescue Skiff"], graveyard: ["Serra Angel", "Shock"] } });
     s = settle(cast(s, "p1", "Rescue Skiff"));
     expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
@@ -2748,7 +2748,7 @@ describe("Edge of Eternities, lot K8 : peu communes (4)", () => {
     expect(chars(big, ship).keywords).toContain("flying");
   });
 
-  it("Roving Actuator : vide, exile un éphémère ou rituel de VM 2 ou moins de votre cimetière et en lance une copie gratuite", () => {
+  it("Roving Actuator: void, exiles an instant or sorcery with MV 2 or less from your graveyard and casts a free copy of it", () => {
     const setup = () =>
       scenario({
         p1: { battlefield: lands("Mountain", 4), hand: ["Roving Actuator"], graveyard: ["Shock", "Bombard"] },
@@ -2769,13 +2769,13 @@ describe("Edge of Eternities, lot K8 : peu communes (4)", () => {
     expect(offered).toEqual(["Shock"]);
     expect(exiled(s, "Shock")).toHaveLength(1);
     expect(lifeOf(s, "p2")).toBe(18);
-    // Sans vide : rien.
+    // Without void: nothing.
     const t = settle(cast(setup(), "p1", "Roving Actuator"));
     expect(namesIn(t, t.players.p1?.graveyard).sort()).toEqual(["Bombard", "Shock"]);
     expect(lifeOf(t, "p2")).toBe(20);
   });
 
-  it("Ruinous Rampage : 3 blessures à chaque adversaire, ou exil des artefacts de VM 3 ou moins", () => {
+  it("Ruinous Rampage: 3 damage to each opponent, or exile of artifacts with MV 3 or less", () => {
     let s = scenario({ p1: { battlefield: lands("Mountain", 3), hand: ["Ruinous Rampage"] } });
     s = settle(cast(s, "p1", "Ruinous Rampage", { mode: 0 }));
     expect(lifeOf(s, "p2")).toBe(17);
@@ -2790,7 +2790,7 @@ describe("Edge of Eternities, lot K8 : peu communes (4)", () => {
     expect(idsOf(t, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
   });
 
-  it("Sami, Ship's Engineer : à votre étape de fin, avec deux créatures engagées, un Robot 2/2 engagé", () => {
+  it("Sami, Ship's Engineer: at your end step, with two tapped creatures, a tapped 2/2 Robot", () => {
     const setup = (tapped: boolean) =>
       scenario({
         p1: { battlefield: ["Sami, Ship's Engineer", { name: "Bear Cub", tapped }, { name: "Llanowar Elves", tapped: true }] },
@@ -2803,7 +2803,7 @@ describe("Edge of Eternities, lot K8 : peu communes (4)", () => {
     expect(tokensOf(s, "p1", "Robot")).toHaveLength(0);
   });
 
-  it("Scour for Scrap : cherchez un artefact, reprenez un artefact du cimetière, ou les deux", () => {
+  it("Scour for Scrap: search for an artifact, return an artifact from the graveyard, or both", () => {
     let s = scenario({
       p1: {
         battlefield: lands("Island", 4),
@@ -2819,7 +2819,7 @@ describe("Edge of Eternities, lot K8 : peu communes (4)", () => {
     expect(namesIn(s, s.players.p1?.hand).sort()).toEqual(["Memorial Vault", "Thaumaton Torpedo"]);
   });
 
-  it("Scrounge for Eternity : sacrifiez un artefact ou une créature ; une créature ou un Vaisseau de VM 5 ou moins revient, puis un Lander", () => {
+  it("Scrounge for Eternity: sacrifice an artifact or creature; a creature or Spacecraft with MV 5 or less returns, then a Lander", () => {
     let s = scenario({
       p1: {
         battlefield: [...lands("Swamp", 3), "Bear Cub"],
@@ -2844,7 +2844,7 @@ describe("Edge of Eternities, lot K8 : peu communes (4)", () => {
     expect(tokensOf(s, "p1", "Lander")).toHaveLength(1);
   });
 
-  it("Seedship Agrarian : engagé, un Lander ; landfall, un marqueur +1/+1", () => {
+  it("Seedship Agrarian: tapped, a Lander; landfall, a +1/+1 counter", () => {
     let s = scenario({ p1: { battlefield: ["Seedship Agrarian"], hand: ["Forest"] } });
     const ag = idOf(s, "p1", "battlefield", "Seedship Agrarian");
     s = settle(act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Forest") }));
@@ -2853,7 +2853,7 @@ describe("Edge of Eternities, lot K8 : peu communes (4)", () => {
     expect(tokensOf(s, "p1", "Lander")).toHaveLength(1);
   });
 
-  it("Seedship Broodtender : meulez trois cartes ; {3}{B}{G}, sacrifice : une créature ou un Vaisseau du cimetière revient (rituel)", () => {
+  it("Seedship Broodtender: mill three cards; {3}{B}{G}, sacrifice: a creature or Spacecraft from the graveyard returns (sorcery speed)", () => {
     let s = scenario({
       p1: {
         battlefield: [...lands("Swamp", 3), ...lands("Forest", 4)],
@@ -2870,7 +2870,7 @@ describe("Edge of Eternities, lot K8 : peu communes (4)", () => {
     expect(idsOf(s, "p1", "battlefield", "Seedship Broodtender")).toHaveLength(0);
   });
 
-  it("Seedship Impact : détruit un artefact ou un enchantement ; un Lander si sa VM était de 2 ou moins", () => {
+  it("Seedship Impact: destroys an artifact or enchantment; a Lander if its MV was 2 or less", () => {
     const setup = () =>
       scenario({
         p1: { battlefield: lands("Forest", 2), hand: ["Seedship Impact"] },
@@ -2886,7 +2886,7 @@ describe("Edge of Eternities, lot K8 : peu communes (4)", () => {
     expect(tokensOf(t, "p1", "Lander")).toHaveLength(0);
   });
 
-  it("Specimen Freighter : renvoie jusqu'à deux créatures non-Vaisseaux ; à 9+, en attaquant, le défenseur meule quatre cartes", () => {
+  it("Specimen Freighter: returns up to two non-Spacecraft creatures; at 9+, on attacking, the defender mills four cards", () => {
     let s = scenario({
       p1: { battlefield: lands("Island", 6), hand: ["Specimen Freighter"] },
       p2: { battlefield: ["Serra Angel", "Bear Cub", { name: "Galvanizing Sawship", counters: { charge: 3 } }] },
@@ -2907,7 +2907,7 @@ describe("Edge of Eternities, lot K8 : peu communes (4)", () => {
     expect(a.players.p2?.graveyard).toHaveLength(4);
   });
 
-  it("Steelswarm Operator : vol ; {U} pour un sort d'artefact, {U}{U} pour une capacité d'une source artefact", () => {
+  it("Steelswarm Operator: flying; {U} for an artifact spell, {U}{U} for an ability of an artifact source", () => {
     const s = scenario({ p1: { battlefield: ["Steelswarm Operator"], hand: ["Thaumaton Torpedo", "Opt"] } });
     expect(chars(s, idOf(s, "p1", "battlefield", "Steelswarm Operator")).keywords).toContain("flying");
     expect(castable(s, "p1", idOf(s, "p1", "hand", "Thaumaton Torpedo"))).toBe(true);
@@ -2918,7 +2918,7 @@ describe("Edge of Eternities, lot K8 : peu communes (4)", () => {
     expect(hasActivation(t, tokensOf(t, "p1", "Lander")[0] as string, "Basic land")).toBe(true);
   });
 
-  it("Sunstar Expansionist : un Lander si un adversaire a plus de terrains ; landfall, +1/+0", () => {
+  it("Sunstar Expansionist: a Lander if an opponent has more lands; landfall, +1/+0", () => {
     const setup = (opp: number) =>
       scenario({
         p1: { battlefield: lands("Plains", 2), hand: ["Sunstar Expansionist", "Plains"] },
@@ -2930,7 +2930,7 @@ describe("Edge of Eternities, lot K8 : peu communes (4)", () => {
     expect(chars(s, idOf(s, "p1", "battlefield", "Sunstar Expansionist")).power).toBe(3);
     const t = settle(cast(setup(2), "p1", "Sunstar Expansionist"));
     expect(tokensOf(t, "p1", "Lander")).toHaveLength(0);
-    // À trois (PLAN-D, D8) : « un adversaire » en a plus, pas tous les adversaires ensemble.
+    // With three players (PLAN-D, D8): "an opponent" has more, not all opponents together.
     const three = (opp: number) =>
       scenario({
         players: 3,
@@ -2942,7 +2942,7 @@ describe("Edge of Eternities, lot K8 : peu communes (4)", () => {
     expect(tokensOf(settle(cast(three(3), "p1", "Sunstar Expansionist")), "p1", "Lander")).toHaveLength(1);
   });
 
-  it("Sunstar Lightsmith : à votre deuxième sort du tour, un marqueur +1/+1 et une pioche", () => {
+  it("Sunstar Lightsmith: on your second spell of the turn, a +1/+1 counter and a draw", () => {
     let s = scenario({ p1: { battlefield: ["Sunstar Lightsmith", ...lands("Island", 2)], hand: ["Opt", "Opt"] } });
     const smith = idOf(s, "p1", "battlefield", "Sunstar Lightsmith");
     s = settle(cast(s, "p1", "Opt"));
@@ -2953,7 +2953,7 @@ describe("Edge of Eternities, lot K8 : peu communes (4)", () => {
     expect(handSize(s, "p1")).toBe(before - 1 + 2);
   });
 
-  it("Survey Mechan : vol, défense talismanique ; {10} moins un par nom de terrain : 3 blessures, un joueur pioche trois et gagne 3 PV", () => {
+  it("Survey Mechan: flying, hexproof; {10} less one per land name: 3 damage, a player draws three and gains 3 life", () => {
     const five = ["Plains", "Island", "Swamp", "Mountain", "Forest", "Plains"];
     let s = scenario({ p1: { battlefield: ["Survey Mechan", ...five] } });
     const mech = idOf(s, "p1", "battlefield", "Survey Mechan");
@@ -2966,7 +2966,7 @@ describe("Edge of Eternities, lot K8 : peu communes (4)", () => {
     expect(hasActivation(t, idOf(t, "p1", "battlefield", "Survey Mechan"), "3 damage")).toBe(false);
   });
 
-  it("Susurian Dirgecraft : chaque adversaire sacrifie une créature non-jeton ; créature volante à 7+", () => {
+  it("Susurian Dirgecraft: each opponent sacrifices a nontoken creature; flying creature at 7+", () => {
     let s = scenario({
       p1: { battlefield: lands("Swamp", 5), hand: ["Susurian Dirgecraft"] },
       p2: { battlefield: ["Bear Cub"] },
@@ -2979,7 +2979,7 @@ describe("Edge of Eternities, lot K8 : peu communes (4)", () => {
     expect(chars(big, idOf(big, "p1", "battlefield", "Susurian Dirgecraft")).keywords).toContain("flying");
   });
 
-  it("Susurian Voidborn : elle ou une autre de vos créatures ou artefacts meurt, un adversaire perd 1 PV et vous en gagnez 1", () => {
+  it("Susurian Voidborn: it or another of your creatures or artifacts dies, an opponent loses 1 life and you gain 1", () => {
     let s = scenario({
       p1: { battlefield: ["Susurian Voidborn", "Thaumaton Torpedo", "Bear Cub"] },
       p2: { battlefield: ["Serra Angel"] },
@@ -2995,7 +2995,7 @@ describe("Edge of Eternities, lot K8 : peu communes (4)", () => {
     expect([lifeOf(s, "p1"), lifeOf(s, "p2")]).toEqual([22, 18]);
   });
 
-  it("Syr Vondam, the Lucent : contact mortel, lien de vie ; en arrivant ou en attaquant, vos autres créatures +1/+0 et le contact mortel", () => {
+  it("Syr Vondam, the Lucent: deathtouch, lifelink; on entering or attacking, your other creatures get +1/+0 and deathtouch", () => {
     let s = scenario({ p1: { battlefield: ["Plains", ...lands("Swamp", 4), "Bear Cub"], hand: ["Syr Vondam, the Lucent"] } });
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
     s = settle(cast(s, "p1", "Syr Vondam, the Lucent"));
@@ -3011,7 +3011,7 @@ describe("Edge of Eternities, lot K8 : peu communes (4)", () => {
     expect(chars(s, cub).keywords).toContain("deathtouch");
   });
 
-  it("Systems Override : contrôle d'un artefact ou d'une créature jusqu'à la fin du tour, dégagé, avec la célérité", () => {
+  it("Systems Override: control of an artifact or creature until end of turn, untap, with haste", () => {
     let s = scenario({
       p1: { battlefield: lands("Mountain", 3), hand: ["Systems Override"] },
       p2: { battlefield: [{ name: "Serra Angel", tapped: true }] },
@@ -3025,7 +3025,7 @@ describe("Edge of Eternities, lot K8 : peu communes (4)", () => {
     expect(s.objects[angel]?.controller).toBe("p2");
   });
 
-  it("Systems Override : un Vaisseau reçoit dix marqueurs de charge, retirés à l'étape de fin suivante", () => {
+  it("Systems Override: a Spacecraft gets ten charge counters, removed at the following end step", () => {
     let s = scenario({
       p1: { battlefield: lands("Mountain", 3), hand: ["Systems Override"] },
       p2: { battlefield: ["Galvanizing Sawship"] },
@@ -3041,8 +3041,8 @@ describe("Edge of Eternities, lot K8 : peu communes (4)", () => {
   });
 });
 
-describe("Edge of Eternities, lot K8 : peu communes (5)", () => {
-  it("Tannuk, Memorial Ensign : landfall, 1 blessure à chaque adversaire ; à la deuxième résolution du tour, piochez", () => {
+describe("Edge of Eternities, lot K8: uncommons (5)", () => {
+  it("Tannuk, Memorial Ensign: landfall, 1 damage to each opponent; on the second resolution of the turn, draw", () => {
     let s = scenario({
       p1: { battlefield: ["Tannuk, Memorial Ensign", ...lands("Mountain", 2)], hand: ["Forest"], library: lands("Forest", 5) },
     });
@@ -3056,7 +3056,7 @@ describe("Edge of Eternities, lot K8 : peu communes (5)", () => {
     expect(handSize(s, "p1")).toBe(1);
   });
 
-  it("Territorial Bruntar : portée ; landfall, exilez jusqu'à une carte non-terrain, lançable ce tour-ci seulement", () => {
+  it("Territorial Bruntar: reach; landfall, exile up to one nonland card, castable this turn only", () => {
     let s = scenario({
       p1: {
         battlefield: ["Territorial Bruntar", "Forest"],
@@ -3075,7 +3075,7 @@ describe("Edge of Eternities, lot K8 : peu communes (5)", () => {
     expect(castable(later, "p1", cub)).toBe(false);
   });
 
-  it("Tractor Beam : engage la créature enchantée, vous la contrôlez, elle ne se dégage pas", () => {
+  it("Tractor Beam: taps the enchanted creature, you control it, it doesn't untap", () => {
     let s = scenario({ p1: { battlefield: lands("Island", 4), hand: ["Tractor Beam"] }, p2: { battlefield: ["Serra Angel"] } });
     const angel = idOf(s, "p2", "battlefield", "Serra Angel");
     s = settle(cast(s, "p1", "Tractor Beam", { targets: { enchant: [angel] } }));
@@ -3086,7 +3086,7 @@ describe("Edge of Eternities, lot K8 : peu communes (5)", () => {
     expect(s.objects[angel]?.tapped).toBe(true);
   });
 
-  it("Tragic Trajectory : -2/-2 ; vide : -10/-10", () => {
+  it("Tragic Trajectory: -2/-2; void: -10/-10", () => {
     const setup = () =>
       scenario({
         p1: { battlefield: ["Swamp"], hand: ["Tragic Trajectory"] },
@@ -3101,14 +3101,14 @@ describe("Edge of Eternities, lot K8 : peu communes (5)", () => {
     expect(idsOf(t, "p2", "battlefield", "Serra Angel")).toHaveLength(0);
   });
 
-  it("Uthros Psionicist : le deuxième sort de chaque tour coûte {2} de moins", () => {
+  it("Uthros Psionicist: the second spell each turn costs {2} less", () => {
     let s = scenario({ p1: { battlefield: ["Uthros Psionicist", ...lands("Island", 4)], hand: ["Opt", "Cerebral Download"] } });
     expect(castable(s, "p1", idOf(s, "p1", "hand", "Cerebral Download"))).toBe(false);
     s = settle(cast(s, "p1", "Opt"));
     expect(castable(s, "p1", idOf(s, "p1", "hand", "Cerebral Download"))).toBe(true);
   });
 
-  it("Uthros Scanship : piochez deux cartes, puis défaussez-en une ; créature volante à 8+", () => {
+  it("Uthros Scanship: draw two cards, then discard one; flying creature at 8+", () => {
     let s = scenario({
       p1: { battlefield: lands("Island", 4), hand: ["Uthros Scanship"], library: ["Opt", "Forest", "Island"] },
     });
@@ -3119,7 +3119,7 @@ describe("Edge of Eternities, lot K8 : peu communes (5)", () => {
     expect(chars(big, idOf(big, "p1", "battlefield", "Uthros Scanship")).keywords).toContain("flying");
   });
 
-  it("Vaultguard Trooper : avec deux créatures engagées, vous pouvez défausser votre main pour piocher deux cartes", () => {
+  it("Vaultguard Trooper: with two tapped creatures, you may discard your hand to draw two cards", () => {
     const setup = () =>
       scenario({
         p1: {
@@ -3140,7 +3140,7 @@ describe("Edge of Eternities, lot K8 : peu communes (5)", () => {
     expect(t.players.p1?.graveyard).toHaveLength(0);
   });
 
-  it("Virulent Silencer : vos créatures-artefacts non-jetons qui blessent un joueur lui donnent deux marqueurs poison", () => {
+  it("Virulent Silencer: your nontoken artifact creatures that damage a player give them two poison counters", () => {
     let s = scenario({ p1: { battlefield: ["Virulent Silencer", "Rust Harvester", "Bear Cub"] } });
     createTokens(
       s,
@@ -3157,7 +3157,7 @@ describe("Edge of Eternities, lot K8 : peu communes (5)", () => {
     expect(lifeOf(s, "p2")).toBe(15);
   });
 
-  it("Voidforged Titan : vide, à votre étape de fin, piochez et perdez 1 PV", () => {
+  it("Voidforged Titan: void, at your end step, draw and lose 1 life", () => {
     const setup = () => scenario({ p1: { battlefield: ["Voidforged Titan"] }, p2: { battlefield: ["Llanowar Elves"] } });
     const s = advanceUntil(withVoid(setup()), (x) => x.turn.active === "p2");
     expect(handSize(s, "p1")).toBe(1);
@@ -3167,7 +3167,7 @@ describe("Edge of Eternities, lot K8 : peu communes (5)", () => {
     expect(lifeOf(t, "p1")).toBe(20);
   });
 
-  it("Wedgelight Rammer : un Robot 2/2 en arrivant ; créature avec le vol et l'initiative à 9+", () => {
+  it("Wedgelight Rammer: a 2/2 Robot on entering; creature with flying and first strike at 9+", () => {
     let s = scenario({ p1: { battlefield: lands("Plains", 4), hand: ["Wedgelight Rammer"] } });
     s = settle(cast(s, "p1", "Wedgelight Rammer"));
     expect(tokensOf(s, "p1", "Robot")).toHaveLength(1);
@@ -3177,11 +3177,11 @@ describe("Edge of Eternities, lot K8 : peu communes (5)", () => {
     expect(chars(big, ship).keywords).toEqual(expect.arrayContaining(["flying", "firstStrike"]));
   });
 
-  it("Weftstalker Ardent : une autre de vos créatures ou un de vos artefacts arrive, 1 blessure à chaque adversaire", () => {
+  it("Weftstalker Ardent: another of your creatures or one of your artifacts enters, 1 damage to each opponent", () => {
     let s = scenario({
       p1: { battlefield: ["Weftstalker Ardent", "Plains", "Forest"], hand: ["Thaumaton Torpedo", "Llanowar Elves", "Forest"] },
     });
-    // Un terrain ne déclenche rien.
+    // A land triggers nothing.
     s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Forest") });
     expect(s.stack).toHaveLength(0);
     expect(s.triggers).toHaveLength(0);
@@ -3189,7 +3189,7 @@ describe("Edge of Eternities, lot K8 : peu communes (5)", () => {
     expect(lifeOf(s, "p2")).toBe(19);
     s = settle(cast(s, "p1", "Llanowar Elves"));
     expect(lifeOf(s, "p2")).toBe(18);
-    // Une créature adverse qui arrive ne compte pas.
+    // An opposing creature that enters doesn't count.
     createTokens(s, "p2", DRONE, 1);
     s = settle(s);
     expect(lifeOf(s, "p2")).toBe(18);
@@ -3197,7 +3197,7 @@ describe("Edge of Eternities, lot K8 : peu communes (5)", () => {
 });
 
 describe("Broodguard Elite (lot K8)", () => {
-  it("en quittant le champ de bataille, met tous ses marqueurs (toutes sortes) sur une créature ciblée que vous contrôlez", () => {
+  it("on leaving the battlefield, puts all its counters (of every kind) on a targeted creature you control", () => {
     let s = scenario({
       p1: { battlefield: [{ name: "Broodguard Elite", counters: { "+1/+1": 2, stun: 1 } }, "Bear Cub"] },
       p2: { battlefield: lands("Mountain", 1), hand: ["Shock"] },
@@ -3212,17 +3212,17 @@ describe("Broodguard Elite (lot K8)", () => {
   });
 });
 
-describe("Edge of Eternities : approximations levées (lot A1)", () => {
-  it("Emissary Escort : « +X/+0 » s'ajoute à une force de base fixée par un effet", () => {
+describe("Edge of Eternities: approximations lifted (lot A1)", () => {
+  it('Emissary Escort: "+X/+0" adds to a base power set by an effect', () => {
     const s = scenario({ p1: { battlefield: ["Emissary Escort", "Thaumaton Torpedo", "Memorial Vault"] } });
     const escort = idOf(s, "p1", "battlefield", "Emissary Escort");
     expect([chars(s, escort).power, chars(s, escort).toughness]).toEqual([4, 4]);
-    // F/E de base 1/1 (couche 7b) : le bonus (couche 7c) s'y ajoute.
+    // Base P/T 1/1 (layer 7b): the bonus (layer 7c) is added to it.
     addEffect(s, [escort], { setPower: 1, setToughness: 1 }, "endOfTurn");
     expect([chars(s, escort).power, chars(s, escort).toughness]).toEqual([5, 1]);
   });
 
-  it("Dyadrine : en attaquant, le joueur choisit les deux créatures dont il retire un marqueur +1/+1", () => {
+  it("Dyadrine: on attacking, the player chooses the two creatures to remove a +1/+1 counter from", () => {
     let s = scenario({
       p1: {
         battlefield: [
@@ -3253,7 +3253,7 @@ describe("Edge of Eternities : approximations levées (lot A1)", () => {
     expect(idsOf(s, "p1", "battlefield", "Robot")).toHaveLength(1);
   });
 
-  it("Terrasymbiosis : un refus de piocher ne compte pas pour « une seule fois par tour »", () => {
+  it('Terrasymbiosis: declining to draw doesn\'t count toward "only once each turn"', () => {
     let s = scenario({
       p1: {
         battlefield: [...lands("Plains", 3), "Bear Cub", "Terrasymbiosis"],
@@ -3266,18 +3266,18 @@ describe("Edge of Eternities : approximations levées (lot A1)", () => {
     expect(r.triggered).toEqual(["Terrasymbiosis"]);
     s = settle(r.s, (req) => (req.type === "yesNo" ? [0] : undefined));
     expect(s.players.p1?.hand).toHaveLength(2);
-    // Deuxième fois : elle se déclenche encore, et l'on pioche.
+    // Second time: it triggers again, and you draw.
     r = counterFrom(s, "p1", cub);
     expect(r.triggered).toEqual(["Terrasymbiosis"]);
     s = settle(r.s, (req) => (req.type === "yesNo" ? [1] : undefined));
     expect(s.players.p1?.hand).toHaveLength(2);
-    // C'est fait : plus de déclenchement ce tour-ci.
+    // Done: no more triggers this turn.
     expect(counterFrom(s, "p1", cub).triggered).toEqual([]);
   });
 });
 
 describe("Edge of Eternities, PLAN-A A4a", () => {
-  it("Chorale of the Void : à plusieurs, la carte vient du cimetière du joueur défenseur", () => {
+  it("Chorale of the Void: in multiplayer, the card comes from the defending player's graveyard", () => {
     let s = scenario({
       players: 3,
       p1: { battlefield: [...lands("Swamp", 4), "Bear Cub"], hand: ["Chorale of the Void"] },
@@ -3292,7 +3292,7 @@ describe("Edge of Eternities, PLAN-A A4a", () => {
     expect(run.s.battlefield.filter((id) => run.s.objects[id]?.owner === "p3")).toHaveLength(1);
   });
 
-  it("The Dominion Bracelet : la capacité accordée disparaît si la créature équipée perd ses capacités", () => {
+  it("The Dominion Bracelet: the granted ability disappears if the equipped creature loses its abilities", () => {
     const s = scenario({ p1: { battlefield: ["The Dominion Bracelet", "Serra Angel", ...lands("Plains", 15)] } });
     const bracelet = idOf(s, "p1", "battlefield", "The Dominion Bracelet");
     const angel = idOf(s, "p1", "battlefield", "Serra Angel");

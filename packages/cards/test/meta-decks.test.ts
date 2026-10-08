@@ -1,12 +1,12 @@
 /**
- * Decks du méta Standard (plan P4, `docs/meta/2026-09-29/`) : tous leurs noms de cartes sont reconnus, et les decks des
- * lots terminés sont légaux et jouables, réserve comprise (le BO3 en a besoin). La liste grandit à chaque lot.
+ * Standard meta decks (plan P4, `docs/meta/2026-09-29/`): all their card names are recognized, and the decks of the
+ * finished lots are legal and playable, sideboard included (BO3 needs it). The list grows with each lot.
  */
 import { describe, expect, it } from "vitest";
 import { metaDecks } from "../../../tools/meta-decks";
 import { CARDS, DECKS, type DeckEntries, validateDeck } from "../src";
 
-/** Decks rendus jouables par les lots du méta déjà faits (docs/plans/PLAN-P4.md). */
+/** Decks made playable by the meta lots already done (PLAN-P4 in docs/history.md). */
 const PLAYABLE = [
   // Lot M1
   "Izzet Spellementals",
@@ -36,25 +36,25 @@ const PLAYABLE = [
   "Jeskai Control",
 ];
 
-describe("decks du méta", () => {
+describe("meta decks", () => {
   const decks = metaDecks();
 
-  it("les vingt archétypes sont lus, sans carte inconnue", () => {
+  it("the twenty archetypes are read, with no unknown card", () => {
     expect(decks).toHaveLength(20);
     for (const d of decks) expect(d.unknown, d.name).toEqual([]);
   });
 
-  it("la phase 1 est finie : les vingt archétypes sont jouables", () => {
+  it("phase 1 is over: the twenty archetypes are playable", () => {
     expect(PLAYABLE).toHaveLength(20);
   });
 
-  it.each(PLAYABLE)("%s est légal et jouable, réserve comprise", (name) => {
+  it.each(PLAYABLE)("%s is legal and playable, sideboard included", (name) => {
     const d = decks.find((x) => x.name === name);
     expect(d?.playable).toBe(true);
   });
 });
 
-describe("decks préconstruits du méta", () => {
+describe("meta precon decks", () => {
   const prebuilt = DECKS.filter((d) => d.id.startsWith("meta-"));
   const total = (l: DeckEntries) => {
     const m = new Map<string, number>();
@@ -62,7 +62,7 @@ describe("decks préconstruits du méta", () => {
     return [...m].sort(([a], [b]) => (a < b ? -1 : 1));
   };
 
-  it("les cinq premiers archétypes, dans l'ordre du méta", () => {
+  it("the first five archetypes, in meta order", () => {
     expect(prebuilt.map((d) => d.name)).toEqual([
       "Izzet Spellementals",
       "Mono-Green Landfall",
@@ -73,7 +73,7 @@ describe("decks préconstruits du méta", () => {
   });
 
   it.each(prebuilt.map((d) => [d.name, d] as const))(
-    "%s : légal, jouable, identique au relevé, avec une illustration",
+    "%s: legal, playable, identical to the list, with an illustration",
     (name, d) => {
       const v = validateDeck(d, CARDS);
       expect(v.errors).toEqual([]);

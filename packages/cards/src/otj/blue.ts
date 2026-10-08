@@ -1,4 +1,4 @@
-/** Outlaws of Thunder Junction — cartes bleues. */
+/** Outlaws of Thunder Junction — blue cards. */
 import type { CardScript } from "@mtgx/engine";
 import {
   activated,

@@ -15,7 +15,7 @@ export const RECORD_FORMAT = "mtgx-game";
 export const RECORD_VERSION = 1;
 
 /**
- * Version of the engine rules. It moves at each lot that changes the behavior of a game (docs/plans/PLAN-R.md,
+ * Version of the engine rules. It moves at each lot that changes the behavior of a game (PLAN-R in docs/history.md,
  * "[rules]" lots): a record from another version may no longer replay identically. Absent from a record: 0.
  *
  * - 1: one id counter per prefix (lot F1).

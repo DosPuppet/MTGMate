@@ -4,15 +4,15 @@ The tutorial is aimed at a player who does not know Magic. It starts from the **
 
 | # | id | Content |
 |---|---|---|
-| 1 | `ecran` | Goal of the game, life, battlefield, hand, library, graveyard, phases, main button, preview, log |
+| 1 | `screen` | Goal of the game, life, battlefield, hand, library, graveyard, phases, main button, preview, log |
 | 2 | `mana` | One land per turn, mana cost (color, generic), tapped lands, end of turn |
 | 3 | `creatures` | Power and toughness, summoning sickness, the stack (opposing spell) |
-| 4 | `attaque` | Combat, attackers, opposing block, damage, graveyard, second main phase |
-| 5 | `blocage` | Defending, creature trade, life loss |
-| 6 | `sorts` | Sorceries and instants, targets (drag and drop), first victory |
-| 7 | `pile` | Responding to a spell, resolution order, damage that lasts until end of turn, combat turn |
-| 8 | `capacites` | Flying, vigilance, lifelink, reach, deathtouch, triggered and activated abilities |
-| 9 | `partie` | Mulligan, stops, "Passer le tour" ("Pass the turn"), then a real game against the beginner AI (opponent at 10 life), with tips |
+| 4 | `attack` | Combat, attackers, opposing block, damage, graveyard, second main phase |
+| 5 | `block` | Defending, creature trade, life loss |
+| 6 | `spells` | Sorceries and instants, targets (drag and drop), first victory |
+| 7 | `stack` | Responding to a spell, resolution order, damage that lasts until end of turn, combat turn |
+| 8 | `abilities` | Flying, vigilance, lifelink, reach, deathtouch, triggered and activated abilities |
+| 9 | `game` | Mulligan, stops, "Passer le tour" ("Pass the turn"), then a real game against the beginner AI (opponent at 10 life), with tips |
 
 You can **play through everything** (the next lesson is offered first), **resume**, or pick a lesson. Progress is kept in `localStorage` (`planecircle.tutorial`: completed lessons and the lesson to resume). Resuming restarts the lesson **from its beginning**.
 
