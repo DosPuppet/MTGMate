@@ -1,6 +1,6 @@
 /** Listes de decks seules (sans les données de cartes) : utilisable côté interface sans alourdir le bundle. */
 
-import type { Format } from "@mtgx/engine";
+import { CUSTOM_PRINTING, type Format } from "@mtgx/engine";
 import bienvenueBlanc from "../decks/bienvenue-blanc.json";
 import bienvenueBleu from "../decks/bienvenue-bleu.json";
 import bienvenueNoir from "../decks/bienvenue-noir.json";
@@ -47,6 +47,11 @@ export interface DeckList {
    * EDHREC ou Moxfield, celui de son auteur). Le nombre de Game Changers (`validateDeck`) n'en donne qu'un plancher.
    */
   bracket?: 1 | 2 | 3 | 4 | 5;
+  /**
+   * Préconstruit aux illustrations personnelles (`"custom"`) : chaque ligne qui ne choisit pas d'impression prend
+   * l'impression personnelle (`CUSTOM_PRINTING`), dont l'image vient du dossier local du serveur, s'il y en a une.
+   */
+  art?: "custom";
 }
 
 /**
@@ -78,7 +83,14 @@ export const DECKS: DeckList[] = [
   cmdNissa,
   cmdVision,
   cmdDarkLeo,
-].map((d) => ({ ...(d as DeckList), builtin: true }));
+].map((d) => withArt({ ...(d as DeckList), builtin: true }));
+
+function withArt(d: DeckList): DeckList {
+  if (d.art !== "custom") return d;
+  const custom = (entries: DeckEntries): DeckEntries =>
+    entries.map((e) => (e[2] ? e : ([e[0], e[1], CUSTOM_PRINTING] as DeckEntries[number])));
+  return { ...d, main: custom(d.main), ...(d.commander ? { commander: custom(d.commander) } : {}) };
+}
 
 const deckKey = (main: DeckEntries) => {
   const totals = new Map<string, number>();

@@ -2,13 +2,14 @@
  * Impressions (PLAN-G, G1) : l'illustration d'une réédition, ou d'une impression de la table (`printings.ts`), choisie
  * par le deck, sans rien changer aux règles.
  */
-import { createRecordedGame, isGameRecord, keyedPrinting, projectView, replayGame } from "@mtgx/engine";
+import { CUSTOM_PRINTING, createRecordedGame, isGameRecord, keyedPrinting, projectView, replayGame } from "@mtgx/engine";
 import { describe, expect, it } from "vitest";
 import {
   buildDeck,
   CARDS,
   CardIndex,
   card,
+  DECKS,
   type DeckEntries,
   deckPrintings,
   parseDeckList,
@@ -182,5 +183,35 @@ describe("table des impressions", () => {
     expect(JSON.stringify(projectView(state, "p2"))).not.toContain(image);
     const replayed = replayGame(JSON.parse(JSON.stringify(record)), (name) => card(name)).state;
     expect(replayed.printings).toEqual(state.printings);
+  });
+});
+
+describe("impression personnelle (illustrations locales du serveur)", () => {
+  it("le préconstruit The Vision la prend pour chaque carte ; la vue marque ses faces, ses jetons et son joueur", () => {
+    const vision = DECKS.find((d) => d.id === "cmd-vision");
+    expect(vision?.art).toBe("custom");
+    expect([...(vision?.commander ?? []), ...(vision?.main ?? [])].every((e) => e[2] === CUSTOM_PRINTING)).toBe(true);
+    // Les autres préconstruits gardent les impressions de Scryfall.
+    expect(DECKS.filter((d) => d.main.some((e) => e[2] === CUSTOM_PRINTING)).map((d) => d.id)).toEqual(["cmd-vision"]);
+    expect(hasPrinting(card("Sol Ring"), CUSTOM_PRINTING)).toBe(true);
+    const main: DeckEntries = [
+      [30, "Sol Ring", CUSTOM_PRINTING],
+      [30, "Wastes"],
+    ];
+    const { state } = createRecordedGame({
+      seed: 5,
+      players: [
+        { id: "p1", name: "A", deck: buildDeck({ main }), printings: deckPrintings({ main }) },
+        { id: "p2", name: "B", deck: buildDeck({ main }) },
+      ],
+    });
+    const v1 = projectView(state, "p1");
+    const rings = v1.hand.filter((v) => v.name === "Sol Ring");
+    expect(rings.length).toBeGreaterThan(0);
+    for (const v of rings) expect(v.customArt).toBe(true);
+    for (const v of v1.hand.filter((x) => x.name === "Wastes")) expect(v.customArt).toBeUndefined();
+    expect(v1.players.p1?.customArt).toBe(true);
+    expect(v1.players.p2?.customArt).toBeUndefined();
+    for (const v of projectView(state, "p2").hand) expect(v.customArt).toBeUndefined();
   });
 });

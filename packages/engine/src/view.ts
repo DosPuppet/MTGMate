@@ -6,7 +6,7 @@
 import { copiedDefId } from "./layers";
 import { legalActions } from "./legal";
 import { costToText, manaValue, totalCost } from "./mana";
-import { keyedPrinting } from "./printing";
+import { CUSTOM_PRINTING, keyedPrinting } from "./printing";
 import { abilitiesOf, castTerms, landPermitted, modesOf, spellCost } from "./stack";
 import { chars, commanderOf, decider, HIDDEN_CARD_ID, isSummoningSick, obj } from "./state";
 import { mayLookAt, untapStepRule } from "./statics";
@@ -50,6 +50,11 @@ export interface CardFace {
   /** Carte à plusieurs faces : sa disposition et ses autres faces (verso, aventure, autre moitié). */
   layout?: CardDef["layout"];
   otherFaces?: CardDef["prepareFace"][];
+  /**
+   * Impression personnelle (`CUSTOM_PRINTING`) : l'interface affiche l'illustration personnelle de la carte (par son
+   * nom), s'il y en a une ; aussi sur les jetons d'un joueur dont le deck en utilise.
+   */
+  customArt?: true;
 }
 
 export interface ObjectView extends CardFace {
@@ -147,6 +152,8 @@ export interface PlayerView {
   /** Mana restreint de la réserve (« ne dépensez ce mana que pour… »), par type ; absent s'il n'y en a pas. */
   restrictedMana?: ManaType[];
   lost: boolean;
+  /** Son deck utilise l'impression personnelle : le dos de ses cartes cachées est le dos personnel, s'il y en a un. */
+  customArt?: true;
   /** Emblèmes (zone de commandement). */
   /** Emblèmes (114) ; `id` : l'objet, source des capacités activées d'un emblème (Karn, Living Legacy). */
   emblems: { id: ObjectId; name: string; text: string }[];
@@ -341,9 +348,27 @@ function otherFaces(d: CardDef): NonNullable<CardFace["otherFaces"]> {
 function printedFace(s: GameState, uid: string, defId: string, d: CardDef): CardFace {
   const face = cardFace(d);
   const key = s.printings?.[uid];
+  if (key === CUSTOM_PRINTING) return d.id === defId ? { ...face, customArt: true } : face;
   const p = key && d.id === defId ? (d.printings?.find((x) => x.key === key) ?? keyedPrinting(key)) : undefined;
   if (!p?.image) return face;
   return { ...face, image: p.image, ...(face.fr ? { fr: { ...face.fr, image: p.frImage ?? p.image } } : {}) };
+}
+
+const NO_OWNERS: ReadonlySet<PlayerId> = new Set();
+/** Joueurs dont le deck utilise l'impression personnelle, par table d'impressions (fixée à la création de la partie). */
+const customOwnersCache = new WeakMap<object, ReadonlySet<PlayerId>>();
+function customArtOwners(s: GameState): ReadonlySet<PlayerId> {
+  const printings = s.printings;
+  if (!printings) return NO_OWNERS;
+  let owners = customOwnersCache.get(printings);
+  if (!owners) {
+    const uids = new Set(Object.keys(printings).filter((uid) => printings[uid] === CUSTOM_PRINTING));
+    const found = new Set<PlayerId>();
+    if (uids.size) for (const o of Object.values(s.objects)) if (uids.has(o.uid)) found.add(o.owner);
+    owners = found;
+    customOwnersCache.set(printings, owners);
+  }
+  return owners;
 }
 
 /** `ObjectView.untapRule` d'un permanent. */
@@ -363,6 +388,8 @@ export function objectView(s: GameState, id: ObjectId): ObjectView {
   const blocking = s.combat?.blockers.find((b) => b.id === id)?.attacker ?? null;
   return {
     ...printedFace(s, o.uid, o.defId, d),
+    // Jeton d'un joueur dont le deck utilise les illustrations personnelles : la sienne, s'il y en a une.
+    ...(o.isToken && customArtOwners(s).has(o.owner) ? { customArt: true as const } : {}),
     id,
     uid: o.uid,
     owner: o.owner,
@@ -526,6 +553,7 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
       manaPool: { ...pl.manaPool },
       ...(pl.restrictedMana?.length ? { restrictedMana: pl.restrictedMana.map((m) => m.type) } : {}),
       lost: pl.lost,
+      ...(customArtOwners(s).has(p) ? { customArt: true as const } : {}),
       emblems: pl.command
         .filter((id) => obj(s, id).isToken)
         .map((id) => {

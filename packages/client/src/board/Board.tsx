@@ -1045,11 +1045,11 @@ function Hand() {
   );
 }
 
-function OpponentHand({ count }: { count: number }) {
+function OpponentHand({ count, custom }: { count: number; custom?: boolean }) {
   return (
     <div className="opp-hand">
       {Array.from({ length: count }, (_, i) => (
-        <CardBack key={i} width="var(--back-w)" />
+        <CardBack key={i} width="var(--back-w)" custom={custom} />
       ))}
     </div>
   );
@@ -1253,7 +1253,7 @@ export function Board() {
         {opponents.map((opp) => (
           <div key={opp.id} className={`top-row ${opp.lost ? "eliminated" : ""}`}>
             <PlayerBar player={opp} isMe={false} />
-            <OpponentHand count={opp.handCount} />
+            <OpponentHand count={opp.handCount} custom={!!opp.customArt} />
           </div>
         ))}
       </div>

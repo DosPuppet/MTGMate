@@ -46,7 +46,8 @@ export function Preview() {
   const { face, obj } = hover;
   const back =
     flipped && backImage
-      ? (customImage(backImage.name) ?? imageUrl((lang === "fr" && backImage.fr?.image) || backImage.image))
+      ? ((face.customArt ? customImage(backImage.name) : undefined) ??
+        imageUrl((lang === "fr" && backImage.fr?.image) || backImage.image))
       : undefined;
   // Votre carte face cachée : vous seul voyez de quelle carte il s'agit.
   const hidden = obj?.faceDownCard;

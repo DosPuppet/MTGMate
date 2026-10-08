@@ -131,6 +131,7 @@ Des images locales (proxys, versions alternatives) peuvent remplacer celles de S
 1. Sur votre machine, préparez-les : `npm run custom-art -- <dossier des images>`. Les fichiers sont nommés d'après le nom anglais de la carte (détail en tête de `tools/custom-art.ts`). Le résultat va dans `data/art/` : des images réduites en WebP (environ 100 Ko chacune) et `manifest.json`.
 2. Copiez ce dossier sur le VPS, dans le dossier `data/` de l'appli : `rsync -a data/art/ vps:planecircle/data/art/`. Un autre emplacement se donne par `MTGX_ART_DIR`.
 3. Le serveur les sert sur `/art/`, sans redémarrage. Tout joueur du serveur voit alors la case « Illustrations personnelles », cochée par défaut, sur l'accueil et dans les réglages de la partie.
+4. Elles ne remplacent l'image de Scryfall que dans un deck qui les choisit : le préconstruit The Vision pour toutes ses cartes, ou une carte au choix dans l'éditeur de deck (menu « Illustration », « Illustration personnelle »). Les jetons et le dos des cartes d'un joueur dont le deck en utilise prennent aussi les siens.
 
 ## 7. Vérifier
 

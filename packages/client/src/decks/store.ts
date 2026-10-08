@@ -2,7 +2,7 @@
  * Decks de l'utilisateur, conservés dans le navigateur (localStorage), plus les decks préconstruits.
  */
 import { CARDS, DECKS, type DeckList, deckColors } from "@mtgx/cards";
-import { type CardDef, type CardFace, colorIdentity, keyedPrinting } from "@mtgx/engine";
+import { type CardDef, type CardFace, CUSTOM_PRINTING, colorIdentity, keyedPrinting } from "@mtgx/engine";
 import { create } from "zustand";
 import { createJSONStorage, persist, type StateStorage } from "zustand/middleware";
 import { customImage, imageUrl } from "../images";
@@ -83,12 +83,12 @@ export function useAllDecks(): DeckList[] {
 }
 
 /**
- * Illustration d'un deck : celle, personnelle, de son commandant (images.ts) ; sinon sa couverture, sinon la carte
- * non-terrain la plus présente (dans l'impression choisie).
+ * Illustration d'un deck : celle, personnelle, de son commandant s'il prend l'impression personnelle (images.ts) ; sinon
+ * sa couverture, sinon la carte non-terrain la plus présente (dans l'impression choisie).
  */
 export function deckCover(deck: DeckList): string | undefined {
   const cmd = deck.commander?.[0];
-  const custom = cmd && customImage(cmd[1]);
+  const custom = cmd?.[2] === CUSTOM_PRINTING ? customImage(cmd[1]) : undefined;
   if (custom) return custom;
   if (deck.cover) return imageUrl(deck.cover);
   // Deck Commander : l'illustration de son commandant.
@@ -101,6 +101,7 @@ export function deckCover(deck: DeckList): string | undefined {
 
 /** La face d'une carte dans l'impression choisie par le deck (réédition, PLAN-G, ou impression de la table). */
 export function printedFace(face: CardFace, c: CardDef, key: string | undefined): CardFace {
+  if (key === CUSTOM_PRINTING) return { ...face, customArt: true };
   const p = key ? (c.printings?.find((x) => x.key === key) ?? keyedPrinting(key)) : undefined;
   if (!p?.image) return face;
   return { ...face, image: p.image, ...(face.fr ? { fr: { ...face.fr, image: p.frImage ?? p.image } } : {}) };

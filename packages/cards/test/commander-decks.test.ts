@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import { commanderDecks } from "../../../tools/commander-decks";
 import commanderData from "../data/commander.json";
 import edhData from "../data/edh.json";
-import { CARDS, DECKS, SET_BY_CODE } from "../src";
+import { CARDS, DECKS, type DeckEntries, SET_BY_CODE } from "../src";
 
 describe("decks Commander", () => {
   const decks = commanderDecks();
@@ -39,8 +39,10 @@ describe("decks Commander", () => {
     for (const d of decks) {
       const precon = DECKS.find((x) => x.id === `cmd-${d.id}`);
       expect(precon?.format, d.id).toBe("commander");
-      expect(precon?.commander).toEqual(d.commander);
-      expect(precon?.main).toEqual(d.main);
+      // Les cartes et leur nombre ; l'impression peut différer (préconstruit aux illustrations personnelles).
+      const names = (entries: DeckEntries | undefined) => entries?.map(([n, name]) => [n, name]);
+      expect(names(precon?.commander)).toEqual(names(d.commander));
+      expect(names(precon?.main)).toEqual(names(d.main));
     }
   });
 

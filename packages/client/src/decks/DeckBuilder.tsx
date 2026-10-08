@@ -21,6 +21,7 @@ import type { PrintingOption } from "@mtgx/cards/printings";
 import {
   type CardDef,
   type Color,
+  CUSTOM_PRINTING,
   cardFace,
   colorIdentity,
   type Format,
@@ -32,6 +33,7 @@ import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { Card, ManaCost } from "../board/Card";
 import { Preview } from "../board/Sidebar";
 import { faceName } from "../i18n";
+import { hasCustomArt, useImages } from "../images";
 import { useGame } from "../store";
 import { ExportModal, ImportModal } from "./ImportExport";
 import { type PrintingTable, usePrintings } from "./printings";
@@ -115,6 +117,7 @@ const PRINT_LANGS: Record<string, string> = {
 
 /** Libellé d'une impression dans le menu « Illustration » : « STA 42 · Strixhaven Mystical Archive · 2021 · japonais ». */
 function printingLabel(p: PrintingOption): string {
+  if (p.key === CUSTOM_PRINTING) return "Illustration personnelle";
   const info = SET_BY_CODE[p.set];
   const setName = info ? (info.nameFr ?? info.name) : p.setName;
   return [`${p.set} ${p.number}`, setName, p.year, p.lang && (PRINT_LANGS[p.lang] ?? p.lang)].filter(Boolean).join(" · ");
@@ -124,11 +127,18 @@ function printingLabel(p: PrintingOption): string {
  * Impressions proposées pour une carte : toutes celles de la table une fois chargée ; avant, la carte et ses rééditions
  * (et l'impression déjà choisie).
  */
-function printingChoices(c: CardDef, key: string | undefined, table: PrintingTable | undefined): PrintingOption[] {
+function printingChoices(
+  c: CardDef,
+  key: string | undefined,
+  table: PrintingTable | undefined,
+  custom: boolean,
+): PrintingOption[] {
   const out: PrintingOption[] = table?.printingOptions(c) ?? [
     { set: c.set ?? "", number: c.number ?? "" },
     ...(c.printings ?? []).map((p) => ({ key: p.key, set: p.set, number: p.number })),
   ];
+  // Illustration personnelle (dossier local du serveur, images.ts) : proposée si le serveur en a une, ou déjà choisie.
+  if (custom || key === CUSTOM_PRINTING) out.push({ key: CUSTOM_PRINTING, set: "", number: "" });
   const chosen = key && !out.some((p) => p.key === key) ? keyedPrinting(key) : undefined;
   return chosen ? [...out, { key, set: chosen.set, number: chosen.number }] : out;
 }
@@ -378,6 +388,7 @@ function DeckLines({
   const lang = useGame((s) => s.lang);
   const setHover = useGame((s) => s.setHover);
   const table = usePrintings();
+  const custom = useImages((s) => s.custom);
   return (
     <>
       {GROUPS.map(([label, test]) => {
@@ -394,7 +405,7 @@ function DeckLines({
               const c = CARDS[name] as CardDef;
               const face = printedFace(cardFace(c), c, key);
               const illegal = legalityIssue(c, format);
-              const choices = printingChoices(c, key, table);
+              const choices = printingChoices(c, key, table, hasCustomArt(custom, name));
               const current = choices.find((p) => p.key === key);
               return (
                 <div

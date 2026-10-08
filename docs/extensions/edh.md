@@ -250,7 +250,7 @@ Ajouté le 08/10/2026 à la demande de l'utilisateur avec la recette « Ajouter 
 - **Correction du moteur :** les créatures qui attaquent s'engagent avant le paiement de la taxe d'attaque (508.1f, puis 508.1h) ; une créature sacrifiée pour la payer (Rejeton Eldrazi devant Ghostly Prison) quitte le combat. Le moteur plantait (« Objet inconnu ») dans l'arène à quatre joueurs.
 - **Tests :** 8 de plus dans `engine/test/edh-vision.test.ts` (70) ; fuzz strict EDH à deux et quatre joueurs sans option refusée.
 - **Équilibre** (mêmes réglages qu'avant) : en duel, 50,0 % ± 6,9 (200 parties, 20,0 tours) ; à quatre, 49,0 % ± 9,8 (100 parties, 48,1 tours), contre 41,8 % avec l'ancienne liste.
-- **Illustrations personnelles :** `npm run custom-art -- <dossier>` (`tools/custom-art.ts`) ; toutes les cartes du deck ont la leur sauf Shrine of the Forsaken Gods (absente du dossier).
+- **Illustrations personnelles :** `npm run custom-art -- <dossier>` (`tools/custom-art.ts`) ; le préconstruit les prend pour toutes ses cartes (`"art": "custom"`), les autres decks gardent celles de Scryfall (au choix carte par carte dans l'éditeur) ; toutes les cartes du deck ont la leur sauf Shrine of the Forsaken Gods (absente du dossier).
 
 ## Deck Dark Leo & Shredder : Ninjas ✅ (653 / 653)
 

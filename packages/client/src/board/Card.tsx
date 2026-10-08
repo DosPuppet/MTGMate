@@ -2,7 +2,7 @@ import { type CardFace, counterLabel, HIDDEN_CARD_ID, type ObjectView } from "@m
 import { motion } from "motion/react";
 import { type CSSProperties, useState } from "react";
 import { faceImage, faceName, faceText, faceType } from "../i18n";
-import { detectBlockedScryfall, useRelayActive } from "../images";
+import { detectBlockedScryfall, useCustomBack, useRelayActive } from "../images";
 import { useGame } from "../store";
 import { useLongPress } from "../touch";
 import { KeywordBadges } from "./Keywords";
@@ -117,7 +117,7 @@ export function Card({
   if (face.defId === HIDDEN_CARD_ID)
     return (
       <div className={`card-slot ${className ?? ""}`} style={{ width, height }} data-oid={oid}>
-        <CardBack width={width} />
+        <CardBack width={width} custom={!!obj && customBackOf(obj.owner)} />
       </div>
     );
 
@@ -242,6 +242,12 @@ function CounterBadges({ counters }: { counters: Record<string, number> }) {
   );
 }
 
-export function CardBack({ width }: { width: string }) {
-  return <div className="card-back" style={{ width, height: `calc(${width} * 1.395)` }} />;
+/** Le deck de ce joueur utilise-t-il les illustrations personnelles (dos des cartes) ? */
+const customBackOf = (owner: string): boolean => !!useGame.getState().view?.players[owner]?.customArt;
+
+/** Dos d'une carte ; `custom` : le joueur à qui elle appartient utilise les illustrations personnelles. */
+export function CardBack({ width, custom }: { width: string; custom?: boolean }) {
+  const back = useCustomBack();
+  const image = custom && back ? { backgroundImage: `url("${back}")` } : {};
+  return <div className="card-back" style={{ width, height: `calc(${width} * 1.395)`, ...image }} />;
 }

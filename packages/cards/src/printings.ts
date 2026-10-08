@@ -4,7 +4,7 @@
  * l'interface ne la charge qu'à la demande (éditeur de deck, import d'une decklist) ; le serveur s'en sert pour vérifier
  * l'impression d'une ligne de deck.
  */
-import { type CardDef, keyedPrinting, printingKey } from "@mtgx/engine";
+import { type CardDef, CUSTOM_PRINTING, keyedPrinting, printingKey } from "@mtgx/engine";
 import data from "../data/printings.json";
 
 /** Une impression proposée pour une carte. */
@@ -55,6 +55,8 @@ export function printingOptions(c: CardDef): PrintingOption[] {
 
 /** La clé est-elle une impression connue de la carte ? */
 export function hasPrinting(c: CardDef, key: string): boolean {
+  // Impression personnelle : toujours admise (l'interface garde l'image de la carte s'il n'y en a pas).
+  if (key === CUSTOM_PRINTING) return true;
   if (c.printings?.some((p) => p.key === key)) return true;
   return !!keyedPrinting(key) && tableOptions(c.name).some((p) => p.key === key);
 }

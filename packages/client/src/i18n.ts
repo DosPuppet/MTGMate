@@ -118,9 +118,12 @@ export function faceType(face: CardFace, lang: Lang): string {
   return (lang === "fr" && face.fr?.typeLine) || face.typeLine;
 }
 
-/** Image d'une face : illustration personnelle, sinon celle de Scryfall (relayée si Scryfall est bloqué, voir images.ts). */
+/**
+ * Image d'une face : l'illustration personnelle si la face la demande (impression personnelle, jeton d'un deck qui en
+ * utilise) et qu'il y en a une ; sinon celle de Scryfall (relayée si Scryfall est bloqué, voir images.ts).
+ */
 export function faceImage(face: CardFace, lang: Lang): string | undefined {
-  const custom = face.defId === HIDDEN_CARD_ID ? undefined : customImage(face.name, face.isToken);
+  const custom = face.customArt && face.defId !== HIDDEN_CARD_ID ? customImage(face.name, face.isToken) : undefined;
   if (custom) return custom;
   // Jeton : l'image d'un jeton Scryfall correspondant (data/tokens.json), sinon le cadre texte.
   return imageUrl((lang === "fr" && face.fr?.image) || face.image || (face.isToken ? tokenImage(face) : undefined));

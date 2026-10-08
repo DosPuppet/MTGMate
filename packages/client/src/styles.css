@@ -1264,12 +1264,8 @@ button.emblem-chip.activatable {
 }
 .card-back {
   border-radius: 3px;
-  /* --card-back-image : dos des cartes personnel (illustrations personnelles, images.ts). */
-  background: var(
-    --card-back-image,
-    radial-gradient(ellipse at 50% 50%, #a3743f 0 30%, transparent 32%),
-    linear-gradient(135deg, #3b2616, #1e130b)
-  );
+  background: radial-gradient(ellipse at 50% 50%, #a3743f 0 30%, transparent 32%), linear-gradient(135deg, #3b2616, #1e130b);
+  /* Dos personnel (illustrations personnelles, `CardBack`) : image en ligne. */
   background-size: cover;
   background-position: center;
   border: 1px solid #0b0704;

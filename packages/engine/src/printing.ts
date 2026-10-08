@@ -6,6 +6,13 @@
  */
 import type { CardPrinting } from "./model/cards";
 
+/**
+ * Impression « personnelle » : l'illustration personnelle de la carte (images locales servies sur /art/ par le serveur,
+ * `tools/custom-art.ts`), s'il y en a une ; sinon, celle de la carte. Le moteur ne connaît pas l'image : la vue marque la
+ * face (`CardFace.customArt`) et l'interface la cherche par le nom de la carte.
+ */
+export const CUSTOM_PRINTING = "custom";
+
 /** « STA-42@<identifiant Scryfall sans tirets> ». */
 const KEY = /^([A-Z0-9]{2,6})-([^@\s]{1,10})@([0-9a-f]{32})$/;
 

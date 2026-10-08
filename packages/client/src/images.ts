@@ -7,9 +7,11 @@
  *
  * Toute URL d'image affichée passe par `imageUrl`.
  *
- * Illustrations personnelles (`tools/custom-art.ts`) : images locales servies sur /art/ (hors de Git), qui remplacent celles
- * de Scryfall pour les cartes, jetons et dos qu'elles nomment, quand la case « Illustrations personnelles » est cochée
- * (par défaut ; mémorisé). Sans /art/manifest.json sur le serveur, la case n'apparaît pas.
+ * Illustrations personnelles (`tools/custom-art.ts`) : images locales servies sur /art/ (hors de Git). Elles ne remplacent
+ * celles de Scryfall que pour les cartes d'un deck qui choisit l'impression personnelle (`CUSTOM_PRINTING` : tout le
+ * préconstruit The Vision, ou une carte au choix dans l'éditeur de deck), les jetons et le dos des cartes d'un joueur dont
+ * le deck en utilise, et quand la case « Illustrations personnelles » est cochée (par défaut ; mémorisé). Sans
+ * /art/manifest.json sur le serveur, la case n'apparaît pas.
  */
 import { create } from "zustand";
 
@@ -105,6 +107,11 @@ export function customImage(name: string, token = false): string | undefined {
   return file ? ART + file : undefined;
 }
 
+/** Le serveur a-t-il une illustration personnelle pour cette carte (case cochée ou non) ? */
+export function hasCustomArt(custom: ArtManifest | null, name: string): boolean {
+  return !!custom && !!(custom.cards[name] ?? custom.cards[name.split(" // ")[0] ?? ""]);
+}
+
 /** Composants : se redessiner quand le relais s'active ou se coupe, ou que les illustrations personnelles changent. */
 export const useRelayActive = (): boolean => {
   useImages((s) => s.customOn && s.custom);
@@ -124,14 +131,10 @@ export async function loadCustomArt(): Promise<void> {
   }
 }
 
-/** Dos des cartes : variable CSS `--card-back-image` (voir `.card-back`), suivie au fil des réglages. */
-function applyCardBack(s: Pick<ImageStore, "custom" | "customOn">): void {
-  if (typeof document === "undefined") return;
-  const back = s.customOn && s.custom?.back;
-  if (back) document.documentElement.style.setProperty("--card-back-image", `url("${ART}${back}")`);
-  else document.documentElement.style.removeProperty("--card-back-image");
+/** Dos personnel des cartes (s'il y en a un et que la case est cochée) : pour un joueur dont le deck en utilise. */
+export function useCustomBack(): string | undefined {
+  return useImages((s) => (s.customOn && s.custom?.back ? ART + s.custom.back : undefined));
 }
-useImages.subscribe(applyCardBack);
 
 function loads(src: string): Promise<boolean> {
   return new Promise((resolve) => {
