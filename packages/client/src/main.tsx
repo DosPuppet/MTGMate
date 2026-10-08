@@ -5,7 +5,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
 import { playSound, unlockAudio, useAudio } from "./audio/sfx";
-import { detectBlockedScryfall } from "./images";
+import { detectBlockedScryfall, loadCustomArt } from "./images";
 import { prefetchGameWorker } from "./session";
 import { flushSave, useGame } from "./store";
 import { useTutorial } from "./tutorial/store";
@@ -61,6 +61,8 @@ document.addEventListener("keydown", (e) => {
 
 // Images : Scryfall bloqué par le réseau du joueur ? Relais par le serveur (mode auto, voir images.ts).
 void detectBlockedScryfall();
+// Illustrations personnelles du serveur (/art/, voir tools/custom-art.ts).
+void loadCustomArt();
 
 // Page rouverte : reprise de la partie en ligne, sinon de la partie contre l'IA sauvegardée (sauf lien d'invitation
 // ?room=CODE, qui ouvre le jeu en ligne ; la partie sauvegardée reprendra à la prochaine ouverture).

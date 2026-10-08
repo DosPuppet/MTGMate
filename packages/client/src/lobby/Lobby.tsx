@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { SoundControl } from "../audio/SoundControl";
 import { ManaCost } from "../board/Card";
 import { deckCover, useAllDecks } from "../decks/store";
-import { ImageRelayToggle } from "../ImageRelayToggle";
+import { CustomArtToggle, ImageRelayToggle } from "../ImageRelayToggle";
 import { useRelayActive } from "../images";
 import { useGame } from "../store";
 import { useTutorial } from "../tutorial/store";
@@ -242,6 +242,7 @@ export function Lobby() {
         <div className="lobby-sound">
           <SoundControl />
           <ImageRelayToggle />
+          <CustomArtToggle />
         </div>
         <h1>
           Planecircle <span className="build-tag">(alpha build)</span>

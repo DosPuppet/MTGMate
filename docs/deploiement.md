@@ -124,6 +124,14 @@ Les images des cartes viennent de Scryfall (`cards.scryfall.io`). Certains rése
 curl -sI https://mtg.mondomaine.fr/scry/small/front/8/d/8d8432a7-1c8a-4cfb-947c-ecf9791063eb.jpg | grep -i -E "^HTTP|x-cache"
 ```
 
+### Illustrations personnelles (facultatif)
+
+Des images locales (proxys, versions alternatives) peuvent remplacer celles de Scryfall pour les cartes, jetons et dos qu'elles nomment. Elles ne sont jamais dans Git.
+
+1. Sur votre machine, préparez-les : `npm run custom-art -- <dossier des images>`. Les fichiers sont nommés d'après le nom anglais de la carte (détail en tête de `tools/custom-art.ts`). Le résultat va dans `data/art/` : des images réduites en WebP (environ 100 Ko chacune) et `manifest.json`.
+2. Copiez ce dossier sur le VPS, dans le dossier `data/` de l'appli : `rsync -a data/art/ vps:planecircle/data/art/`. Un autre emplacement se donne par `MTGX_ART_DIR`.
+3. Le serveur les sert sur `/art/`, sans redémarrage. Tout joueur du serveur voit alors la case « Illustrations personnelles », cochée par défaut, sur l'accueil et dans les réglages de la partie.
+
 ## 7. Vérifier
 
 - `https://mtg.mondomaine.fr/healthz` affiche « ok » ;

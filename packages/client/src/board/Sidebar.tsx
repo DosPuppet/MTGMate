@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { SoundControl } from "../audio/SoundControl";
 import { BOARD_THEMES } from "../boardThemes";
-import { ImageRelayToggle } from "../ImageRelayToggle";
+import { CustomArtToggle, ImageRelayToggle } from "../ImageRelayToggle";
 import { faceImage, faceName, faceText, faceType, KEYWORD_LABEL, type LogLine } from "../i18n";
-import { imageUrl, useRelayActive } from "../images";
+import { customImage, imageUrl, useRelayActive } from "../images";
 import { PACES, useGame } from "../store";
 import { isTouch, justLongPressed } from "../touch";
 import { ManaCost, RulesText } from "./Card";
@@ -44,7 +44,10 @@ export function Preview() {
       </div>
     );
   const { face, obj } = hover;
-  const back = flipped && backImage ? imageUrl((lang === "fr" && backImage.fr?.image) || backImage.image) : undefined;
+  const back =
+    flipped && backImage
+      ? (customImage(backImage.name) ?? imageUrl((lang === "fr" && backImage.fr?.image) || backImage.image))
+      : undefined;
   // Votre carte face cachée : vous seul voyez de quelle carte il s'agit.
   const hidden = obj?.faceDownCard;
   const src = back ?? (hidden ? faceImage(hidden, lang) : undefined) ?? faceImage(face, lang);
@@ -325,6 +328,7 @@ function Settings() {
       <PaceControl />
       <BoardThemeControl />
       <ImageRelayToggle />
+      <CustomArtToggle />
       {!over && !replay && <ConcedeButton onConcede={() => decide({ type: "concede" })} />}
       {/* Enregistrement de la partie (replay, signalement d'un bug) ; en ligne, seulement une fois terminée. */}
       {!tutorial && !replay && (!online || over) && (

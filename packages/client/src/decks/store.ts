@@ -5,7 +5,7 @@ import { CARDS, DECKS, type DeckList, deckColors } from "@mtgx/cards";
 import { type CardDef, type CardFace, colorIdentity, keyedPrinting } from "@mtgx/engine";
 import { create } from "zustand";
 import { createJSONStorage, persist, type StateStorage } from "zustand/middleware";
-import { imageUrl } from "../images";
+import { customImage, imageUrl } from "../images";
 
 /** Stockage tolérant : navigation privée ou stockage bloqué ne doivent rien casser. */
 const safeStorage: StateStorage = {
@@ -82,11 +82,16 @@ export function useAllDecks(): DeckList[] {
   return [...DECKS, ...mine];
 }
 
-/** Illustration d'un deck : sa couverture, sinon la carte non-terrain la plus présente (dans l'impression choisie). */
+/**
+ * Illustration d'un deck : celle, personnelle, de son commandant (images.ts) ; sinon sa couverture, sinon la carte
+ * non-terrain la plus présente (dans l'impression choisie).
+ */
 export function deckCover(deck: DeckList): string | undefined {
+  const cmd = deck.commander?.[0];
+  const custom = cmd && customImage(cmd[1]);
+  if (custom) return custom;
   if (deck.cover) return imageUrl(deck.cover);
   // Deck Commander : l'illustration de son commandant.
-  const cmd = deck.commander?.[0];
   if (cmd && CARDS[cmd[1]]) return imageUrl(CARDS[cmd[1]]?.artCrop);
   const best = [...deck.main].filter(([, name]) => !CARDS[name]?.types.includes("Land")).sort((a, b) => b[0] - a[0])[0];
   const c = best ? CARDS[best[1]] : undefined;

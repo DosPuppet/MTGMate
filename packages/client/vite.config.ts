@@ -1,8 +1,35 @@
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
+
+/**
+ * Illustrations personnelles (tools/custom-art.ts) : /art/ servi depuis `MTGX_ART_DIR` ou data/art/ à la racine du dépôt,
+ * comme le fait le serveur de parties en production (hors de Git, hors du build).
+ */
+function customArt(): Plugin {
+  const dir = process.env.MTGX_ART_DIR || fileURLToPath(new URL("../../data/art", import.meta.url));
+  return {
+    name: "mtgx-custom-art",
+    configureServer(server) {
+      server.middlewares.use("/art", (req, res, next) => {
+        const m = req.url?.match(/^\/([a-z0-9-]+\.(webp|json))$/);
+        const file = m?.[1] ? join(dir, m[1]) : "";
+        if (!m || !existsSync(file)) {
+          if (m) res.statusCode = 404;
+          return m ? res.end() : next();
+        }
+        res.setHeader("Content-Type", m[2] === "json" ? "application/json" : "image/webp");
+        res.setHeader("Cache-Control", "no-cache");
+        res.end(readFileSync(file));
+      });
+    },
+  };
+}
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), customArt()],
   worker: { format: "es" },
   build: {
     // Les données des cartes (6 Mo, 1 Mo compressées) forment un fichier à part : une mise à jour du code ne force pas à

@@ -34,6 +34,11 @@ export interface ServerOptions {
   allowedOrigins?: string[];
   /** Dossier du client construit (packages/client/dist), servi en statique. */
   staticDir?: string;
+  /**
+   * Illustrations personnelles (`tools/custom-art.ts`), servies sur /art/ : dossier préparé hors de Git (MTGX_ART_DIR,
+   * data/art par défaut). Absent : pas d'illustrations personnelles.
+   */
+  artDir?: string;
   /** Récupération d'une image de Scryfall pour le relais /scry/ (remplaçable dans les tests). */
   fetchImage?: (url: string) => Promise<Response>;
   config?: Partial<RoomConfig>;
@@ -257,6 +262,36 @@ async function relayImage(
     .pipe(res);
 }
 
+/**
+ * Illustrations personnelles : /art/<fichier>.webp et /art/manifest.json, depuis le dossier préparé par
+ * `tools/custom-art.ts`. Noms de fichiers stricts (ni sous-dossier, ni autre extension). Les images portent une empreinte
+ * de leur source dans leur nom : cache long ; le manifeste, jamais en cache.
+ */
+export const ART_PREFIX = "/art/";
+const ART_PATH = /^\/art\/([a-z0-9-]+\.(webp|json))$/;
+
+function serveArt(dir: string | undefined, req: IncomingMessage, res: ServerResponse): void {
+  if (req.method !== "GET" && req.method !== "HEAD") {
+    res.writeHead(405).end();
+    return;
+  }
+  const m = new URL(req.url ?? "/", "http://x").pathname.match(ART_PATH);
+  const file = dir && m?.[1] ? join(dir, m[1]) : undefined;
+  if (!file || !existsSync(file)) {
+    res.writeHead(404).end();
+    return;
+  }
+  const json = m?.[2] === "json";
+  res.writeHead(200, {
+    ...SECURITY_HEADERS,
+    "Content-Type": json ? "application/json" : "image/webp",
+    "Cache-Control": json ? "no-cache" : "public, max-age=31536000, immutable",
+    "Content-Length": statSync(file).size,
+  });
+  if (req.method === "HEAD") res.end();
+  else createReadStream(file).pipe(res);
+}
+
 /** Version du serveur : le commit, fixé à la compilation (`tools/build-server.ts`) ; « dev » sous tsx. */
 const BUILD = process.env.MTGX_BUILD ?? "dev";
 
@@ -300,6 +335,7 @@ export function startServer(opts: ServerOptions = {}): Promise<RunningServer> {
   const aiPool = opts.aiWorkers === 0 ? undefined : new AiPool(opts.aiWorkers);
   const rooms = new RoomManager({ ...DEFAULT_CONFIG, ...(aiPool ? { aiPool } : {}), ...opts.config });
   const root = opts.staticDir && existsSync(opts.staticDir) ? resolve(opts.staticDir) : undefined;
+  const artDir = opts.artDir && existsSync(opts.artDir) ? resolve(opts.artDir) : undefined;
   const http = createHttpServer((req, res) => {
     try {
       handle(req, res);
@@ -317,6 +353,10 @@ export function startServer(opts: ServerOptions = {}): Promise<RunningServer> {
     }
     if (req.url?.startsWith(SCRY_PREFIX)) {
       void relayImage(req, res, opts.fetchImage ?? fetchScryfall);
+      return;
+    }
+    if (req.url?.startsWith(ART_PREFIX)) {
+      serveArt(artDir, req, res);
       return;
     }
     serveStatic(root, req, res);

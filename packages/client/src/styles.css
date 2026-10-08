@@ -1264,7 +1264,14 @@ button.emblem-chip.activatable {
 }
 .card-back {
   border-radius: 3px;
-  background: radial-gradient(ellipse at 50% 50%, #a3743f 0 30%, transparent 32%), linear-gradient(135deg, #3b2616, #1e130b);
+  /* --card-back-image : dos des cartes personnel (illustrations personnelles, images.ts). */
+  background: var(
+    --card-back-image,
+    radial-gradient(ellipse at 50% 50%, #a3743f 0 30%, transparent 32%),
+    linear-gradient(135deg, #3b2616, #1e130b)
+  );
+  background-size: cover;
+  background-position: center;
   border: 1px solid #0b0704;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
@@ -1931,7 +1938,8 @@ button.emblem-chip.activatable {
   align-items: flex-end;
   gap: 6px;
 }
-.lobby-sound .image-relay {
+.lobby-sound .image-relay,
+.lobby-sound .custom-art {
   color: var(--dim);
 }
 

@@ -14,3 +14,21 @@ export function ImageRelayToggle() {
     </label>
   );
 }
+
+/** Case « Illustrations personnelles » : seulement si le serveur en a (`tools/custom-art.ts`, voir images.ts). */
+export function CustomArtToggle() {
+  const custom = useImages((s) => s.custom);
+  const on = useImages((s) => s.customOn);
+  const setOn = useImages((s) => s.setCustomOn);
+  if (!custom) return null;
+  const count = Object.keys(custom.cards).length;
+  return (
+    <label
+      className="toggle custom-art"
+      title={`Images de cartes propres à ce serveur (${count} cartes) à la place de celles de Scryfall.`}
+    >
+      <input type="checkbox" checked={on} onChange={(e) => setOn(e.target.checked)} />
+      Illustrations personnelles
+    </label>
+  );
+}
