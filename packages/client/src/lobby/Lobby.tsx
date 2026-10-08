@@ -39,14 +39,23 @@ export function deckCategory(d: DeckList): Category {
   return "welcome";
 }
 
-/** Ordre des tranches Commander (bracket estimé d'après les Game Changers, `validateDeck`). */
-const BRACKET_ORDER = ["1–2", "3", "4+"] as const;
-type Bracket = (typeof BRACKET_ORDER)[number];
+/** Bracket d'un deck Commander : son libellé, son rang (pour le tri) et sa provenance. */
+interface Bracket {
+  label: string;
+  rank: number;
+  /** Déclaré par la source de la liste ; sinon estimé d'après les Game Changers (un plancher seulement). */
+  declared: boolean;
+}
 
-/** Bracket estimé d'un deck Commander (indicatif) ; rien pour un autre deck. */
+/** Estimation de `validateDeck` (aucun Game Changer : 1–2 ; jusqu'à trois : 3 ; au-delà : 4+) et son rang. */
+const ESTIMATE_RANK: Record<string, number> = { "1–2": 1.5, "3": 3, "4+": 4 };
+
+/** Bracket d'un deck Commander : celui que déclare sa source, sinon l'estimation ; rien pour un autre deck. */
 export function deckBracket(d: DeckList): Bracket | undefined {
   if (d.format !== "commander" && !d.commander?.length) return undefined;
-  return validateDeck(d, CARDS, "commander").bracket;
+  if (d.bracket) return { label: String(d.bracket), rank: d.bracket, declared: true };
+  const estimate = validateDeck(d, CARDS, "commander").bracket;
+  return estimate ? { label: `≈ ${estimate}`, rank: ESTIMATE_RANK[estimate] ?? 5, declared: false } : undefined;
 }
 
 export function DeckChoice({
@@ -69,8 +78,7 @@ export function DeckChoice({
   const [category, setCategory] = useState<Category>(chosen ? deckCategory(chosen) : "welcome");
   const brackets = useMemo(() => new Map(decks.map((d) => [d.id, deckBracket(d)])), [decks]);
   const rank = (d: DeckList) => {
-    const b = brackets.get(d.id);
-    return b ? BRACKET_ORDER.indexOf(b) : BRACKET_ORDER.length;
+    return brackets.get(d.id)?.rank ?? 6;
   };
   // Commander : classés par bracket, du plus doux au plus optimisé.
   const shown = decks
@@ -113,8 +121,15 @@ export function DeckChoice({
               <button type="button" className="deck-tile-main" disabled={!status.ok} onClick={() => onChange(d.id)}>
                 <div className="deck-art" style={{ backgroundImage: cover ? `url(${cover})` : undefined }}>
                   {bracket && (
-                    <span className="deck-bracket" title="Bracket estimé d'après les Game Changers du deck">
-                      Bracket {bracket}
+                    <span
+                      className="deck-bracket"
+                      title={
+                        bracket.declared
+                          ? "Bracket déclaré par la source de la liste"
+                          : "Bracket estimé d'après les Game Changers du deck (un plancher seulement)"
+                      }
+                    >
+                      Bracket {bracket.label}
                     </span>
                   )}
                 </div>

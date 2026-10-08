@@ -39,6 +39,11 @@ export interface DeckList {
   format?: Format;
   /** Deck préconstruit (lecture seule) ou créé par l'utilisateur. */
   builtin?: boolean;
+  /**
+   * Commander : bracket déclaré par la source de la liste (Wizards annonce ses préconstruits en bracket 2 ; une liste
+   * EDHREC ou Moxfield, celui de son auteur). Le nombre de Game Changers (`validateDeck`) n'en donne qu'un plancher.
+   */
+  bracket?: 1 | 2 | 3 | 4 | 5;
 }
 
 /**

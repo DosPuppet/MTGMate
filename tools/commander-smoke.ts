@@ -33,9 +33,12 @@ await page
   .getByRole("tab", { name: /^Commander/ })
   .click();
 const brackets = await page.locator(".deck-choice").first().locator(".deck-tile .deck-bracket").allInnerTexts();
-const order = ["Bracket 1–2", "Bracket 3", "Bracket 4+"];
-const ranks = brackets.map((b) => order.indexOf(b.trim()));
-if (brackets.length < 3 || ranks.some((r, i) => r < 0 || (i > 0 && r < (ranks[i - 1] ?? 0))))
+// Bracket déclaré par la source (« Bracket 2 ») ou estimé (« Bracket ≈ 3 », « ≈ 1–2 » rangé à 1,5).
+const ranks = brackets.map((b) => {
+  const m = /Bracket (≈ )?(\d)(–\d)?/.exec(b.trim());
+  return m ? Number(m[2]) + (m[3] ? 0.5 : 0) : Number.NaN;
+});
+if (brackets.length < 3 || ranks.some((r, i) => Number.isNaN(r) || (i > 0 && r < (ranks[i - 1] ?? 0))))
   errors.push(`decks Commander non classés par bracket : ${brackets.join(", ")}`);
 await page.screenshot({ path: join(OUT, "01-accueil-commander.png") });
 
@@ -43,7 +46,7 @@ await page.screenshot({ path: join(OUT, "01-accueil-commander.png") });
 await page.getByRole("button", { name: "Mes decks" }).click();
 await page.locator(".deck-select").selectOption("cmd-edgar-markov");
 const summary = await page.locator("[data-testid=commander-summary]").innerText({ timeout: 10_000 });
-if (!/Game Changers : 5 · bracket estimé 4\+/.test(summary)) errors.push(`éditeur : « ${summary} »`);
+if (!/Game Changers : 5 · bracket estimé 4\+ · déclaré 4/.test(summary)) errors.push(`éditeur : « ${summary} »`);
 const deckTab = await page.locator(".deck-tabs button").first().innerText();
 if (!/100\s*\/\s*100/.test(deckTab)) errors.push(`éditeur : onglet du deck « ${deckTab} »`);
 await page.screenshot({ path: join(OUT, "01b-editeur-commander.png") });

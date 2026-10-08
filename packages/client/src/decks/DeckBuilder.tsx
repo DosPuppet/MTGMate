@@ -718,6 +718,7 @@ export function DeckBuilder() {
                   title={v.gameChangers.length ? `Game Changers : ${v.gameChangers.join(", ")}` : "Aucun Game Changer"}
                 >
                   Game Changers : {v.gameChangers.length} · bracket estimé {v.bracket}
+                  {deck.bracket ? ` · déclaré ${deck.bracket}` : ""}
                 </span>
               )}
             </div>
