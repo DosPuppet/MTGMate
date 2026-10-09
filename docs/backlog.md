@@ -22,7 +22,7 @@ From PLAN-R ("Deferred until no card requires it", state of 2026-10-02, audit se
 | 722 | View of the player who controls another player's turn | done (`view.ts`) | done |
 | 615.7 | "The next time" shields | done (`fx.shield`, TDM) | done |
 | 903 partner / background | Commander pairs (partner, "choose a Background", friends forever) | a deck that has a pair (PLAN-E) | done 2026-10-09 (rules 178, Mario & Luigi deck: `canPair`, `decklist.ts`) |
-| Mechanics absent from the pool on 2026-09-30 | day and night, dungeons, the Ring, energy, initiative (the undertaking), battles. Phyrexian mana, phasing, regeneration, monarch were added since (G4e, H6) | check each against the pool with `npm run coverage -- --set <ext> --text` before assuming it is absent | check |
+| Mechanics absent from the pool | day and night, dungeons, the Ring, energy, initiative (the undertaking), battles. Phyrexian mana, phasing, regeneration, monarch were added since (G4e, H6) | a pool card with the mechanic; recheck the Oracle texts after each import | checked 2026-10-09 (PLAN-L): none in the pool |
 
 Related deferrals from the same plans:
 - PLAN-C "What we do not do" lists the same rules (block several attackers, battles, phasing, layer 3, loop shortcuts) as waiting for a card that requires them.
@@ -43,10 +43,9 @@ Related deferrals from the same plans:
 - Entry-choice flows not covered by `asEnters` (H9): a token copy created by an effect asks no question; the 1/1 characteristic of Abuelo's Awakening right after arriving (needs `LayerMods` in `MoveSpec`); `shockLand` stays apart (already a common arrival question).
 
 **Approximation groups left by PLAN-C C12** (check each against `docs/approximations.md` before starting; some were touched by later plans)
-- "Add N mana in any combination of colors" (6 to 8 cards: Vivi Ornitier banned, Flamebraider, Interdimensional Web Watch, Hermitic Herbalist): needs distinct mana units in the solver. Still in `approximations.md`: all mana of one chosen color when committed by hand.
+- "Add N mana in any combination of colors": the solver and the effects divide it since K2 (rules 73); a mana ability tapped by hand still gives one color (PLAN-L L3).
 - Choices at resolution without a target (about 15 cards, one by one): partly done by D1 (`fx.yourChoice`), H2c (Finality) and H4; remaining ones are listed in `approximations.md`.
-- "Tap N untapped creatures", the source included (9 cards): E7 added "tap N untapped creatures of a type"; check the rest.
-- "Player who put the counters" (9 cards): partly done (Lasting Tarfire); check.
+- "Tap N untapped creatures", the source included, and "player who put the counters": done in K2 (rules 73); Orphans of the Wheat and Exemplar of Light were missed (PLAN-L L4); Lasting Tarfire stays approximated (low value).
 - Eriette, the Beguiler: modeled as a static (control while the Aura stays attached) instead of a trigger "whenever an Aura becomes attached" with a timestamped control effect (layer 2). Needs an attachment trigger and a control duration tied to the Aura (single card).
 
 **Single-card remains of the DSL (PLAN-S, PLAN-H reports)**
@@ -58,18 +57,17 @@ Related deferrals from the same plans:
 
 **Layers and copies**
 - Counter-granted abilities apply after all other layer 6 effects whatever their timestamp (documented approximation, 2026-09-30 audit section 3.2).
-- Aura control timestamp is that of its arrival (R2.4).
 
 ## Cards: documented approximations to revisit
 
 Per card, in `docs/approximations.md`. Cards the plans left explicitly documented:
 - **PLAN-D:** Sidisi (its X comes from the sacrificed creature; Likeness Looter, The Mycosynth Gardens and Rydia were tied to X by PLAN-J J6c), Theorist's Sanctum (behold on entering), Kindle the Inner Flame (flashback behold), Lifecraft Engine, Raiding Schemes, Hawkeye (several reflexive modes), Moonlit Meditation copies that come from amass, endure or a gift, Zhao, Ruthless Admiral sacrificed by itself (untested), North Wind Avatar (card outside the game).
-- **PLAN-A:** Fear of Burning Alive ("that source" of a resolved spell has no object to designate), Central Elevator (a Room's names), Heirloom Epic (convoke of an ability), Eluge's {U} reduction, "other than Alania", Vision Quest (graveyard offered first), Zenos (opponent chosen when transforming), Great Train Heist (Treasures of an emblem), Sonic Shrieker, Shark Shredder's attack, the kind of counters removed from one creature (Quilled Greatwurm). Kept on purpose: Arena-style automatic choices, "exact in duel" entries, timings with the same result, the "outside the game" zone (Extrapolate the Impossible, Turtles Forever, North Wind Avatar).
-- **PLAN-E:** Relic of Legends, New Blood, ascension (one permanent only), Propaganda, Orcish Bowmasters, Enlightened Tutor and Herald's Horn, "untap up to N lands", Phyrexian Altar, Teferi's Protection. 903.9b timing: the commander question comes at the next check, not at the instant of the move.
-- **PLAN-H (H11 report):** Nuka-Nuke Launcher (radiation on each opponent instead of only the defending player: needs an emblem held by that player); sneak (the kept defender is not rechecked, 508.4a, as ninjutsu was before H5); Kili (only the mana part of an Equip cost is replaced); one defender for the tokens of one effect (general entry added in H5).
+- **PLAN-A:** Central Elevator (a Room's names), Heirloom Epic (convoke of an ability), Eluge's {U} reduction, "other than Alania", Vision Quest (graveyard offered first), Zenos (opponent chosen when transforming), Great Train Heist (Treasures of an emblem), Sonic Shrieker, the kind of counters removed from one creature (Quilled Greatwurm). Kept on purpose: Arena-style automatic choices, "exact in duel" entries, timings with the same result, the "outside the game" zone (Extrapolate the Impossible, Turtles Forever, North Wind Avatar).
+- **PLAN-E:** Relic of Legends, New Blood, Orcish Bowmasters, "untap up to N lands", Phyrexian Altar (general entry: the automatic payment never sacrifices), Teferi's Protection. 903.9b timing: the commander question comes at the next check, not at the instant of the move.
+- **PLAN-H (H11 report):** Nuka-Nuke Launcher (radiation on each opponent instead of only the defending player: needs an emblem held by that player); sneak (the kept defender is not rechecked, 508.4a, as ninjutsu was before H5; documented in `approximations.md` since PLAN-L L0); Kili (only the mana part of an Equip cost is replaced); one defender for the tokens of one effect (general entry added in H5).
 - **PLAN-G:** the 15 cards with Commander-only mechanics excluded from the reprint sets (`EXCLUDED_REPRINTS`): Breeches, Brazen Plunderer; Dargo, the Shipwrecker; Malcolm, Keen-Eyed Navigator; Akroma's Will; Bruse Tarl, Boorish Herder; Command Beacon; Inalla, Archmage Ritualist; Ishai, Ojutai Dragonspeaker; Kraum, Ludevic's Opus; Thrasios, Triton Hero; Tymna the Weaver; Vial Smasher the Fierce; Yuriko, the Tiger's Shadow; Jeska's Will; Command Tower. The plan said "to resume with Commander": Commander exists since PLAN-E, so they can now be added. Also out of the plan's scope: Commander sets, "Eternal" sets (TLE, SPE, TMC, HOC), Jumpstart (J25), Clue Edition (CLU), promos, Through the Omenpaths (OM1), Modern Horizons 3 Special Guests (set absent).
-- **PLAN-C C19:** 5 cards that Scryfall does not have in French.
-- **Card tests (PLAN-C C13, continuous):** the share of cards named in a rules test per extension. State at C13 (2026-10-03): FDN 41 %, FRA 23 %, EOE 23 %, DFT 17 %, OTJ 13 %, BLB 19 %, TDM 35 %, DSK 15 %, LCI 18 %, FIN 14 %; target at least 50 % per extension for the extensions before R7 and TDM, rares and mythics first, then cards with nontrivial effects. After PLAN-D D9 the overall figure was 4,356 / 5,171 (84 %, K lots + D9 tested the M/R/U cards of eleven extensions): measure again with `npm run coverage -- --set all --tests [--meta]` and with `--set <EXT>` for the never-named cards. Also pending: more Oracle expectation patterns (`clause` in `oracle-expectations.test.ts`) for recurring text forms, more official-ruling tests (`rulings.test.ts`) for other interactions (PLAN-R R7 "to continue").
+- **PLAN-C C19:** 5 cards that Scryfall does not have in French (Behind the Mask, Burden of Proof, Lead Pipe, Flotsam // Jetsam, Bloomvine Regent; still none on 2026-10-09). Also without any French at Scryfall: Candelabra of Tawnos, Leonardo, Worldly Warrior, Mishra's Workshop, Splinter, Aging Champion, Super State, The Mightstone and Weakstone, Library of Alexandria.
+- **Card tests (PLAN-C C13, continuous):** the share of cards named in a rules test per extension. The C13 target (50 % per extension) is met: on 2026-10-09, 5,184 / 6,372 (81 %), every set at 56 % or more; the lowest are EOS 56 %, OTP 57 %, SOA 65 %, EDH 67 % (261 cards never named), WOT 69 %, OTJ, LCI and SPG 70 %. Next target: the never-named cards of EDH and of the lowest sets, rares and mythics first (`npm run coverage -- --set all --tests [--meta]`, `--set <EXT>`). Also pending: more Oracle expectation patterns (`clause` in `oracle-expectations.test.ts`) for recurring text forms, more official-ruling tests (`rulings.test.ts`) for other interactions (PLAN-R R7 "to continue").
 
 ## PLAN-J: not done (2026-10-09)
 
@@ -82,13 +80,13 @@ Per card, in `docs/approximations.md`. Cards the plans left explicitly documente
 
 ## AI
 
-- Multiplayer: ISMCTS is for duels only; Commander at two uses it (kept after a 40-game measure); in 3 to 4 players the heuristic level plays. Medium-level priority decisions take 1.5 to 4 s on boards of 50 to 90 permanents (four-player games), already before C17 (`docs/ai.md`, "Pitfalls") (PLAN-C C17).
+- Multiplayer: ISMCTS is for duels only; Commander at two uses it (kept after a 40-game measure); in 3 to 4 players the heuristic level plays. The 1.5 to 4 s per medium decision on large boards (PLAN-C C17) no longer holds: on 2026-10-09 the bench's Commander line (four precons) measured 5.7 ms on average on boards of 50 to 62 permanents, 308 ms at worst.
 - Server-side determinization `forAgent` for AI seats was not done (PLAN-E E14): the server AI receives the full state as in the browser worker, under the same rule "never read the opponent's hand, deck, library order or hidden faces".
-- Medium AI in Commander proposes illegal decisions that are refused cleanly (the game continues): to examine (PLAN-H report).
+- Refused AI decisions in Commander (PLAN-H report): attack taxes and lone blocks on menace, fixed in PLAN-L L1; the arena now counts them.
 - Performance ideas not done (PLAN-H report): tokens created by batch, lazy trigger sources, cheaper state copy, AI bounds on very large boards. PLAN-S: compiled filters once (P3) and a trigger index by event (P4): under 4 % and 8 % of profile time after P1/P2; the absolute bench target of 5,000 decisions/s is judged before and after, never reached against an old number on WSL.
 - 2026-09-29/30 audit leftovers: no card-specific hints in `policy.ts` (holding a counterspell, targeting the right threat), no deck-specific game plan, no archetype mulligan, no multiplayer policy beyond the lethal/threat attack choice, no weight tuning by self-play.
 - Commander balance (PLAN-E E15, to decide with the user): with the medium AI Edgar Markov wins 59.3 % +/- 3.9 in duel (600 games) and its seats 33.3 % +/- 5.3 at four players (300 games); lists were not touched (a gap is fixed in the AI first).
-- Commander position in the bench (PLAN-E E15 report): not done.
+- Commander position in the bench (PLAN-E E15 report): done in PLAN-L L1 (four precons, timed by board size).
 
 ## Client and interface
 

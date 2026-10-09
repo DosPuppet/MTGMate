@@ -146,5 +146,17 @@
   "Yawgmoth's Will": {
     "typeLine": "Rituel",
     "text": "Jusqu'à la fin du tour, vous pouvez jouer des terrains et lancer des sorts depuis votre cimetière.\nSi une carte devait être mise dans votre cimetière de n'importe où ce tour-ci, exilez-la à la place."
+  },
+  "Null Brooch": {
+    "typeLine": "Artefact",
+    "text": "{2}, {T}, défaussez-vous de votre main : Contrecarrez un sort non-créature ciblé."
+  },
+  "Scorched Ruins": {
+    "typeLine": "Terrain",
+    "text": "Si ce terrain devait arriver, sacrifiez deux terrains dégagés à la place. Si vous faites ainsi, mettez ce terrain sur le champ de bataille. Sinon, mettez-le dans le cimetière de son propriétaire.\n{T} : Ajoutez {C}{C}{C}{C}."
+  },
+  "Mind Twist": {
+    "typeLine": "Rituel",
+    "text": "Un joueur ciblé se défausse de X cartes au hasard."
   }
 }

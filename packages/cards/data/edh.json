@@ -13993,7 +13993,9 @@
   },
   "fr": {
    "name": "Broche de cassation",
-   "image": "https://cards.scryfall.io/normal/front/0/8/08b7dee5-ace3-4389-8e95-23fad0e6d4e3.jpg?1783048874"
+   "image": "https://cards.scryfall.io/normal/front/0/8/08b7dee5-ace3-4389-8e95-23fad0e6d4e3.jpg?1783048874",
+   "typeLine": "Artefact",
+   "text": "{2}, {T}, défaussez-vous de votre main : Contrecarrez un sort non-créature ciblé."
   },
   "origin": "EXO",
   "colorIdentity": []
@@ -17192,7 +17194,9 @@
   },
   "fr": {
    "name": "Ruines dévastées",
-   "image": "https://cards.scryfall.io/normal/front/e/1/e10ffde5-6b47-4c92-9ac8-5c6f2dd738a9.jpg?1783051889"
+   "image": "https://cards.scryfall.io/normal/front/e/1/e10ffde5-6b47-4c92-9ac8-5c6f2dd738a9.jpg?1783051889",
+   "typeLine": "Terrain",
+   "text": "Si ce terrain devait arriver, sacrifiez deux terrains dégagés à la place. Si vous faites ainsi, mettez ce terrain sur le champ de bataille. Sinon, mettez-le dans le cimetière de son propriétaire.\n{T} : Ajoutez {C}{C}{C}{C}."
   },
   "origin": "WTH",
   "colorIdentity": []

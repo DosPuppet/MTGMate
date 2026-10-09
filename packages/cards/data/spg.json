@@ -3335,7 +3335,9 @@
    "standard": "not_legal"
   },
   "fr": {
-   "name": "Convulsion cérébrale"
+   "name": "Convulsion cérébrale",
+   "typeLine": "Rituel",
+   "text": "Un joueur ciblé se défausse de X cartes au hasard."
   }
  },
  {

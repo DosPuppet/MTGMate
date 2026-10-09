@@ -21,6 +21,7 @@ Each entry carries its nature:
 - `rule` **Eriette, the Beguiler:** modeled by a static ability, and not by the trigger "whenever an Aura becomes attached": control lasts as long as the Aura stays attached, the mana value condition holds and Eriette is on the battlefield (losing her returns the stolen permanents; a new Eriette steals retroactively).
 - `rule` **Convoke:** a creature that has a mana ability is not used for convoke (it pays through its mana ability).
 - `auto choice` **"Enters" effects outside a resolution** (return from a linked exile, token copy created by an effect, ninjutsu, sneak, state-based actions; 614.1c, 614.12): only the choices are made (type, color, name, mode, model of a copy), with the suggested answer; the other "enters" effects are not (Sin removes no counters, Mox Diamond enters without a discard, devour sacrifices nothing), and riot takes the default choice. A permanent spell that resolves, a land played (the first question comes with the decision, the following ones take the suggestion) and a permanent put onto the battlefield by an effect (`moveTo`, `arrivalChoices`) ask the player the questions (`asEntersChoices`, PLAN-H H9).
+- `rule` **Sneak** (TMT): the player or planeswalker chosen when the spell is cast is kept at resolution without being rechecked; if it is no longer attackable (planeswalker gone, player out of the game), the creature still enters attacking it instead of a new choice among the attackable players and planeswalkers (508.4a).
 - `auto choice` **Mana "in any combination" committed by hand** (Vivi Ornitier, Flamebraider, Interdimensional Web Watch, Hermitic Herbalist): all the mana is of one chosen color; the automatic payment of a cost, for its part, distributes it as well as possible.
 - `auto choice` **Untap up to N lands:** the lands are chosen automatically.
 - `auto choice` **Mana abilities with a cost (605.1a):** they resolve without the stack, but only when activated by hand: the automatic payment does not use them (Ramos, Capital City, Loot, the Pathfinder, Phyrexian Altar, Phyrexian Tower, Sunken Ruins...; the automatic payment never sacrifices a creature).
@@ -80,7 +81,6 @@ In the order they were added, set by set.
   - `rule` Neriv, Heart of the Storm: a creature that is no longer on the battlefield did not "enter this turn".
 - **Duskmourn (`docs/extensions/dsk.md`):**
   - `rule` Acrobatic Cheerleader ("triggers only once"): as long as it has no flying counter;
-  - `rule` Fear of Burning Alive: the redirected damage is dealt by Fear of Burning Alive, and not by the source that damaged the opponent (a spell has no object to designate once resolved);
   - `rule` conditions not checked: the Room with a different name (Central Elevator: a Room has two names), different powers (Rip, Spawn Hunter);
   - `rule` Unable to Scream: the face-down creature can still be turned face up;
   - `rule` Leyline of Transformation: only creatures on the battlefield (not spells or cards);
