@@ -1,0 +1,89 @@
+// Sephiroth, Fabled SOLDIER — mono-black aristocrats and combo. List "Sephiroth's Singularity" by Grumpywolf
+// (Moxfield), updated on 2026-10-08, retrieved on 2026-10-09. Source: https://moxfield.com/decks/LYykXgfH5k2TEntKKQzIGQ
+Commander
+1 Sephiroth, Fabled SOLDIER // Sephiroth, One-Winged Angel
+
+Deck
+1 Accursed Marauder
+1 Agadeem's Awakening // Agadeem, the Undercrypt
+1 Ancient Tomb
+1 Ashnod's Altar
+1 Avacyn, Angel of Horror
+1 Ayara, First of Locthwain
+1 Barad-dûr
+1 Biotransference
+1 Bitterbloom Bearer
+1 Bitterblossom
+1 Black Market Connections
+1 Blood Artist
+1 Bolas's Citadel
+1 Braids, Arisen Nightmare
+1 Cabal Coffers
+1 Chrome Mox
+1 Crypt Ghast
+1 Culling the Weak
+1 Dark Ritual
+1 Darklight Phoenix
+1 Deadly Rollick
+1 Demonic Tutor
+1 Deserted Temple
+1 Drivnod, Carnage Dominus
+1 Entomb
+1 Fell the Profane // Fell Mire
+1 Flare of Malice
+1 Fleshbag Marauder
+1 Forsaken Miner
+1 Fumulus, the Infestation
+1 Gemstone Caverns
+1 Grave Pact
+1 Gravecrawler
+1 Gray Merchant of Asphodel
+1 Great Unclean One
+1 Gwenom, Remorseless
+1 High Market
+1 Jadar, Ghoulcaller of Nephalia
+1 Jet Medallion
+1 Lake of the Dead
+1 Lord Skitter, Sewer King
+1 Malakir Rebirth // Malakir Mire
+1 Mana Vault
+1 Merciless Executioner
+1 Midgar, City of Mako // Reactor Raid
+1 Mortuary
+1 Mox Amber
+1 My Precious // Allure of Power
+1 Necropotence
+1 Nykthos, Shrine to Nyx
+1 Ophiomancer
+1 Orcish Bowmasters
+1 Pawn of Ulamog
+1 Phyrexian Altar
+1 Phyrexian Tower
+1 Pitiless Plunderer
+1 Reanimate
+1 Reassembling Skeleton
+1 Sensei's Divining Top
+1 Sheoldred, the Apocalypse
+1 Shizo, Death's Storehouse
+1 Skullclamp
+1 Sol Ring
+1 Stridehangar Automaton
+1 Susur Secundi, Void Altar
+17 Swamp
+1 Tevesh Szat, Doom of Fools
+1 The One Ring
+1 The Soul Stone
+1 Timeline Culler
+1 Tombstone Stairwell
+1 Umbral Collar Zealot
+1 Urborg, Tomb of Yawgmoth
+1 Urza's Cave
+1 Urza's Saga
+1 Vampiric Tutor
+1 Vein Ripper
+1 Viscera Seer
+1 Warren Soultrader
+1 Withering Torment
+1 Yawgmoth's Will
+1 Yawgmoth, Thran Physician
+1 Zulaport Cutthroat

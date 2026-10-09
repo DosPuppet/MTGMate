@@ -151,6 +151,9 @@ export interface ObjectFilter {
    * search; Shared Animosity: the event object).
    */
   sharesCreatureTypeWith?: Ref;
+  /** "That shares a card type with it" (Braids, Arisen Nightmare): the card types of the designated objects (their last
+   * known information if they left the battlefield), resolved by `withX`. */
+  sharesCardTypeWith?: Ref;
   /** Same name as the designated object, resolved by `withX` (Dragonlord Kolaghan: "with the same name as a card in their graveyard"). */
   nameOf?: Ref;
   /** Equipped creature (at least one Equipment attached). */

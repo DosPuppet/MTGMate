@@ -17,6 +17,7 @@ import {
   cond,
   costReducer,
   doesntUntap,
+  ELDRAZI_SPAWN,
   entersWith,
   eventReplacement,
   flashForAll,
@@ -48,17 +49,6 @@ const HISTORIC: ObjectFilter = { anyOf: [{ types: ["Artifact"] }, { legendary: t
 const ARTIFACTS_YOU: ObjectFilter = { types: ["Artifact"], controller: "you" };
 const ALL_COLORS: ProtectionRule = protection.from({ colors: ["W", "U", "B", "R", "G"] }, "Protection from each color");
 
-/** 0/1 colorless Eldrazi Spawn: "Sacrifice this token: Add {C}." */
-const ELDRAZI_SPAWN: TokenSpec = {
-  name: "Eldrazi Spawn",
-  colors: [],
-  types: ["Creature"],
-  subtypes: ["Eldrazi", "Spawn"],
-  power: 0,
-  toughness: 1,
-  abilities: [manaAbility("C", 1, { sacrifice: true, noTap: true })],
-  text: "Sacrifice this token: Add {C}.",
-};
 /** 1/1 colorless Eldrazi Scion: "Sacrifice this token: Add {C}." */
 const ELDRAZI_SCION: TokenSpec = {
   ...ELDRAZI_SPAWN,

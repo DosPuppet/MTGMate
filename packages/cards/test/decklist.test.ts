@@ -124,6 +124,7 @@ describe("construction rules", () => {
       "cmd-dark-leo",
       "cmd-ur-sphinx",
       "cmd-vivi",
+      "cmd-sephiroth",
     ];
     for (const d of DECKS) {
       if (d.format === "commander") {

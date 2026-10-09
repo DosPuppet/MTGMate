@@ -293,3 +293,6 @@ In the order they were added, set by set.
   - `rule` Tandem Lookout (soulbond, 702.95e): a pair breaks when state-based actions are checked, not at the very moment one of the creatures leaves, changes controller or stops being a creature;
   - `rule` Intuition: the three cards are shown to the choosing opponent only (not to the other players);
   - `timing` Final Fortune, Last Chance, Warrior's Oath: you lose at the end step of your next turn (the extra turn, unless another one is inserted before it).
+  - `rule` Biotransference: only your creatures on the battlefield and your creature spells are artifacts (not your creature cards in the other zones);
+  - `auto choice` Flare of Malice: the creature sacrificed instead of paying is chosen by the engine (the lowest mana value);
+  - `rule` Tombstone Stairwell: the world rule (704.5k) is not done (no other world enchantment in the catalog).

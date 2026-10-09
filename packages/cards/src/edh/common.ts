@@ -33,6 +33,17 @@ export const POWERSTONE: TokenSpec = {
   text: "{T}: Add {C}. This mana can't be spent to cast a nonartifact spell.",
 };
 /** The five colors, for "one mana of any color". */
+/** 0/1 colorless Eldrazi Spawn: "Sacrifice this token: Add {C}." (The Vision, Pawn of Ulamog). */
+export const ELDRAZI_SPAWN: TokenSpec = {
+  name: "Eldrazi Spawn",
+  colors: [],
+  types: ["Creature"],
+  subtypes: ["Eldrazi", "Spawn"],
+  power: 0,
+  toughness: 1,
+  abilities: [manaAbility("C", 1, { sacrifice: true, noTap: true })],
+  text: "Sacrifice this token: Add {C}.",
+};
 export const ANY_COLOR: ManaType[] = ["W", "U", "B", "R", "G"];
 
 /**

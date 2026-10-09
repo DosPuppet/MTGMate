@@ -21,6 +21,7 @@ describe("decks Commander", () => {
       "multiverse-reforged",
       "mutant-menace",
       "rakdos",
+      "sephiroth",
       "turtle-power",
       "ur-dragon",
       "ur-sphinx",

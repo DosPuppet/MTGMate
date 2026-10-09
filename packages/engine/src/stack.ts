@@ -820,17 +820,27 @@ export function altCostPayment(
     if (options.length === 0) return null;
     bounce = options[0];
   }
-  const sacrifice = pay.sacrificeReduce ? emergeVictim(s, player, pay.sacrificeReduce) : undefined;
-  if (pay.sacrificeReduce && !sacrifice) return null;
+  const sacrifice = pay.sacrificeReduce
+    ? emergeVictim(s, player, pay.sacrificeReduce)
+    : pay.sacrifice
+      ? emergeVictim(s, player, pay.sacrifice, "lowest")
+      : undefined;
+  if ((pay.sacrificeReduce || pay.sacrifice) && !sacrifice) return null;
   return { exile, ...(bounce ? { bounce } : {}), ...(sacrifice ? { sacrifice } : {}) };
 }
 
 /** Emerge (702.119): the sacrificed permanent, chosen automatically (the greatest mana value, hence the biggest reduction). */
-function emergeVictim(s: GameState, player: PlayerId, f: ObjectFilter): ObjectId | undefined {
+/** `lowest`: the lowest mana value instead (a sacrifice that reduces nothing: the Flares). */
+function emergeVictim(
+  s: GameState,
+  player: PlayerId,
+  f: ObjectFilter,
+  order: "greatest" | "lowest" = "greatest",
+): ObjectId | undefined {
   const mv = (id: ObjectId) => snapshot(s, id).manaValue ?? 0;
   return s.battlefield
     .filter((id) => obj(s, id).controller === player && matchesObjectFilter(s, player, id, f))
-    .sort((a, b) => mv(b) - mv(a))[0];
+    .sort((a, b) => (order === "greatest" ? mv(b) - mv(a) : mv(a) - mv(b)))[0];
 }
 
 /** A mana cost paid N times (replicate, cumulative upkeep). */

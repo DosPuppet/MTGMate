@@ -478,8 +478,10 @@ export const RECORD_VERSION = 1;
  *   Spell); "look at" cards seen by their player only (Gitaxian Probe, the Baubles); "copy this spell" while it
  *   resolves, by another player (Chain of Vapor); a copy may replace targets that no longer exist (707.10c); "any
  *   number" choices with a maximum (Intuition); "target spell with a single target" (Misdirection)
+ * - 177: Sephiroth deck (Commander): "a permanent that shares a card type with it" (Braids, Arisen Nightmare), the
+ *   sacrifice filters resolve the values of what is resolving; sacrifice as an alternative cost (the Flares)
  */
-export const RULES_VERSION = 176;
+export const RULES_VERSION = 177;
 
 /** One checkpoint every N decisions (plus the last one of the game). */
 export const CHECKPOINT_EVERY = 25;

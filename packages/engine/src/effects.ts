@@ -113,6 +113,20 @@ export function withX(s: GameState, f: ObjectFilter, ctx: EffectContext): Object
       ? { ...f, sharesCreatureTypeWith: undefined, types: [...(f.types ?? []), "Creature"] }
       : { ...f, sharesCreatureTypeWith: undefined, anySubtype: types };
   }
+  if (f.sharesCardTypeWith) {
+    // A sacrificed permanent: its last known information.
+    const types = new Set(
+      resolveRef(s, ctx, f.sharesCardTypeWith).flatMap((x) =>
+        s.objects[x]?.zone === "battlefield"
+          ? chars(s, x).types
+          : (s.lki[x]?.types ?? s.defs[s.objects[x]?.defId ?? ""]?.types ?? []),
+      ),
+    );
+    // Nothing designated: nothing matches (an empty `types` would not constrain the type).
+    f = types.size
+      ? { ...f, sharesCardTypeWith: undefined, types: [...types] }
+      : { ...f, sharesCardTypeWith: undefined, not: {} };
+  }
   // "… attacking that player" (Namor, Atlantean King): the designated players.
   if (f.attacking && typeof f.attacking === "object" && !Array.isArray(f.attacking))
     f = { ...f, attacking: resolveRef(s, ctx, f.attacking).filter((p) => isPlayer(s, p)) };

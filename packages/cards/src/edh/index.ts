@@ -13,6 +13,7 @@ import { EDH_MULTIVERSE } from "./multiverse";
 import { EDH_MUTANT } from "./mutant";
 import { EDH_NISSA } from "./nissa";
 import { EDH_RAKDOS } from "./rakdos";
+import { EDH_SEPHIROTH } from "./sephiroth";
 import { EDH_STAPLES } from "./staples";
 import { EDH_TURTLES } from "./turtles";
 import { EDH_URDRAGON } from "./urdragon";
@@ -41,4 +42,5 @@ export const EDH_SCRIPTS: Record<string, CardScript> = {
   ...EDH_DARK_LEO,
   ...EDH_UR_SPHINX,
   ...EDH_VIVI,
+  ...EDH_SEPHIROTH,
 };

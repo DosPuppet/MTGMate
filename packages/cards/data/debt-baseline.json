@@ -243,7 +243,8 @@
     "revealFirstUpkeep": "Chancellor of the Spires — opening-hand reveal (CardDef.leyline, 103.6): the Chancellor cycle (Annex, Dross, Forge, Tangle) uses the same form",
     "storeAll": "Dazzling Sphinx — exileUntil remembers every exiled card (\"the exiled cards that weren't cast\"); to reuse for any \"exile until … put the rest\" text",
     "spellsOnly": "Misdirection — \"target spell with a single target\" (stackItems target filter); to reuse for any spell-only stack target",
-    "paired": "Tandem Lookout — soulbond filter (702.95: paired, unpaired, paired with the source); shared by every soulbond card"
+    "paired": "Tandem Lookout — soulbond filter (702.95: paired, unpaired, paired with the source); shared by every soulbond card",
+    "sharesCardTypeWith": "Braids, Arisen Nightmare — \"a permanent that shares a card type with it\" (resolved by withX from the last known information); family of relative filters (sharesCreatureTypeWith)"
   },
   "turnFields": {},
   "engineCardLiterals": {},
@@ -254,7 +255,7 @@
     "StackItem": 29,
     "PlayerState": 23,
     "GameState": 41,
-    "ObjectFilter": 73,
+    "ObjectFilter": 74,
     "FilterCompare": 3,
     "CostDef": 33,
     "ActivatedAbilityDef": 19,
@@ -364,6 +365,7 @@
     "Dark Leo & Shredder deck (rules 174): blocked filter (Throatseeker), LayerMods.forbidKeywords (Archetype of Courage), BlockRule.cantBeBlockedByPlayer (The Black Gate): ObjectFilter 71 → 72, LayerMods 30 → 31, BlockRule 13 → 14",
     "PLAN-I: player-facing texts (labels, prompts) no longer counted as single-card values: Single-card values 105 → 104",
     "Ur-Sphinx deck: connives X, during their next turn (castLimit), extra beginning phase, extra turn condition, removeFromCombat, one-of-each tokens, opening-hand reveal (Chancellors), exileUntil storeAll, library zone reference: Single-card values 104 → 106, Effect 149 → 150, Effect (fields) 640 → 645, Condition 53 → 54, Condition (fields) 97 → 98",
-    "Vivi deck: soulbond (GameObject.pairedWith, filter paired, op pair), look op (Gitaxian Probe, Baubles), spellsOnly stack target (Misdirection): Single-card values 106 → 107, GameObject 49 → 50, ObjectFilter 72 → 73, Effect 150 → 152, Effect (fields) 645 → 653"
+    "Vivi deck: soulbond (GameObject.pairedWith, filter paired, op pair), look op (Gitaxian Probe, Baubles), spellsOnly stack target (Misdirection): Single-card values 106 → 107, GameObject 49 → 50, ObjectFilter 72 → 73, Effect 150 → 152, Effect (fields) 645 → 653",
+    "Sephiroth deck: sharesCardTypeWith filter (Braids, Arisen Nightmare): ObjectFilter 73 → 74"
   ]
 }

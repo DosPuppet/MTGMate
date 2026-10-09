@@ -321,6 +321,9 @@ export interface AltCostPay {
    * (automatic choice: the greatest).
    */
   sacrificeReduce?: ObjectFilter;
+  /** A matching permanent you control, sacrificed (the Flares: "sacrifice a nontoken black creature rather than pay";
+   * automatic choice: the lowest mana value). */
+  sacrifice?: ObjectFilter;
 }
 
 /** A printing of a card: its set, its number and its art. */

@@ -104,7 +104,8 @@ function playLand(name: string): { s: GameState; id: string } {
 describe("Oracle: lands that enter tapped", () => {
   const lands = cards.filter((c) => c.types.includes("Land") && !c.faceDefs?.length && !c.types.includes("Creature"));
   const tapped = lands.filter((c) => lines(c).includes("This land enters tapped."));
-  const untapped = lands.filter((c) => !/tapped|untap|enters|As this land/i.test(c.text ?? ""));
+  // "If this land would enter, sacrifice a Swamp instead" (Lake of the Dead): a replacement, not an untapped land.
+  const untapped = lands.filter((c) => !/tapped|untap|enters|would enter|As this land/i.test(c.text ?? ""));
 
   it("the filters recognize enough lands to be useful", () => {
     expect(tapped.length).toBeGreaterThanOrEqual(20);

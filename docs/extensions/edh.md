@@ -24,6 +24,7 @@ The scripts are in `packages/cards/src/edh/`; the rules tests in `packages/engin
 | `dark-leo` | Dark Leo & Shredder (Ninjas, white and black) | 27 |
 | `ur-sphinx` | The Ur-Sphinx (Sphinxes, Esper) | 28 |
 | `vivi` | Vivi Ornitier (cEDH storm, blue and red) | 39 |
+| `sephiroth` | Sephiroth, Fabled SOLDIER (aristocrats, mono-black) | 31 |
 
 ## E0 — import ✅
 
@@ -318,3 +319,21 @@ Added on 2026-10-09 at the user's request with the "Add a Commander deck" recipe
 - **Balance** (medium AI on both sides, `--by-deck --deck cmd-vivi`, against the twelve other precons in turn): in a duel, 21.0% ± 5.6 (200 games, 18.3 turns); with four players (seats A, B, A, B, fair share 50%), 17.0% ± 7.4 (100 games, 40.1 turns). Far under the target: a storm deck whose engine (Underworld Breach with Lion's Eye Diamond and Brain Freeze, rituals chained in one turn) the AI doesn't assemble; to study in the AI first, the list is not touched.
 - **AI turn length** (measured with self-play, actions of the AI during its own turn, Vivi against the other precons): medium, 2.7 actions per turn on average (others 2.6), 6 at the 95th percentile, 19 at most; expert, 3.8 on average (others 3.1), 10 at the 95th percentile, 24 at most, with 2.2 s of thinking per turn on average outside the interface (others 1.3 s; 10 s at most). In the interface, thinking is capped at 0.7 s per decision and each resolution is shown about 1.5 s (normal pace): a long Vivi turn lasts about 15 to 40 s.
 - **Debt:** `pair` (soulbond), `paired` and `spellsOnly` enter the baseline; `switchPT` and `with` leave it (shared); ceilings Single-card values 106 → 107, GameObject 49 → 50, ObjectFilter 72 → 73, Effect 150 → 152, Effect (fields) 645 → 653.
+
+## Deck Sephiroth: aristocrats ✅ (751 / 751)
+
+Added on 2026-10-09 at the user's request with the "Add a Commander deck" recipe. List: "Sephiroth's Singularity" by Grumpywolf on Moxfield (updated 2026-10-08), in `docs/commander/decks/sephiroth.txt`; precon `cmd-sephiroth` (mono-black), bracket 4 (nine Game Changers: Ancient Tomb, Bolas's Citadel, Chrome Mox, Demonic Tutor, Mana Vault, Necropotence, Orcish Bowmasters, The One Ring, Vampiric Tutor). The commander (Final Fantasy) and 52 other cards were already playable; the Moxfield sideboard (seven "considering" cards) is not imported.
+
+**Import:** 31 cards absent from the catalog added to EDH; French text from Scryfall except four old printings with a French name only (Lake of the Dead, Mortuary, Tombstone Stairwell, Yawgmoth's Will), completed by hand in `french-overrides.json`; 0 color identity discrepancies with Scryfall.
+
+**Cards (31, `edh/sephiroth.ts`):** creatures: Accursed Marauder, Ayara, First of Locthwain, Braids, Arisen Nightmare, Crypt Ghast, Drivnod, Carnage Dominus, Fleshbag Marauder, Fumulus, the Infestation, Gravecrawler, Great Unclean One, Jadar, Ghoulcaller of Nephalia, Merciless Executioner, Ophiomancer, Pawn of Ulamog, Stridehangar Automaton, Warren Soultrader, Zulaport Cutthroat; planeswalker: Tevesh Szat, Doom of Fools; artifacts and enchantments: Ashnod's Altar, Biotransference, Jet Medallion, Mortuary, Tombstone Stairwell; lands: Barad-dûr, Cabal Coffers, Lake of the Dead, Nykthos, Shrine to Nyx; spells: Entomb, Fell the Profane // Fell Mire, Flare of Malice, Malakir Rebirth // Malakir Mire, Yawgmoth's Will.
+
+- **Engine** (rules 177, details in `docs/engine.md`):
+  - filter `sharesCardTypeWith` (Braids: "a permanent that shares a card type with it", read from the sacrificed permanent's last known information); the `sacrifice` operation resolves its filter like the zone references (`withX`);
+  - sacrifice as an alternative cost (`AltCostPay.sacrifice`, the Flares), the lowest mana value chosen automatically;
+  - the Eldrazi Spawn token moves to `edh/common.ts` (The Vision, Pawn of Ulamog);
+  - an Oracle test of the lands that enter untapped no longer takes a land that "would enter" (Lake of the Dead: a replacement).
+- **Tests:** `engine/test/edh-sephiroth.test.ts` (27); EDH smoke test (751 cards). Two script bugs found by the tests: `fx.forEachPlayer` goes through six seats, so Braids drew and Great Unclean One created a Demon for absent seats (now guarded by the seat's presence).
+- **Approximations:** Biotransference (creature cards outside the battlefield are not artifacts), Flare of Malice (the sacrificed creature is chosen by the engine), Tombstone Stairwell (no world rule).
+- **Balance** (medium AI on both sides, `--by-deck --deck cmd-sephiroth`, against the thirteen other precons in turn): in a duel, 48.0% ± 6.9 (200 games, 19.0 turns); with four players (seats A, B, A, B, fair share 50%), 59.0% ± 9.6 (100 games, 42.8 turns). Within the target. Slowest decision: 1.7 s, an opponent at 82 permanents with four players. AI turn length (medium, actions during its own turn): 3.2 on average, 7 at the 95th percentile, 17 at most (the other decks: 3.2, 8, 14). Strict fuzz with the precons clean.
+- **Debt:** `sharesCardTypeWith` enters the baseline; ceiling ObjectFilter 73 → 74.

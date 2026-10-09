@@ -130,5 +130,21 @@
   "Wheel of Fortune": {
     "typeLine": "Rituel",
     "text": "Chaque joueur se défausse de sa main, puis pioche sept cartes."
+  },
+  "Lake of the Dead": {
+    "typeLine": "Terrain",
+    "text": "Si le Lac de la mort devait arriver sur le champ de bataille, sacrifiez un marais à la place. Si vous faites ainsi, mettez le Lac de la mort sur le champ de bataille. Sinon, mettez-le dans le cimetière de son propriétaire.\n{T} : Ajoutez {B}.\n{T}, sacrifiez un marais : Ajoutez {B}{B}{B}{B}."
+  },
+  "Mortuary": {
+    "typeLine": "Enchantement",
+    "text": "À chaque fois qu'une créature est mise dans votre cimetière depuis le champ de bataille, mettez cette carte au-dessus de votre bibliothèque."
+  },
+  "Tombstone Stairwell": {
+    "typeLine": "Enchantement mondial",
+    "text": "Entretien cumulatif {1}{B} (Au début de votre entretien, mettez un marqueur « âge » sur ce permanent, puis sacrifiez-le à moins que vous ne payiez son coût d'entretien pour chaque marqueur « âge » sur lui.)\nAu début de chaque entretien, si La sépulcrale volée de marches est sur le champ de bataille, chaque joueur crée un jeton de créature 2/2 noire Zombie avec la célérité appelé Sépulcreux pour chaque carte de créature dans son cimetière.\nAu début de chaque étape de fin et quand La sépulcrale volée de marches quitte le champ de bataille, détruisez tous les jetons créés avec elle. Ils ne peuvent pas être régénérés."
+  },
+  "Yawgmoth's Will": {
+    "typeLine": "Rituel",
+    "text": "Jusqu'à la fin du tour, vous pouvez jouer des terrains et lancer des sorts depuis votre cimetière.\nSi une carte devait être mise dans votre cimetière de n'importe où ce tour-ci, exilez-la à la place."
   }
 }

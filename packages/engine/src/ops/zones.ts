@@ -980,12 +980,14 @@ export const HANDLERS: OpHandlers = {
   },
   sacrifice(s, r, e, ctx, key) {
     const all = evalAmount(s, ctx, e.amount);
+    // Values that depend on what is resolving ("that shares a card type with it": Braids, Arisen Nightmare).
+    const filter = withX(s, e.filter, ctx);
     for (const p of resolveRef(s, ctx, e.who)) {
       if (r.vars[key(`done-${p}`)]) continue;
       let candidates = s.battlefield.filter(
         (id) =>
           s.objects[id]?.controller === p &&
-          matchesObjectFilter(s, p, id, e.filter, ctx.sourceId) &&
+          matchesObjectFilter(s, p, id, filter, ctx.sourceId) &&
           !hasKeyword(s, id, "cantBeSacrificed"),
       );
       // Zodiark: "half the creatures they control, rounded down".
