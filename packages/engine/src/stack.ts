@@ -2048,14 +2048,15 @@ function chosenAdditional(
   return out;
 }
 
-/**
- * Colors offered for a spell's hybrid mana, only if one of its abilities reads the spent colors (`spentColor`):
- * otherwise the automatic payment chooses without changing the result.
- */
+/** Colors offered for a spell's hybrid mana (PLAN-L L7: for any hybrid cost). */
 export function hybridColors(d: CardDef): ManaType[] {
   const pairs = [...(d.manaCost?.hybrid ?? []), ...((d.evoke ?? d.altCost?.mana)?.hybrid ?? [])];
-  if (!pairs.length || !JSON.stringify(d.abilities).includes('"kind":"spentColor"')) return [];
   return [...new Set(pairs.flat())];
+}
+
+/** One of the spell's abilities reads the spent colors (`spentColor`): the hybrid color changes the outcome. */
+export function hybridMatters(d: CardDef): boolean {
+  return hybridColors(d).length > 0 && JSON.stringify(d.abilities).includes('"kind":"spentColor"');
 }
 
 /** The cost, with each hybrid symbol that contains this color paid with this color. */
@@ -2240,9 +2241,12 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   for (const id of harmonyTap) cost = totalCost(cost, 0, undefined, harmony?.powers[id] ?? 0);
   // Hybrid mana paid with a chosen color (Deceit: "if {U}{U} was spent").
   if (choices.hybridAs) {
-    if (!hybridColors(d).includes(choices.hybridAs)) throw new RulesError(msg("This hybrid mana can't be paid with this color"));
+    if (!cost.hybrid?.some((h) => h.includes(choices.hybridAs as ManaType)))
+      throw new RulesError(msg("This hybrid mana can't be paid with this color"));
     cost = hybridPaidAs(cost, choices.hybridAs);
   }
+  if (choices.phyrexianLife && choices.phyrexianLife > (cost.phyrexian?.length ?? 0))
+    throw new RulesError(msg("Not that many Phyrexian mana symbols to pay with life"));
 
   // Counters removed from among your creatures: divided by the player (`counterFrom`), otherwise the suggestion.
   const countersFrom = terms.removeCounters
@@ -2410,6 +2414,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
         fromHand: terms.source === "hand",
         ...(bendPaid ? { waterbend: bendPaid } : {}),
         ...(onlyChosen(validHelperPicks(s, player, stackId, d, choices)) ? { only: onlyChosen(choices.picks) } : {}),
+        ...(choices.phyrexianLife !== undefined ? { phyrexianLife: choices.phyrexianLife } : {}),
       },
       taps,
       spent,
@@ -3553,7 +3558,10 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
       // Doc Aurlock (plot), Inquisitive Glimmer (unlock): cheaper.
       try {
         // The X of a disguise cost (Aurelia's Vindicator); the ability's own reduction (Fugitive Codebreaker).
-        payMana(s, player, abilityManaCost(s, player, source, ab, undefined, x), undefined, abilityPurpose(source, ab));
+        payMana(s, player, abilityManaCost(s, player, source, ab, undefined, x), undefined, {
+          ...abilityPurpose(source, ab),
+          ...(choices.phyrexianLife !== undefined ? { phyrexianLife: choices.phyrexianLife } : {}),
+        });
       } catch (e) {
         rethrowAsRules(e, msg("Not enough mana"));
       }
@@ -3644,7 +3652,13 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
           : ab.cost.convoke && choices.picks?.convoke
             ? { convoke: pickNow(s, player, source, ab, x, "convoke", choices) }
             : undefined;
-      const purpose = { ...purpose0, ...(only ? { only } : {}) };
+      const purpose = {
+        ...purpose0,
+        ...(only ? { only } : {}),
+        ...(choices.phyrexianLife !== undefined ? { phyrexianLife: choices.phyrexianLife } : {}),
+      };
+      if (choices.phyrexianLife && choices.phyrexianLife > (cost.phyrexian?.length ?? 0))
+        throw new RulesError(msg("Not that many Phyrexian mana symbols to pay with life"));
       payMana(s, player, cost, reserved, sacrificed.length ? { ...purpose, sacrificedForCost: new Set(sacrificed) } : purpose);
       if (ab.cost.waterbend) bent(s, player, "water");
     } catch (e) {

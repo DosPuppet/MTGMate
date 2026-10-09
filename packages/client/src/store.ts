@@ -121,6 +121,10 @@ export interface Casting {
   payMode: "normal" | "free" | "alt" | null;
   /** Color of the hybrid mana ("if {U}{U} was spent", Deceit); "auto": the automatic payment decides. */
   hybrid?: ManaType | "auto";
+  /** Phyrexian symbols paid with life (PLAN-L L7); "auto": the mana pays first. */
+  phyrexian?: number | "auto";
+  /** Full control: the sources tapped by hand have been confirmed ("mana" stage, PLAN-L L7). */
+  manaDone?: boolean;
   targets: Record<string, string[]>;
   stage:
     | "mode"
@@ -128,6 +132,8 @@ export interface Casting {
     | "x"
     | "kicker"
     | "hybrid"
+    | "phyrexian"
+    | "mana"
     | "target"
     | "discard"
     | "sacrifice"
@@ -346,6 +352,10 @@ interface Store {
   chooseX(x: number): void;
   chooseKicker(kicked: boolean): void;
   chooseHybrid(color: ManaType | "auto"): void;
+  /** Number of Phyrexian symbols paid with life ("auto": the mana first). */
+  choosePhyrexian(life: number | "auto"): void;
+  /** "mana" stage (full control): the sources tapped by hand are enough, the automatic payment completes the rest. */
+  confirmMana(): void;
   chooseNoTarget(): void;
   choosePayMode(mode: "normal" | "free" | "alt"): void;
   /** Chooses a target (or removes it, for a "target" word that accepts several). */
@@ -414,6 +424,20 @@ function targetSpecs(c: Casting): TargetOption[] {
   return c.option.targets;
 }
 
+/** The cast or activation has mana to pay (a mana symbol in its cost), as far as the view tells. */
+function paysMana(view: GameView | null, c: Casting): boolean {
+  const symbol = /\{(?:[1-9]\d*|X|[WUBRGC](?:\/[WUBRGP])?|2\/[WUBRG])\}/;
+  if (!view) return false;
+  if (c.option.type === "activate") {
+    const ability = c.option.ability;
+    const o = view.battlefield.find((x) => x.id === c.sourceId);
+    return symbol.test(o?.activated?.find((a) => a.index === ability)?.cost ?? "");
+  }
+  const card = c.option.card;
+  const o = [...view.hand, ...view.playableElsewhere, ...view.battlefield].find((x) => x.id === card);
+  return !!o && symbol.test(o.castCost?.text ?? o.manaCost);
+}
+
 function buildDecision(c: Casting): Decision {
   if (c.option.type === "cast") {
     return {
@@ -433,6 +457,7 @@ function buildDecision(c: Casting): Decision {
       free: c.payMode === "free" && !c.option.free ? true : undefined,
       alternative: c.payMode === "alt" ? true : undefined,
       ...(c.hybrid && c.hybrid !== "auto" ? { hybridAs: c.hybrid } : {}),
+      ...(typeof c.phyrexian === "number" ? { phyrexianLife: c.phyrexian } : {}),
       ...(Object.keys(c.picks).length ? { picks: c.picks } : {}),
     };
   }
@@ -446,6 +471,7 @@ function buildDecision(c: Casting): Decision {
     sacrifice: c.sacrifice ?? undefined,
     tap: c.tap ?? undefined,
     materials: c.materials ?? undefined,
+    ...(typeof c.phyrexian === "number" ? { phyrexianLife: c.phyrexian } : {}),
     ...(Object.keys(c.picks).length ? { picks: c.picks } : {}),
   };
 }
@@ -868,9 +894,19 @@ export const useGame = create<Store>((set, get) => {
       else if (o.kickerAffordable) return set({ casting: { ...c, stage: "kicker" } });
       else c.kicked = false;
     }
-    // Hybrid mana the result depends on (Deceit): the color to spend, unless without paying.
-    if (c.option.type === "cast" && c.option.hybridColors?.length && c.payMode !== "free" && c.hybrid === undefined)
+    // Hybrid mana: the color to spend, unless without paying; asked when the result depends on it (Deceit), and for any
+    // hybrid spell in full control.
+    if (
+      c.option.type === "cast" &&
+      c.option.hybridColors?.length &&
+      (c.option.hybridMatters || get().settings.fullControl) &&
+      c.payMode !== "free" &&
+      c.hybrid === undefined
+    )
       return set({ casting: { ...c, stage: "hybrid" } });
+    // Phyrexian mana: mana or life (107.4f), when both are possible; the normal cost only.
+    if (c.option.phyrexianLife && (c.option.type === "activate" || c.payMode === "normal") && c.phyrexian === undefined)
+      return set({ casting: { ...c, stage: "phyrexian" } });
     // Bargain (kicker without mana): the sacrificed permanent, if there is a choice.
     if (
       c.option.type === "cast" &&
@@ -953,6 +989,9 @@ export const useGame = create<Store>((set, get) => {
       if (p.countIsX && count === 0) continue;
       return set({ casting: { ...c, stage: "pick", spec: null, pick: { ...p, count } } });
     }
+    // Full control: the player taps the sources to pay with, the automatic payment completes the rest.
+    if (get().settings.fullControl && !c.manaDone && c.payMode !== "free" && paysMana(get().view, c))
+      return set({ casting: { ...c, stage: "mana", spec: null } });
     get().decide(buildDecision(c));
   };
 
@@ -1493,7 +1532,9 @@ export const useGame = create<Store>((set, get) => {
       if (playbackBusy()) return;
       if (refused(d)) return;
       get().session?.send({ type: "decision", decision: d });
-      set({ casting: null, abilityMenu: null, selectedBlocker: null, selection: [] });
+      // Mana tapped by hand during the "mana" stage of a cast: the cast goes on.
+      const keep = (d.type === "tapForMana" || d.type === "undoMana") && get().casting?.stage === "mana";
+      set({ casting: keep ? get().casting : null, abilityMenu: null, selectedBlocker: null, selection: [] });
     },
 
     passPriority() {
@@ -1613,6 +1654,17 @@ export const useGame = create<Store>((set, get) => {
       if (casting?.stage === "target" && casting.spec) {
         if (casting.spec.legal.includes(id)) return get().pickTarget(id);
         return get().notify(msg("Invalid target."));
+      }
+      // "mana" stage (full control): a click taps the source for its mana, or undoes it.
+      if (casting?.stage === "mana") {
+        if (view.battlefield.find((o) => o.id === id)?.undoMana) return get().decide({ type: "undoMana", source: id });
+        const mana = myActions(view).filter((a) => a.type === "tapForMana" && a.source === id);
+        const m = mana[0];
+        if (mana.length > 1 || (m?.type === "tapForMana" && (m.colors.length > 1 || m.combination)))
+          return set({ abilityMenu: { sourceId: id, options: mana } });
+        if (m?.type === "tapForMana")
+          return get().decide({ type: "tapForMana", source: id, ability: m.ability, color: m.colors[0] });
+        return get().notify(msg("This permanent can't produce mana now."));
       }
       if (pickOnBoard(id)) return;
       const p = view.pending;
@@ -1780,6 +1832,16 @@ export const useGame = create<Store>((set, get) => {
     chooseHybrid(color) {
       const c = get().casting;
       if (c) continueCasting({ ...c, hybrid: color });
+    },
+
+    choosePhyrexian(life) {
+      const c = get().casting;
+      if (c) continueCasting({ ...c, phyrexian: life });
+    },
+
+    confirmMana() {
+      const c = get().casting;
+      if (c?.stage === "mana") continueCasting({ ...c, manaDone: true });
     },
 
     chooseAdditional(kind, ids) {

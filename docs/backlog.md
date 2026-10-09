@@ -90,8 +90,8 @@ Per card, in `docs/approximations.md`. Cards the plans left explicitly documente
 ## Client and interface
 
 From PLAN-C C18 (not done) and PLAN-R R8 (not done):
-- Choice of the lands to tap at payment and of the hybrid symbol (manual tapping before casting, C5, already allows choosing).
-- Scry and surveil by dragging (top, bottom, graveyard) instead of the two generic steps (choose, then order).
+- Choice of the lands to tap at payment and of the hybrid symbol: done in PLAN-L L7 (full control: a "mana" stage of the cast and the hybrid color for any hybrid spell; Phyrexian mana chosen by the player).
+- Scry and surveil by dragging: done in PLAN-L L6.
 - `Card` memoized (views are recreated at each update: a custom comparison to measure); sizes in `rem` instead of px; Biome rule `noStaticElementInteractions` (12 cases).
 - Accessibility to finish: ARIA of the choice windows, all sizes in `rem`.
 - Land untap for a land whose ability has another cost or a trigger (Arena does not allow it either); combat preview that ignores replacements and triggers.

@@ -793,6 +793,7 @@ function Banner() {
   const cancel = useGame((s) => s.cancel);
   const chooseNoTarget = useGame((s) => s.chooseNoTarget);
   const confirmTargets = useGame((s) => s.confirmTargets);
+  const confirmMana = useGame((s) => s.confirmMana);
   const aiming = useGame((s) => s.aimingAttacker);
   const lang = useGame((s) => s.lang);
   const selection = useGame((s) => s.selection);
@@ -827,6 +828,19 @@ function Banner() {
             {t("No target")}
           </button>
         )}
+        <button type="button" className="btn small ghost" onClick={cancel}>
+          {t("Cancel (Esc)")}
+        </button>
+      </>
+    );
+  } else if (casting?.stage === "mana") {
+    // Full control (PLAN-L L7): the sources tapped by hand pay first, the automatic payment completes the rest.
+    text = t("Tap your sources, then pay (the rest is automatic)");
+    extra = (
+      <>
+        <button type="button" className="btn small primary" onClick={confirmMana} data-testid="pay-mana">
+          {t("Pay")}
+        </button>
         <button type="button" className="btn small ghost" onClick={cancel}>
           {t("Cancel (Esc)")}
         </button>

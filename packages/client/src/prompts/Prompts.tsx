@@ -393,6 +393,7 @@ function CastingPrompt() {
   const chooseMode = useGame((s) => s.chooseMode);
   const chooseKicker = useGame((s) => s.chooseKicker);
   const chooseHybrid = useGame((s) => s.chooseHybrid);
+  const choosePhyrexian = useGame((s) => s.choosePhyrexian);
   const choosePayMode = useGame((s) => s.choosePayMode);
   const cancel = useGame((s) => s.cancel);
   const lang = useGame((s) => s.lang);
@@ -578,7 +579,7 @@ function CastingPrompt() {
     };
     return (
       <Modal title={t("Pay the hybrid mana with…")}>
-        <p className="hint">{t("The spell's outcome depends on the mana spent.")}</p>
+        {casting.option.hybridMatters && <p className="hint">{t("The spell's outcome depends on the mana spent.")}</p>}
         <div className="choice-list">
           {(casting.option.hybridColors ?? []).map((c) => (
             <button key={c} type="button" className="btn choice" onClick={() => chooseHybrid(c)}>
@@ -586,6 +587,32 @@ function CastingPrompt() {
             </button>
           ))}
           <button type="button" className="btn choice ghost" onClick={() => chooseHybrid("auto")}>
+            {t("Automatic")}
+          </button>
+        </div>
+        <div className="modal-actions">
+          <button type="button" className="btn ghost" onClick={cancel}>
+            {t("Cancel")}
+          </button>
+        </div>
+      </Modal>
+    );
+  }
+  if (casting.stage === "phyrexian" && opt.phyrexianLife) {
+    return (
+      <Modal title={t("Pay the Phyrexian mana with…")}>
+        <p className="hint">{t("Each Phyrexian symbol is paid with its mana or with 2 life.")}</p>
+        <div className="choice-list">
+          {opt.phyrexianLife.map((n) => (
+            <button key={n} type="button" className="btn choice" onClick={() => choosePhyrexian(n)}>
+              {n === 0
+                ? t("Mana only")
+                : n === 1
+                  ? t("2 life for one symbol")
+                  : t("{life} life for {n} symbols", { n, life: 2 * n })}
+            </button>
+          ))}
+          <button type="button" className="btn choice ghost" onClick={() => choosePhyrexian("auto")}>
             {t("Automatic")}
           </button>
         </div>

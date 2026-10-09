@@ -263,6 +263,7 @@
  "Not enough total mana value: {label}": "Valeur de mana totale insuffisante : {label}",
  "Not enough total power ({n} required)": "Force totale insuffisante ({n} requise)",
  "Not enough total power for teamwork": "Force totale insuffisante pour le travail d'équipe",
+ "Not that many Phyrexian mana symbols to pay with life": "Le coût n'a pas autant de symboles de mana phyrexian à payer avec des points de vie",
  "Nothing to divide": "Rien à répartir",
  "Odd": "Impaire",
  "Offspring {cost}": "Progéniture {cost}",

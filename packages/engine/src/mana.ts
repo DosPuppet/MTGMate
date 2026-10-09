@@ -331,6 +331,11 @@ export interface ManaPurpose {
    * longer count (Lavaleaper exiled by beholding for Champion of the Path). Their own mana: `exclude`.
    */
   gone?: ReadonlySet<ObjectId>;
+  /**
+   * Phyrexian mana (107.4f): the number of Phyrexian symbols paid with 2 life each, chosen by the player
+   * (`CastChoices.phyrexianLife`); absent: mana first, life for the symbols the mana does not cover.
+   */
+  phyrexianLife?: number;
 }
 
 /**
@@ -876,7 +881,8 @@ export function canPay(
 
 /**
  * Phyrexian mana (107.4f): each {G/P} is paid with {G} or 2 life. Automatic choice: mana first, life for the symbols
- * the available mana does not cover. Returns the mana cost and the life to pay.
+ * the available mana does not cover; `purpose.phyrexianLife`: exactly that many symbols paid with life (the engine
+ * picks which ones, when their colors differ). Returns the mana cost and the life to pay.
  */
 function phyrexianSplit(
   s: GameState,
@@ -887,14 +893,40 @@ function phyrexianSplit(
 ): { cost: ManaCost; life: number } | null {
   const phy = cost.phyrexian ?? [];
   const life = payableLife(s, player);
-  for (let k = 0; k <= phy.length; k++) {
+  const chosen = purpose?.phyrexianLife;
+  if (chosen !== undefined && (chosen < 0 || chosen > phy.length || !Number.isInteger(chosen))) return null;
+  for (let k = chosen ?? 0; k <= (chosen ?? phy.length); k++) {
     if (k > 0 && life < 2 * k) break;
-    const colored = { ...cost.colored };
-    for (const m of phy.slice(0, phy.length - k)) colored[m] = (colored[m] ?? 0) + 1;
-    const mana: ManaCost = { ...cost, colored, phyrexian: undefined };
-    if (solvePayment(s, player, mana, exclude, purpose)) return { cost: mana, life: 2 * k };
+    // The symbols paid with mana: every subset of size n - k, distinct by colors.
+    const tried = new Set<string>();
+    for (let mask = 0; mask < 1 << phy.length; mask++) {
+      if (bitCount(mask) !== phy.length - k) continue;
+      const withMana = phy.filter((_, i) => mask & (1 << i));
+      const key = [...withMana].sort().join("");
+      if (tried.has(key)) continue;
+      tried.add(key);
+      const colored = { ...cost.colored };
+      for (const m of withMana) colored[m] = (colored[m] ?? 0) + 1;
+      const mana: ManaCost = { ...cost, colored, phyrexian: undefined };
+      if (solvePayment(s, player, mana, exclude, purpose)) return { cost: mana, life: 2 * k };
+    }
   }
   return null;
+}
+
+/** The numbers of Phyrexian symbols that can be paid with life for this cost (`legalActions`), when there is a choice. */
+export function phyrexianLifeOptions(
+  s: GameState,
+  player: PlayerId,
+  cost: ManaCost,
+  exclude?: ReadonlySet<ObjectId>,
+  purpose?: ManaPurpose,
+): number[] | undefined {
+  const n = cost.phyrexian?.length ?? 0;
+  if (n === 0) return undefined;
+  const out: number[] = [];
+  for (let k = 0; k <= n; k++) if (phyrexianSplit(s, player, cost, exclude, { ...purpose, phyrexianLife: k })) out.push(k);
+  return out.length > 1 ? out : undefined;
 }
 
 /** Activates the needed sources then removes the cost from the pool. Throws if impossible. */

@@ -129,10 +129,15 @@ export interface CastChoices {
   /** Without paying the mana cost (Omniscience). */
   free?: boolean;
   /**
-   * The spell's hybrid mana is paid with this color ("if {U}{U} was spent", Deceit); without a choice, automatic
-   * payment decides. Offered by `legalActions` (`hybridColors`) when an ability of the spell depends on the mana spent.
+   * The spell's hybrid mana is paid with this color: each hybrid symbol that contains it ("if {U}{U} was spent",
+   * Deceit); without a choice, automatic payment decides. Offered by `legalActions` (`hybridColors`, PLAN-L L7).
    */
   hybridAs?: ManaType;
+  /**
+   * Phyrexian mana (107.4f): how many Phyrexian symbols are paid with 2 life each (PLAN-L L7); without a choice, the
+   * mana pays first. Offered by `legalActions` (`phyrexianLife`).
+   */
+  phyrexianLife?: number;
   /** The card's alternative cost. */
   alternative?: boolean;
   mode?: number;
@@ -324,8 +329,12 @@ export type ActionOption =
       kickerAffordable: boolean;
       /** Optional cost specific to the set (Bloomburrow): question and answers displayed instead of "kicker". */
       kickerPrompt?: { title: string; without: string; with: string };
-      /** Possible colors to pay the hybrid mana, when the outcome depends on it (`CastChoices.hybridAs`). */
+      /** Possible colors to pay the hybrid mana (`CastChoices.hybridAs`). */
       hybridColors?: ManaType[];
+      /** The outcome depends on the color of the hybrid mana spent (Deceit): the choice is always asked. */
+      hybridMatters?: true;
+      /** Numbers of Phyrexian symbols payable with life, when there is a choice (`CastChoices.phyrexianLife`). */
+      phyrexianLife?: number[];
       /** Cast from the graveyard thanks to flashback. */
       fromGraveyard?: boolean;
       /** Playable exiled card (impulse, Etali, Tinybones). */
@@ -386,6 +395,8 @@ export type ActionOption =
       xMax: number | null;
       /** Smallest allowed value of X ("X can't be 0"). */
       xMin?: number;
+      /** Numbers of Phyrexian symbols payable with life, when there is a choice (`CastChoices.phyrexianLife`). */
+      phyrexianLife?: number[];
       additional?: {
         sacrifice?: { count: number; options: ObjectId[] };
         /**

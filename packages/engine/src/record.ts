@@ -530,8 +530,10 @@ export const RECORD_VERSION = 1;
  *   payer; entering: the controller, 122.6a); ability counters are layer 6 effects timestamped on arrival (613.7);
  *   Eriette is a "becomes attached" trigger with a control that lasts while the Aura is attached; tokens created
  *   attacking are divided among the defenders (508.4)
+ * - 192: PLAN-L L7: Phyrexian mana paid with life or mana as the player chooses (`phyrexianLife`, 107.4f); the color
+ *   of the hybrid mana can be chosen for any hybrid spell
  */
-export const RULES_VERSION = 191;
+export const RULES_VERSION = 192;
 
 /** One checkpoint every N decisions (plus the last one of the game). */
 export const CHECKPOINT_EVERY = 25;

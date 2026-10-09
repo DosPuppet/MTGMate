@@ -4,7 +4,17 @@
  */
 
 import { concreteSpec, staticContext } from "./effects";
-import { availableMana, canPay, costToText, type ManaPurpose, manaAbilitiesOf, manaSources, manaValue, totalCost } from "./mana";
+import {
+  availableMana,
+  canPay,
+  costToText,
+  type ManaPurpose,
+  manaAbilitiesOf,
+  manaSources,
+  manaValue,
+  phyrexianLifeOptions,
+  totalCost,
+} from "./mana";
 import { asEntersChoices } from "./replacement";
 import {
   abilitiesOf,
@@ -38,6 +48,7 @@ import {
   hasConvoke,
   hasImprovise,
   hybridColors,
+  hybridMatters,
   instantLoyalty,
   isWebSlinging,
   kickerCostOptions,
@@ -545,6 +556,10 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
         canPay(s, player, totalCost(c, 0, undefined, harmony.powers[id] ?? 0), new Set([...(exclude ?? []), id]), purpose),
       );
     const normal = !sneakOnly && !terms.free && payableWith(withExtra(spellCost(s, player, d, base)));
+    // Phyrexian mana: the numbers of symbols payable with life (normal cost), when there is a choice (PLAN-L L7).
+    const phyrexian = normal
+      ? phyrexianLifeOptions(s, player, withExtra(spellCost(s, player, d, base)), exclude, purpose)
+      : undefined;
     // Without paying its mana cost: taxes (Thalia, the Survivor) and additional costs remain to be paid.
     const freePayable = () => payableWith(withExtra(spellCost(s, player, d, { ...base, free: true })));
     if (terms.free && !freePayable()) return;
@@ -708,6 +723,8 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       kickerAffordable: !modeCost && kickerAffordable,
       kickerPrompt: d.kicker ? kickerPrompt(d) : undefined,
       ...(hybridColors(d).length ? { hybridColors: hybridColors(d) } : {}),
+      ...(hybridMatters(d) ? { hybridMatters: true as const } : {}),
+      ...(phyrexian ? { phyrexianLife: phyrexian } : {}),
       fromGraveyard: terms.source === "graveyard" || terms.source === "flashback" ? true : undefined,
       fromExile: terms.source === "exile" ? true : undefined,
       free: (!modeCost && terms.free) || undefined,
@@ -846,6 +863,11 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
         targets,
         xMax,
         ...(minX !== undefined ? { xMin: minX } : {}),
+        // Phyrexian mana (Drivnod; K'rrik): the numbers of symbols payable with life, when there is a choice.
+        ...(() => {
+          const phyrexian = ab.cost.mana ? phyrexianLifeOptions(s, player, abCost, exclude, purpose) : undefined;
+          return phyrexian ? { phyrexianLife: phyrexian } : {};
+        })(),
         // Objects paid as a cost, when the player has a choice to make.
         ...(() => {
           const picks = activationPicks(s, player, id, ab).filter(

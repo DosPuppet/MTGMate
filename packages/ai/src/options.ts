@@ -256,8 +256,12 @@ export function enumerateDecisions(a: ActionOption, limit = 40, rank?: (ids: str
             if (a.kickerAffordable && !m.forbidsKicker && !m.targets.some((t) => t.kickedLegal)) out.push({ ...v, kicked: true });
           }
           // Hybrid mana whose result depends on it (Deceit): one variant per color, the simulation decides.
-          if (a.normalAvailable) for (const c of a.hybridColors ?? []) out.push({ ...base, hybridAs: c });
-          if (a.altAvailable) for (const c of a.hybridColors ?? []) out.push({ ...base, alternative: true, hybridAs: c });
+          const hybrid = a.hybridMatters ? (a.hybridColors ?? []) : [];
+          if (a.normalAvailable) for (const c of hybrid) out.push({ ...base, hybridAs: c });
+          if (a.altAvailable) for (const c of hybrid) out.push({ ...base, alternative: true, hybridAs: c });
+          // Phyrexian mana: also paid with as much life as possible (the default pays with mana first).
+          const life = a.phyrexianLife?.at(-1);
+          if (a.normalAvailable && life) out.push({ ...base, phyrexianLife: life });
         }
         // Targets specific to the promised gift: combinations computed apart.
         if (a.kickerAffordable && !m.forbidsKicker && m.targets.some((t) => t.kickedLegal)) {
