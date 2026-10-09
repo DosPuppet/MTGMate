@@ -369,18 +369,11 @@ export const UNIQUE: Record<string, CardScript> = {
         cost: "{R}",
         label: "Combat damage: Treasures",
         targets: [target.player("p", "opponent")],
+        // "Whenever a creature you control deals combat damage to that player this turn" (PLAN-L L4).
         effects: [
-          fx.emblem(
-            "Great Train Heist",
-            "Whenever a creature you control deals combat damage to that player this turn, create a tapped Treasure token.",
-            [
-              triggered(when.combatDamageToOpponent(CREATURE_YOU_CONTROL), [fx.createTappedTokens(TREASURE)], {
-                label: "Tapped Treasure",
-              }),
-            ],
-            false,
-            true,
-          ),
+          fx.whenThisTurn(when.combatDamage(CREATURE_YOU_CONTROL, true), ref.target("p"), [fx.createTappedTokens(TREASURE)], {
+            label: "Tapped Treasure",
+          }),
         ],
       },
     ),

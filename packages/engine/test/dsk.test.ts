@@ -1093,6 +1093,26 @@ describe("Duskmourn, lot K8: rares (1)", () => {
     expect(namesIn(s, s.players.p1?.hand)).toEqual([ROOM]);
   });
 
+  it("Central Elevator: not a Room with the same name as a Room you control (either door's name; PLAN-L L4)", () => {
+    let s = scenario({
+      p1: {
+        battlefield: [...lands("Island", 4), ROOM],
+        hand: ["Central Elevator // Promising Stairs"],
+        library: [ROOM, "Central Elevator // Promising Stairs", "Funeral Room // Awakening Hall"],
+      },
+    });
+    // The Room in play has its second door unlocked: it is named "Elegant Rotunda" (a locked Room has no name).
+    openDoors(s, ROOM, [1]);
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Central Elevator // Promising Stairs"), face: 0 });
+    let offered: string[] = [];
+    s = settleAnswering(s, (req, _p, cur) => {
+      if (req.type === "pick") offered = namesIn(cur, req.options) as string[];
+      return undefined;
+    });
+    // The Room in play and Central Elevator itself (now a Room you control) are excluded.
+    expect(offered).toEqual(["Funeral Room // Awakening Hall"]);
+  });
+
   it("Promising Stairs: surveil 1 at upkeep; eight unlocked door names, you win the game", () => {
     const rooms = [
       "Central Elevator // Promising Stairs",
@@ -2732,6 +2752,18 @@ describe("Duskmourn, lot K8: uncommons (3)", () => {
     s = settleNoBlocks(s, picking(others));
     expect(chars(s, orphans)).toMatchObject({ power: 4, toughness: 3 });
     expect(others.every((id) => s.objects[id]?.tapped)).toBe(true);
+  });
+
+  it('Orphans of the Wheat: with vigilance, it can tap itself ("any number of untapped creatures you control", PLAN-L L4)', () => {
+    let s = scenario({ p1: { battlefield: ["Orphans of the Wheat", "Bear Cub"] } });
+    const orphans = idOf(s, "p1", "battlefield", "Orphans of the Wheat");
+    (s.objects[orphans] as { counters: Record<string, number> }).counters.vigilance = 1;
+    bump(s);
+    s = attack(s, [orphans]);
+    expect(s.objects[orphans]?.tapped).toBe(false);
+    s = settleNoBlocks(s, picking([orphans, idOf(s, "p1", "battlefield", "Bear Cub")]));
+    expect(chars(s, orphans)).toMatchObject({ power: 4, toughness: 3 });
+    expect(s.objects[orphans]?.tapped).toBe(true);
   });
 
   it("Osseous Sticktwister: delirium, at your end step, each opponent sacrifices, discards, or takes damage equal to its power", () => {

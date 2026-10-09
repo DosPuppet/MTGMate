@@ -21,7 +21,6 @@ Each entry carries its nature:
 - `rule` **Eriette, the Beguiler:** modeled by a static ability, and not by the trigger "whenever an Aura becomes attached": control lasts as long as the Aura stays attached, the mana value condition holds and Eriette is on the battlefield (losing her returns the stolen permanents; a new Eriette steals retroactively).
 - `rule` **Convoke:** a creature that has a mana ability is not used for convoke (it pays through its mana ability).
 - `auto choice` **"Enters" effects outside a resolution** (return from a linked exile, token copy created by an effect, ninjutsu, sneak, state-based actions; 614.1c, 614.12): only the choices are made (type, color, name, mode, model of a copy), with the suggested answer; the other "enters" effects are not (Sin removes no counters, Mox Diamond enters without a discard, devour sacrifices nothing), and riot takes the default choice. A permanent spell that resolves, a land played (the first question comes with the decision, the following ones take the suggestion) and a permanent put onto the battlefield by an effect (`moveTo`, `arrivalChoices`) ask the player the questions (`asEntersChoices`, PLAN-H H9).
-- `rule` **Sneak** (TMT): the player or planeswalker chosen when the spell is cast is kept at resolution without being rechecked; if it is no longer attackable (planeswalker gone, player out of the game), the creature still enters attacking it instead of a new choice among the attackable players and planeswalkers (508.4a).
 - `auto choice` **Untap up to N lands:** the lands are chosen automatically.
 - `auto choice` **Mana abilities with a cost (605.1a):** they resolve without the stack, but only when activated by hand: the automatic payment does not use them (Ramos, Capital City, Loot, the Pathfinder, Phyrexian Altar, Phyrexian Tower, Sunken Ruins...; the automatic payment never sacrifices a creature).
 - `auto choice` **Amass (701.47a):** the counters go on your first Army (no choice when you control several).
@@ -54,11 +53,8 @@ In the order they were added, set by set.
   - `auto choice` Quilled Greatwurm (and Dawnhand Dissident): you divide the removed counters among your creatures, but the kind of counters removed from a single creature is chosen for you (−1/−1 first, +1/+1 last);
   - `auto choice` Muldrotha: a card with several permanent types automatically uses the first type still free.
 - **Final Fantasy (`docs/extensions/fin.md`):**
-  - `rule` Sorceress's Schemes: only an instant or sorcery card from the graveyard (not a card exiled with flashback);
   - `rule` Quina, Qu Gourmet: no Frog for the copy tokens;
-  - `rule` Memories Returning: you choose the three cards kept (the opponent does not choose those on the bottom);
   - `rule` Sin, Spira's Punishment: six copies at most per trigger;
-  - `rule` Zenos, Shinryu: the chosen opponent is the first to lose the game;
 - **Aetherdrift (`docs/extensions/dft.md`):**
   - `rule` Skyseer's Chariot: "a nonland card name"; a land card name is also accepted (and can be offered);
   - `rule` Lifecraft Engine: all your Vehicles, even noncreature ones, have the chosen type (the set affected in layer 4 does not follow the 613.8a dependency on crew, which is more recent);
@@ -66,21 +62,19 @@ In the order they were added, set by set.
 - **Outlaws of Thunder Junction (`docs/extensions/otj-big.md`):**
   - `rule` Fblthp, Lost on the Range: plotting the top card goes through an ability (on the stack) that pays its mana cost;
   - `rule` Riku of Many Paths: a single mode, whatever the number of modes of the spell;
-  - `rule` Great Train Heist: the Treasures come from damage dealt to any opponent.
 - **The Big Score (`docs/extensions/otj-big.md`):**
   - `rule` Memory Vessel: you can still play the cards in your hand;
   - `rule` Grand Abolisher: mana abilities are not blocked.
 - **Edge of Eternities (`docs/extensions/eoe.md`):**
   - `auto choice` Gene Pollinator: the extra tapped permanent is chosen automatically (a permanent without a mana ability first).
 - **Tarkir: Dragonstorm (`docs/extensions/tdm.md`):**
-  - `rule` Sonic Shrieker: a targeted player discards a card even if its damage was prevented;
   - `timing` Sidisi, Regent of the Mire: the card with mana value X + 1 is targeted by a reflexive ability, once the cost is paid;
   - `rule` Teval (Cavern): an exiled card pays generic {1}, but also a {C}; outside full control, the automatic payment uses mana first, then exiles the cards in graveyard order (in full control, the player chooses them);
   - `rule` New Way Forward: a spell chosen as a source is recognized by its card alone (another copy of the same card, whoever controls it, would also be affected); the damage is all prevented, after the modifications (doublings) that apply to it;
   - `rule` Neriv, Heart of the Storm: a creature that is no longer on the battlefield did not "enter this turn".
 - **Duskmourn (`docs/extensions/dsk.md`):**
   - `rule` Acrobatic Cheerleader ("triggers only once"): as long as it has no flying counter;
-  - `rule` conditions not checked: the Room with a different name (Central Elevator: a Room has two names), different powers (Rip, Spawn Hunter);
+  - `rule` condition not checked: different powers (Rip, Spawn Hunter);
   - `rule` Unable to Scream: the face-down creature can still be turned face up;
   - `rule` Leyline of Transformation: only creatures on the battlefield (not spells or cards);
   - `auto choice` Say Its Name: Altanak is searched for in the graveyard, then the hand, then the library;
@@ -93,8 +87,7 @@ In the order they were added, set by set.
   - `auto choice` Portent of Calamity: the exiled cards are chosen automatically (one per type);
   - `rule` Heirloom Epic: creatures cannot help pay;
   - `rule` Rottenmouth Viper: at most as many permanents are sacrificed as the generic cost to pay (one more sacrifice would reduce nothing, but would count for "whenever you sacrifice");
-  - `rule` Eluge: the cost reduction is generic ({1} and not {U});
-  - `rule` Alania: an Alania spell cast earlier in the turn counts as an Otter spell (the next Otter spell is no longer "the first"); Ral (emblem): the copy is counted at resolution (a spell cast in response to the trigger counts).
+  - `rule` Ral (emblem): the copy is counted at resolution (a spell cast in response to the trigger counts).
 - **The Lost Caverns of Ixalan (`docs/extensions/lci.md`):**
   - `rule` Cavern mana (Bat Colony) and "using mana produced by [source]" (Tecutlan, The Myriad Pools): only the mana committed by the automatic payment;
   - `timing` Abuelo's Awakening: the card enters as a flying Spirit creature, but its base P/T only becomes 1/1 right after it enters;
@@ -108,7 +101,6 @@ In the order they were added, set by set.
   - `rule` Garruk, Curse Breaker −4, Jace, Reality Sculptor −3: temporary emblems; Garruk triggers when you attack (not when another player attacks one of your opponents, in multiplayer) and strengthens all your attacking creatures, even those attacking a planeswalker or a battle;
   - `rule` Emrakul, the Exigent Doom: the ability granted to the land ends as soon as the card leaves exile, in any way (and not only when it is cast); once cast, it lasts until the spell is cast (601.2i) and can be used to pay for it.
 - **Standard meta (plan P4, `docs/extensions/meta.md`):**
-  - `rule` Torch the Tower: the target is exiled if it dies this turn, even if its damage was prevented;
   - `rule` Teamwork: the power of the tapped creatures is counted as for crew (a pilot counts 2 more);
   - `auto choice` Collect evidence "X, X being the total mana value of the targeted permanents" (Urgent Necropsy): the exiled cards are chosen by the engine (the cheapest that suffices, otherwise the most expensive); elsewhere, the player chooses them;
   - `auto choice` Kíli the Resourceful: the first equip ability of the turn costs {0} automatically; only the generic part is removed: colored symbols ({R} of Cori-Steel Cutter, {U} of The Key to the Vault) and any other cost (life of Dark Knight's Greatsword, sacrifice of Shredder's Armor or Dissection Tools, discard of Bloodthorn Flail) stay due;
@@ -170,7 +162,6 @@ In the order they were added, set by set.
   - `rule` Bullseye, Death Dealer: "sacrifice an artifact or discard a nonland card" is two abilities;
   - `rule` Cloak and Dagger, Entwined: at resolution, the targeted creature is only rechecked as a creature of an opponent (passed under the control of another opponent, it remains a legal target);
   - `rule` The Kingpin of Crime: "deal damage equal to their toughness" only affects the creatures present at resolution;
-  - `timing` Vision Quest: the graveyard is offered before the library;
   - `rule` Cosmic Cube: the card chosen among the six goes through exile while it is being cast (visible to all), then goes to the bottom if you decline;
   - `rule` Kang the Conqueror: "during that turn, power-up abilities can't be activated" is not applied to the extra turn;
   - `auto choice` Baron Helmut Zemo: the black cards exiled for boast are chosen by the engine (those richest in {B} first, the fewest cards possible);
@@ -195,7 +186,6 @@ In the order they were added, set by set.
   - `auto choice` Goblin Plate Mail: the Equipment attaches to the Army that receives the amass counters (see the general entry).
 - **Reprints, "Unlimited" (`docs/extensions/reprints.md`):**
   - `rule` Ragavan, Nimble Pilferer: "you may cast this card": a modal double-faced card whose back face is a land could be played by that back face;
-  - `rule` Cytoplast Manipulator: control lasts as long as you control the Manipulator (and not "as long as it remains on the battlefield");
   - `auto choice` Gemstone Caverns: the card exiled from hand is the nonland card of lowest mana value (a land if there is none);
   - `rule` Reflecting Pool: the types that lands of the same kind (Reflecting Pool, Exotic Orchard) or Command Tower would produce do not count;
   - `rule` Drown in the Loch: "mana value less than or equal to the number of cards in its controller's graveyard" is checked at resolution, not at targeting;
@@ -225,9 +215,7 @@ In the order they were added, set by set.
 - **Commander, EDH pseudo-set (`docs/extensions/edh.md`):**
   - `auto choice` Relic of Legends: the tapped legendary creature is chosen by the engine (one without a mana ability first); the automatic payment only uses it once per ability;
   - `rule` New Blood: the text change (612, "replace all instances of a creature type with Vampire") is not done; the stolen creature becomes a Vampire in addition to its other types;
-  - `rule` Orcish Bowmasters: "the first card drawn during its draw step" is the step's draw (504.1); if it is replaced or skipped, a later draw in the same step triggers anyway.
   - `auto choice` Rewind, Unwind, Frantic Search: "untap up to N lands" only untaps your lands, chosen automatically;
-  - `rule` Teferi's Protection: an Aura already attached to the player (curse) does not fall off.
   - `auto choice` Foreboding Ruins, Fortified Village, Port Town, Vineglimmer Snarl: a card of the right type in hand is revealed automatically if possible;
   - `auto choice` Scholar of New Horizons: the Plains card goes onto the battlefield as soon as permitted (without offering to put it into hand); the kind of counter removed for the cost is chosen by the engine (−1/−1 first, +1/+1 last);
   - `auto choice` O'aka, Traveling Merchant: the kind of counter removed for the cost is chosen by the engine (−1/−1 first, +1/+1 last);

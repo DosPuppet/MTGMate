@@ -447,7 +447,8 @@ export const MULTI: Record<string, CardScript> = {
   },
   "The Super Hero Civil War": {
     abilities: [
-      chapter([1], fx.gainControlWhileSource(ref.target()), {
+      // "For as long as this Saga remains on the battlefield" (PLAN-L L4).
+      chapter([1], fx.gainControlWhileSource(ref.target(), false, true), {
         targets: [{ ...target.upTo(2, target.creature()), maxTotalManaValue: 6 }],
         label: "Chapter I — Control of up to two creatures with total mana value 6 or less",
       }),
@@ -485,30 +486,18 @@ export const MULTI: Record<string, CardScript> = {
     ],
   },
   "Vision Quest": {
-    // Graveyard first, otherwise library (a single card in all); the X counters are put on as it enters (614.1c).
+    // Library and/or graveyard, one choice (PLAN-L L4); the X counters are put on as it enters (614.1c).
     spell: spell(
       [],
       [
-        fx.pickFromZone(
-          "graveyard",
-          ARTIFACT_CREATURE,
+        fx.search(
+          { ...ARTIFACT_CREATURE, compare: [cmp.manaValue("<=", amount.x)] },
           { to: "battlefield", counters: { kind: "+1/+1", n: amount.x } },
-          {
-            min: 0,
-            maxManaValue: amount.x,
-            store: "v",
-            prompt: "You may choose an artifact creature card from your graveyard (otherwise, from your library)",
-          },
-        ),
-        ...fx.when(
-          cond.not(cond.v("v")),
-          fx.search(
-            { ...ARTIFACT_CREATURE, compare: [cmp.manaValue("<=", amount.x)] },
-            { to: "battlefield", counters: { kind: "+1/+1", n: amount.x } },
-            1,
-            undefined,
-            "v",
-          ),
+          1,
+          undefined,
+          "v",
+          undefined,
+          true,
         ),
         ...fx.when(cond.xAtLeast(4), fx.modify(ref.stored("v"), { addKeywords: ["haste"] })),
       ],

@@ -174,8 +174,30 @@ export const LEGENDS3: Record<string, CardScript> = {
   },
   "Memories Returning": {
     flashback: "{7}{U}{U}",
-    // Approximation: you choose the three cards kept (the opponent does not choose the two cards for the bottom).
-    spell: spell([], [fx.lookAtTop(5, { count: 3, rest: "bottom" })]),
+    // You and the chosen opponent take turns among the five revealed cards (PLAN-L L4): each choice is made among those
+    // not chosen yet (`chooseAmong` keeps them as "<name>Rest").
+    spell: spell(
+      [],
+      [
+        fx.reveal(ref.libraryTopCards(ref.you, 5)),
+        fx.chooseAmong(ref.libraryTopCards(ref.you, 5), ref.you, "a", { anyZone: true, prompt: "Put one into your hand" }),
+        fx.toHand(ref.stored("a")),
+        fx.chooseOpponent("o"),
+        fx.chooseAmong(ref.stored("aRest"), ref.stored("o"), "b", {
+          anyZone: true,
+          prompt: "Put one on the bottom of their library",
+        }),
+        fx.moveTo(ref.stored("b"), { to: "libraryBottom" }),
+        fx.chooseAmong(ref.stored("bRest"), ref.you, "c", { anyZone: true, prompt: "Put one into your hand" }),
+        fx.toHand(ref.stored("c")),
+        fx.chooseAmong(ref.stored("cRest"), ref.stored("o"), "d", {
+          anyZone: true,
+          prompt: "Put one on the bottom of their library",
+        }),
+        fx.moveTo(ref.stored("d"), { to: "libraryBottom" }),
+        fx.toHand(ref.stored("dRest")),
+      ],
+    ),
   },
   "Balthier and Fran": {
     abilities: [

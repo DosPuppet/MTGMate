@@ -4,7 +4,7 @@ import { drawCards } from "../src/actions";
 import { legalActions } from "../src/legal";
 import { changeCounters, chars, moveObject } from "../src/state";
 import { playerStatic } from "../src/statics";
-import { act, advanceUntil, attack, customCard, idOf, idsOf, lands, scenario, settle, throughCombat } from "./helpers";
+import { act, advanceUntil, attack, customCard, idOf, idsOf, lands, scenario, settle, steal, throughCombat } from "./helpers";
 
 const ARTIFACT = customCard({ name: "Test Trinket", types: ["Artifact"], typeLine: "Artifact" });
 const CONSTRUCT = customCard({
@@ -90,6 +90,27 @@ describe("Source Material", () => {
       // effect in play, removed with the source).
       moveObject(s, cyto, "exile");
       expect(s.objects[bear]?.controller).toBe("p2");
+    });
+
+    it("control lasts as long as the Manipulator remains on the battlefield, even under another player (PLAN-L L4)", () => {
+      let s = scenario({
+        p1: { battlefield: [{ name: "Cytoplast Manipulator", counters: { "+1/+1": 2 } }, "Island"] },
+        p2: { battlefield: [{ name: "Bear Cub", counters: { "+1/+1": 1 } }] },
+      });
+      const cyto = idOf(s, "p1", "battlefield", "Cytoplast Manipulator");
+      const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+      const ab = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === cyto);
+      s = settle(
+        act(s, "p1", {
+          type: "activate",
+          source: cyto,
+          ability: ab?.type === "activate" ? ab.ability : 0,
+          targets: { t: [bear] },
+        }),
+      );
+      s = steal(s, cyto, "p2");
+      expect(s.objects[cyto]?.controller).toBe("p2");
+      expect(s.objects[bear]?.controller).toBe("p1");
     });
   });
 

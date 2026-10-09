@@ -106,6 +106,21 @@ describe("Commander (EDH): common spells and engines (E9)", () => {
       expect(payableLife(s, "p1")).toBe(20);
     });
 
+    it("a curse attached to the player falls off (protection, 702.16b; PLAN-L L4)", () => {
+      let s = scenario({
+        active: "p2",
+        p1: { battlefield: lands("Plains", 3), hand: ["Teferi's Protection"] },
+        p2: { battlefield: lands("Swamp", 5), hand: ["Grievous Wound"] },
+      });
+      s = settle(act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Grievous Wound"), targets: { enchant: ["p1"] } }));
+      const wound = idOf(s, "p2", "battlefield", "Grievous Wound");
+      expect(s.objects[wound]?.attachedTo).toBe("p1");
+      s = act(s, "p2", { type: "pass" });
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Teferi's Protection") }));
+      expect(s.battlefield.some((id) => s.objects[id]?.defId === s.objects[wound]?.defId)).toBe(false);
+      expect(idsOf(s, "p2", "graveyard", "Grievous Wound")).toHaveLength(1);
+    });
+
     it("'your life total can't change': no life payment beyond 0 (119.8)", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Plains", 3), ...lands("Swamp", 6)], hand: ["Teferi's Protection", "Toxic Deluge"] },

@@ -218,7 +218,7 @@ export const RARES: Record<string, CardScript> = {
         mode("Two +1/+1 counters", [], [fx.addCounters(ref.self, 2)]),
         mode(
           "A card exiled with warp on the bottom of its owner's library",
-          [{ id: "t", label: "card exiled with warp", filter: { exiled: { withWarp: true } } }],
+          [{ id: "t", label: "card exiled with warp", filter: { exiled: { withCost: "warp" } } }],
           [fx.moveTo(ref.target(), { to: "libraryBottom" })],
         ),
       ]),

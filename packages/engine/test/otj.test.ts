@@ -1590,6 +1590,32 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
     expect(chars(s, cub).keywords).not.toContain("firstStrike");
   });
 
+  it("Great Train Heist: only the creatures that damage the chosen opponent make Treasures (three players, PLAN-L L4)", () => {
+    let s = scenario({
+      players: 3,
+      p1: { battlefield: ["Bear Cub", "Llanowar Elves", ...lands("Mountain", 2)], hand: ["Great Train Heist"] },
+    });
+    s = act(s, "p1", {
+      type: "cast",
+      card: idOf(s, "p1", "hand", "Great Train Heist"),
+      mode: modeOf(s, "Great Train Heist", "Combat damage: Treasures"),
+      targets: { p: ["p3"] },
+    });
+    s = settle(s);
+    const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+    const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", {
+      type: "declareAttackers",
+      attackers: [
+        { id: cub, defender: "p2" },
+        { id: elves, defender: "p3" },
+      ],
+    });
+    s = throughCombat(s);
+    expect(treasures(s, "p1")).toHaveLength(1);
+  });
+
   it("Great Train Heist: untaps your creatures and adds a combat phase", () => {
     let s = scenario({
       p1: { battlefield: ["Bear Cub", ...lands("Mountain", 4)], hand: ["Great Train Heist"] },

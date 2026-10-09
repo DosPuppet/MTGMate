@@ -38,7 +38,13 @@ export const CARDS: Record<string, CardScript> = {
   "Torch the Tower": {
     spell: spell(
       [target.creatureOrPlaneswalker()],
-      [fx.exileIfDies(ref.target()), fx.damage(amount.kicked(3, 2), ref.target()), ...fx.when(cond.kicked, fx.scry(1))],
+      [
+        fx.damage(amount.kicked(3, 2), ref.target(), undefined, { storeDealt: "d" }),
+        // "A permanent dealt damage by Torch the Tower": only if damage was really dealt (PLAN-L L4); the exile applies
+        // before the state-based actions that follow the resolution.
+        ...fx.when(cond.amountAtLeast(amount.v("d"), 1), fx.exileIfDies(ref.target())),
+        ...fx.when(cond.kicked, fx.scry(1)),
+      ],
     ),
   },
 

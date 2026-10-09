@@ -101,9 +101,8 @@ export const WHITE: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         [
-          // The maximum mana value goes through the option: `pickFromZone` replaces the filter's.
-          fx.pickFromZone("graveyard", { types: ["Artifact"] }, { to: "hand" }, { min: 0, store: "g", maxManaValue: 2 }),
-          fx.when(cond.not(cond.v("g")), fx.search({ types: ["Artifact"], maxManaValue: 2 })),
+          // Library and/or graveyard, one choice (PLAN-L L4).
+          fx.search({ types: ["Artifact"], maxManaValue: 2 }, { to: "hand" }, 1, undefined, undefined, undefined, true),
         ],
         { label: "An artifact with mana value 2 or less" },
       ),

@@ -9,6 +9,7 @@ import { dealDamage, destroy, sourceFromObject } from "../src/actions";
 import { RulesError } from "../src/errors";
 import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
+import { addPlayerEffect } from "../src/statics";
 import type { ChoiceRequest, ChoiceValue, GameState, PlayerId } from "../src/types";
 import {
   type Answer,
@@ -3286,6 +3287,12 @@ describe("Tarkir: Dragonstorm, lot K8: uncommons with several abilities (3)", ()
     expect(idsOf(t, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
     expect(lifeOf(t, "p1")).toBe(22);
     expect(handSize(t, "p2")).toBe(2);
+    // Damage prevented: the player is not dealt damage "this way", no discard (PLAN-L L4).
+    const u = setup();
+    addPlayerEffect(u, "p2", { replacement: { event: "damage", to: "you", modify: { prevent: true } } }, u.turn.number, true);
+    const v = settle(cast(u, "p1", "Sonic Shrieker"), picking(["p2"]));
+    expect([lifeOf(v, "p1"), lifeOf(v, "p2")]).toEqual([22, 20]);
+    expect(handSize(v, "p2")).toBe(2);
   });
 
   it("Shocking Sharpshooter: reach; another of your creatures enters: 1 damage to a targeted opponent", () => {

@@ -100,7 +100,11 @@ export const WHITE: Record<string, CardScript> = {
   "Exemplar of Light": {
     abilities: [
       triggered(when.gainLife, [fx.addCounters(ref.self, 1)], { label: "a +1/+1 counter" }),
-      triggered(when.countersPut("self", "+1/+1"), [fx.draw(1)], { oncePerTurn: true, label: "draw a card" }),
+      // "Whenever you put one or more +1/+1 counters on this creature": only the counters you put (PLAN-L L4).
+      triggered({ on: "countersPut", who: "self", kind: "+1/+1", by: "you" }, [fx.draw(1)], {
+        oncePerTurn: true,
+        label: "draw a card",
+      }),
     ],
   },
   "Felidar Savior": {

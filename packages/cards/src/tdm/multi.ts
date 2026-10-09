@@ -329,10 +329,19 @@ export const MULTI: Record<string, CardScript> = {
   },
   "Sonic Shrieker": {
     abilities: [
-      triggered(when.entersSelf, [fx.damage(2, ref.target()), fx.gainLife(2), fx.discard(1, ref.target())], {
-        targets: [target.any()],
-        label: "2 damage, gain 2 life; a damaged player discards a card",
-      }),
+      // "If a player is dealt damage this way": prevented damage, no discard (PLAN-L L4).
+      triggered(
+        when.entersSelf,
+        [
+          fx.damage(2, ref.target(), undefined, { storeDealt: "d" }),
+          fx.gainLife(2),
+          ...fx.when(cond.amountAtLeast(amount.v("d"), 1), fx.discard(1, ref.target())),
+        ],
+        {
+          targets: [target.any()],
+          label: "2 damage, gain 2 life; a damaged player discards a card",
+        },
+      ),
     ],
   },
   "Temur Battlecrier": {

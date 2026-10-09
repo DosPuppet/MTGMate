@@ -144,7 +144,6 @@
     "opponentDiscardToBattlefield": "Wilt-Leaf Liege — a discard replacement on the card itself",
     "opponentsGainLife": "Grove of the Burnwillows — property of a single card, invisible to the guard until the audit of 2026-10-07 (key written without a value by the builders, or declared away from the start of a line): to attach to a family",
     "opponentsMill": "The Mindskinner — property of a single card, invisible to the guard until the audit of 2026-10-07 (key written without a value by the builders, or declared away from the start of a line): to attach to a family",
-    "optionsFrom": "Koh, the Face Stealer — the name choice draws its options from the linked exile",
     "orExileCast": "Etrata, Deadly Fugitive — a unique fallback",
     "orFilter": "Danitha, Sword of Hope — no anyOf across a filter and a targeting",
     "outsideIdentity": "Commander's Plate — protection from each color outside the commanders' color identity (903.4): specific to this card; family R4.2 (protections), to attach to a computed color filter if another card needs it",
@@ -164,7 +163,6 @@
     "topDamage": "Clash of Elements — depends on the owner's choice, no result stored",
     "triggered": "Koh, the Face Stealer — property of a single card, invisible to the guard until the audit of 2026-10-07 (key written without a value by the builders, or declared away from the start of a line): to attach to a family",
     "whileCrafting": "Market Gnome — \"leaves the battlefield\" trigger limited to exile as craft material (702.167): a field of the `leaves` trigger, no other card",
-    "withWarp": "Blade of the Swarm — target \"card exiled with warp\" (a card that has warp); Close Encounter, which used it, reads `warped` (card exiled by warp, PLAN-A A3): to reuse for any card exiled \"with warp\"",
     "oneOfEach": "Academy Manufactor — token replacement \"instead create one of each\" (EventReplacement.instead, family H); each such replacement applies once (616.1)",
     "revealFirstUpkeep": "Chancellor of the Spires — opening-hand reveal (CardDef.leyline, 103.6): the Chancellor cycle (Annex, Dross, Forge, Tangle) uses the same form",
     "storeAll": "Dazzling Sphinx — exileUntil remembers every exiled card (\"the exiled cards that weren't cast\"); to reuse for any \"exile until … put the rest\" text",
@@ -177,7 +175,7 @@
   "turnFields": {},
   "engineCardLiterals": {},
   "ceilings": {
-    "Single-card values": 126,
+    "Single-card values": 130,
     "CardDef": 91,
     "GameObject": 49,
     "StackItem": 29,
@@ -201,7 +199,7 @@
     "CastLimit": 9,
     "NextSpell": 9,
     "Effect": 147,
-    "Effect (fields)": 642,
+    "Effect (fields)": 644,
     "TriggerSpec": 40,
     "TriggerSpec (fields)": 142,
     "Condition": 47,
@@ -209,7 +207,7 @@
     "Amount": 32,
     "Amount (fields)": 77,
     "Ref": 37,
-    "Ref (fields)": 66
+    "Ref (fields)": 67
   },
   "importCycleMax": 21,
   "ceilingNotes": [
@@ -303,6 +301,7 @@
     "PLAN-J J4b [rules 180]: \"X\" costs written in the cost keys (sacrifice, tapOthers, exileFromGraveyard count \"X\"; removeCounters n \"X\"; discard \"X\"; payLife { kind: \"x\" }; read by xCosts and fixedCost) instead of six single-card keys; Twists and Turns as an explore replacement; Warped Space as castPermission freeFrom \"exile\". Single-card values 121 → 125: four values (n \"X\", discard \"X\", event \"explore\", freeFrom \"exile\") replace six keys and two player statics: Single-card values 121 → 125, CostDef 33 → 27",
     "PLAN-J J5 [rules 182]: approximation lifts; CardDef.faceUpCounters (\"as it is turned face up\", Bubble Smuggler and Crowd-Control Warden, replacing two triggered approximations) CardDef 90 → 91; AdditionalCost.payLife (Deep Analysis's flashback life) AdditionalCost 11 → 12; tap cause \"mana\" (Forbidden Orchard) makes cause shared: Single-card values 125 → 126: Single-card values 125 → 126, CardDef 90 → 91, AdditionalCost 11 → 12",
     "PLAN-J J6a: public reveals — search.reveal and lookAtTop.reveal deduced from the Oracle text (\"search … reveal it\", 143 cards; \"look at the top … reveal\", 45 cards), look.reveal (fx.reveal: Parker Luck, Keen Duelist, Yennett, Cloak and Dagger, Intuition): Effect (fields) 639 → 642",
-    "PLAN-L L2 [rules 186]: Commander-only reprints; ActivatedAbilityDef.fromCommand (commander ninjutsu, 702.49d: the same flag as on triggered and static abilities) ActivatedAbilityDef 17 → 18; ref.eventPlayers (the players of a \"one or more\" batch: Breeches, Malcolm) Ref 36 → 37; AdditionalCost.sacrificeToPay becomes { filter, each } (Rottenmouth Viper {1}, Dargo {2}): sacrificeToPay and each leave the single-card keys: ActivatedAbilityDef 17 → 18, Ref 36 → 37, Ref (fields) 65 → 66"
+    "PLAN-L L2 [rules 186]: Commander-only reprints; ActivatedAbilityDef.fromCommand (commander ninjutsu, 702.49d: the same flag as on triggered and static abilities) ActivatedAbilityDef 17 → 18; ref.eventPlayers (the players of a \"one or more\" batch: Breeches, Malcolm) Ref 36 → 37; AdditionalCost.sacrificeToPay becomes { filter, each } (Rottenmouth Viper {1}, Dargo {2}): sacrificeToPay and each leave the single-card keys: ActivatedAbilityDef 17 → 18, Ref 36 → 37, Ref (fields) 65 → 66",
+    "PLAN-L L4 [rules 188]: small approximations lifted; CostReductionAbilityDef.colored (\"{U} (or {1}) less\", Eluge: value U), action trigger whose \"chosen\" (Shinryu: \"when the chosen player loses\"), ExiledFilter withWarp becomes withCost \"warp\" | \"flashback\" (Blade of the Swarm, Sorceress's Schemes: one key for two cards, each value single-card); optionsFrom shared by Koh and the player choice (Zenos); withWarp and optionsFrom leave the single-card keys: Single-card values 126 → 130, Effect (fields) 642 → 644, Ref (fields) 66 → 67"
   ]
 }

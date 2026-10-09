@@ -572,12 +572,19 @@ export const TRANSFORM: Record<string, CardScript> = {
         ],
         { label: "My First Friend" },
       ),
-      triggered(when.linkedLeaves, [fx.transform()], { label: "The chosen creature leaves: transform" }),
+      // "As this creature transforms into Shinryu, choose an opponent" (PLAN-L L4): chosen as the ability resolves,
+      // just before it transforms.
+      triggered(when.linkedLeaves, [fx.chooseForSelf("player", { optionsFrom: ref.eachOpponent }), fx.transform()], {
+        label: "The chosen creature leaves: transform",
+      }),
     ],
   },
   "Shinryu, Transcendent Rival": {
-    // Approximation: the "chosen" opponent is the first opponent who loses the game.
-    abilities: [triggered(when.opponentLoses, [fx.winGame], { label: "Burning Chains" })],
+    abilities: [
+      triggered({ on: "action", action: "playerLost", whose: "chosen" }, [fx.winGame], {
+        label: "Burning Chains — the chosen player loses: you win",
+      }),
+    ],
   },
   "Sidequest: Play Blitzball": {
     abilities: [

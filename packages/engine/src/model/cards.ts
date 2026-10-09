@@ -446,6 +446,11 @@ export interface CostReductionAbilityDef {
   everyone?: boolean;
   /** Variable reduction (affinity for artifacts: Sami, Wildcat Captain), added to `generic`. */
   genericAmount?: Amount;
+  /**
+   * The reduction is in symbols of this color: each point removes one, otherwise one generic mana (118.7c; Eluge:
+   * "costs {U} (or {1}) less for each…").
+   */
+  colored?: ManaType;
   /** Only if the condition is met (Uthros Psionicist: "the second spell you cast each turn"). */
   condition?: Condition;
   /** Only for spells cast from these zones (Aven Interrupter, Doc Aurlock: graveyard or exile). */

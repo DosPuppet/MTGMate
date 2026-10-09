@@ -56,6 +56,7 @@ import {
   cantLose,
   consumePlayerEffect,
   playerEffectValues,
+  playerProtectedFrom,
   playerStatic,
   playerStatics,
   playerStaticTotal,
@@ -422,7 +423,7 @@ function beginStep(s: GameState): void {
       // 103.8a: in a duel, the starting player skips the draw of their first turn
       // (103.8c: in multiplayer, nobody skips their draw).
       if (s.turn.number > 1 || s.playerOrder.length > 2) {
-        drawCards(s, active, 1, true);
+        drawCards(s, active, 1);
       }
       givePriority(s);
       return;
@@ -1991,9 +1992,10 @@ function stateBasedActionsOnce(s: GameState): boolean {
       const d = s.defs[o.defId];
       if (d?.enchant) {
         const host = o.attachedTo;
-        // Player Aura (Grievous Wound): attached to a player still in the game.
+        // Player Aura (Grievous Wound): attached to a player still in the game, without protection from it (702.16b,
+        // Teferi's Protection: curses fall off).
         const legal = d.enchant.player
-          ? !!host && isPlayer(s, host) && !s.players[host]?.lost
+          ? !!host && isPlayer(s, host) && !s.players[host]?.lost && !playerProtectedFrom(s, host, o.controller, id)
           : !!host &&
             host !== id &&
             onBattlefield(s, host) &&

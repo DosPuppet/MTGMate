@@ -144,8 +144,9 @@ export const BLUE: Record<string, CardScript> = {
           },
         ),
       ),
-      // Approximation: the reduction is generic.
+      // "{U} (or {1}) less for each land with a flood counter" (118.7c; PLAN-L L4).
       costReducer(INSTANT_SORCERY, 0, "First instant or sorcery costs less", {
+        colored: "U",
         genericAmount: amount.count({ types: ["Land"], controller: "you", withCounter: "flood" }),
         condition: cond.not(cond.amountAtLeast(amount.instantSorceryCast, 1)),
       }),

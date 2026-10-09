@@ -74,13 +74,13 @@ export interface TargetSpec {
 }
 
 /**
- * Face-up exiled cards: `withWarp`: that have warp (Blade of the Swarm); `warped`: exiled by warp (Close Encounter:
- * "a warped card"); `own`: that you own (`true`) or not (`false`, Sentinel of Lost Lore); `linked`: exiled "with" the
- * source (Mimeoplasm).
+ * Face-up exiled cards: `withCost`: that have warp (Blade of the Swarm) or flashback (Sorceress's Schemes); `warped`:
+ * exiled by warp (Close Encounter: "a warped card"); `own`: that you own (`true`) or not (`false`, Sentinel of Lost
+ * Lore); `linked`: exiled "with" the source (Mimeoplasm).
  */
 export interface ExiledFilter {
   filter?: ObjectFilter;
-  withWarp?: boolean;
+  withCost?: "warp" | "flashback";
   warped?: boolean;
   own?: boolean;
   linked?: boolean;
@@ -328,7 +328,8 @@ export type TriggerSpec =
    * graveyard; the event amount is the X of the cycling cost), transformed ("when this permanent transforms into
    * [this face]": carried by that face, read after the transformation).
    */
-  | { on: "action"; action: ActionEvent; whose?: "you" | "opponent" | "any"; self?: boolean; n?: number }
+  /** `whose: "chosen"`: the source's chosen player (`chosen.player`: "when the chosen player loses the game", Shinryu). */
+  | { on: "action"; action: ActionEvent; whose?: "you" | "opponent" | "any" | "chosen"; self?: boolean; n?: number }
   /**
    * `fromZone`: only an object that entered from that zone, or was cast from it (Twilight Diviner: a graveyard;
    * Extraordinary Journey: exile).
@@ -695,8 +696,8 @@ export type Ref =
   /** The most recent ability on the stack whose source is the event object (Firebender Ascension). */
   | { kind: "abilitiesFromEventObject" }
   /** Top card of the library of each designated player. */
-  /** `bottom`: the bottom card instead (Grenzo, Dungeon Warden). */
-  | { kind: "libraryTop"; who: Ref; bottom?: boolean }
+  /** `bottom`: the bottom card instead (Grenzo, Dungeon Warden); `count`: the top N cards (Memories Returning). */
+  | { kind: "libraryTop"; who: Ref; bottom?: boolean; count?: number }
   /** Creatures that saddled or crewed the source this turn (Fortune, Calamity, The Gitrog, Luxurious Locomotive). */
   | { kind: "crewedBy" }
   /** The designated objects that match the filter, in any zone (Ghost Vacuum: the creature cards). */

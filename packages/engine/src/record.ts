@@ -512,8 +512,16 @@ export const RECORD_VERSION = 1;
  *   and never leaves mana in the pool
  * - 187: PLAN-L L3: a mana ability "in any combination" tapped by hand takes one type per mana (`tapForMana.colors`);
  *   Baxter Building, Realm-Scorcher Hellkite and Desolation of Smaug ask one division instead of four colors
+ * - 188: PLAN-L L4: Exemplar of Light (counters you put), Orphans of the Wheat (itself too), damage really dealt
+ *   (`storeDealt`: Sonic Shrieker, Torch the Tower), control while the source remains (Cytoplast Manipulator, The Super
+ *   Hero Civil War), Central Elevator's names, Alania's "other than Alania", Eluge's {U} reduction (118.7c), a delayed
+ *   ability that watches a player (Great Train Heist), Shinryu's chosen opponent, library and/or graveyard in one
+ *   search (Vision Quest, Delivery Moogle, Fang-Druid Summoner), the first draw of the draw step from the turn log
+ *   (Orcish Bowmasters, Notion Thief), curses fall off a protected player, Sorceress's Schemes' exiled card with
+ *   flashback, Memories Returning's alternating choices, a sneaked creature whose defender is gone isn't attacking
+ *   (508.4a)
  */
-export const RULES_VERSION = 187;
+export const RULES_VERSION = 188;
 
 /** One checkpoint every N decisions (plus the last one of the game). */
 export const CHECKPOINT_EVERY = 25;

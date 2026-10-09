@@ -10,6 +10,7 @@ import { protection, protectionAbility } from "../src/dsl";
 import { permissionActive } from "../src/effects";
 import { RulesError } from "../src/errors";
 import { legalActions } from "../src/legal";
+import { spellCost } from "../src/stack";
 import { changeCounters, chars, moveObject } from "../src/state";
 import { plainText } from "../src/text";
 import type { GameObject, GameState, PlayerId, TokenSpec } from "../src/types";
@@ -566,6 +567,24 @@ describe("Bloomburrow", () => {
     expect(s.players.p2?.hand).toHaveLength(1);
     s = resolve(cast(s, "p1", "Thieving Otter"), yes);
     expect(idsOf(s, "p1", "battlefield", "Thieving Otter")).toHaveLength(3);
+    expect(s.players.p2?.hand).toHaveLength(1);
+  });
+
+  it('Alania: an Alania spell cast earlier doesn\'t count as the first Otter spell ("other than Alania", PLAN-L L4)', () => {
+    let s = scenario({
+      p1: {
+        battlefield: [...lands("Island", 7), ...lands("Mountain", 2), "Alania, Divergent Storm"],
+        hand: ["Alania, Divergent Storm", "Thieving Otter"],
+      },
+      p2: { library: ["Forest", "Island"] },
+    });
+    const yes: Answer = (req) => (req.type === "yesNo" ? [1] : undefined);
+    // The second Alania: not an Otter spell "other than Alania", no copy (nobody draws).
+    s = resolve(cast(s, "p1", "Alania, Divergent Storm"), yes);
+    expect(s.players.p2?.hand).toHaveLength(0);
+    // Thieving Otter: the first Otter spell other than Alania, copied.
+    s = resolve(cast(s, "p1", "Thieving Otter"), yes);
+    expect(idsOf(s, "p1", "battlefield", "Thieving Otter")).toHaveLength(2);
     expect(s.players.p2?.hand).toHaveLength(1);
   });
 });
@@ -1214,6 +1233,23 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
     s = resolve(cast(s, "p1", "Lightning Strike", { targets: { t: ["p2"] } }));
     expect(untapped(s)).toHaveLength(2);
     expect(s.players.p2?.life).toBe(14);
+  });
+
+  it('Eluge: the reduction removes {U} symbols first ("{U} (or {1})", 118.7c; PLAN-L L4)', () => {
+    // Two flooded lands, tapped: Cancel ({1}{U}{U}) costs {1}, paid by the Mountain.
+    const s = scenario({
+      p1: {
+        battlefield: [
+          "Eluge, the Shoreless Sea",
+          { name: "Forest", counters: { flood: 1 }, tapped: true },
+          { name: "Forest", counters: { flood: 1 }, tapped: true },
+          "Mountain",
+        ],
+        hand: ["Cancel"],
+      },
+    });
+    const cancel = s.defs[s.objects[idOf(s, "p1", "hand", "Cancel")]?.defId ?? ""];
+    expect(cancel && spellCost(s, "p1", cancel, {})).toMatchObject({ generic: 1, colored: {} });
   });
 
   it("Glarb: deathtouch; lands and spells with MV 4 or greater playable from the top of the library, not the others", () => {

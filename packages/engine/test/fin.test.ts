@@ -1841,6 +1841,34 @@ describe("Final Fantasy, lot K8: mythic, rare and uncommon cards", () => {
       expect(castable(t, "p1", idOf(t, "p1", "graveyard", "Memories Returning"))).toBe(true);
     });
 
+    it("Memories Returning: you and the chosen opponent take turns (PLAN-L L4)", () => {
+      let s = scenario({
+        p1: {
+          battlefield: lands("Island", 4),
+          hand: ["Memories Returning"],
+          library: ["Opt", "Bear Cub", "Forest", "Shivan Dragon", "Serra Angel", "Island"],
+        },
+      });
+      const choosers: string[] = [];
+      const want: Record<string, string> = { p1: "Shivan Dragon", p2: "Serra Angel" };
+      s = resolve(cast(s, "p1", "Memories Returning"), (req, p, cur) => {
+        if (req.type !== "pick") return undefined;
+        choosers.push(p);
+        // p1 takes the Dragon, p2 sends the Angel to the bottom; then the first card offered.
+        const named = req.options.find((id) => nameOf(cur, id) === want[p]);
+        if (named) {
+          want[p] = "";
+          return [named];
+        }
+        return [req.options[0] as string];
+      });
+      expect(choosers).toEqual(["p1", "p2", "p1", "p2"]);
+      expect(namesIn(s, s.players.p1?.hand)).toContain("Shivan Dragon");
+      expect(namesIn(s, s.players.p1?.hand)).not.toContain("Serra Angel");
+      expect(s.players.p1?.hand).toHaveLength(3);
+      expect(namesIn(s, s.players.p1?.library)).toEqual(["Island", "Serra Angel", expect.any(String)]);
+    });
+
     it("Midgar / Reactor Raid: you may sacrifice an artifact or creature to draw two cards; the land enters tapped", () => {
       const MIDGAR = "Midgar, City of Mako // Reactor Raid";
       const run = (yes: boolean) => {
@@ -2548,6 +2576,39 @@ describe("Final Fantasy, lot K8: mythic, rare and uncommon cards", () => {
       t = resolve(cast(t, "p1", ZENOS));
       expect(idsOf(t, "p1", "graveyard", "Bear Cub")).toHaveLength(1);
       expect(chars(t, idOf(t, "p1", "battlefield", ZENOS)).name).not.toBe("Shinryu, Transcendent Rival");
+    });
+
+    it("Shinryu: an opponent chosen as it transforms; only that player losing wins the game (four players, PLAN-L L4)", () => {
+      const ZENOS = "Zenos yae Galvus // Shinryu, Transcendent Rival";
+      let s = scenario({
+        players: 4,
+        p1: { battlefield: [...lands("Swamp", 5)], hand: [ZENOS] },
+        p2: { battlefield: ["Serra Angel"] },
+      });
+      const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+      s = resolve(cast(s, "p1", ZENOS), answering(true, [angel]));
+      destroy(s, angel);
+      // The transform: p1 chooses p3 among the opponents.
+      let asked: string[] = [];
+      s = resolve(act(s, "p1", { type: "pass" }), (req) => {
+        if (req.type === "pick" && req.intent === "chooseOnEnter") {
+          asked = req.options as string[];
+          return ["p3"];
+        }
+        return undefined;
+      });
+      expect(asked.sort()).toEqual(["p2", "p3", "p4"]);
+      const shinryu = idOf(s, "p1", "battlefield", ZENOS);
+      expect(s.objects[shinryu]?.chosen?.player).toBe("p3");
+      // p2 loses: nothing. p3 (the chosen one) loses: p1 wins (p4, still in the game, loses with it: 104.2a).
+      (s.players.p2 as { life: number }).life = 0;
+      s = resolve(act(s, "p1", { type: "pass" }));
+      expect(s.players.p2?.lost).toBe(true);
+      expect(s.over).toBeFalsy();
+      (s.players.p3 as { life: number }).life = 0;
+      s = resolve(act(s, s.pending?.kind === "priority" ? s.pending.player : "p1", { type: "pass" }));
+      expect(s.over).toBe(true);
+      expect(s.winner).toBe("p1");
     });
   });
 
@@ -3877,6 +3938,20 @@ describe("Final Fantasy, lot K8: mythic, rare and uncommon cards", () => {
       s = resolve(act(s, "p1", { type: "cast", card, targets: { t: legal } }));
       expect(namesIn(s, s.players.p1?.hand)).toEqual(["Opt"]);
       expect(s.players.p1?.manaPool.R).toBe(1);
+    });
+
+    it("Sorceress's Schemes: or an exiled card with flashback you own (PLAN-L L4)", () => {
+      const s = scenario({
+        p1: { battlefield: lands("Mountain", 4), hand: ["Sorceress's Schemes"], graveyard: ["Think Twice", "Opt"] },
+        p2: { graveyard: ["Think Twice"] },
+      });
+      const mine = idOf(s, "p1", "graveyard", "Think Twice");
+      const opt = idOf(s, "p1", "graveyard", "Opt");
+      const theirs = idOf(s, "p2", "graveyard", "Think Twice");
+      const exiled = [mine, opt, theirs].map((id) => moveObject(s, id, "exile") as string);
+      const legal = castModes(s, idOf(s, "p1", "hand", "Sorceress's Schemes"))[0]?.targets[0]?.legal ?? [];
+      // Only your exiled Think Twice (flashback); not Opt (no flashback), not the opponent's.
+      expect(legal).toEqual([exiled[0]]);
     });
 
     it("Stolen Uniform: you gain control of the targeted Equipment and attach it to your creature", () => {

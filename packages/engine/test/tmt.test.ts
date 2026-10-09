@@ -699,6 +699,26 @@ describe("lot A, blanc", () => {
         expect(s.players.p2?.life).toBe(12);
       });
 
+      it("sneaked at a planeswalker that is gone on resolution: it enters tapped, not attacking (508.4a; PLAN-L L4)", () => {
+        const walker = customCard({ name: "Test Walker", types: ["Planeswalker"], typeLine: "Planeswalker", loyalty: 5 });
+        let s = scenario({
+          p1: { battlefield: ["Bear Cub", ...lands("Plains", 5)], hand: ["Leonardo, Leader in Blue"] },
+          p2: { battlefield: [walker] },
+        });
+        const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+        const w = idOf(s, "p2", "battlefield", "Test Walker");
+        s = drive(
+          attackPlayer(s, [bear], w),
+          (x) => x.turn.step === "declareBlockers" && x.pending?.kind === "priority" && x.pending.player === "p1",
+        );
+        s = cast(s, "p1", "Leonardo, Leader in Blue", { alternative: true });
+        destroy(s, w);
+        s = settle(s);
+        const leo = idOf(s, "p1", "battlefield", "Leonardo, Leader in Blue");
+        expect(s.objects[leo]?.tapped).toBe(true);
+        expect(s.combat?.attackers.some((a) => a.id === leo)).toBe(false);
+      });
+
       it("cast normally: no bonus; {1}{W}: first strike until end of turn", () => {
         let s = scenario({ p1: { battlefield: ["Bear Cub", ...lands("Plains", 3)], hand: ["Leonardo, Leader in Blue"] } });
         s = settle(cast(s, "p1", "Leonardo, Leader in Blue"));

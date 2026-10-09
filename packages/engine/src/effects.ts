@@ -493,6 +493,7 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
     case "libraryTop":
       return resolveRef(s, ctx, ref.who).flatMap((p) => {
         const lib = s.players[p]?.library ?? [];
+        if (ref.count !== undefined) return ref.bottom ? lib.slice(-ref.count) : lib.slice(0, ref.count);
         const id = ref.bottom ? lib[lib.length - 1] : lib[0];
         return id ? [id] : [];
       });

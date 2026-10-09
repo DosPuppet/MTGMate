@@ -272,17 +272,8 @@ export const UNIQUE: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         [
-          fx.pickFromZone(
-            "graveyard",
-            { types: ["Creature"], noAbilities: true },
-            { to: "hand" },
-            {
-              min: 0,
-              store: "g",
-              prompt: "You may take back a creature card with no abilities",
-            },
-          ),
-          fx.when(cond.not(cond.v("g")), fx.search({ types: ["Creature"], noAbilities: true })),
+          // Library and/or graveyard, one choice (PLAN-L L4).
+          fx.search({ types: ["Creature"], noAbilities: true }, { to: "hand" }, 1, undefined, undefined, undefined, true),
         ],
         { label: "A creature card with no abilities" },
       ),

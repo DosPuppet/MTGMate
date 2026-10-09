@@ -117,7 +117,8 @@ export const LEGENDS: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.attacksSelf,
-        [fx.tapChosen({ types: ["Creature"], other: true }, "n"), fx.pump(ref.self, amount.v("n"), amount.v("n"))],
+        // "Any number of untapped creatures you control": itself too, if it is still untapped (vigilance; PLAN-L L4).
+        [fx.tapChosen({ types: ["Creature"] }, "n"), fx.pump(ref.self, amount.v("n"), amount.v("n"))],
         { label: "Tap creatures: +1/+1 for each" },
       ),
     ],
@@ -194,8 +195,14 @@ export const LEGENDS: Record<string, CardScript> = {
 
   // Blue
   "Central Elevator": {
-    // "that doesn't have the same name as a Room you control": not checked.
-    abilities: [triggered(when.unlockThisDoor, [fx.search({ subtype: "Room" })], { label: "Search for a Room" })],
+    // "A Room card that doesn't have the same name as a Room you control": a Room has both its names (PLAN-L L4).
+    abilities: [
+      triggered(
+        when.unlockThisDoor,
+        [fx.search({ subtype: "Room", not: { sameNameAs: { subtype: "Room", controller: "you" } } })],
+        { label: "Search for a Room" },
+      ),
+    ],
   },
   "Promising Stairs": {
     abilities: [

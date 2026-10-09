@@ -4,6 +4,7 @@
  */
 import { card } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
+import { drawCards } from "../src/actions";
 import { cumulativeUpkeepAbility } from "../src/dsl";
 import { chars } from "../src/layers";
 import { legalActions } from "../src/legal";
@@ -267,6 +268,22 @@ describe("Commander (EDH): Y'shtola's deck", () => {
       expect(life(s, "p2")).toBe(19);
       const army = tokens(s, "p1");
       expect(s.objects[army[0] as string]?.counters["+1/+1"]).toBe(1);
+    });
+
+    it("the step's draw replaced: the first card drawn later in the draw step doesn't trigger it either (PLAN-L L4)", () => {
+      let s = scenario({
+        active: "p2",
+        step: "upkeep",
+        p1: { battlefield: ["Orcish Bowmasters"] },
+        p2: { library: lands("Island", 5) },
+      });
+      s = advanceUntil(s, (x) => x.turn.step === "draw" && x.pending?.kind === "priority");
+      // As if the step's draw had been replaced (dredge): no card drawn in this step yet.
+      s.turnLog = s.turnLog.filter((x) => !(x.e === "draw" && x.player === "p2"));
+      drawCards(s, "p2", 1);
+      expect(s.triggers).toHaveLength(0);
+      drawCards(s, "p2", 1);
+      expect(s.triggers).toHaveLength(1);
     });
   });
 

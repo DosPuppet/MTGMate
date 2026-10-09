@@ -14,6 +14,7 @@ import { ask, cardRef } from "./choices";
 import { boardAmount, concreteSpec, evalAmount, needsConcrete, resolveRef, staticContext } from "./effects";
 import { RulesError, rethrowAsRules } from "./errors";
 import { withScan } from "./layers";
+import { shareName } from "./names";
 import {
   apnapOrder,
   castInfoOf,
@@ -493,12 +494,15 @@ function matchAction(
   me: PlayerId,
 ): TriggerEventData | null {
   if (ev.e !== t.action) return null;
-  const by = (p: PlayerId) => whose(t.whose ?? "you", p, me);
+  // The source's chosen player (Shinryu), even if they have just lost the game.
+  const chosen = t.whose === "chosen" ? (s.objects[src.id] ?? s.lki[src.id])?.chosen?.player : undefined;
+  const by = (p: PlayerId) => (t.whose === "chosen" ? p === chosen : whose(t.whose ?? "you", p, me));
   switch (ev.e) {
     case "search":
       return by(ev.player) ? { player: ev.player } : null;
     // A player who has just lost still counts as an opponent.
     case "playerLost":
+      if (t.whose === "chosen") return ev.player === chosen ? { player: ev.player } : null;
       return ev.player !== me && (t.whose === "any" || opponentsOf(s, me).includes(ev.player) || s.players[ev.player]?.lost)
         ? { player: ev.player }
         : null;
@@ -734,24 +738,25 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       if (t.minManaSpent !== undefined && (s.stack.find((x) => x.id === ev.stackId)?.cast?.manaSpent ?? 0) < t.minManaSpent)
         return null;
       if (t.notOwned && s.objects[ev.stackId]?.owner === ev.player) return null;
-      // Alania: the first instant, the first sorcery or the first Otter spell (other than her) this turn.
+      // Alania: the first instant, the first sorcery or the first Otter spell other than Alania this turn.
       if (t.firstOf) {
-        // Turn log: a single spell of this type (or of this creature subtype), this one.
+        const CARD_TYPES = ["Instant", "Sorcery", "Creature", "Artifact", "Enchantment", "Planeswalker", "Battle", "Land"];
+        const sourceName = src.view.name;
+        // Turn log: a single spell of this type, this one; of this creature subtype, a single one not named like the
+        // source ("other than Alania": a spell with her name doesn't count, before or now).
         const castOf = (k: string) =>
-          countTurnEvents(
-            s,
-            (
-              ["Instant", "Sorcery", "Creature", "Artifact", "Enchantment", "Planeswalker", "Battle", "Land"] as string[]
-            ).includes(k)
-              ? { event: "cast", types: [k as CardType] }
-              : { event: "cast", types: ["Creature"], subtype: k },
-            me,
-            ev.player,
-          );
+          CARD_TYPES.includes(k)
+            ? countTurnEvents(s, { event: "cast", types: [k as CardType] }, me, ev.player)
+            : s.turnLog.filter(
+                (x) => x.e === "cast" && x.player === ev.player && x.subtypes.includes(k) && !shareName(x.name, sourceName),
+              ).length;
         const first =
           !!v &&
           ev.stackId !== src.id &&
-          t.firstOf.some((k) => (v.types.includes(k as CardType) || v.subtypes.includes(k)) && castOf(k) === 1);
+          t.firstOf.some(
+            (k) =>
+              (v.types.includes(k as CardType) || (v.subtypes.includes(k) && !shareName(v.name, sourceName))) && castOf(k) === 1,
+          );
         if (!first) return null;
       }
       // `amount`: instants and sorceries already cast this turn (Thousand-Year Storm).
@@ -1145,7 +1150,11 @@ function detectDelayedOnEvent(s: GameState, ev: RulesEvent): void {
     if (!d.on || (d.at === "thisTurn" && d.notBeforeTurn !== s.turn.number)) continue;
     const src = delayedSource(s, d);
     const data = matchTrigger(s, ev, d.on, src);
-    if (!data?.objectId || (d.watch && !d.watch.includes(data.objectId))) continue;
+    // A watched player: the events that concern them ("deals combat damage to that player this turn", Great Train
+    // Heist; PLAN-L L4).
+    const byPlayer = !!(d.watch && data?.player && d.watch.includes(data.player));
+    if (!data || (!data.objectId && !byPlayer)) continue;
+    if (d.watch && !byPlayer && !(data.objectId && d.watch.includes(data.objectId))) continue;
     if (entryMuted(s, ev, undefined)) continue;
     const c = d.ability.condition;
     if (c && !checkCondition(s, c, d.controller, d.sourceId, data.objectId, data)) continue;

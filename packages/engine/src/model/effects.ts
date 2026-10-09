@@ -87,7 +87,11 @@ export type Effect =
   | { op: "suspect"; what: Ref; value: boolean }
   /** Becomes prepared / unprepared (Reality Fracture). */
   | { op: "prepare"; what?: Ref; filter?: ObjectFilter; value: boolean }
-  | { op: "damage"; amount: Amount; to: Ref; source?: Ref; storeExcess?: string }
+  /**
+   * `storeExcess`: excess damage (120.4a); `storeDealt`: the damage really dealt to the targets, after prevention and
+   * redirection ("if a player is dealt damage this way": Sonic Shrieker; "a permanent dealt damage by": Torch the Tower).
+   */
+  | { op: "damage"; amount: Amount; to: Ref; source?: Ref; storeExcess?: string; storeDealt?: string }
   /** `storeExcess`: excess damage dealt to the second creature (The Last Agni Kai). */
   | { op: "fight"; a: Ref; b: Ref; storeExcess?: string }
   /** `double`: each object gets +X/+Y, where X and Y are its power and toughness ("double the power and toughness"). */
@@ -323,6 +327,11 @@ export type Effect =
       maxManaValue?: Amount;
       /** "… reveal it": the found cards are shown to all players (read from the text, `scryfall.ts`). */
       reveal?: boolean;
+      /**
+       * "Search your library and/or graveyard" (Vision Quest, Delivery Moogle…): the graveyard's matching cards are
+       * offered with the library's, in one choice; the library is shuffled unless the card comes from the graveyard.
+       */
+      alsoGraveyard?: boolean;
     }
   | { op: "shuffle"; who: Ref }
   /** Exchanges control of two permanents (Trade the Helm). */
@@ -523,7 +532,8 @@ export type Effect =
        * control of its owner (Alicia Masters: "each player gains control of all creatures they own").
        */
       to?: Ref | "owner";
-      duration?: "endOfTurn" | "endOfYourNextTurn" | "whileYouControlSource" | "permanent";
+      /** `whileSource`: "for as long as [the source] remains on the battlefield", whoever controls it. */
+      duration?: "endOfTurn" | "endOfYourNextTurn" | "whileYouControlSource" | "whileSource" | "permanent";
     }
   /**
    * Additional phase, step or turn (`amount` times, 500.8 to 500.10): `upkeep`, a beginning phase reduced to its

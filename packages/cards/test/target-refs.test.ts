@@ -8,9 +8,7 @@ import { describe, expect, it } from "vitest";
 import { implementedCards } from "../src/index";
 
 /** Declared but unread targets, on purpose: documented approximation in docs/approximations.md. */
-const UNUSED_OK: Record<string, string> = {
-  "Great Train Heist": '"that player": the Treasures come from damage dealt to any opponent',
-};
+const UNUSED_OK: Record<string, string> = {};
 
 type J = unknown;
 const isObj = (x: J): x is Record<string, J> => !!x && typeof x === "object" && !Array.isArray(x);

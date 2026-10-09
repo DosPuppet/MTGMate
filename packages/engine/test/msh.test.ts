@@ -3815,6 +3815,30 @@ describe("lot A, multicolores", () => {
       expect(chars(s, auto).keywords).not.toContain("haste");
     });
 
+    it("Vision Quest: library and/or graveyard in one choice; taken from the graveyard, no shuffle (PLAN-L L4)", () => {
+      let s = scenario({
+        p1: {
+          battlefield: [...lands("Island", 2), ...lands("Mountain", 2)],
+          hand: ["Vision Quest"],
+          graveyard: [AUTOMATON],
+          library: [AUTOMATON, "Forest", "Island", "Mountain", "Plains", "Swamp"],
+        },
+      });
+      const fromGraveyard = idOf(s, "p1", "graveyard", AUTOMATON.name);
+      const library = [...(s.players.p1?.library ?? [])];
+      let offered: string[] = [];
+      s = settle(cast(s, "p1", "Vision Quest", { x: 2 }), (req) => {
+        if (req.type === "pick" && req.intent === "search") {
+          offered = req.options as string[];
+          return [fromGraveyard];
+        }
+        return undefined;
+      });
+      expect(offered).toEqual([fromGraveyard, library[0]]);
+      expect(idsOf(s, "p1", "graveyard", AUTOMATON.name)).toHaveLength(0);
+      expect(s.players.p1?.library).toEqual(library);
+    });
+
     it("War Machine: at the beginning of combat, another of your creatures gets +X/+0, X being its power", () => {
       let s = scenario({ p1: { battlefield: ["War Machine, Legacy of Iron", "Bear Cub"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");

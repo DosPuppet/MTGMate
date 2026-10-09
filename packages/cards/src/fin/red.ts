@@ -133,9 +133,18 @@ export const RED: Record<string, CardScript> = {
   },
   "Sorceress's Schemes": {
     flashback: "{4}{R}",
-    // Approximation: only an instant or sorcery card from the graveyard (not a card exiled with flashback).
+    // "Target instant or sorcery card from your graveyard or exiled card with flashback you own" (PLAN-L L4).
     spell: spell(
-      [target.cardInGraveyard("t", { types: ["Instant", "Sorcery"] }, "you", "instant or sorcery card")],
+      [
+        {
+          id: "t",
+          label: "instant or sorcery card in your graveyard, or exiled card with flashback you own",
+          filter: {
+            cards: { filter: { types: ["Instant", "Sorcery"] }, whose: "you" },
+            exiled: { withCost: "flashback", own: true },
+          },
+        },
+      ],
       [fx.toHand(ref.target()), fx.addMana("R")],
     ),
   },

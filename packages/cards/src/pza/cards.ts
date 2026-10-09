@@ -39,7 +39,8 @@ export const CARDS: Record<string, CardScript> = {
         mana: "{U}",
         tap: true,
         targets: [target.creature("t", { withCounter: "+1/+1" })],
-        effects: [fx.gainControlWhileSource(ref.target())],
+        // "For as long as this creature remains on the battlefield" (PLAN-L L4).
+        effects: [fx.gainControlWhileSource(ref.target(), false, true)],
         label: "Control of a creature with a +1/+1 counter, for as long as this one remains",
       }),
     ],

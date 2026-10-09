@@ -276,6 +276,12 @@ export function canCastTiming(s: GameState, player: PlayerId, d: CardDef): boole
   );
 }
 
+/** The player or planeswalker a sneaked creature will attack is still there (508.4a). */
+function sneakDefenderStill(s: GameState, defender: string): boolean {
+  const p = s.players[defender];
+  return p ? !p.lost : onBattlefield(s, defender);
+}
+
 /** Sneak (702.190a): the spell is cast for its sneak cost during the declare blockers step. */
 export function sneakTiming(s: GameState, player: PlayerId, d: CardDef): boolean {
   return !!d.sneak && sneakOptions(s, player).length > 0 && checkCondition(s, { kind: "sneakWindow" }, player);
@@ -563,8 +569,9 @@ export function spellReduction(
   fromZone?: CastTerms["source"],
   card?: ObjectId,
   kicked?: boolean,
-): number {
+): { generic: number; colored: ManaCost["colored"] } {
   let r = 0;
+  const colored: ManaCost["colored"] = {};
   const own = d.costReduction;
   const ok = ownReductionApplies(s, player, d, targets, card, kicked);
   if (own && ok) {
@@ -593,11 +600,15 @@ export function spellReduction(
       // "Spells cast from graveyards or from exile" (Aven Interrupter, Doc Aurlock).
       const zone = fromZone === "flashback" ? "graveyard" : fromZone;
       if (ab.fromZones && !(zone === "graveyard" || zone === "exile" ? ab.fromZones.includes(zone) : false)) continue;
-      r += ab.generic;
-      if (ab.genericAmount !== undefined) r += evalAmount(s, reductionContext(s, o.controller, id, o.defId), ab.genericAmount);
+      const n =
+        ab.generic +
+        (ab.genericAmount !== undefined ? evalAmount(s, reductionContext(s, o.controller, id, o.defId), ab.genericAmount) : 0);
+      // "{U} (or {1}) less for each…" (Eluge): colored symbols, applied with 118.7c by `spellCost`.
+      if (ab.colored) colored[ab.colored] = (colored[ab.colored] ?? 0) + Math.max(0, n);
+      else r += n;
     }
   }
-  return r;
+  return { generic: r, colored };
 }
 
 /** Modifications as a spell enters (Noctis; next creature spell: Summon: Fenrir, Summon: Brynhildr). */
@@ -947,13 +958,14 @@ export function spellCost(
   const replicated = kickerPaidTimes(d) && d.kicker && (opts.x ?? 0) > 0 ? timesCost(d.kicker, opts.x ?? 0) : undefined;
   const kick = replicated ?? (opts.kicked && d.kicker ? d.kicker : undefined);
   const extra = kick ? (bendCost ? totalCost(kick, 0, bendCost) : kick) : bendCost;
+  const reduction = spellReduction(s, player, d, opts.targets, opts.fromZone, opts.card, opts.kicked);
   let cost0 = totalCost(
     base1,
     opts.free ? 0 : (opts.x ?? 0),
     extra,
     // 601.2f / 118.9d: a spell cast without paying its mana cost still pays the increases (Thalia, the Survivor); a
     // reduction doesn't go below zero.
-    spellReduction(s, player, d, opts.targets, opts.fromZone, opts.card, opts.kicked),
+    reduction.generic,
   );
   // Officious Interrogation: "costs {W}{U} more to cast for each target beyond the first".
   const extraTargets = d.costPerExtraTarget && opts.targets ? Math.max(0, flatTargets(opts.targets).length - 1) : 0;
@@ -970,7 +982,10 @@ export function spellCost(
   const symbols = playerStatics(s, player, "spellCost").filter(
     ({ ab }) => ab.spellCost?.colored && matchesView(spellView(d, player), ab.spellCost.filter, player),
   );
-  const cost = symbols.reduce((c, { ab }) => withoutColored(c, ab.spellCost?.colored ?? {}), cost2);
+  const cost = withoutColored(
+    symbols.reduce((c, { ab }) => withoutColored(c, ab.spellCost?.colored ?? {}), cost2),
+    reduction.colored,
+  );
   // Case File Auditor: "as though it were mana of any color" for the matching spells.
   const anyMana =
     opts.anyMana ||
@@ -2468,6 +2483,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     logTurnEvent(s, {
       e: "cast",
       player,
+      name: d.name,
       types: d.types,
       subtypes: d.subtypes,
       supertypes: d.supertypes,
@@ -4029,8 +4045,11 @@ function finishResolution(
             kicked: item.kicked,
             cast: item.cast,
             attachTo: d.enchant ? targets[ENCHANT_SPEC]?.[0] : undefined,
-            // Sneak: it enters tapped and attacking what the returned creature was attacking.
-            ...(item.cast?.sneakDefender ? { tapped: true, attacking: item.cast.sneakDefender } : {}),
+            // Sneak: it enters tapped and attacking what the returned creature was attacking; if that player left the
+            // game or that planeswalker the battlefield, it enters tapped but not attacking (508.4a).
+            ...(item.cast?.sneakDefender
+              ? { tapped: true, attacking: sneakDefenderStill(s, item.cast.sneakDefender) ? item.cast.sneakDefender : undefined }
+              : {}),
             // Counters, haste and subtypes on entering (Torgal, Summon: Fenrir, Noctis), impending: before the event.
             counters: item.arrival?.counters,
             ...(item.arrival?.loyalty !== undefined ? { loyalty: item.arrival.loyalty } : {}),

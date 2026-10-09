@@ -71,13 +71,26 @@ export interface DamageSource {
   keywords: Keyword[];
 }
 
-/** `turnDraw`: the draw of the draw step (504.1), which Notion Thief does not replace. */
-export function drawCard(s: GameState, p: PlayerId, turnDraw = false): void {
+/**
+ * "The first card a player draws in each of their draw steps" (Orcish Bowmasters, Notion Thief): during their own draw
+ * step, no card drawn yet in it (504.1: usually the step's draw, but not if it was replaced or skipped).
+ */
+function firstOfDrawStep(s: GameState, p: PlayerId): boolean {
+  return (
+    s.turn.step === "draw" &&
+    s.turn.active === p &&
+    !s.turnLog.some((x) => x.e === "draw" && x.player === p && "drawStep" in x && x.drawStep)
+  );
+}
+
+/** `thief`: the draw of Notion Thief itself, which it does not replace in turn. */
+export function drawCard(s: GameState, p: PlayerId, thief = false): void {
   const player = s.players[p];
   if (!player) return;
+  const first = firstOfDrawStep(s, p);
   // Notion Thief: "if an opponent would draw a card except the first one they draw in each of their draw steps,
   // instead that player skips that draw and you draw a card" (the thief's draw is not replaced in turn).
-  if (!turnDraw) {
+  if (!first && !thief) {
     const thief = opponentsOf(s, p).find((q) => !s.players[q]?.lost && playerStatic(s, q, "stealsOpponentDraws"));
     if (thief) {
       drawCard(s, thief, true);
@@ -94,11 +107,11 @@ export function drawCard(s: GameState, p: PlayerId, turnDraw = false): void {
   const id = moveObject(s, top, "hand");
   emit({ type: "draw", player: p, objectId: id ?? undefined, defId: s.objects[id ?? ""]?.defId });
   // Turn log (Duelist of the Mind: power equal to the cards drawn this turn).
-  logTurnEvent(s, { e: "draw", player: p });
+  const inDrawStep = s.turn.step === "draw" && s.turn.active === p;
+  logTurnEvent(s, { e: "draw", player: p, ...(inDrawStep ? { drawStep: true } : {}) });
   const nth = countTurnEvents(s, { event: "draw" }, p, p);
-  // The draw of the player's draw step (not Notion Thief's, which draws instead of another player).
-  const stepDraw = turnDraw && s.turn.step === "draw" && s.turn.active === p;
-  rulesEvent(s, { e: "draw", player: p, nth, objectId: id ?? undefined, ...(stepDraw ? { turnDraw: true } : {}) });
+  // The first card drawn in the player's draw step (whatever drew it; PLAN-L L4).
+  rulesEvent(s, { e: "draw", player: p, nth, objectId: id ?? undefined, ...(first ? { turnDraw: true } : {}) });
 }
 
 /**
@@ -106,8 +119,7 @@ export function drawCard(s: GameState, p: PlayerId, turnDraw = false): void {
  * most cards, unless they don't have that many in their library): Vnwxt, Verbose Host ("draw two cards instead", for
  * each card), Quantum Riddler ("that many plus one" with one or fewer cards in hand).
  */
-/** `turnDraw`: the draw of the draw step (the first card only). */
-export function drawCards(s: GameState, p: PlayerId, n: number, turnDraw = false): void {
+export function drawCards(s: GameState, p: PlayerId, n: number): void {
   const player = s.players[p];
   if (!player || n <= 0) return;
   // Draw replacements (R1, family I); Mornsong Aria: "players can't draw cards".
@@ -118,7 +130,7 @@ export function drawCards(s: GameState, p: PlayerId, n: number, turnDraw = false
   const total = most <= player.library.length ? most : chooseReplacementOrder(n, mods, "min");
   // One draw from an empty library is enough (704.5b): no need to go further.
   const draws = Math.min(total, player.library.length + 1);
-  for (let i = 0; i < draws; i++) drawCard(s, p, turnDraw && i === 0);
+  for (let i = 0; i < draws; i++) drawCard(s, p);
 }
 
 export function gainLife(s: GameState, p: PlayerId, amount: number): void {

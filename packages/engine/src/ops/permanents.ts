@@ -158,6 +158,26 @@ const CARD_TYPE_LABEL: Record<string, string> = {
  * suggestion: during the resolution of a permanent spell, when playing a land, or when an effect puts it into play.
  * `preset`: the options imposed by the effect.
  */
+/** Records the source's choice (`chooseOnEnter`). */
+function chooseOnEnterDone(
+  s: GameState,
+  r: Resolution,
+  ctx: EffectContext,
+  kind: Extract<Effect, { op: "chooseOnEnter" }>["kind"],
+  value: string,
+  secret?: boolean,
+): undefined {
+  r.vars.$chosen = [kind, value];
+  // Triggered ability of a permanent already in play (Petrified Hamlet: "when this land enters, choose…") or a
+  // resolving spell (Harmonized Crescendo: "choose a creature type; draw a card for each…").
+  const src = s.objects[ctx.sourceId];
+  if (src?.zone === "battlefield" || src?.zone === "stack") {
+    src.chosen = { ...src.chosen, ...(secret ? { secret: true } : {}), ...chosenValue(kind, value) };
+    bump(s);
+  }
+  return undefined;
+}
+
 export function enterChoiceRequest(
   s: GameState,
   controller: PlayerId,
@@ -166,17 +186,20 @@ export function enterChoiceRequest(
   preset?: string[],
 ): ChoiceRequest {
   const ctx = { controller, sourceDefId };
-  // "Choose a player" (Saskia the Unyielding): the players still in the game; suggestion, the next opponent.
+  // "Choose a player" (Saskia the Unyielding): the players still in the game, or those offered ("choose an opponent",
+  // Shinryu); suggestion, the next opponent.
   if (kind === "player") {
-    const players = s.playerOrder.filter((p) => !s.players[p]?.lost);
+    const players = preset ?? s.playerOrder.filter((p) => !s.players[p]?.lost);
     return {
       type: "pick",
       intent: "chooseOnEnter",
-      prompt: msg("Choose a player"),
+      prompt: preset ? msg("Choose an opponent") : msg("Choose a player"),
       options: players,
       min: 1,
       max: 1,
-      suggested: opponentsOf(s, controller).slice(0, 1),
+      suggested: opponentsOf(s, controller)
+        .filter((p) => players.includes(p))
+        .slice(0, 1),
     };
   }
   {
@@ -723,7 +746,11 @@ export const HANDLERS: OpHandlers = {
     if (!answer) {
       let preset: string[] | undefined;
       if (e.options) preset = [...e.options];
-      else if (e.optionsFrom) {
+      else if (e.optionsFrom && kind === "player") {
+        // "Choose an opponent" (Shinryu): among the designated players still in the game; no question for a single one.
+        preset = resolveRef(s, ctx, e.optionsFrom).filter((p) => isPlayer(s, p) && !s.players[p]?.lost);
+        if (preset.length === 0) return;
+      } else if (e.optionsFrom) {
         // Koh, the Face Stealer: the name of one of the designated cards (if there are none, nothing is chosen).
         const names = resolveRef(s, ctx, e.optionsFrom).flatMap((id) => (s.objects[id] ? nameList(chars(s, id).name) : []));
         preset = [...new Set(names)];
@@ -731,6 +758,7 @@ export const HANDLERS: OpHandlers = {
       }
       // Sphinx Ambassador: "that player chooses a card name" (the choice still belongs to the source).
       const chooser = (e.who && resolveRef(s, ctx, e.who).find((p) => isPlayer(s, p) && !s.players[p]?.lost)) || ctx.controller;
+      if (kind === "player" && preset?.length === 1) return chooseOnEnterDone(s, r, ctx, kind, preset[0] as string, e.secret);
       return {
         ask: {
           player: chooser,
@@ -739,15 +767,7 @@ export const HANDLERS: OpHandlers = {
         },
       };
     }
-    r.vars.$chosen = [kind, String(answer[0])];
-    // Triggered ability of a permanent already in play (Petrified Hamlet: "when this land enters, choose…") or a
-    // resolving spell (Harmonized Crescendo: "choose a creature type; draw a card for each…").
-    const src = s.objects[ctx.sourceId];
-    if (src?.zone === "battlefield" || src?.zone === "stack") {
-      src.chosen = { ...src.chosen, ...(e.secret ? { secret: true } : {}), ...chosenValue(kind, String(answer[0])) };
-      bump(s);
-    }
-    return;
+    return chooseOnEnterDone(s, r, ctx, kind, String(answer[0]), e.secret);
   },
   exchangeControl(s, _r, e, ctx) {
     const a = resolveRef(s, ctx, e.a)[0];
@@ -771,8 +791,9 @@ export const HANDLERS: OpHandlers = {
     const toOwner = e.to === "owner";
     const to0 = e.to === "owner" ? undefined : e.to ? resolveRef(s, ctx, e.to).find((x) => isPlayer(s, x)) : ctx.controller;
     if (!to0 && !toOwner) return;
-    // 611.2b: "for as long as you control [the source]" does nothing if it is already gone.
-    if (e.duration === "whileYouControlSource" && !onBattlefield(s, ctx.sourceId)) return;
+    // 611.2b: "for as long as you control [the source]" / "[it] remains on the battlefield" does nothing if it is
+    // already gone.
+    if ((e.duration === "whileYouControlSource" || e.duration === "whileSource") && !onBattlefield(s, ctx.sourceId)) return;
     for (const id of resolveRef(s, ctx, e.what)) {
       const o = s.objects[id];
       const to = toOwner ? (o?.owner ?? "") : (to0 ?? "");
@@ -790,8 +811,11 @@ export const HANDLERS: OpHandlers = {
       // cleanup of your next turn.
       if (e.duration === "endOfYourNextTurn")
         addControlEffect(s, [id], to, "endOfYourNextTurn", { until: ctx.controller, sinceTurn: s.turn.number });
-      else if (e.duration === "whileYouControlSource") {
-        addControlEffect(s, [id], to, "permanent", { whileSource: ctx.sourceId, whileControlledBy: ctx.controller });
+      else if (e.duration === "whileYouControlSource" || e.duration === "whileSource") {
+        addControlEffect(s, [id], to, "permanent", {
+          whileSource: ctx.sourceId,
+          ...(e.duration === "whileYouControlSource" ? { whileControlledBy: ctx.controller } : {}),
+        });
         bump(s);
       } else addControlEffect(s, [id], to, e.duration === "permanent" ? "permanent" : "endOfTurn");
     }

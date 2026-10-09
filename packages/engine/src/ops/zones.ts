@@ -1450,7 +1450,9 @@ export const HANDLERS: OpHandlers = {
       const maxMv = e.maxManaValue !== undefined ? evalAmount(s, ctx, e.maxManaValue) : undefined;
       // "mana value X or less": the X of the resolving spell (Nature's Rhythm).
       const base = withX(s, e.filter, ctx);
-      const options = player.library.filter((id) =>
+      // "Library and/or graveyard": the graveyard's cards first (they are public), then the library's.
+      const pool = e.alsoGraveyard ? [...player.graveyard, ...player.library] : player.library;
+      const options = pool.filter((id) =>
         matchesCard(
           s,
           p,
@@ -1474,7 +1476,9 @@ export const HANDLERS: OpHandlers = {
               request: {
                 type: "pick",
                 intent: "search",
-                prompt: msg("Search your library: up to {n} card(s)", { n: count }),
+                prompt: e.alsoGraveyard
+                  ? msg("Search your library and/or graveyard: up to {n} card(s)", { n: count })
+                  : msg("Search your library: up to {n} card(s)", { n: count }),
                 options,
                 min: 0,
                 max: Math.min(count, options.length),
@@ -1495,8 +1499,12 @@ export const HANDLERS: OpHandlers = {
       const arrival = arrivalChoices(s, r, ctx, picked, e.to, ownerOr(s, e.to, p), (x) => key(`${p}-${x}`));
       if (!(arrival instanceof Map)) return arrival;
       r.vars[key(`sdone-${p}`)] = [1];
-      rulesEvent(s, { e: "search", player: p });
-      logTurnEvent(s, { e: "search", player: p });
+      // "If you search your library this way, shuffle": a card taken from the graveyard means the library wasn't searched.
+      const searchedLibrary = !e.alsoGraveyard || !picked.some((id) => player.graveyard.includes(id));
+      if (searchedLibrary) {
+        rulesEvent(s, { e: "search", player: p });
+        logTurnEvent(s, { e: "search", player: p });
+      }
       // 701.23: shuffle after searching; "on top" applies after the shuffle.
       const toTop = e.to.to === "libraryTop";
       for (const id of picked) {
@@ -1504,7 +1512,7 @@ export const HANDLERS: OpHandlers = {
         const moved = moveWithSpec(s, p, id, evalMoveSpec(s, ctx, e.to), arrival.get(id));
         if (e.store && moved) r.vars[`$ids:${e.store}`] = [...(r.vars[`$ids:${e.store}`] ?? []), moved];
       }
-      shuffle(s, player.library);
+      if (searchedLibrary) shuffle(s, player.library);
       if (toTop) for (const id of picked) player.library = [id, ...player.library.filter((x) => x !== id)];
     }
     return;

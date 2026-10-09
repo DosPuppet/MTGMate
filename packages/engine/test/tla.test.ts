@@ -5455,6 +5455,21 @@ describe("Avatar: The Last Airbender, PLAN-D D9: last cards", () => {
       expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
       expect(pt(s, idOf(s, "p1", "battlefield", "Zhao, Ruthless Admiral"))).toEqual([3, 4]);
     });
+
+    it('Zhao sacrificed itself: "another permanent", no bonus for the others (PLAN-L L4)', () => {
+      let s = scenario({ p1: { battlefield: ["Zhao, Ruthless Admiral", "Serra Angel", altar] } });
+      const angel = idOf(s, "p1", "battlefield", "Serra Angel");
+      s = settle(
+        sacrificeWith(
+          s,
+          "p1",
+          idOf(s, "p1", "battlefield", "Test Altar"),
+          idOf(s, "p1", "battlefield", "Zhao, Ruthless Admiral"),
+        ),
+      );
+      expect(idsOf(s, "p1", "graveyard", "Zhao, Ruthless Admiral")).toHaveLength(1);
+      expect(pt(s, angel)).toEqual([4, 4]);
+    });
   });
 });
 

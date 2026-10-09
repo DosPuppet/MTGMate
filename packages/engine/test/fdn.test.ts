@@ -1806,6 +1806,21 @@ describe("Foundations, lot K8: rares (1)", () => {
     expect(hand(s)).toBe(0);
   });
 
+  it('Exemplar of Light: a counter put by an opponent doesn\'t draw ("whenever you put", PLAN-L L4)', () => {
+    let s = scenario({
+      active: "p2",
+      p1: { battlefield: ["Exemplar of Light"], library: lands("Plains", 3) },
+      p2: { battlefield: ["Plains"], hand: ["Fleeting Flight"] },
+    });
+    const ex = idOf(s, "p1", "battlefield", "Exemplar of Light");
+    s = run(
+      cast(s, "p2", "Fleeting Flight", { targets: { t: [ex] } }),
+      (x) => x.stack.length === 0 && x.triggers.length === 0 && x.pending?.kind === "priority",
+    );
+    expect(counterCount(s.objects[ex] as never, "+1/+1")).toBe(1);
+    expect(hand(s)).toBe(0);
+  });
+
   it("Extravagant Replication: at your upkeep, a token copy of another nonland permanent you control", () => {
     let s = scenario({
       p1: { battlefield: ["Extravagant Replication", "Bear Cub", "Forest"] },

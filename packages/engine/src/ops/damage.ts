@@ -15,7 +15,9 @@ export const HANDLERS: OpHandlers = {
     const src = damageSource(s, ctx, e.source);
     if (!src) return;
     const amount = evalAmount(s, ctx, e.amount);
+    let dealt = 0;
     for (const t of resolveRef(s, ctx, e.to)) {
+      const logged = s.turnLog.length;
       if (e.storeExcess && onBattlefield(s, t) && isCreature(s, t)) {
         // 120.4a: damage beyond lethal damage.
         const lethal = src.keywords.includes("deathtouch")
@@ -24,7 +26,12 @@ export const HANDLERS: OpHandlers = {
         store(r, e.storeExcess, Math.max(0, amount - Math.max(0, lethal)));
       }
       dealDamage(s, src, t, amount, false);
+      // What the turn log recorded for this target: the damage really dealt (prevention, redirection).
+      if (e.storeDealt)
+        for (const x of s.turnLog.slice(logged))
+          if (x.e === "damage" && (x.toPlayer ? x.player === t : x.id === t)) dealt += x.amount;
     }
+    if (e.storeDealt) store(r, e.storeDealt, dealt);
     return;
   },
   fight(s, r, e, ctx) {

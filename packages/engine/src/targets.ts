@@ -345,7 +345,8 @@ function hexproofFromSource(s: GameState, f: ObjectFilter, player: PlayerId, sou
 export function matchesExiled(s: GameState, controller: PlayerId, id: ObjectId, ex: ExiledFilter, sourceId?: ObjectId): boolean {
   const o = s.objects[id];
   if (o?.zone !== "exile" || o.faceDown || o.cardCopy || o.preparedFor) return false;
-  if (ex.withWarp && !s.defs[o.defId]?.warp) return false;
+  // "With warp" (Blade of the Swarm), "with flashback" (Sorceress's Schemes): the card has that cost.
+  if (ex.withCost && !s.defs[o.defId]?.[ex.withCost]) return false;
   if (ex.warped && o.exiledVia?.kind !== "warp") return false;
   if (ex.own !== undefined && (o.owner === controller) !== ex.own) return false;
   if (

@@ -477,6 +477,8 @@ export type TurnLogEntry =
   | {
       e: "cast";
       player: PlayerId;
+      /** The card's name ("the first Otter spell other than Alania", PLAN-L L4). */
+      name?: string;
       types: CardType[];
       subtypes: string[];
       supertypes: string[];
@@ -527,7 +529,14 @@ export type TurnLogEntry =
   /** A card drawn; cards discarded (`amount`); a scry or a surveil; a crime (700.13); a permanent turned face
    * up. */
   /** `search`: search of one's library (Archive Trap: "if an opponent searched their library"). */
-  | { e: "draw" | "scry" | "crime" | "turnFaceUp" | "search"; player: PlayerId; types?: CardType[]; subtypes?: string[] }
+  /** `drawStep`: a card drawn during the player's own draw step (Orcish Bowmasters, Notion Thief: "except the first"). */
+  | {
+      e: "draw" | "scry" | "crime" | "turnFaceUp" | "search";
+      player: PlayerId;
+      types?: CardType[];
+      subtypes?: string[];
+      drawStep?: boolean;
+    }
   /** `id`: the discarded card, in its new zone (Mayhem: "if you discarded it this turn"). */
   | { e: "discard"; player: PlayerId; amount: number; types?: CardType[]; subtypes?: string[]; id?: ObjectId }
   /** Element bending (Avatar). */

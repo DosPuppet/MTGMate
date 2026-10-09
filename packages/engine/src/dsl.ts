@@ -268,6 +268,8 @@ export const ref = {
     where: { kind: "not", cond: { kind: "maxSpeed" } },
   } as Ref,
   libraryTop: (who: Ref): Ref => ({ kind: "libraryTop", who }),
+  /** The top N cards of the designated player's library (Memories Returning). */
+  libraryTopCards: (who: Ref, count: number): Ref => ({ kind: "libraryTop", who, count }),
   /** The bottom card of the designated player's library. */
   libraryBottom: (who: Ref): Ref => ({ kind: "libraryTop", who, bottom: true }),
   /** The objects in a zone of the designated players (see the `zone` reference). */
@@ -575,7 +577,14 @@ export const cmp = {
 };
 
 export const fx = {
-  damage: (n: Amount, to: Ref, source?: Ref): Effect => ({ op: "damage", amount: n, to, source }),
+  /** `storeDealt`: the damage really dealt to the targets is stored ("if a player is dealt damage this way"). */
+  damage: (n: Amount, to: Ref, source?: Ref, opts: { storeDealt?: string } = {}): Effect => ({
+    op: "damage",
+    amount: n,
+    to,
+    source,
+    ...(opts.storeDealt ? { storeDealt: opts.storeDealt } : {}),
+  }),
   fight: (a: Ref, b: Ref, storeExcess?: string): Effect => ({ op: "fight", a, b, ...(storeExcess ? { storeExcess } : {}) }),
   pump: (what: Ref, power: Amount, toughness: Amount, keywords?: Keyword[]): Effect => ({
     op: "pump",
@@ -1139,9 +1148,12 @@ export const fx = {
   plotOnResolve: (what: Ref): Effect => ({ op: "spellFate", fate: "plot", what }),
   flickerChosen: (filter: ObjectFilter, times: Amount): Effect => ({ op: "flickerChosen", filter, times }),
   exchangeControl: (a: Ref, b: Ref): Effect => ({ op: "exchangeControl", a, b }),
-  /** Gains control as long as you control the source; `restrict`: it can't attack or block (Possession Engine). */
-  gainControlWhileSource: (what: Ref, restrict = false): Effect[] => [
-    { op: "gainControl", what, duration: "whileYouControlSource" },
+  /**
+   * Gains control as long as you control the source; `restrict`: it can't attack or block (Possession Engine);
+   * `remains`: as long as the source remains on the battlefield, whoever controls it (Cytoplast Manipulator).
+   */
+  gainControlWhileSource: (what: Ref, restrict = false, remains = false): Effect[] => [
+    { op: "gainControl", what, duration: remains ? "whileSource" : "whileYouControlSource" },
     ...(restrict
       ? [
           {
@@ -1695,6 +1707,8 @@ export const fx = {
     who?: Ref,
     store?: string,
     manaValue?: Amount,
+    /** "Search your library and/or graveyard": one choice among both zones. */
+    alsoGraveyard?: boolean,
   ): Effect => ({
     op: "search",
     filter,
@@ -1703,6 +1717,7 @@ export const fx = {
     who,
     store,
     manaValue,
+    ...(alsoGraveyard ? { alsoGraveyard } : {}),
   }),
   copyToken: (
     of: Ref,
@@ -1768,7 +1783,9 @@ export const fx = {
   }),
   /**
    * Delayed ability "when [the designated object] … this turn" (603.7c): `trigger` on an event that concerns one of the
-   * objects of `watch` (fixed now), each time until end of turn; `ref.eventObject` is that object there.
+   * objects of `watch` (fixed now), each time until end of turn; `ref.eventObject` is that object there. A watched
+   * player: the events that concern them ("whenever a creature you control deals combat damage to that player this
+   * turn").
    */
   whenThisTurn: (
     trigger: TriggerSpec,
@@ -2153,7 +2170,7 @@ export function costReducer(
   filter: ObjectFilter,
   generic: number,
   label?: string,
-  opts: { condition?: Condition; genericAmount?: Amount; opponents?: boolean } = {},
+  opts: { condition?: Condition; genericAmount?: Amount; opponents?: boolean; colored?: ManaType } = {},
 ): CostReductionAbilityDef {
   return { kind: "costReduction", filter, generic, label, ...opts };
 }

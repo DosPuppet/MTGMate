@@ -5,7 +5,9 @@
  */
 
 import { describe, expect, it } from "vitest";
+import { destroy } from "../src/actions";
 import { legalActions } from "../src/legal";
+import { addReplacement } from "../src/replacement";
 import { chars } from "../src/state";
 import { playerStatic } from "../src/statics";
 import type { GameState } from "../src/types";
@@ -96,6 +98,16 @@ describe("Meta, lot M1", () => {
       t = settle(act(t, "p1", { type: "cast", card: idOf(t, "p1", "hand", "Torch the Tower"), targets: { t: [bear] } }));
       expect(idsOf(t, "p2", "graveyard", "Bear Cub")).toHaveLength(0);
       expect(t.exile.some((id) => t.objects[id]?.owner === "p2")).toBe(true);
+    });
+
+    it('damage prevented: the creature is not "dealt damage by Torch the Tower", it dies normally later (PLAN-L L4)', () => {
+      let s = setup();
+      const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+      addReplacement(s, "preventDamage", [bear], "r-test");
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Torch the Tower"), targets: { t: [bear] } }));
+      expect(s.objects[bear]?.damage ?? 0).toBe(0);
+      destroy(s, bear);
+      expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
     });
 
     it("a permanent that cannot pay for the bargain is refused", () => {
