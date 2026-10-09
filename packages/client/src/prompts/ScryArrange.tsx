@@ -7,6 +7,7 @@
 import type { ChoiceValue, GameView, ObjectView } from "@mtgx/engine";
 import { useState } from "react";
 import { Card } from "../board/Card";
+import { Dialog } from "../Dialog";
 import { useT } from "../localize";
 import type { PickRequest } from "./boardChoice";
 
@@ -71,88 +72,87 @@ export function ScryArrange({
   };
   const other = (zone: Zone): Zone => (zone === "top" ? "away" : "top");
   return (
-    <div className="modal-backdrop">
-      <div className="modal wide scry-arrange" role="dialog" aria-label={req.prompt} data-testid="scry-arrange">
-        <h2>{req.prompt}</h2>
-        <p className="hint">{t("Drag the cards between the zones, or use the buttons.")}</p>
-        {(["top", "away"] as const).map((zone) => (
-          <div
-            key={zone}
-            className={`scry-zone ${zone}`}
-            data-zone={zone}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => {
-              e.preventDefault();
-              if (dragged) move(dragged, zone);
-              setDragged(null);
-            }}
-          >
-            <div className="scry-zone-title">
-              {titles[zone]} <span>{zones[zone].length}</span>
-            </div>
-            <div className="scry-cards">
-              {zones[zone].map((id, i) => {
-                const o = face(id);
-                return (
-                  <div
-                    key={id}
-                    className="scry-card"
-                    draggable
-                    data-oid={id}
-                    onDragStart={() => setDragged(id)}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      if (dragged && dragged !== id) move(dragged, zone, id);
-                      setDragged(null);
-                    }}
-                  >
-                    <span className="order-rank">{i + 1}</span>
-                    {o && <Card face={o} obj={o} width="var(--pick-w)" />}
-                    <div className="order-moves">
-                      <button
-                        type="button"
-                        className="btn small"
-                        aria-label={t("Earlier")}
-                        disabled={i === 0}
-                        onClick={() => shift(zone, i, -1)}
-                      >
-                        ←
-                      </button>
-                      <button
-                        type="button"
-                        className="btn small"
-                        aria-label={zone === "top" ? titles.away : titles.top}
-                        onClick={() => move(id, other(zone))}
-                      >
-                        {zone === "top" ? "↓" : "↑"}
-                      </button>
-                      <button
-                        type="button"
-                        className="btn small"
-                        aria-label={t("Later")}
-                        disabled={i === zones[zone].length - 1}
-                        onClick={() => shift(zone, i, 1)}
-                      >
-                        →
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+    <Dialog title={req.prompt} className="wide scry-arrange" testId="scry-arrange">
+      <p className="hint">{t("Drag the cards between the zones, or use the buttons.")}</p>
+      {(["top", "away"] as const).map((zone) => (
+        // biome-ignore lint/a11y/noStaticElementInteractions: drop zone of a drag and drop; each card's buttons do the same from the keyboard
+        <div
+          key={zone}
+          className={`scry-zone ${zone}`}
+          data-zone={zone}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault();
+            if (dragged) move(dragged, zone);
+            setDragged(null);
+          }}
+        >
+          <div className="scry-zone-title">
+            {titles[zone]} <span>{zones[zone].length}</span>
           </div>
-        ))}
-        <div className="modal-actions">
-          <button type="button" className="btn ghost" onClick={() => setZones({ top: ids, away: [] })}>
-            {t("Reset")}
-          </button>
-          <button type="button" className="btn primary" disabled={!valid} onClick={confirm}>
-            {t("Confirm")}
-          </button>
+          <div className="scry-cards">
+            {zones[zone].map((id, i) => {
+              const o = face(id);
+              return (
+                // biome-ignore lint/a11y/noStaticElementInteractions: dragged card; its buttons do the same from the keyboard
+                <div
+                  key={id}
+                  className="scry-card"
+                  draggable
+                  data-oid={id}
+                  onDragStart={() => setDragged(id)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (dragged && dragged !== id) move(dragged, zone, id);
+                    setDragged(null);
+                  }}
+                >
+                  <span className="order-rank">{i + 1}</span>
+                  {o && <Card face={o} obj={o} width="var(--pick-w)" />}
+                  <div className="order-moves">
+                    <button
+                      type="button"
+                      className="btn small"
+                      aria-label={t("Earlier")}
+                      disabled={i === 0}
+                      onClick={() => shift(zone, i, -1)}
+                    >
+                      ←
+                    </button>
+                    <button
+                      type="button"
+                      className="btn small"
+                      aria-label={zone === "top" ? titles.away : titles.top}
+                      onClick={() => move(id, other(zone))}
+                    >
+                      {zone === "top" ? "↓" : "↑"}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn small"
+                      aria-label={t("Later")}
+                      disabled={i === zones[zone].length - 1}
+                      onClick={() => shift(zone, i, 1)}
+                    >
+                      →
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
+      ))}
+      <div className="modal-actions">
+        <button type="button" className="btn ghost" onClick={() => setZones({ top: ids, away: [] })}>
+          {t("Reset")}
+        </button>
+        <button type="button" className="btn primary" disabled={!valid} onClick={confirm}>
+          {t("Confirm")}
+        </button>
       </div>
-    </div>
+    </Dialog>
   );
 }

@@ -358,6 +358,7 @@ function Collection({ deck, onChange }: { deck: DeckList; onChange: (name: strin
           const n = inDeck(c.name);
           const illegal = legalityTag(c, format, lang);
           return (
+            // biome-ignore lint/a11y/noStaticElementInteractions: right click: one copy less (the deck list's buttons do it from the keyboard)
             <div
               key={c.id}
               className={`collection-card ${c.implemented ? "" : "soon"}`}
@@ -447,6 +448,7 @@ function DeckLines({
               });
               const current = choices.find((p) => p.key === key);
               return (
+                // biome-ignore lint/a11y/noStaticElementInteractions: hovering only shows the card's preview
                 <div
                   key={name}
                   className={`deck-line ${c.implemented ? "" : "soon"} ${illegal ? "illegal" : ""}`}
@@ -579,6 +581,7 @@ function DeckColumns({
             {cards.map(([n, name, key]) => {
               const c = CARDS[name] as CardDef;
               return (
+                // biome-ignore lint/a11y/noStaticElementInteractions: right click: one copy less (the deck list's buttons do it from the keyboard)
                 <div
                   key={name}
                   className="deck-column-card"

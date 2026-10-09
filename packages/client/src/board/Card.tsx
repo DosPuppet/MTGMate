@@ -1,6 +1,6 @@
 import { type CardFace, counterLabel, HIDDEN_CARD_ID, msg, type ObjectView } from "@mtgx/engine";
 import { motion } from "motion/react";
-import { type CSSProperties, useState } from "react";
+import { type CSSProperties, memo, useCallback, useRef, useState } from "react";
 import { faceImage, faceName, faceText, faceType } from "../i18n";
 import { detectBlockedScryfall, useCustomBack, useRelayActive } from "../images";
 import { useLocalize, useT } from "../localize";
@@ -94,7 +94,30 @@ interface CardProps {
   oid?: string;
 }
 
-export function Card({
+/**
+ * A card, memoized (PLAN-L L10): each update recreates the view's objects, so the card only renders again when its face,
+ * its object or another property changes in value; the click goes through a stable function that calls the latest
+ * `onClick` (no stale closure).
+ */
+export function Card(props: CardProps) {
+  const latest = useRef(props.onClick);
+  latest.current = props.onClick;
+  const onClick = useCallback(() => latest.current?.(), []);
+  return <CardView {...props} onClick={props.onClick ? onClick : undefined} />;
+}
+
+/** Same card: the same values (face and object compared by content, the views being rebuilt at each update). */
+function sameCard(a: CardProps, b: CardProps): boolean {
+  const keys = new Set([...Object.keys(a), ...Object.keys(b)] as (keyof CardProps)[]);
+  for (const k of keys) {
+    if (a[k] === b[k]) continue;
+    if ((k === "face" || k === "obj") && JSON.stringify(a[k]) === JSON.stringify(b[k])) continue;
+    return false;
+  }
+  return true;
+}
+
+const CardView = memo(function CardView({
   face,
   obj,
   width,
@@ -136,6 +159,7 @@ export function Card({
   const debuffed = power !== undefined && (power < (face.basePower ?? 0) || (toughness ?? 0) < (face.baseToughness ?? 0));
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: a role "button" when the card can be used; otherwise, hovering only shows its preview
     <div
       className={`card-slot ${className ?? ""}`}
       style={{ width: tapped ? height : width, height }}
@@ -230,7 +254,7 @@ export function Card({
       </motion.div>
     </div>
   );
-}
+}, sameCard);
 
 const COLOR_NAME: Record<string, string> = {
   W: msg("White"),

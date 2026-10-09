@@ -92,8 +92,7 @@ Per card, in `docs/approximations.md`. Cards the plans left explicitly documente
 From PLAN-C C18 (not done) and PLAN-R R8 (not done):
 - Choice of the lands to tap at payment and of the hybrid symbol: done in PLAN-L L7 (full control: a "mana" stage of the cast and the hybrid color for any hybrid spell; Phyrexian mana chosen by the player).
 - Scry and surveil by dragging: done in PLAN-L L6.
-- `Card` memoized (views are recreated at each update: a custom comparison to measure); sizes in `rem` instead of px; Biome rule `noStaticElementInteractions` (12 cases).
-- Accessibility to finish: ARIA of the choice windows, all sizes in `rem`.
+- `Card` memoized, font sizes in `rem`, Biome rule `noStaticElementInteractions`, ARIA of the windows (shared `Dialog`: `aria-modal`, title, focus kept and given back): done in PLAN-L L10.
 - Land untap for a land whose ability has another cost or a trigger (Arena does not allow it either); combat preview that ignores replacements and triggers.
 - Playwright capture for the new client choices of PLAN-A (the two modes of Teamwork, target tied to a chosen player, counters split among creatures) (A report).
 - From the 2026-09-30 audit section 4: done in PLAN-L (L8: always answer a trigger's "may" the same way; L9: automatic lands, sample hand, mana-value columns).

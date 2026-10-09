@@ -43,7 +43,7 @@ body,
   background: var(--bg);
   color: var(--text);
   font-family: Inter, system-ui, sans-serif;
-  font-size: 14px;
+  font-size: 0.875rem;
   overflow: clip;
   user-select: none;
   -webkit-user-select: none;
@@ -98,11 +98,11 @@ button {
 }
 .btn.small {
   padding: 4px 10px;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 .btn.big {
   padding: 12px 22px;
-  font-size: 16px;
+  font-size: 1rem;
 }
 
 /* ------------------------------------------------------------------------ */
@@ -180,7 +180,7 @@ button {
   display: flex;
   gap: 6px;
   align-items: center;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 .swatches {
   display: flex;
@@ -203,7 +203,7 @@ button {
 .swatch.random {
   background: conic-gradient(#1d4a30, #3d2416, #2c333b, #4a1c1c, #1d1236, #0e3442, #1c2735, #1d4a30);
   color: var(--text);
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 700;
   line-height: 20px;
 }
@@ -336,7 +336,7 @@ button {
   margin-left: 8px;
   padding: 1px 8px;
   border-radius: 9px;
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.02em;
   color: #0e1117;
@@ -352,14 +352,14 @@ button {
   top: 7px;
   left: 0;
   right: 0;
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--dim);
   font-weight: 600;
 }
 .life {
   position: absolute;
   inset: 16px 0 0;
-  font-size: 24px;
+  font-size: 1.5rem;
   font-weight: 700;
   font-family: Cinzel, serif;
 }
@@ -373,7 +373,7 @@ button {
   align-items: baseline;
 }
 .thinking {
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--gold);
   font-weight: 500;
   animation: blink 1.2s infinite;
@@ -382,7 +382,7 @@ button {
   display: flex;
   gap: 10px;
   color: var(--dim);
-  font-size: 12px;
+  font-size: 0.75rem;
   margin-top: 3px;
   align-items: center;
 }
@@ -488,7 +488,7 @@ button {
   background: var(--panel-2);
   border: 1px solid var(--gold);
   color: var(--text);
-  font-size: 12px;
+  font-size: 0.75rem;
   line-height: 1.35;
   text-align: left;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
@@ -499,7 +499,7 @@ button {
 }
 .citys-blessing-rule {
   opacity: 0.75;
-  font-size: 11px;
+  font-size: 0.6875rem;
 }
 .battlefield.me .citys-blessing-tip {
   bottom: 32px;
@@ -604,7 +604,7 @@ button {
   background: var(--gold);
   color: #1d1406;
   font-weight: 800;
-  font-size: 13px;
+  font-size: 0.8125rem;
   text-align: center;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
   pointer-events: none;
@@ -648,7 +648,7 @@ button {
   border-radius: 6px;
   background: rgba(70, 90, 170, 0.9);
   color: #fff;
-  font-size: 10px;
+  font-size: 0.625rem;
   font-weight: 700;
   pointer-events: none;
 }
@@ -659,7 +659,7 @@ button {
   gap: 4px;
 }
 .exile-holder {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--dim);
   font-style: italic;
   max-width: var(--pick-w);
@@ -698,7 +698,7 @@ button {
   gap: 4px;
 }
 .phase-turn {
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--dim);
 }
 .phases {
@@ -712,7 +712,7 @@ button {
   gap: 3px;
   padding: 3px 6px;
   border-radius: 6px;
-  font-size: 10.5px;
+  font-size: 0.6562rem;
   color: var(--dim);
   background: var(--panel-2);
 }
@@ -772,7 +772,7 @@ button {
 .stack-label {
   writing-mode: vertical-rl;
   transform: rotate(180deg);
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--dim);
   letter-spacing: 2px;
   text-transform: uppercase;
@@ -798,7 +798,7 @@ button {
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 1px 6px;
-  font-size: 10px;
+  font-size: 0.625rem;
   white-space: nowrap;
 }
 .center-strip .card-slot {
@@ -932,7 +932,7 @@ button {
   border: 1px solid var(--line);
   background: #2a3240;
   font-weight: 700;
-  font-size: 15px;
+  font-size: 0.9375rem;
   cursor: pointer;
   transition:
     transform 0.1s,
@@ -994,7 +994,7 @@ button {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  font-size: 8px;
+  font-size: 0.5rem;
   line-height: 1.2;
   color: #1a1a1a;
   border: 3px solid #1a1a1a;
@@ -1039,7 +1039,7 @@ button {
 .tf-pt {
   align-self: flex-end;
   font-weight: 700;
-  font-size: 10px;
+  font-size: 0.625rem;
 }
 .pt-badge {
   position: absolute;
@@ -1048,7 +1048,7 @@ button {
   background: rgba(10, 12, 16, 0.88);
   color: #fff;
   font-weight: 700;
-  font-size: 12px;
+  font-size: 0.75rem;
   padding: 1px 6px;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.25);
@@ -1075,7 +1075,7 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 10px;
+  font-size: 0.625rem;
   padding: 1px 5px;
   border-radius: 6px;
   background: rgba(20, 24, 32, 0.9);
@@ -1092,7 +1092,7 @@ button {
 }
 .commander-chip,
 .commander-damage {
-  font-size: 11px;
+  font-size: 0.6875rem;
   padding: 1px 7px;
   border-radius: 10px;
   white-space: nowrap;
@@ -1131,7 +1131,7 @@ button {
   }
 }
 .emblem-chip {
-  font-size: 11px;
+  font-size: 0.6875rem;
   padding: 1px 7px;
   border-radius: 10px;
   background: rgba(160, 120, 255, 0.18);
@@ -1142,7 +1142,7 @@ button {
 /* Emblem with an ability that can be activated (Karn, Living Legacy): a glowing button. */
 button.emblem-chip.activatable {
   font: inherit;
-  font-size: 11px;
+  font-size: 0.6875rem;
   cursor: pointer;
   box-shadow: 0 0 6px rgba(160, 120, 255, 0.8);
 }
@@ -1156,7 +1156,7 @@ button.emblem-chip.activatable {
   background: linear-gradient(#2b2f38, #14161b);
   color: #fff;
   font-weight: 800;
-  font-size: 13px;
+  font-size: 0.8125rem;
   padding: 2px 7px 4px;
   border: 1px solid rgba(255, 255, 255, 0.45);
   clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%);
@@ -1204,7 +1204,7 @@ button.emblem-chip.activatable {
   pointer-events: none;
   padding: 1px 7px;
   border-radius: 9px;
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 700;
   color: #14161b;
   background: var(--zone-color);
@@ -1224,7 +1224,7 @@ button.emblem-chip.activatable {
   background: #c0392b;
   color: #fff;
   font-weight: 700;
-  font-size: 11px;
+  font-size: 0.6875rem;
   padding: 1px 5px;
   border-radius: 8px;
 }
@@ -1242,13 +1242,13 @@ button.emblem-chip.activatable {
 }
 .counter-badge.other {
   background: #34495e;
-  font-size: 10px;
+  font-size: 0.625rem;
 }
 .counter-badge {
   background: #2e8b57;
   color: #fff;
   font-weight: 700;
-  font-size: 11px;
+  font-size: 0.6875rem;
   padding: 1px 5px;
   border-radius: 8px;
 }
@@ -1260,7 +1260,7 @@ button.emblem-chip.activatable {
   font-weight: 700;
   color: #cfe3ff;
   text-shadow: 0 0 3px #000;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 .card-back {
   border-radius: 3px;
@@ -1560,7 +1560,7 @@ button.emblem-chip.activatable {
   background: transparent;
   padding: 3px 8px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 .seg button.on {
   background: rgba(240, 184, 74, 0.25);
@@ -1575,20 +1575,20 @@ button.emblem-chip.activatable {
 }
 .zone-tabs button {
   padding: 6px 12px;
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: inherit;
 }
 .pace-control {
   display: flex;
   gap: 6px;
   align-items: center;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 .toggle {
   display: flex;
   gap: 5px;
   align-items: center;
-  font-size: 12px;
+  font-size: 0.75rem;
   cursor: pointer;
 }
 .preview {
@@ -1601,7 +1601,7 @@ button.emblem-chip.activatable {
 }
 .preview.empty {
   color: var(--dim);
-  font-size: 12px;
+  font-size: 0.75rem;
   text-align: center;
   padding: 30px 10px;
 }
@@ -1623,7 +1623,7 @@ button.emblem-chip.activatable {
 .token-name {
   font-family: Cinzel, serif;
   font-weight: 700;
-  font-size: 22px;
+  font-size: 1.375rem;
 }
 .token-type {
   font-style: italic;
@@ -1632,13 +1632,13 @@ button.emblem-chip.activatable {
 }
 .token-text {
   flex: 1;
-  font-size: 14px;
+  font-size: 0.875rem;
   white-space: pre-line;
 }
 .token-pt {
   align-self: flex-end;
   font-weight: 700;
-  font-size: 26px;
+  font-size: 1.625rem;
   background: rgba(255, 255, 255, 0.6);
   border-radius: 10px;
   padding: 2px 12px;
@@ -1648,7 +1648,7 @@ button.emblem-chip.activatable {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 12.5px;
+  font-size: 0.7812rem;
 }
 .preview-title {
   display: flex;
@@ -1678,22 +1678,22 @@ button.emblem-chip.activatable {
   background: rgba(255, 255, 255, 0.08);
   border-radius: 6px;
   padding: 1px 6px;
-  font-size: 11px;
+  font-size: 0.6875rem;
 }
 .preview-note {
   color: #cfe3ff;
-  font-size: 11px;
+  font-size: 0.6875rem;
 }
 .preview-warn {
   color: #ffb36b;
-  font-size: 11px;
+  font-size: 0.6875rem;
 }
 .dmg {
   color: #ff8d80;
 }
 .log-title {
   padding: 8px 10px 4px;
-  font-size: 11px;
+  font-size: 0.6875rem;
   text-transform: uppercase;
   letter-spacing: 1.5px;
   color: var(--dim);
@@ -1702,7 +1702,7 @@ button.emblem-chip.activatable {
   flex: 1 0 96px;
   overflow-y: auto;
   padding: 0 10px 10px;
-  font-size: 12.5px;
+  font-size: 0.7812rem;
   line-height: 1.45;
   user-select: text;
 }
@@ -1782,7 +1782,7 @@ button.emblem-chip.activatable {
 .modal h2 {
   margin: 0 0 14px;
   font-family: Cinzel, serif;
-  font-size: 20px;
+  font-size: 1.25rem;
 }
 .modal-actions {
   display: flex;
@@ -1792,7 +1792,7 @@ button.emblem-chip.activatable {
 }
 .hint {
   color: var(--dim);
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 .hand-picker {
   display: flex;
@@ -1850,7 +1850,7 @@ button.emblem-chip.activatable {
   background: rgba(255, 255, 255, 0.03);
 }
 .scry-zone-title {
-  font-size: 12px;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 1px;
   color: var(--dim);
@@ -1889,7 +1889,7 @@ button.emblem-chip.activatable {
   min-width: 28px;
   text-align: center;
   font-weight: 700;
-  font-size: 16px;
+  font-size: 1rem;
 }
 .x-picker {
   display: flex;
@@ -1901,14 +1901,14 @@ button.emblem-chip.activatable {
 }
 .x-value {
   font-weight: 700;
-  font-size: 18px;
+  font-size: 1.125rem;
   min-width: 60px;
 }
 .gameover {
   text-align: center;
 }
 .gameover h2 {
-  font-size: 34px;
+  font-size: 2.125rem;
 }
 .gameover.won h2 {
   color: #8bf0a8;
@@ -2000,7 +2000,7 @@ button.emblem-chip.activatable {
 }
 .lobby-head h1 {
   font-family: Cinzel, serif;
-  font-size: 56px;
+  font-size: 3.5rem;
   margin: 0;
   letter-spacing: 6px;
   background: linear-gradient(180deg, #ffe2a3, var(--gold-2));
@@ -2010,7 +2010,7 @@ button.emblem-chip.activatable {
 }
 .lobby-head .build-tag {
   font-family: Inter, system-ui, sans-serif;
-  font-size: 18px;
+  font-size: 1.125rem;
   font-weight: 500;
   letter-spacing: 1px;
   color: var(--dim);
@@ -2025,7 +2025,7 @@ button.emblem-chip.activatable {
   margin-top: 28px;
 }
 .deck-choice-label {
-  font-size: 12px;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 1.5px;
   color: var(--dim);
@@ -2039,7 +2039,7 @@ button.emblem-chip.activatable {
 }
 .deck-categories button {
   padding: 6px 12px;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 .deck-category-count {
   opacity: 0.6;
@@ -2095,7 +2095,7 @@ button.emblem-chip.activatable {
   background: rgba(10, 14, 22, 0.82);
   border: 1px solid rgba(240, 184, 74, 0.6);
   color: var(--gold);
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
@@ -2110,12 +2110,12 @@ button.emblem-chip.activatable {
 }
 .deck-desc {
   color: var(--dim);
-  font-size: 13px;
+  font-size: 0.8125rem;
   margin-top: 4px;
 }
 .deck-count {
   color: var(--dim);
-  font-size: 11px;
+  font-size: 0.6875rem;
   margin-top: 6px;
 }
 .ai-count {
@@ -2127,7 +2127,7 @@ button.emblem-chip.activatable {
 }
 .ai-count .seg button {
   padding: 4px 14px;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 /* Home screen, multiplayer: one AI at a time, with the name of its deck. */
 .ai-decks {
@@ -2137,7 +2137,7 @@ button.emblem-chip.activatable {
 }
 .ai-decks button {
   padding: 6px 12px;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 .ai-deck-name {
   color: var(--dim);
@@ -2151,7 +2151,7 @@ button.emblem-chip.activatable {
 }
 /* Online play */
 .lobby.online h1 {
-  font-size: 40px;
+  font-size: 2.5rem;
 }
 .online-field {
   display: flex;
@@ -2178,7 +2178,7 @@ button.emblem-chip.activatable {
 }
 .code-input {
   width: 9ch;
-  font-size: 20px;
+  font-size: 1.25rem;
   letter-spacing: 4px;
   text-transform: uppercase;
 }
@@ -2194,7 +2194,7 @@ button.emblem-chip.activatable {
 }
 .room-code {
   font-family: Cinzel, serif;
-  font-size: 56px;
+  font-size: 3.5rem;
   letter-spacing: 12px;
   color: var(--gold);
 }
@@ -2233,7 +2233,7 @@ button.emblem-chip.activatable {
 }
 .rope-text {
   position: relative;
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--dim);
   background: rgba(10, 14, 20, 0.85);
   padding: 0 8px;
@@ -2253,7 +2253,7 @@ button.emblem-chip.activatable {
   background: rgba(120, 30, 30, 0.92);
   border: 1px solid #ff7b7b;
   color: #ffe0e0;
-  font-size: 13px;
+  font-size: 0.8125rem;
   white-space: nowrap;
 }
 
@@ -2267,7 +2267,7 @@ button.emblem-chip.activatable {
   background: rgba(90, 60, 160, 0.92);
   border: 1px solid #b89cff;
   color: #efe6ff;
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 700;
   pointer-events: none;
   z-index: 2;
@@ -2282,7 +2282,7 @@ button.emblem-chip.activatable {
   background: rgba(150, 40, 40, 0.92);
   border: 1px solid #ff9c9c;
   color: #ffecec;
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 700;
   pointer-events: none;
   z-index: 2;
@@ -2295,7 +2295,7 @@ button.emblem-chip.activatable {
 
 .lobby-help {
   color: var(--dim);
-  font-size: 13px;
+  font-size: 0.8125rem;
   text-align: center;
   line-height: 1.6;
 }
@@ -2303,7 +2303,7 @@ button.emblem-chip.activatable {
   margin-top: auto;
   padding-top: 30px;
   color: #6c7885;
-  font-size: 11px;
+  font-size: 0.6875rem;
   text-align: center;
   max-width: 700px;
 }
@@ -2356,7 +2356,7 @@ button.emblem-chip.activatable {
     border-radius: 50%;
     border: 1px solid var(--line);
     background: rgba(10, 14, 20, 0.85);
-    font-size: 20px;
+    font-size: 1.25rem;
     cursor: pointer;
   }
   .drawer-close {
@@ -2367,7 +2367,7 @@ button.emblem-chip.activatable {
     height: 36px;
     border: none;
     background: none;
-    font-size: 26px;
+    font-size: 1.625rem;
     color: var(--dim);
     cursor: pointer;
   }
@@ -2415,14 +2415,14 @@ button.emblem-chip.activatable {
   }
   .life {
     inset: 7px 0 0;
-    font-size: 18px;
+    font-size: 1.125rem;
   }
   .player-name {
-    font-size: 12px;
+    font-size: 0.75rem;
   }
   .player-counts {
     gap: 6px;
-    font-size: 11px;
+    font-size: 0.6875rem;
     margin-top: 0;
   }
   .gy-top {
@@ -2441,7 +2441,7 @@ button.emblem-chip.activatable {
   }
   .banner {
     padding: 4px 10px;
-    font-size: 12px;
+    font-size: 0.75rem;
   }
   .action-panel {
     min-width: 0;
@@ -2450,7 +2450,7 @@ button.emblem-chip.activatable {
   .main-button {
     min-width: 110px;
     height: 38px;
-    font-size: 13px;
+    font-size: 0.8125rem;
     padding: 0 12px;
   }
 }
@@ -2493,6 +2493,10 @@ button.emblem-chip.activatable {
   max-width: 280px;
 }
 /* "Always answer this way" (PLAN-L L8). */
+.modal:focus {
+  /* The window takes the focus when it opens (Dialog.tsx): no frame around it. */
+  outline: none;
+}
 .always-answer {
   margin-top: 10px;
   font-size: 0.85rem;
@@ -2534,7 +2538,7 @@ button.emblem-chip.activatable {
   max-width: 280px;
   max-height: 94dvh;
   overflow-y: auto;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 @media (orientation: portrait) {
   .touch-preview .preview {
@@ -2563,11 +2567,11 @@ button.emblem-chip.activatable {
     padding: 24px;
     background: var(--bg);
     color: var(--text);
-    font-size: 16px;
+    font-size: 1rem;
     text-align: center;
   }
   .rotate-icon {
-    font-size: 56px;
+    font-size: 3.5rem;
     color: var(--gold);
   }
 }
@@ -2588,7 +2592,7 @@ button.emblem-chip.activatable {
   z-index: 2;
   font-family: Cinzel, serif;
   font-weight: 700;
-  font-size: 42px;
+  font-size: 2.625rem;
   letter-spacing: 1px;
   pointer-events: none;
   white-space: nowrap;
@@ -2608,7 +2612,7 @@ button.emblem-chip.activatable {
     0 0 18px rgba(60, 220, 120, 0.8);
 }
 .fx-number.speed {
-  font-size: 18px;
+  font-size: 1.125rem;
   color: var(--gold);
   -webkit-text-stroke: 1px rgba(20, 10, 0, 0.9);
   text-shadow:
@@ -2630,7 +2634,7 @@ button.emblem-chip.activatable {
   padding: 14px 42px;
   border-radius: 40px;
   font-family: Cinzel, serif;
-  font-size: 30px;
+  font-size: 1.875rem;
   font-weight: 700;
   color: #ffe2d8;
   background: linear-gradient(90deg, rgba(224, 121, 91, 0), rgba(120, 40, 20, 0.85), rgba(224, 121, 91, 0));
@@ -2657,7 +2661,7 @@ button.emblem-chip.activatable {
   border: 1px solid rgba(224, 121, 91, 0.6);
   border-radius: 16px;
   padding: 4px 12px;
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: #ffe2d8;
 }
 .spotlight .card {
@@ -2696,12 +2700,12 @@ button.emblem-chip.activatable {
   animation: none;
 }
 .resolution-label {
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: #d8ecff;
   text-align: center;
 }
 .resolution-note {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: #cfcfcf;
 }
 .resolution-timer {
@@ -2863,7 +2867,7 @@ button.emblem-chip.activatable {
   border: 1px solid var(--line);
   border-radius: 10px;
   padding: 1px 8px;
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: #ffb36b;
   pointer-events: none;
 }
@@ -2929,18 +2933,18 @@ button.emblem-chip.activatable {
   left: 0;
   right: 0;
   text-align: center;
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--dim);
 }
 .curve-label {
   text-align: center;
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--dim);
 }
 .pips {
   display: flex;
   gap: 12px;
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--dim);
 }
 .deck-lines {
@@ -3001,7 +3005,7 @@ button.emblem-chip.activatable {
   margin-bottom: 10px;
 }
 .deck-group-title {
-  font-size: 11px;
+  font-size: 0.6875rem;
   text-transform: uppercase;
   letter-spacing: 1.2px;
   color: var(--dim);
@@ -3035,7 +3039,7 @@ button.emblem-chip.activatable {
   align-self: center;
   padding: 1px 8px;
   border-radius: 10px;
-  font-size: 12px;
+  font-size: 0.75rem;
   border: 1px solid currentColor;
 }
 .format-badge.ok {
@@ -3069,7 +3073,7 @@ button.emblem-chip.activatable {
   flex: none;
   padding: 1px 2px;
   font: inherit;
-  font-size: 10.5px;
+  font-size: 0.6562rem;
   letter-spacing: 0.04em;
   background: #151c26;
   color: var(--text);
@@ -3085,7 +3089,7 @@ button.emblem-chip.activatable {
 .deck-validation {
   padding: 10px 14px;
   border-top: 1px solid var(--line);
-  font-size: 12.5px;
+  font-size: 0.7812rem;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -3120,7 +3124,7 @@ button.emblem-chip.activatable {
   border-radius: 8px;
   padding: 10px;
   font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
-  font-size: 13px;
+  font-size: 0.8125rem;
   resize: vertical;
 }
 .import-report {
@@ -3128,7 +3132,7 @@ button.emblem-chip.activatable {
   flex-direction: column;
   gap: 4px;
   margin-top: 10px;
-  font-size: 13px;
+  font-size: 0.8125rem;
   max-height: 180px;
   overflow-y: auto;
 }
@@ -3140,7 +3144,7 @@ button.emblem-chip.activatable {
   gap: 10px;
   align-items: center;
   margin-top: 12px;
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--dim);
 }
 .import-name input {
@@ -3235,7 +3239,7 @@ button.emblem-chip.activatable {
   background: rgba(14, 16, 22, 0.96);
   border: 1px solid rgba(232, 204, 120, 0.6);
   color: #e9edf5;
-  font-size: 12px;
+  font-size: 0.75rem;
   line-height: 1.35;
   pointer-events: none;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
@@ -3267,7 +3271,7 @@ button.emblem-chip.activatable {
 }
 .stack-reveal-label,
 .stack-reveal-targets {
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: #ffe2d8;
   text-align: center;
 }
@@ -3322,18 +3326,18 @@ button.emblem-chip.activatable {
   max-width: 100%;
 }
 .board-choice-label {
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--text);
   text-align: center;
 }
 .board-choice-effect {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: #8cc4ff;
   text-align: center;
 }
 .board-choice-hint {
   margin: 0;
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--dim);
   text-align: center;
 }
@@ -3353,14 +3357,14 @@ button.emblem-chip.activatable {
     0 0 0 1px rgba(77, 163, 255, 0.3),
     0 0 14px rgba(77, 163, 255, 0.45);
   color: #e6f1ff;
-  font-size: 13px;
+  font-size: 0.8125rem;
   line-height: 1.35;
   text-align: center;
 }
 .effect-frame-kind {
   display: block;
   margin-bottom: 2px;
-  font-size: 10px;
+  font-size: 0.625rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -3374,7 +3378,7 @@ button.emblem-chip.activatable {
   border-radius: 6px;
   background: rgba(20, 50, 90, 0.9);
   color: #e6f1ff;
-  font-size: 11px;
+  font-size: 0.6875rem;
   line-height: 1.25;
   text-align: center;
   overflow: hidden;
@@ -3438,7 +3442,7 @@ button.emblem-chip.activatable {
   background: #161d27;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.65);
   color: var(--text);
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1.45;
   max-height: calc(100dvh - 16px);
   overflow-y: auto;
@@ -3453,7 +3457,7 @@ button.emblem-chip.activatable {
   display: flex;
   justify-content: space-between;
   gap: 8px;
-  font-size: 11px;
+  font-size: 0.6875rem;
   text-transform: uppercase;
   letter-spacing: 1px;
   color: var(--gold);
@@ -3473,7 +3477,7 @@ button.emblem-chip.activatable {
   border-radius: 8px;
   background: rgba(77, 182, 255, 0.1);
   border-left: 3px solid var(--playable);
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 .coach-actions {
   display: flex;
@@ -3501,7 +3505,7 @@ button.emblem-chip.activatable {
 }
 @media (max-height: 560px) {
   .coach {
-    font-size: 13px;
+    font-size: 0.8125rem;
     padding: 9px 11px;
     gap: 6px;
   }
@@ -3514,7 +3518,7 @@ button.emblem-chip.activatable {
 }
 
 .tutorial-menu .lobby-head h1 {
-  font-size: 44px;
+  font-size: 2.75rem;
   letter-spacing: 3px;
 }
 .tutorial-intro {
@@ -3583,12 +3587,12 @@ button.emblem-chip.activatable {
   border-radius: 6px;
   background: rgba(240, 184, 74, 0.18);
   color: var(--gold);
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 500;
 }
 .lesson-summary {
   color: var(--dim);
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 .tutorial-menu .btn.small.ghost {
   align-self: center;
@@ -3603,7 +3607,7 @@ button.emblem-chip.activatable {
 }
 .ai-level-hint {
   color: var(--dim);
-  font-size: 13px;
+  font-size: 0.8125rem;
   text-align: center;
   max-width: 560px;
 }
@@ -3823,7 +3827,7 @@ button.emblem-chip.activatable {
 }
 .name-result small {
   color: var(--dim);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 .name-result.active,
 .name-result:hover {

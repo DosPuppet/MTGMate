@@ -398,6 +398,7 @@ export function TouchPreview() {
   return (
     // Neither the click that ends the long press (it lands on the overlay) nor the preview's buttons (other face)
     // close it.
+    // biome-ignore lint/a11y/noStaticElementInteractions: touch overlay over the whole screen: a tap closes it, Escape too
     <div
       className="touch-preview"
       onClick={(e) => !justLongPressed() && !(e.target as HTMLElement).closest("button") && setPeek(null)}
@@ -453,6 +454,7 @@ export function DrawerToggle() {
         ☰
       </button>
       {open && (
+        // biome-ignore lint/a11y/noStaticElementInteractions: the scrim closes the drawer, which its button and Escape also do
         <div
           className="drawer-scrim"
           onClick={() => setDrawerOpen(false)}

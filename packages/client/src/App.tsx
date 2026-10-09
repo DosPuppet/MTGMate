@@ -79,6 +79,7 @@ function GameScreen() {
   const drawerOpen = useGame((s) => s.drawerOpen);
   const t = useT();
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: only the browser's context menu is suppressed (touch), not an interaction
     <div
       className={`game ${drawerOpen ? "drawer-open" : ""}`}
       // Long press with a finger: no browser context menu (the card preview replaces it).

@@ -3,6 +3,7 @@
  */
 import { CARDS, CardIndex, type DeckList, parseDeckList, serializeDeckList } from "@mtgx/cards";
 import { useMemo, useState } from "react";
+import { Dialog } from "../Dialog";
 import { useT } from "../localize";
 import { useGame } from "../store";
 import { textIn } from "../translate";
@@ -16,18 +17,9 @@ const INDEX = new CardIndex(CARDS);
 
 export function DeckModal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
   return (
-    <div className="modal-backdrop full" onClick={onClose} onKeyDown={(e) => e.key === "Escape" && onClose()}>
-      <div
-        className="modal wide deck-modal"
-        role="dialog"
-        aria-label={title}
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => e.stopPropagation()}
-      >
-        <h2>{title}</h2>
-        {children}
-      </div>
-    </div>
+    <Dialog title={title} className="wide deck-modal" backdropClassName="full" onClose={onClose}>
+      {children}
+    </Dialog>
   );
 }
 

@@ -240,6 +240,7 @@ function CommanderChips({ player }: { player: PlayerView }) {
         const face = base && player.customArt ? { ...base, customArt: player.customArt } : base;
         const title = where ? t("Commander ({zone})", { zone: where }) : t("Commander (command zone)");
         return (
+          // biome-ignore lint/a11y/noStaticElementInteractions: hovering only shows the card's preview
           <span
             key={c.defId}
             className={`commander-chip ${c.zone === "command" ? "waiting" : ""}`}

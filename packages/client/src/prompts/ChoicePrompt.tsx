@@ -5,6 +5,7 @@
 import type { ChoiceValue, GameView, ObjectView } from "@mtgx/engine";
 import { useEffect, useState } from "react";
 import { Card } from "../board/Card";
+import { Dialog } from "../Dialog";
 import { faceName } from "../i18n";
 import { useLocalize, useLocalizedView, useT } from "../localize";
 import { useGame } from "../store";
@@ -237,31 +238,32 @@ function ChoiceModal({ view }: { view: GameView }) {
         send([v]);
       };
       return (
-        <div className="modal-backdrop">
-          <div className="modal" role="dialog" aria-label={req.prompt}>
-            {source && (
+        <Dialog
+          title={req.prompt}
+          before={
+            source && (
               <div className="yes-no-source">
                 <Card face={source.face} width="var(--board-choice-w)" hoverable />
                 {source.effect && <div className="board-choice-effect">{loc(source.effect)}</div>}
               </div>
-            )}
-            <h2>{req.prompt}</h2>
-            {req.remember && (
-              <label className="toggle always-answer">
-                <input type="checkbox" checked={always} onChange={(e) => setAlways(e.target.checked)} />
-                {t("Always answer this way for this ability")}
-              </label>
-            )}
-            <div className="modal-actions">
-              <button type="button" className="btn" onClick={() => answer(0)}>
-                {t("No")}
-              </button>
-              <button type="button" className="btn primary" onClick={() => answer(1)}>
-                {t("Yes")}
-              </button>
-            </div>
+            )
+          }
+        >
+          {req.remember && (
+            <label className="toggle always-answer">
+              <input type="checkbox" checked={always} onChange={(e) => setAlways(e.target.checked)} />
+              {t("Always answer this way for this ability")}
+            </label>
+          )}
+          <div className="modal-actions">
+            <button type="button" className="btn" onClick={() => answer(0)}>
+              {t("No")}
+            </button>
+            <button type="button" className="btn primary" onClick={() => answer(1)}>
+              {t("Yes")}
+            </button>
           </div>
-        </div>
+        </Dialog>
       );
     }
     case "name": {
@@ -334,19 +336,16 @@ function ChoiceModal({ view }: { view: GameView }) {
   }
 
   return (
-    <div className="modal-backdrop">
-      <div className="modal wide" role="dialog" aria-label={req.prompt}>
-        <h2>{req.prompt}</h2>
-        {body}
-        <div className="modal-actions">
-          <button type="button" className="btn ghost" onClick={() => setValues(req.suggested)}>
-            {t("Suggestion")}
-          </button>
-          <button type="button" className="btn primary" disabled={!valid} onClick={() => send(values)}>
-            {t("Confirm")}
-          </button>
-        </div>
+    <Dialog title={req.prompt} className="wide">
+      {body}
+      <div className="modal-actions">
+        <button type="button" className="btn ghost" onClick={() => setValues(req.suggested)}>
+          {t("Suggestion")}
+        </button>
+        <button type="button" className="btn primary" disabled={!valid} onClick={() => send(values)}>
+          {t("Confirm")}
+        </button>
       </div>
-    </div>
+    </Dialog>
   );
 }

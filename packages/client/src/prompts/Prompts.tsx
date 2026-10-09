@@ -12,6 +12,7 @@ import {
 } from "@mtgx/engine";
 import { useState } from "react";
 import { Card, ManaCost, RulesText } from "../board/Card";
+import { Dialog } from "../Dialog";
 import { faceName, type Lang } from "../i18n";
 import { useLocalize, useT } from "../localize";
 import { myActions, type PlayableOption, useGame } from "../store";
@@ -24,12 +25,9 @@ import { ZoneTabbed } from "./ZoneTabs";
 
 function Modal({ title, children, wide }: { title: string; children: React.ReactNode; wide?: boolean }) {
   return (
-    <div className="modal-backdrop">
-      <div className={`modal ${wide ? "wide" : ""}`} role="dialog" aria-label={title}>
-        <h2>{title}</h2>
-        {children}
-      </div>
-    </div>
+    <Dialog title={title} className={wide ? "wide" : undefined}>
+      {children}
+    </Dialog>
   );
 }
 
@@ -821,31 +819,30 @@ function ExileViewer() {
     if (src) for (const id of ids) holder.set(id, faceName(src, lang));
   }
   return (
-    <div className="modal-backdrop" onClick={() => close(null)} onKeyDown={(e) => e.key === "Escape" && close(null)}>
-      <div className="modal wide" role="dialog" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-        <h2>
-          {open === view.viewer
-            ? t("Exile — you ({n})", { n: cards.length })
-            : t("Exile — {player} ({n})", { player: player.name, n: cards.length })}
-        </h2>
-        <div className="hand-picker">
-          {cards.length === 0 && <p className="hint">{t("Empty.")}</p>}
-          {[...cards].reverse().map((c) => (
-            <div key={c.uid} className="exile-entry">
-              <Card face={c} obj={c} width="var(--pick-w)" glow={playable.has(c.id) ? "playable" : null} />
-              {holder.has(c.id) && (
-                <span className="exile-holder">{t("Exiled by {name}", { name: holder.get(c.id) ?? "" })}</span>
-              )}
-            </div>
-          ))}
-        </div>
-        <div className="modal-actions">
-          <button type="button" className="btn" onClick={() => close(null)}>
-            {t("Close")}
-          </button>
-        </div>
+    <Dialog
+      className="wide"
+      onClose={() => close(null)}
+      title={
+        open === view.viewer
+          ? t("Exile — you ({n})", { n: cards.length })
+          : t("Exile — {player} ({n})", { player: player.name, n: cards.length })
+      }
+    >
+      <div className="hand-picker">
+        {cards.length === 0 && <p className="hint">{t("Empty.")}</p>}
+        {[...cards].reverse().map((c) => (
+          <div key={c.uid} className="exile-entry">
+            <Card face={c} obj={c} width="var(--pick-w)" glow={playable.has(c.id) ? "playable" : null} />
+            {holder.has(c.id) && <span className="exile-holder">{t("Exiled by {name}", { name: holder.get(c.id) ?? "" })}</span>}
+          </div>
+        ))}
       </div>
-    </div>
+      <div className="modal-actions">
+        <button type="button" className="btn" onClick={() => close(null)}>
+          {t("Close")}
+        </button>
+      </div>
+    </Dialog>
   );
 }
 
@@ -873,33 +870,34 @@ function GraveyardViewer() {
   const player = view.players[open];
   if (!player) return null;
   return (
-    <div className="modal-backdrop" onClick={() => close(null)} onKeyDown={(e) => e.key === "Escape" && close(null)}>
-      <div className="modal wide" role="dialog" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-        <h2>
-          {open === view.viewer
-            ? t("Graveyard — you ({n})", { n: player.graveyard.length })
-            : t("Graveyard — {player} ({n})", { player: player.name, n: player.graveyard.length })}
-        </h2>
-        <div className="hand-picker">
-          {player.graveyard.length === 0 && <p className="hint">{t("Empty.")}</p>}
-          {[...player.graveyard].reverse().map((c) => (
-            <Card
-              key={c.uid}
-              face={c}
-              obj={c}
-              width="var(--pick-w)"
-              glow={flashback.has(c.id) ? "playable" : null}
-              onClick={flashback.has(c.id) ? () => castFromGraveyard(c.id) : undefined}
-            />
-          ))}
-        </div>
-        <div className="modal-actions">
-          <button type="button" className="btn" onClick={() => close(null)}>
-            {t("Close")}
-          </button>
-        </div>
+    <Dialog
+      className="wide"
+      onClose={() => close(null)}
+      title={
+        open === view.viewer
+          ? t("Graveyard — you ({n})", { n: player.graveyard.length })
+          : t("Graveyard — {player} ({n})", { player: player.name, n: player.graveyard.length })
+      }
+    >
+      <div className="hand-picker">
+        {player.graveyard.length === 0 && <p className="hint">{t("Empty.")}</p>}
+        {[...player.graveyard].reverse().map((c) => (
+          <Card
+            key={c.uid}
+            face={c}
+            obj={c}
+            width="var(--pick-w)"
+            glow={flashback.has(c.id) ? "playable" : null}
+            onClick={flashback.has(c.id) ? () => castFromGraveyard(c.id) : undefined}
+          />
+        ))}
       </div>
-    </div>
+      <div className="modal-actions">
+        <button type="button" className="btn" onClick={() => close(null)}>
+          {t("Close")}
+        </button>
+      </div>
+    </Dialog>
   );
 }
 
@@ -981,96 +979,97 @@ function GameOver({ view }: { view: GameView }) {
   const deckNow = online ? online.deck : localMatch?.deck;
   const original = online ? online.deck : localMatch?.original;
   return (
-    <div className="modal-backdrop soft">
-      <div className={`modal gameover ${won ? "won" : "lost"} ${between ? "wide" : ""}`}>
-        <h2>
-          {match?.decided
-            ? match.wonMatch
-              ? t("Match won!")
-              : match.mine === match.theirs
-                ? t("Match drawn")
-                : t("Match lost")
-            : won
-              ? t("Victory!")
-              : view.winner
-                ? t("Defeat")
-                : t("Game drawn")}
-        </h2>
-        {!won && view.winner && view.opponents.length > 1 && (
-          <p className="match-score">{t("{name} wins the game.", { name: view.players[view.winner]?.name ?? "" })}</p>
-        )}
-        {match && (
-          <p className="match-score">
-            {t("Game {game} · Score {mine} – {theirs} (best of {bestOf})", {
-              game: match.game,
-              mine: match.mine,
-              theirs: match.theirs,
-              bestOf: match.bestOf,
-            })}
-          </p>
-        )}
-        <p className="hint">
-          {t("Turn {n} · You {life} life", { n: view.turn.number, life: view.players[view.viewer]?.life ?? "" })}
-          {view.opponents
-            .map((o) => ` · ${t("{name} {life} life", { name: view.players[o]?.name ?? "", life: view.players[o]?.life ?? "" })}`)
-            .join("")}
+    <Dialog
+      backdropClassName="soft"
+      className={`gameover ${won ? "won" : "lost"} ${between ? "wide" : ""}`}
+      title={
+        match?.decided
+          ? match.wonMatch
+            ? t("Match won!")
+            : match.mine === match.theirs
+              ? t("Match drawn")
+              : t("Match lost")
+          : won
+            ? t("Victory!")
+            : view.winner
+              ? t("Defeat")
+              : t("Game drawn")
+      }
+    >
+      {!won && view.winner && view.opponents.length > 1 && (
+        <p className="match-score">{t("{name} wins the game.", { name: view.players[view.winner]?.name ?? "" })}</p>
+      )}
+      {match && (
+        <p className="match-score">
+          {t("Game {game} · Score {mine} – {theirs} (best of {bestOf})", {
+            game: match.game,
+            mine: match.mine,
+            theirs: match.theirs,
+            bestOf: match.bestOf,
+          })}
         </p>
-        {between && deckNow && original && (
-          <SideboardEditor
-            key={`${match?.game}`}
-            start={deckNow}
-            original={original}
-            waiting={
-              online && me?.ready
-                ? opp?.name
+      )}
+      <p className="hint">
+        {t("Turn {n} · You {life} life", { n: view.turn.number, life: view.players[view.viewer]?.life ?? "" })}
+        {view.opponents
+          .map((o) => ` · ${t("{name} {life} life", { name: view.players[o]?.name ?? "", life: view.players[o]?.life ?? "" })}`)
+          .join("")}
+      </p>
+      {between && deckNow && original && (
+        <SideboardEditor
+          key={`${match?.game}`}
+          start={deckNow}
+          original={original}
+          waiting={
+            online && me?.ready
+              ? opp?.name
+                ? t("Waiting for {name}…", { name: opp.name })
+                : t("Waiting for the opponent…")
+              : undefined
+          }
+          onSubmit={nextGame}
+        />
+      )}
+      {online && !multi && opp?.rematch && !me?.rematch && (
+        <p className="hint">{t("{name} offers a rematch.", { name: opp.name })}</p>
+      )}
+      {online && multi && others.some((p) => p.rematch) && !me?.rematch && (
+        <p className="hint">
+          {others.filter((p) => p.rematch).length > 1
+            ? t("{names} offer a rematch.", {
+                names: others
+                  .filter((p) => p.rematch)
+                  .map((p) => p.name)
+                  .join(", "),
+              })
+            : t("{name} offers a rematch.", { name: others.find((p) => p.rematch)?.name ?? "" })}
+        </p>
+      )}
+      <div className="modal-actions">
+        {online && !between && (
+          <button
+            type="button"
+            className="btn primary"
+            disabled={!!me?.rematch || !othersConnected}
+            onClick={rematch}
+            title={
+              !othersConnected ? (multi ? t("A player has left the game") : t("Your opponent has left the game")) : undefined
+            }
+          >
+            {me?.rematch
+              ? multi
+                ? t("Waiting for the other players…")
+                : opp?.name
                   ? t("Waiting for {name}…", { name: opp.name })
                   : t("Waiting for the opponent…")
-                : undefined
-            }
-            onSubmit={nextGame}
-          />
-        )}
-        {online && !multi && opp?.rematch && !me?.rematch && (
-          <p className="hint">{t("{name} offers a rematch.", { name: opp.name })}</p>
-        )}
-        {online && multi && others.some((p) => p.rematch) && !me?.rematch && (
-          <p className="hint">
-            {others.filter((p) => p.rematch).length > 1
-              ? t("{names} offer a rematch.", {
-                  names: others
-                    .filter((p) => p.rematch)
-                    .map((p) => p.name)
-                    .join(", "),
-                })
-              : t("{name} offers a rematch.", { name: others.find((p) => p.rematch)?.name ?? "" })}
-          </p>
-        )}
-        <div className="modal-actions">
-          {online && !between && (
-            <button
-              type="button"
-              className="btn primary"
-              disabled={!!me?.rematch || !othersConnected}
-              onClick={rematch}
-              title={
-                !othersConnected ? (multi ? t("A player has left the game") : t("Your opponent has left the game")) : undefined
-              }
-            >
-              {me?.rematch
-                ? multi
-                  ? t("Waiting for the other players…")
-                  : opp?.name
-                    ? t("Waiting for {name}…", { name: opp.name })
-                    : t("Waiting for the opponent…")
-                : t("Rematch")}
-            </button>
-          )}
-          <button type="button" className={`btn ${online ? "" : "primary"}`} onClick={backToLobby}>
-            {online ? t("Quit") : t("Back to menu")}
+              : t("Rematch")}
           </button>
-        </div>
+        )}
+        <button type="button" className={`btn ${online ? "" : "primary"}`} onClick={backToLobby}>
+          {online ? t("Quit") : t("Back to menu")}
+        </button>
       </div>
-    </div>
+    </Dialog>
   );
 }
 
