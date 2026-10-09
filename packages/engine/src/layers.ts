@@ -72,7 +72,7 @@ export interface Characteristics {
 }
 
 /** 122.1b: counters that grant a keyword (the counter name is that of the engine keyword). */
-const KEYWORD_COUNTERS: Record<string, Keyword> = {
+export const KEYWORD_COUNTERS: Record<string, Keyword> = {
   flying: "flying",
   firstStrike: "firstStrike",
   doubleStrike: "doubleStrike",
@@ -412,6 +412,7 @@ const EFFECT_FIELDS = new Set([
   "copiable",
   "controller",
   "whileControlledBy",
+  "whileAttached",
   "whileAffectedTapped",
   "whileAffectedHasCounter",
   "copyOf",
@@ -909,6 +910,15 @@ function collectStatics(s: GameState, defOfId: (id: ObjectId) => string, previou
       return { ...previous, applied, signature: sig.join(","), dependent: true };
     }
     const fixed: Applied[] = s.effects.map((e) => ({ timestamp: e.timestamp, mods: e, affected: e.affected }));
+    // 122.1b, 613.7: an ability counter is a layer 6 effect timestamped when it was put on (PLAN-L L5).
+    for (const id of s.battlefield) {
+      const o = obj(s, id);
+      for (const [kind, n] of Object.entries(o.counters)) {
+        const k = KEYWORD_COUNTERS[kind];
+        if (k && n > 0)
+          fixed.push({ timestamp: o.counterTimestamps?.[kind] ?? o.timestamp, mods: { addKeywords: [k] }, affected: [id] });
+      }
+    }
     const applied = [...fixed];
     const dependentSlots: StaticSlot[] = [];
     for (const slot of staticSlots(s, defOfId)) {
@@ -1259,12 +1269,7 @@ function applyLayersScanned(s: GameState, applied: Applied[], defOfId: (id: Obje
       }
     },
   );
-  // 122.1b: ability counters (flying, lifelink, deathtouch…), applied after the other layer 6 effects.
   for (const [id, c] of out) {
-    for (const [kind, n] of Object.entries(obj(s, id).counters)) {
-      const k = KEYWORD_COUNTERS[kind];
-      if (k && n > 0 && !c.keywords.includes(k)) c.keywords.push(k);
-    }
     // 701.60c: a suspected permanent has menace and "can't block" for as long as it's suspected.
     if (obj(s, id).suspected) for (const k of ["menace", "cantBlock"] as const) if (!c.keywords.includes(k)) c.keywords.push(k);
     // 702.108: a granted prowess (Bria) or one carried by a token (Otter) has its triggered ability.

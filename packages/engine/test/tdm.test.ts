@@ -3988,3 +3988,36 @@ describe("attacked player in multiplayer (PLAN-H, lot H5)", () => {
     expect(copies.every((id) => s.objects[id]?.tapped)).toBe(true);
   });
 });
+
+describe("tokens created attacking: one defender each (508.4; PLAN-L L5)", () => {
+  it("mobilize 2 with two opponents: the tokens are divided among the defenders", () => {
+    let s = scenario({ players: 3, p1: { battlefield: ["Voice of Victory"] } });
+    const voice = idOf(s, "p1", "battlefield", "Voice of Victory");
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: voice, defender: "p2" }] });
+    let asked: ChoiceRequest | undefined;
+    s = settle(s, (req) => {
+      if (req.type !== "divide") return undefined;
+      asked = req;
+      return req.among.map((d) => (d === "p2" || d === "p3" ? 1 : 0));
+    });
+    expect(asked?.type === "divide" && [...asked.among].sort()).toEqual(["p2", "p3"]);
+    const warriors = idsOf(s, "p1", "battlefield", "Warrior");
+    expect(warriors).toHaveLength(2);
+    expect(warriors.map((id) => s.combat?.attackers.find((a) => a.id === id)?.defender).sort()).toEqual(["p2", "p3"]);
+  });
+
+  it("a single opponent: no question", () => {
+    let s = scenario({ p1: { battlefield: ["Voice of Victory"] } });
+    const voice = idOf(s, "p1", "battlefield", "Voice of Victory");
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: voice, defender: "p2" }] });
+    let asked = 0;
+    s = settle(s, (req) => {
+      if (req.type === "divide") asked++;
+      return undefined;
+    });
+    expect(asked).toBe(0);
+    expect(idsOf(s, "p1", "battlefield", "Warrior")).toHaveLength(2);
+  });
+});

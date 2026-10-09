@@ -590,7 +590,7 @@ export function activateManaAbility(
   if (ab.cost.payLife) payLife(s, player, lifeCost(s, player, id, ab.cost.payLife));
   // Cryptex: "{T}, Collect evidence 3: Add one mana…".
   if (ab.cost.collectEvidence) collectEvidence(s, player, evidenceCards(s, player, id, ab.cost.collectEvidence, keep) ?? []);
-  if (ab.addCounter && s.objects[id]?.zone === "battlefield") changeCounters(s, o, ab.addCounter, 1);
+  if (ab.addCounter && s.objects[id]?.zone === "battlefield") changeCounters(s, o, ab.addCounter, 1, { by: player });
   if (ab.removeCounter && (o.counters[ab.removeCounter] ?? 0) > 0) changeCounters(s, o, ab.removeCounter, -1);
   const pool = s.players[player]?.manaPool;
   const pl = s.players[player];

@@ -36,6 +36,8 @@ import { emit } from "./events";
 // ---------------------------------------------------------------------------
 
 export type RulesEvent =
+  /** An Aura or an Equipment becomes attached to a permanent (by `attach`, or entering attached; Eriette). */
+  | { e: "attached"; objectId: ObjectId; to: ObjectId }
   | {
       e: "zone";
       oldId: ObjectId | null;
@@ -386,7 +388,20 @@ const HARMFUL_COUNTERS = new Set(["-1/-1", "stun", "time", "doom", "bounty", "fi
  * Adds (or removes, if n < 0) counters; returns the number actually changed. `asCost`: counters put to pay a cost
  * (loyalty +N, "put a counter:"); "if an effect would" replacements don't apply to them.
  */
-export function changeCounters(s: GameState, o: GameObject, kind: string, n: number, asCost = false): number {
+/**
+ * Puts (n > 0) or removes counters. `asCost`: paid as a cost; `by`: the player who puts them (by default the controller
+ * of what is resolving, otherwise of the permanent): the damage source's controller for infect and wither (120.3d),
+ * the payer of a cost, the controller of a permanent entering with counters (122.6a).
+ */
+export function changeCounters(
+  s: GameState,
+  o: GameObject,
+  kind: string,
+  n: number,
+  opts: boolean | { asCost?: boolean; by?: PlayerId } = false,
+): number {
+  const asCost = typeof opts === "boolean" ? opts : !!opts.asCost;
+  const putBy = (typeof opts === "object" ? opts.by : undefined) ?? s.resolving?.controller ?? o.controller;
   // Replacements (616.1), in the order chosen by the permanent's controller: Doubling Season, The Earth Crystal
   // ("twice that", including as it enters), Yoshimaru, Caradora ("that many plus one" +1/+1 counters). They want the
   // most counters, except for harmful counters.
@@ -399,7 +414,7 @@ export function changeCounters(s: GameState, o: GameObject, kind: string, n: num
         (!a.r.counter || a.r.counter === kind) &&
         !(asCost && a.r.effectOnly) &&
         // "if you would put": the one who puts them (controller of what is resolving, otherwise of the permanent).
-        (!a.r.byYou || (s.resolving?.controller ?? o.controller) === a.controller) &&
+        (!a.r.byYou || putBy === a.controller) &&
         recipientMatches(s, a, o.id),
     );
     if (q.prevented) return 0;
@@ -409,6 +424,14 @@ export function changeCounters(s: GameState, o: GameObject, kind: string, n: num
   const after = Math.max(0, before + n);
   if (after === 0) delete o.counters[kind];
   else o.counters[kind] = after;
+  // An ability counter takes the timestamp of its arrival (613.7): the latest one put on (layers.ts).
+  if (KEYWORD_COUNTERS[kind]) {
+    if (after > before) o.counterTimestamps = { ...o.counterTimestamps, [kind]: nextTimestamp(s) };
+    else if (after === 0 && o.counterTimestamps?.[kind] !== undefined) {
+      const { [kind]: _, ...rest } = o.counterTimestamps;
+      o.counterTimestamps = Object.keys(rest).length ? rest : undefined;
+    }
+  }
   if (after !== before) bump(s);
   // "As long as this land has a doom counter" (Ultima): the effect ends for it when it has none left.
   if (after === 0 && before > 0 && s.effects.some((e) => e.whileAffectedHasCounter === kind && e.affected.includes(o.id)))
@@ -425,7 +448,7 @@ export function changeCounters(s: GameState, o: GameObject, kind: string, n: num
     // Turn log (Lasting Tarfire: "if you put a counter on a creature this turn"; Fractal Tender, Kid Loki: "on it"):
     // the one who puts them is the controller of what is resolving, otherwise (cost, action) the controller of the
     // permanent. Noted before the event, which its triggers read.
-    const by = s.resolving?.controller ?? o.controller;
+    const by = putBy;
     const c = chars(s, o.id);
     logTurnEvent(s, { e: "counters", player: by, kind, n: after - before, types: c.types, subtypes: c.subtypes, id: o.id });
     rulesEvent(s, { e: "counters", objectId: o.id, kind, amount: after - before, first, by });
@@ -684,6 +707,9 @@ export function moveObject(
     bump(s);
   }
   rulesEvent(s, { e: "zone", oldId: id, newId: moved.id, from: from0, to, lki });
+  // Entering attached (an Aura cast or put onto the battlefield): it becomes attached.
+  if (to === "battlefield" && moved.attachedTo && s.objects[moved.attachedTo])
+    rulesEvent(s, { e: "attached", objectId: moved.id, to: moved.attachedTo });
   if (from0 === "battlefield") releaseLinkedExile(s, id);
   return moved.id;
 }
@@ -812,7 +838,7 @@ export function setPrepared(s: GameState, o: GameObject, on: boolean): void {
 
 import { syncControl } from "./control";
 import { evalAmount, staticContext } from "./effects";
-import { bump, bumpFor, carryLayerCache, chars, snapshot } from "./layers";
+import { bump, bumpFor, carryLayerCache, chars, KEYWORD_COUNTERS, snapshot } from "./layers";
 import { chooseReplacementOrder } from "./modifiers";
 import { applyEntersReplacements, auraHosts, type EntersContext, releaseLinkedExile, replaceGraveyard } from "./replacement";
 import { carryStaticsCache, quantityMods, recipientMatches } from "./statics";

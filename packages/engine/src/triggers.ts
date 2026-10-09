@@ -890,6 +890,13 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       const v = liveView(s, ev.objectId);
       return v && matchWho(t.who, v, src) ? { objectId: v.id, player: v.controller } : null;
     }
+    case "becomesAttached": {
+      if (ev.e !== "attached") return null;
+      const a = liveView(s, ev.objectId);
+      const host = liveView(s, ev.to);
+      if (!a || !host || !matchWho(t.who, a, src) || (t.to && !matchWho(t.to, host, src))) return null;
+      return { objectId: a.id, player: host.controller };
+    }
     case "becomesBlocked": {
       if (ev.e !== "blocked") return null;
       const v = liveView(s, ev.attacker);

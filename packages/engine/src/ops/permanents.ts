@@ -1,6 +1,6 @@
 /** Engine effects: permanent modifications, control, copies and tokens. Each key is an `op` of `Effect` (see `runEffect`, effects.ts). */
 
-import { createTokenCopy, createTokens, phaseOut, tokenCopyCount, tokenCopyReplacement } from "../actions";
+import { createTokenCopy, createTokens, phaseOut, tokenCopyCount, tokenCopyReplacement, tokenCount } from "../actions";
 import { cardRef } from "../choices";
 import { addControlEffect } from "../control";
 import type { EffectContext, OpHandlers, OpResult } from "../effects";
@@ -551,15 +551,48 @@ export const HANDLERS: OpHandlers = {
     const pt = e.pt !== undefined ? evalAmount(s, ctx, e.pt) : undefined;
     const token = pt === undefined ? e.token : { ...e.token, power: pt, toughness: pt };
     const creators = e.attachTo || !e.for ? [ctx.controller] : resolveRef(s, ctx, e.for).filter((x) => isPlayer(s, x));
-    // 508.4: "tapped and attacking" tokens attack without having been declared; their controller chooses what they
-    // attack among their opponents, once for all their tokens of the effect (Najeela: the Warrior's controller).
+    // 508.4: "tapped and attacking" tokens attack without having been declared; their controller chooses what each
+    // attacks among their opponents and planeswalkers (Najeela: the Warrior's controller): several tokens and several
+    // choices, a division; otherwise a single choice.
     const attacking = new Map<string, string | undefined>();
+    const attackingEach = new Map<string, string[]>();
     if (e.attacking) {
       // "… tapped and attacking that player": nothing to create without a designated player (`fx.forEachPlayer`).
       const designated = typeof e.attacking === "object" ? resolveRef(s, ctx, e.attacking) : undefined;
       if (designated?.length === 0) return;
       const prompt = n > 1 ? msg("What should the tokens attack?") : msg("What should the token attack?");
       for (const p of creators) {
+        const all = s.combat ? attackableDefenders(s, p, false) : [];
+        const options = designated ? all.filter((d) => designated.includes(d)) : all;
+        const count = tokenCount(s, p, token, n);
+        if (options.length > 1 && count > 1) {
+          const k = key(`defenders:${p}`);
+          const answer = r.vars[k];
+          if (!answer) {
+            const one = chooseAttacked(s, r, ctx, key("unused"), p, designated, prompt, { ask: false });
+            const suggested = "defender" in one ? one.defender : undefined;
+            return {
+              ask: {
+                player: p,
+                key: k,
+                request: {
+                  type: "divide",
+                  intent: "other",
+                  prompt,
+                  among: options,
+                  total: count,
+                  minEach: 0,
+                  suggested: options.map((d) => (d === suggested ? count : 0)),
+                },
+              },
+            };
+          }
+          attackingEach.set(
+            p,
+            options.flatMap((d, i) => Array<string>(Math.max(0, Number(answer[i] ?? 0))).fill(d)),
+          );
+          continue;
+        }
         const k = key(p === ctx.controller ? "defender" : `defender:${p}`);
         const c = chooseAttacked(s, r, ctx, k, p, designated, prompt);
         if ("ask" in c) return c;
@@ -579,7 +612,8 @@ export const HANDLERS: OpHandlers = {
       if (e.store) r.vars[`$ids:${e.store}`] = created;
       return;
     }
-    for (const p of creators) created.push(...createTokens(s, p, token, n, true, enters(p), declined.has(p)));
+    for (const p of creators)
+      created.push(...createTokens(s, p, token, n, true, enters(p), declined.has(p), [], attackingEach.get(p)));
     if (e.store) r.vars[`$ids:${e.store}`] = created;
     return;
   },
@@ -856,7 +890,13 @@ export const HANDLERS: OpHandlers = {
       // cleanup of your next turn.
       if (e.duration === "endOfYourNextTurn")
         addControlEffect(s, [id], to, "endOfYourNextTurn", { until: ctx.controller, sinceTurn: s.turn.number });
-      else if (e.duration === "whileYouControlSource" || e.duration === "whileSource") {
+      else if (e.duration === "whileAttached") {
+        // "For as long as that Aura is attached to it": nothing if it no longer is (611.2b).
+        const attachment = e.attachment ? resolveRef(s, ctx, e.attachment)[0] : undefined;
+        if (!attachment || s.objects[attachment]?.attachedTo !== id) continue;
+        addControlEffect(s, [id], to, "permanent", { whileAttached: attachment });
+        bump(s);
+      } else if (e.duration === "whileYouControlSource" || e.duration === "whileSource") {
         addControlEffect(s, [id], to, "permanent", {
           whileSource: ctx.sourceId,
           ...(e.duration === "whileYouControlSource" ? { whileControlledBy: ctx.controller } : {}),

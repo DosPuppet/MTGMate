@@ -526,8 +526,12 @@ export const RECORD_VERSION = 1;
  * - 190: PLAN-L L5b: Moonlit Meditation's "you may" for amass, endure and gift tokens; the "as it enters" choices of
  *   token copies created by an effect are asked; Theorist's Sanctum beholds as it enters (a real choice, the card
  *   revealed); behold of several objects, also as a flashback cost (Kindle the Inner Flame)
+ * - 191: PLAN-L L5c: the player who puts counters (infect and wither: the source's controller, 120.3d; costs: the
+ *   payer; entering: the controller, 122.6a); ability counters are layer 6 effects timestamped on arrival (613.7);
+ *   Eriette is a "becomes attached" trigger with a control that lasts while the Aura is attached; tokens created
+ *   attacking are divided among the defenders (508.4)
  */
-export const RULES_VERSION = 190;
+export const RULES_VERSION = 191;
 
 /** One checkpoint every N decisions (plus the last one of the game). */
 export const CHECKPOINT_EVERY = 25;

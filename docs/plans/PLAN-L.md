@@ -108,4 +108,5 @@ History, backlog, summary.
 | L4 | done: 17 items (13 approximations lifted, 2 undocumented gaps, 1 missing test, 3 more cards with the combined search); Kindle the Inner Flame moved to L5 (behold of three cards as a flashback cost) | 798d93a | 188 |
 | L9 | done (before L5, client only): basic lands by colored symbols (`decks/autoLands.ts`), sample hand, mana-value columns in place of the collection; checked by `deck-smoke` | 72d1928 | — |
 | L5a | done: Hawkeye, Nuka-Nuke Launcher (and intimidate), Kíli, Abuelo's Awakening, Heirloom Epic | 7bb4078 | 189 |
-| L5b | done: Moonlit Meditation's "may" for amass, endure and gift (token copies by an effect stay unreplaced, documented), entry choices of token copies, Theorist's Sanctum, Kindle the Inner Flame | | 190 |
+| L5b | done: Moonlit Meditation's "may" for amass, endure and gift (token copies by an effect stay unreplaced, documented), entry choices of token copies, Theorist's Sanctum, Kindle the Inner Flame | 06d861e | 190 |
+| L5c | done: who puts counters (infect, wither, costs, entering), ability counters in layer 6, Eriette as a trigger, tokens created attacking divided among defenders; 903.9b left documented (a question before the move is only possible inside a resolution, the draw step and costs would keep the current way: little gain) | | 191 |

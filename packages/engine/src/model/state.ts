@@ -82,6 +82,11 @@ export interface GameObject {
   regenShields?: number;
   /** Counters by name: "+1/+1", "-1/-1", "stun", "loyalty"… */
   counters: Record<string, number>;
+  /**
+   * Timestamp of the last counter of each keyword kind put on it (flying, lifelink…): such a counter is a layer 6 effect
+   * with that timestamp (122.1b, 613.7), so a later "loses all abilities" removes its keyword.
+   */
+  counterTimestamps?: Record<string, number>;
   /** Number of the turn during which the current controller gained control of it. */
   controlledSince: number;
   /**
@@ -819,6 +824,8 @@ export interface ContinuousEffect extends LayerMods {
   controller?: PlayerId;
   /** "For as long as you control [the source]": the effect ends as soon as that player no longer controls `whileSource` (611.2b). */
   whileControlledBy?: PlayerId;
+  /** "For as long as that Aura is attached to it" (Eriette): ends when `whileAttached` is no longer attached to an affected object. */
+  whileAttached?: ObjectId;
 }
 
 export type Flow = "mulligan" | "stepStart" | "tba" | "priority" | "resolving" | "stepEnd" | "over";

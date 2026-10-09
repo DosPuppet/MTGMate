@@ -4254,6 +4254,23 @@ describe("Lorwyn Eclipsed, batch C", () => {
     expect(s.players.p2?.life).toBe(18);
   });
 
+  it("Lasting Tarfire: wither damage puts the counters for the source's controller (120.3d; PLAN-L L5)", () => {
+    const run = (sourceController: "p1" | "p2") => {
+      let s = scenario({
+        p1: { battlefield: ["Lasting Tarfire", "Bear Cub"] },
+        p2: { battlefield: ["Bear Cub"] },
+        step: "main2",
+      });
+      const victim = idOf(s, sourceController === "p1" ? "p2" : "p1", "battlefield", "Bear Cub");
+      dealDamage(s, { defId: "test", controller: sourceController, keywords: ["wither"] }, victim, 1, false);
+      expect(s.objects[victim]?.counters["-1/-1"]).toBe(1);
+      s = passAccepting(s, (x) => x.turn.number === 4);
+      return s.players.p2?.life;
+    };
+    expect(run("p1")).toBe(18);
+    expect(run("p2")).toBe(20);
+  });
+
   it("Spinerock Tyrant: copy of a single-target spell; both spells have blight", () => {
     let s = scenario({
       p1: { battlefield: ["Spinerock Tyrant", ...lands("Mountain", 2)], hand: ["Lightning Strike"] },

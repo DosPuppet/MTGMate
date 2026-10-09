@@ -537,7 +537,9 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
     if (walker) changeCounters(s, o, "loyalty", -Math.min(amount, o.counters.loyalty ?? 0));
     if (creature) {
       // Wither (702.80), infect (702.90b): −1/−1 counters instead of marked damage (it is still damage).
-      if (source.keywords.includes("wither") || source.keywords.includes("infect")) changeCounters(s, o, "-1/-1", amount);
+      // 120.3d: the source's controller puts them.
+      if (source.keywords.includes("wither") || source.keywords.includes("infect"))
+        changeCounters(s, o, "-1/-1", amount, { by: source.controller });
       else o.damage += amount;
       if (source.keywords.includes("deathtouch")) o.deathtouched = true;
       // Tracking of "dealt damage by this creature this turn" (Predator Ooze).
@@ -745,6 +747,15 @@ export function tokenCopyReplacement(
   return undefined;
 }
 
+/** Number of tokens that "create N [token]" makes for this player (doublers, 616.1; the cap on tokens). */
+export function tokenCount(s: GameState, controller: PlayerId, t: TokenSpec, count: number): number {
+  const t2 = swappedToken(s, controller, t);
+  return tokenRoom(
+    s,
+    chooseReplacementOrder(count, tokenModifiers(s, tokenReplacements(s, controller, tokenView(t2, controller))), "max"),
+  );
+}
+
 export function createTokens(
   s: GameState,
   controller: PlayerId,
@@ -756,6 +767,8 @@ export function createTokens(
   copyDeclined = false,
   /** Sources of the "one of each" replacements already applied to these tokens (Academy Manufactor, 616.1). */
   applied: ObjectId[] = [],
+  /** What each token attacks (508.4, `tokenCount` of them); more or fewer tokens: spread proportionally. */
+  attackingEach?: (string | undefined)[],
 ): ObjectId[] {
   const tokenReps = (v: LkiSnapshot) => tokenReplacements(s, controller, v);
   t = swappedToken(s, controller, t);
@@ -813,22 +826,27 @@ export function createTokens(
     s.defs[defId] = def;
   }
   // Doubling Season: "creates twice that many of those tokens"; Ojer Taq: three times that many creature tokens.
-  const reps = tokenReps(tokenView(t, controller));
-  const n = tokenRoom(s, chooseReplacementOrder(count, tokenModifiers(s, reps), "max"));
+  const n = tokenCount(s, controller, t, count);
   for (let i = 0; i < n; i++) {
     const o = createObject(s, defId, controller, "battlefield", { isToken: true });
     o.timestamp = nextTimestamp(s);
+    const each = attackingEach?.length
+      ? { ...enters, attacking: attackingEach[Math.floor((i * attackingEach.length) / n)] }
+      : enters;
     // Entering replacements of other permanents ("each creature you control enters with…"); a token described as
     // tapped (`TokenSpec.tapped`) enters tapped.
-    applyEntersReplacements(s, o, t.tapped ? { ...enters, tapped: true } : enters);
+    applyEntersReplacements(s, o, t.tapped ? { ...each, tapped: true } : each);
     emit({ type: "token", objectId: o.id, defId, controller });
     rulesEvent(s, { e: "zone", oldId: null, newId: o.id, from: null, to: "battlefield", lki: null });
+    if (o.attachedTo && s.objects[o.attachedTo]) rulesEvent(s, { e: "attached", objectId: o.id, to: o.attachedTo });
     logTokenArrival(s, o);
     created.push(o.id);
   }
   // Quina ("those tokens plus a Frog"), Worldwalker Helm ("plus a Map"): the added tokens do not trigger a new
   // replacement.
-  if (extras && count > 0) for (const a of reps) if (a.r.plus) created.push(...createTokens(s, controller, a.r.plus, 1, false));
+  if (extras && count > 0)
+    for (const a of tokenReps(tokenView(t, controller)))
+      if (a.r.plus) created.push(...createTokens(s, controller, a.r.plus, 1, false));
   return created;
 }
 

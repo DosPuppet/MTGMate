@@ -534,8 +534,12 @@ export type Effect =
        * control of its owner (Alicia Masters: "each player gains control of all creatures they own").
        */
       to?: Ref | "owner";
-      /** `whileSource`: "for as long as [the source] remains on the battlefield", whoever controls it. */
-      duration?: "endOfTurn" | "endOfYourNextTurn" | "whileYouControlSource" | "whileSource" | "permanent";
+      /**
+       * `whileSource`: "for as long as [the source] remains on the battlefield", whoever controls it; `whileAttached`:
+       * "for as long as [`attachment`] is attached to it" (Eriette).
+       */
+      duration?: "endOfTurn" | "endOfYourNextTurn" | "whileYouControlSource" | "whileSource" | "whileAttached" | "permanent";
+      attachment?: Ref;
     }
   /**
    * Additional phase, step or turn (`amount` times, 500.8 to 500.10): `upkeep`, a beginning phase reduced to its

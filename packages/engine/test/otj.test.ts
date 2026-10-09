@@ -4,7 +4,7 @@
  */
 import { TOKEN_SPECS } from "@mtgx/cards/tokens";
 import { describe, expect, it } from "vitest";
-import { createTokens } from "../src/actions";
+import { createTokens, destroy } from "../src/actions";
 import { fx, triggered, when } from "../src/dsl";
 import { legalActions } from "../src/legal";
 import { chars, moveObject, random } from "../src/state";
@@ -1472,6 +1472,35 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (1)", () => {
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Pacifism"), targets: { enchant: [angel] } });
     s = settle(s);
     expect(s.objects[angel]?.controller).toBe("p2");
+  });
+
+  it("Eriette, the Beguiler: a trigger — control lasts while the Aura is attached, even after Eriette leaves; not retroactive (PLAN-L L5)", () => {
+    let s = scenario({
+      p1: { battlefield: ["Eriette, the Beguiler", ...lands("Plains", 4)], hand: ["Pacifism"] },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Pacifism"), targets: { enchant: [bear] } }));
+    expect(s.objects[bear]?.controller).toBe("p1");
+    // Eriette leaves: the Bear stays.
+    moveObject(s, idOf(s, "p1", "battlefield", "Eriette, the Beguiler"), "graveyard");
+    s = settle(act(s, "p1", { type: "pass" }));
+    expect(s.objects[bear]?.controller).toBe("p1");
+    // The Aura leaves: the Bear goes back.
+    destroy(s, idOf(s, "p1", "battlefield", "Pacifism"));
+    s = settle(act(s, "p1", { type: "pass" }));
+    expect(s.objects[bear]?.controller).toBe("p2");
+    // An Aura already attached when Eriette arrives: no steal.
+    let t = scenario({
+      p1: { battlefield: [...lands("Plains", 6)], hand: ["Pacifism", "Eriette, the Beguiler"] },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    const bear2 = idOf(t, "p2", "battlefield", "Bear Cub");
+    t = settle(act(t, "p1", { type: "cast", card: idOf(t, "p1", "hand", "Pacifism"), targets: { enchant: [bear2] } }));
+    moveObject(t, idOf(t, "p1", "hand", "Eriette, the Beguiler"), "battlefield");
+    t = settle(act(t, "p1", { type: "pass" }));
+    expect(idsOf(t, "p1", "battlefield", "Eriette, the Beguiler")).toHaveLength(1);
+    expect(t.objects[bear2]?.controller).toBe("p2");
   });
 
   it("Fblthp, Lost on the Range: plot the top nonland card by paying its mana cost; ward {2}", () => {

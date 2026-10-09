@@ -2463,7 +2463,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   if (kickerLife) payLife_(s, player, kickerLife);
   if (d.xCost === "blight" && x > 0) {
     const blighted = spellPickNow(s, player, item.id, d, x, "blight", undefined, choices)?.[0];
-    if (blighted) changeCounters(s, obj(s, blighted), "-1/-1", x, true);
+    if (blighted) changeCounters(s, obj(s, blighted), "-1/-1", x, { asCost: true, by: player });
   }
   if (lifeTax) payLife_(s, player, lifeTax);
   // Emrakul, the Exigent Doom: "until this card is cast from exile" — the costs are paid, the spell is cast (601.2i);
@@ -2499,7 +2499,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   for (const id of sacrifice) sacrificePermanent(s, id);
   if (kicked && kickerPermanent && d.kickerCost?.sacrifice) sacrificePermanent(s, kickerPermanent);
   else if (kicked && kickerPermanent && d.kickerCost?.blight)
-    changeCounters(s, obj(s, kickerPermanent), "-1/-1", d.kickerCost.blight, true);
+    changeCounters(s, obj(s, kickerPermanent), "-1/-1", d.kickerCost.blight, { asCost: true, by: player });
   else if (kicked && kickerPermanent && d.kickerCost?.bounce) moveObject(s, kickerPermanent, "hand");
   s.priority.passes = 0;
   emit({ type: "cast", player, stackId, defId: d.id, targets: flatTargets(targets) });
@@ -3656,7 +3656,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   if (ab.cost.grantor === "tap" && grantor) tapObject(s, obj(s, grantor));
   if (ab.cost.loyalty !== undefined) {
     const cost = ab.cost.loyalty === "X" ? -x : ab.cost.loyalty;
-    if (cost !== 0) changeCounters(s, o, "loyalty", cost, true);
+    if (cost !== 0) changeCounters(s, o, "loyalty", cost, { asCost: true, by: player });
     rulesEvent(s, { e: "loyalty", player, sourceId: source, cost });
   }
   // One entry per activation: Wonder Man allows one more activation of power-ups.
@@ -3669,7 +3669,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     // Pit Automaton: the next exhaust ability this turn is copied (new targets may be chosen).
     if (consumePlayerEffect(s, player, "copyNextExhaust")) copyStackItem(s, item, player);
   }
-  if (ab.cost.addCounters) changeCounters(s, o, ab.cost.addCounters.kind, ab.cost.addCounters.n, true);
+  if (ab.cost.addCounters) changeCounters(s, o, ab.cost.addCounters.kind, ab.cost.addCounters.n, { asCost: true, by: player });
   for (const id of crew) tapObject(s, obj(s, id));
   if (crew.length) {
     // "The creatures that crewed / saddled it this turn" (702.122, 702.171): all those of the turn's activations.
@@ -3708,7 +3708,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   if (fc.exileFromGraveyard) for (const id of pick("graveyardExile")) moveObject(s, id, "exile");
   // Blight N as a cost (ECL): by default, `blightTarget`.
   const blighted = ab.cost.blight ? pick("blight")[0] : undefined;
-  if (blighted && ab.cost.blight) changeCounters(s, obj(s, blighted), "-1/-1", ab.cost.blight, true);
+  if (blighted && ab.cost.blight) changeCounters(s, obj(s, blighted), "-1/-1", ab.cost.blight, { asCost: true, by: player });
   // "Remove a counter from a creature you control": by default, the one that carries the most.
   if (ab.cost.removeCounterFrom)
     for (const id of pick("counterFrom")) {

@@ -219,6 +219,8 @@ export const ref = {
   attached: { kind: "attached" } as Ref,
   /** The permanents attached to the designated object (filter with `ref.filtered`). */
   attachmentsOf: (r: Ref): Ref => ({ kind: "attachmentsOf", ref: r }),
+  /** The permanents the designated objects are attached to (an Aura's host). */
+  hostOf: (r: Ref): Ref => ({ kind: "hostOf", ref: r }),
   /** "Its controller" (last known controller of an object that left the battlefield this turn). */
   controllerOf: (r: Ref): Ref => ({ kind: "controllerOf", ref: r }),
   /** "Its owner". */
@@ -1005,10 +1007,12 @@ export const fx = {
   /** "[This card] gains harmonize until end of turn; its harmonize cost is its mana cost" (702.180). */
   grantHarmonize: (what: Ref): Effect => ({ op: "grantPlay", what, flashback: "harmonize" }),
   endTurn: { op: "endTurn" } as Effect,
-  gainControl: (what: Ref, opts: { untilEndOfYourNextTurn?: boolean } = {}): Effect => ({
+  /** `whileAttached`: "for as long as [this attachment] is attached to it" (Eriette: the Aura of the event). */
+  gainControl: (what: Ref, opts: { untilEndOfYourNextTurn?: boolean; whileAttached?: Ref } = {}): Effect => ({
     op: "gainControl",
     what,
     ...(opts.untilEndOfYourNextTurn ? { duration: "endOfYourNextTurn" } : {}),
+    ...(opts.whileAttached ? { duration: "whileAttached", attachment: opts.whileAttached } : {}),
   }),
   /**
    * `haste`, `sacrificeAtEndStep`: the copy of a creature spell (a token) has haste, is sacrificed at the beginning of

@@ -1533,3 +1533,26 @@ describe("Deck Dark Leo & Shredder: rulings", () => {
     expect(chars(s, idOf(s, "p2", "battlefield", "Leonardo, Worldly Warrior")).keywords).toContain("doubleStrike");
   });
 });
+
+describe("ability counters in layer 6 (122.1b, 613.7; PLAN-L L5)", () => {
+  it("a counter's keyword is lost to a later 'loses all abilities', and comes back with a counter put on after it", () => {
+    const s = scenario({ p1: { battlefield: ["Bear Cub"] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const o = s.objects[bear];
+    if (!o) throw new Error("bear");
+    changeCounters(s, o, "flying", 1);
+    expect(chars(s, bear).keywords).toContain("flying");
+    addEffect(s, [bear], { loseAllAbilities: true }, "permanent");
+    expect(chars(s, bear).keywords).not.toContain("flying");
+    changeCounters(s, o, "flying", 1);
+    expect(chars(s, bear).keywords).toContain("flying");
+  });
+
+  it("'loses all abilities' before the counter: the counter's keyword stays (Abigale)", () => {
+    const s = scenario({ p1: { battlefield: ["Bear Cub"] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    addEffect(s, [bear], { loseAllAbilities: true }, "permanent");
+    changeCounters(s, s.objects[bear] as never, "lifelink", 1);
+    expect(chars(s, bear).keywords).toContain("lifelink");
+  });
+});

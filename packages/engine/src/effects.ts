@@ -575,6 +575,12 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
     }
     case "zone":
       return zoneObjects(s, ctx, ref);
+    case "hostOf":
+      // The permanents the designated objects are attached to.
+      return resolveRef(s, ctx, ref.ref).flatMap((id) => {
+        const host = s.objects[id]?.attachedTo;
+        return host && onBattlefield(s, host) ? [host] : [];
+      });
     case "attachmentsOf": {
       const hosts = new Set(resolveRef(s, ctx, ref.ref));
       return s.battlefield.filter((id) => hosts.has(s.objects[id]?.attachedTo ?? ""));
@@ -1120,6 +1126,7 @@ export function attach(s: GameState, what: ObjectId, to: ObjectId): boolean {
   a.timestamp = nextTimestamp(s); // 613.7e: new timestamp
   bump(s);
   emit({ type: "attach", objectId: what, defId: a.defId, to, toDefId: s.objects[to]?.defId ?? "" });
+  if (!isPlayer(s, to)) rulesEvent(s, { e: "attached", objectId: what, to });
   return true;
 }
 

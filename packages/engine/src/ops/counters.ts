@@ -324,7 +324,8 @@ export const HANDLERS: OpHandlers = {
     for (const id of picks) {
       const o = s.objects[id];
       if (o?.zone !== "battlefield") continue;
-      changeCounters(s, o, "-1/-1", n);
+      // Each player blights a creature they control: they put the counters.
+      changeCounters(s, o, "-1/-1", n, { by: o.controller });
       done.push(id);
     }
     store(r, e.store, done.length ? 1 : 0);

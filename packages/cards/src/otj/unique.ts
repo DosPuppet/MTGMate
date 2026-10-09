@@ -509,7 +509,25 @@ export const UNIQUE: Record<string, CardScript> = {
     ],
   },
   "Eriette, the Beguiler": {
-    abilities: [playerStatic({ auraStealsCheaper: true, label: "Your Auras steal cheaper permanents" })],
+    // "Whenever an Aura you control becomes attached to a nonland permanent an opponent controls with mana value less
+    // than or equal to that Aura's mana value, you gain control of that permanent for as long as that Aura is attached
+    // to it" (PLAN-L L5).
+    abilities: [
+      triggered(
+        {
+          on: "becomesAttached",
+          who: { subtype: "Aura", controller: "you" },
+          to: { controller: "opponent", notTypes: ["Land"] },
+        },
+        [fx.gainControl(ref.hostOf(ref.eventObject), { whileAttached: ref.eventObject })],
+        {
+          triggerCondition: cond.not(
+            cond.amountGreater(amount.manaValueOf(ref.hostOf(ref.eventObject)), amount.manaValueOf(ref.eventObject)),
+          ),
+          label: "An Aura of yours steals the cheaper permanent it enchants",
+        },
+      ),
+    ],
   },
   "Ertha Jo, Frontier Mentor": {
     abilities: [

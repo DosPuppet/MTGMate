@@ -1284,8 +1284,6 @@ export interface PlayerStaticAbilityDef {
   blockTax?: number;
   /** Terror of the Peaks: spells opponents cast that target this creature cost N more life. */
   targetLifeTax?: number;
-  /** Eriette, the Beguiler: your Auras attached to an opponent's nonland permanent with lesser or equal MV gain control of it. */
-  auraStealsCheaper?: boolean;
   /** Elvish Refueler: during your turn, as long as no exhaust ability has been activated, they can be activated again. */
   exhaustReuse?: boolean;
   /** Shang-Chi: abilities of matching creatures are activated as though they had haste (not attacking). */

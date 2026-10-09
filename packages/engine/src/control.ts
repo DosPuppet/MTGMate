@@ -10,10 +10,7 @@
  * (800.4a).
  */
 import { removeFromCombat } from "./actions";
-import { chars } from "./layers";
-import { manaValue } from "./mana";
 import { bump, newId, nextTimestamp, setController } from "./state";
-import { playerStatic } from "./statics";
 import type { ContinuousEffect, GameState, ObjectId, PlayerId } from "./types";
 
 /** Adds a control effect and applies it at once. */
@@ -22,7 +19,7 @@ export function addControlEffect(
   ids: ObjectId[],
   to: PlayerId,
   duration: ContinuousEffect["duration"],
-  extra: Pick<ContinuousEffect, "whileSource" | "whileControlledBy" | "until" | "sinceTurn"> = {},
+  extra: Pick<ContinuousEffect, "whileSource" | "whileControlledBy" | "whileAttached" | "until" | "sinceTurn"> = {},
 ): void {
   if (ids.length === 0) return;
   s.effects.push({ id: newId(s, "e"), timestamp: nextTimestamp(s), affected: [...ids], duration, controller: to, ...extra });
@@ -74,8 +71,13 @@ function controlClaims(s: GameState): Map<ObjectId, { ts: number; to: PlayerId }
     else claims.set(id, [{ ts, to }]);
   };
   // Possession Engine: "for as long as you control [the source]"; the effect ends for good (611.2b).
+  // Eriette: "for as long as that Aura is attached to it".
   const ended = s.effects.filter(
-    (e) => e.whileControlledBy && e.whileSource && s.objects[e.whileSource]?.controller !== e.whileControlledBy,
+    (e) =>
+      (e.whileControlledBy && e.whileSource && s.objects[e.whileSource]?.controller !== e.whileControlledBy) ||
+      (e.whileAttached &&
+        (s.objects[e.whileAttached]?.zone !== "battlefield" ||
+          !e.affected.includes(s.objects[e.whileAttached]?.attachedTo ?? ""))),
   );
   if (ended.length) {
     s.effects = s.effects.filter((e) => !ended.includes(e));
@@ -91,14 +93,7 @@ function controlClaims(s: GameState): Map<ObjectId, { ts: number; to: PlayerId }
     if (!aura || host?.zone !== "battlefield" || !inGame(s, aura.controller)) continue;
     const d = s.defs[aura.defId];
     // Confiscate: "you control enchanted permanent".
-    // Eriette, the Beguiler: an Aura attached to a nonland permanent with lesser or equal mana value (on a permanent
-    // its controller already controls, no effect).
-    const steals =
-      !!d?.subtypes.includes("Aura") &&
-      !chars(s, host.id).types.includes("Land") &&
-      manaValue(s.defs[host.defId]?.manaCost) <= manaValue(d?.manaCost) &&
-      playerStatic(s, aura.controller, "auraStealsCheaper");
-    if (d?.controlsEnchanted || steals) claim(host.id, aura.timestamp, aura.controller);
+    if (d?.controlsEnchanted) claim(host.id, aura.timestamp, aura.controller);
   }
   return claims;
 }

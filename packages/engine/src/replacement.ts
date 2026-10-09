@@ -581,7 +581,7 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
         addKeywords: ["haste"],
       });
       s.version += 1;
-    } else changeCounters(s, o, P1P1, 1);
+    } else changeCounters(s, o, P1P1, 1, { by: o.controller });
   }
   if (ctx.attacking && s.combat) s.combat.attackers.push({ id: o.id, defender: ctx.attacking, blockers: [], blocked: false });
   // What follows reads the effective definition: the one the permanent copies (707.9: a Clone of a planeswalker enters
@@ -592,15 +592,15 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
   // Shock land: tapped, unless the life was paid while playing it (put onto the battlefield by an effect: tapped).
   if (eff?.shockLand && !ctx.shockPaid) o.tapped = true;
   // 714.3a: a Saga enters with a lore counter.
-  if (eff?.saga) changeCounters(s, o, "lore", 1);
+  if (eff?.saga) changeCounters(s, o, "lore", 1, { by: o.controller });
   // 306.5b: a planeswalker enters with its printed loyalty.
   const loyalty = ctx.loyalty ?? eff?.loyalty;
-  if (loyalty) changeCounters(s, o, "loyalty", loyalty);
+  if (loyalty) changeCounters(s, o, "loyalty", loyalty, { by: o.controller });
   // X of the spell that made it enter, known as it enters (squad: "if it was paid", checked on triggering).
   if (ctx.x) o.x = ctx.x;
   // Counters imposed by the effect ("with a +1/+1 counter", Impending): put as it enters (122.6).
-  for (const c of ctx.counters ?? []) changeCounters(s, o, c.kind, c.n);
-  if (ctx.impending) changeCounters(s, o, "time", ctx.impending);
+  for (const c of ctx.counters ?? []) changeCounters(s, o, c.kind, c.n, { by: o.controller });
+  if (ctx.impending) changeCounters(s, o, "time", ctx.impending, { by: o.controller });
   // Replacements carried by other permanents ("creatures your opponents control enter tapped").
   for (const id of s.battlefield) {
     const src = s.objects[id];
@@ -615,8 +615,9 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
       if (ab.entersWithCounters !== undefined) {
         const n = amountAtEntry(s, ab.entersWithCounters, src, ctx, o);
         // Blue, Loyal Raptor: that many counters of each kind present on the source.
-        if (ab.counterKind === "*") for (const [k, c] of Object.entries(src.counters)) c > 0 && changeCounters(s, o, k, n);
-        else changeCounters(s, o, ab.counterKind ?? P1P1, n);
+        if (ab.counterKind === "*")
+          for (const [k, c] of Object.entries(src.counters)) c > 0 && changeCounters(s, o, k, n, { by: o.controller });
+        else changeCounters(s, o, ab.counterKind ?? P1P1, n, { by: o.controller });
       }
     }
   }
@@ -626,7 +627,7 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
     if (ab.entersTapped) o.tapped = true;
     if (ab.entersPrepared) setPrepared(s, o, true);
     if (ab.entersWithCounters !== undefined)
-      changeCounters(s, o, ab.counterKind ?? P1P1, amountAtEntry(s, ab.entersWithCounters, o, ctx));
+      changeCounters(s, o, ab.counterKind ?? P1P1, amountAtEntry(s, ab.entersWithCounters, o, ctx), { by: o.controller });
   }
   // The Wandering Minstrel: "lands you control enter untapped".
   if (o.tapped && eff?.types.includes("Land") && playerStatic(s, o.controller, "landsEnterUntapped")) o.tapped = false;
