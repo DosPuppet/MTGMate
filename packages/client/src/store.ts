@@ -375,6 +375,10 @@ interface Store {
   toggleStop(side: "own" | "opponent", step: Step): void;
   setFullControl(on: boolean): void;
   setHoldPriority(on: boolean): void;
+  /** "Always answer this way": the answer kept for a trigger's "may" question (`ChoiceRequest.remember`). */
+  keepAnswer(key: string, answer: 0 | 1): void;
+  /** Forgets the kept answers. */
+  clearAnswers(): void;
   /** Autopilot settings imposed by the tutorial (stops). */
   applySettings(partial: Partial<AutopilotSettings>): void;
   setLang(lang: Lang): void;
@@ -757,6 +761,14 @@ function loadSettings(): AutopilotSettings {
       ...(raw.stops && Array.isArray(raw.stops.own) && Array.isArray(raw.stops.opponent)
         ? { stops: { own: raw.stops.own, opponent: raw.stops.opponent } }
         : {}),
+      ...(raw.autoAnswers && typeof raw.autoAnswers === "object"
+        ? {
+            autoAnswers: Object.fromEntries(Object.entries(raw.autoAnswers).filter(([, v]) => v === 0 || v === 1)) as Record<
+              string,
+              0 | 1
+            >,
+          }
+        : {}),
     };
   } catch {
     return base;
@@ -765,8 +777,8 @@ function loadSettings(): AutopilotSettings {
 
 function saveSettings(s: AutopilotSettings): void {
   try {
-    const { fullControl, holdPriority, revealOpponentStack, stops } = s;
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify({ fullControl, holdPriority, revealOpponentStack, stops }));
+    const { fullControl, holdPriority, revealOpponentStack, stops, autoAnswers } = s;
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify({ fullControl, holdPriority, revealOpponentStack, stops, autoAnswers }));
   } catch {
     // Storage unavailable (private browsing): settings of the session only.
   }
@@ -1959,6 +1971,15 @@ export const useGame = create<Store>((set, get) => {
 
     setHoldPriority(on) {
       sendSettings({ ...get().settings, holdPriority: on });
+    },
+
+    keepAnswer(key, answer) {
+      const st = get().settings;
+      sendSettings({ ...st, autoAnswers: { ...st.autoAnswers, [key]: answer } });
+    },
+
+    clearAnswers() {
+      sendSettings({ ...get().settings, autoAnswers: {} });
     },
 
     applySettings(partial) {

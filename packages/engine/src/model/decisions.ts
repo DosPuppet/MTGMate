@@ -77,6 +77,11 @@ interface ChoiceBase {
   autoOk?: boolean;
   /** Labels of the options that are neither objects nor players (e.g. triggered abilities). */
   labels?: Record<string, string>;
+  /**
+   * The "may" question of a triggered ability (PLAN-L L8): the key under which the player can keep their answer
+   * ("always answer this way", `AutopilotSettings.autoAnswers`): card, ability and question.
+   */
+  remember?: string;
 }
 
 export type ChoiceRequest = ChoiceBase &

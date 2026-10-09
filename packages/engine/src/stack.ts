@@ -3984,7 +3984,18 @@ export function continueResolution(s: GameState): boolean {
     }
     if (result && "ask" in result) {
       r.awaiting = result.ask.key;
-      ask(s, result.ask.player, result.ask.request, { kind: "effect" });
+      // The "may" of a triggered ability, asked to its controller: the answer can be kept (PLAN-L L8).
+      const req = result.ask.request;
+      const item = r.item;
+      const remember =
+        req.type === "yesNo" &&
+        req.intent === "may" &&
+        item.kind === "ability" &&
+        item.event &&
+        result.ask.player === item.controller
+          ? `${item.sourceDefId}:${item.abilityIndex}:${result.ask.key}`
+          : undefined;
+      ask(s, result.ask.player, remember ? { ...req, remember } : req, { kind: "effect" });
       s.flow = "resolving";
       return false;
     }

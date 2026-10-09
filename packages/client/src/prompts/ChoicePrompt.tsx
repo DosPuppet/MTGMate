@@ -114,6 +114,7 @@ export function ChoicePrompt({ view: raw }: { view: GameView }) {
 
 function ChoiceModal({ view }: { view: GameView }) {
   const decide = useGame((s) => s.decide);
+  const keepAnswer = useGame((s) => s.keepAnswer);
   const lang = useGame((s) => s.lang);
   const t = useT();
   const loc = useLocalize();
@@ -121,10 +122,13 @@ function ChoiceModal({ view }: { view: GameView }) {
   const req = p.request;
   const [values, setValues] = useState<ChoiceValue[]>(req?.suggested ?? []);
   const [query, setQuery] = useState("");
+  // "Always answer this way" (a trigger's "may", PLAN-L L8).
+  const [always, setAlways] = useState(false);
   // New question: back to the engine's suggestion.
   useEffect(() => {
     setValues(req?.suggested ?? []);
     setQuery("");
+    setAlways(false);
   }, [req]);
   // Scry: the order of the cards left on top was arranged with the first question (ScryArrange).
   const arranged = req?.type === "order" && req.intent === "scryOrder" ? arrangedTopOrder(req.items) : null;
@@ -228,6 +232,10 @@ function ChoiceModal({ view }: { view: GameView }) {
     case "yesNo": {
       // The card asking the question (resolving spell or ability), as in the panel of the choices on the board.
       const source = choiceSource(view);
+      const answer = (v: 0 | 1) => {
+        if (always && req.remember) keepAnswer(req.remember, v);
+        send([v]);
+      };
       return (
         <div className="modal-backdrop">
           <div className="modal" role="dialog" aria-label={req.prompt}>
@@ -238,11 +246,17 @@ function ChoiceModal({ view }: { view: GameView }) {
               </div>
             )}
             <h2>{req.prompt}</h2>
+            {req.remember && (
+              <label className="toggle always-answer">
+                <input type="checkbox" checked={always} onChange={(e) => setAlways(e.target.checked)} />
+                {t("Always answer this way for this ability")}
+              </label>
+            )}
             <div className="modal-actions">
-              <button type="button" className="btn" onClick={() => send([0])}>
+              <button type="button" className="btn" onClick={() => answer(0)}>
                 {t("No")}
               </button>
-              <button type="button" className="btn primary" onClick={() => send([1])}>
+              <button type="button" className="btn primary" onClick={() => answer(1)}>
                 {t("Yes")}
               </button>
             </div>

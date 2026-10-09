@@ -2492,6 +2492,11 @@ button.emblem-chip.activatable {
 .yes-no-source .board-choice-effect {
   max-width: 280px;
 }
+/* "Always answer this way" (PLAN-L L8). */
+.always-answer {
+  margin-top: 10px;
+  font-size: 0.85rem;
+}
 /* Mouse preview on a narrow screen (sidebar as a drawer): follows the pointer. */
 .hover-preview {
   position: fixed;

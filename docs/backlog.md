@@ -96,7 +96,7 @@ From PLAN-C C18 (not done) and PLAN-R R8 (not done):
 - Accessibility to finish: ARIA of the choice windows, all sizes in `rem`.
 - Land untap for a land whose ability has another cost or a trigger (Arena does not allow it either); combat preview that ignores replacements and triggers.
 - Playwright capture for the new client choices of PLAN-A (the two modes of Teamwork, target tied to a chosen player, counters split among creatures) (A report).
-- From the 2026-09-30 audit section 4: always answer a trigger the same way ("always respond the same"), automatic lands and a sample hand in the deckbuilder, a mana-value column view; check what is left against the current interface before starting.
+- From the 2026-09-30 audit section 4: done in PLAN-L (L8: always answer a trigger's "may" the same way; L9: automatic lands, sample hand, mana-value columns).
 
 ## Platform, security, operations
 

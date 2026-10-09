@@ -311,6 +311,8 @@ function Settings() {
   const settings = useGame((s) => s.settings);
   const setFullControl = useGame((s) => s.setFullControl);
   const setHoldPriority = useGame((s) => s.setHoldPriority);
+  const clearAnswers = useGame((s) => s.clearAnswers);
+  const kept = Object.keys(settings.autoAnswers ?? {}).length;
   const decide = useGame((s) => s.decide);
   const backToLobby = useGame((s) => s.backToLobby);
   const over = useGame((s) => s.view?.over);
@@ -331,6 +333,16 @@ function Settings() {
         <input type="checkbox" checked={!!settings.holdPriority} onChange={(e) => setHoldPriority(e.target.checked)} />
         {t("Hold priority")}
       </label>
+      {kept > 0 && (
+        <button
+          type="button"
+          className="btn small ghost"
+          title={t('Ask again the questions answered with "Always answer this way"')}
+          onClick={clearAnswers}
+        >
+          {t("Forget the kept answers ({n})", { n: kept })}
+        </button>
+      )}
       <PaceControl />
       <BoardThemeControl />
       <ImageRelayToggle />

@@ -51,6 +51,13 @@ export function cleanSettings(raw: unknown): Partial<AutopilotSettings> {
   if (r.passUntilTurn === null || (Number.isInteger(r.passUntilTurn) && (r.passUntilTurn as number) >= 0)) {
     out.passUntilTurn = r.passUntilTurn as number | null;
   }
+  // "Always answer this way": bounded keys and answers 0 or 1.
+  if (r.autoAnswers && typeof r.autoAnswers === "object" && !Array.isArray(r.autoAnswers)) {
+    const kept = Object.entries(r.autoAnswers as Record<string, unknown>)
+      .filter(([k, v]) => k.length <= 200 && (v === 0 || v === 1))
+      .slice(0, 500);
+    out.autoAnswers = Object.fromEntries(kept) as Record<string, 0 | 1>;
+  }
   if (r.stops && typeof r.stops === "object") {
     const s = r.stops as Record<string, unknown>;
     const own = steps(s.own);

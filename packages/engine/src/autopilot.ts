@@ -28,6 +28,11 @@ export interface AutopilotSettings {
    * hard pass, which lets everything go until the end of the turn.
    */
   passMode?: "soft" | "hard";
+  /**
+   * "Always answer this way" (PLAN-L L8): the kept answers to the "may" questions of triggered abilities, by
+   * `ChoiceRequest.remember` (1: yes, 0: no). They also apply in full control.
+   */
+  autoAnswers?: Record<string, 0 | 1>;
 }
 
 export const DEFAULT_AUTOPILOT: AutopilotSettings = {
@@ -51,6 +56,8 @@ export function autopilotDecision(s: GameState, player: PlayerId, settings: Auto
     return { type: "declareAttackers", attackers: forcedAttacks(s, player) };
   }
   if (p.kind === "choice") {
+    const kept = p.request.remember !== undefined ? settings.autoAnswers?.[p.request.remember] : undefined;
+    if (kept !== undefined) return { type: "choose", values: [kept] };
     if (!p.request.autoOk || settings.fullControl) return null;
     // Order of one's triggers: chosen by the autopilot, unless priority is held and the order matters
     // (different abilities; the same ability several times, the order does not matter).
