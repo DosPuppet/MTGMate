@@ -552,7 +552,12 @@ export const LEGENDS: Record<string, CardScript> = {
   },
   "Twists and Turns": {
     abilities: [
-      playerStatic({ scryBeforeExplore: true, label: "Scry 1 before exploring" }),
+      eventReplacement({
+        event: "explore",
+        toFilter: { types: ["Creature"], controller: "you" },
+        modify: { add: 1 },
+        label: "Scry 1 before exploring",
+      }),
       triggered(when.entersSelf, [fx.explore(ref.target())], {
         targets: [target.creature("t", { controller: "you" })],
         label: "A creature explores",

@@ -398,8 +398,6 @@ export interface TurnStats {
   coinFlips?: number;
   /** Exhaust abilities activated this turn (Elvish Refueler). */
   exhaustActivated?: number;
-  /** Warped Space: a spell cast from exile without paying its mana cost this turn. */
-  freeFromExile?: number;
   /** Total mana spent to cast spells this turn (Expend, Bloomburrow). */
   manaSpentOnSpells?: number;
 }

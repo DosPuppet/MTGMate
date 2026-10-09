@@ -2243,23 +2243,27 @@ export function activated(opts: {
               : opts.exert
                 ? "exert"
                 : undefined,
-      sacrifice: opts.sacrificeOther
-        ? {
-            filter: opts.sacrificeOther.filter,
-            count: opts.sacrificeOther.count ?? 1,
-            ...(opts.sacrificeOther.includeSelf ? { includeSelf: true } : {}),
-            ...(opts.sacrificeOther.differentNames ? { distinct: "name" as const } : {}),
-          }
-        : undefined,
-      removeCounters: opts.removeCounters,
-      tapOthers: opts.tapOthers,
+      // "X" costs (X chosen on activation): `xCosts` (stack.ts).
+      sacrifice: opts.sacrificeX
+        ? { filter: opts.sacrificeX, count: "X" }
+        : opts.sacrificeOther
+          ? {
+              filter: opts.sacrificeOther.filter,
+              count: opts.sacrificeOther.count ?? 1,
+              ...(opts.sacrificeOther.includeSelf ? { includeSelf: true } : {}),
+              ...(opts.sacrificeOther.differentNames ? { distinct: "name" as const } : {}),
+            }
+          : undefined,
+      removeCounters: opts.removeCountersX ? { kind: opts.removeCountersX, n: "X" } : opts.removeCounters,
+      tapOthers: opts.tapX ? { filter: opts.tapX, count: "X" } : opts.tapOthers,
       ...(opts.grantor ? { grantor: opts.grantor } : {}),
-      payLife: opts.payLife,
-      payLifeX: opts.payLifeX,
+      payLife: opts.payLifeX ? { kind: "x" } : opts.payLife,
       addCounters: opts.addCounters,
-      exileFromGraveyard: opts.exileFromGraveyard
-        ? { filter: opts.exileFromGraveyard.filter, count: opts.exileFromGraveyard.count ?? 1 }
-        : undefined,
+      exileFromGraveyard: opts.exileFromGraveyardX
+        ? { filter: opts.exileFromGraveyardX, count: "X" }
+        : opts.exileFromGraveyard
+          ? { filter: opts.exileFromGraveyard.filter, count: opts.exileFromGraveyard.count ?? 1 }
+          : undefined,
       removeCounterFrom: opts.removeCounterFrom,
       blight: opts.blight,
       collectEvidence: opts.collectEvidence,
@@ -2267,12 +2271,7 @@ export function activated(opts: {
       waterbend: opts.waterbend,
       minX: opts.minX,
       exileGraveyardSymbols: opts.exileGraveyardSymbols,
-      tapX: opts.tapX,
-      exileFromGraveyardX: opts.exileFromGraveyardX,
-      sacrificeX: opts.sacrificeX,
-      discardX: opts.discardX,
-      removeCountersX: opts.removeCountersX,
-      discard: opts.discard,
+      discard: opts.discardX ? "X" : opts.discard,
       ...(opts.discardHand ? { discardHand: true } : {}),
       discardFilter: opts.discardFilter,
       returnUnblockedAttacker: opts.returnUnblockedAttacker,

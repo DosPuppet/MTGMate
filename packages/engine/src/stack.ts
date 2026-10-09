@@ -96,6 +96,7 @@ import type {
   ChoiceValue,
   Color,
   Condition,
+  CostDef,
   CostPick,
   CostSlot,
   Effect,
@@ -1014,8 +1015,6 @@ export interface CastTerms {
   free?: boolean;
   /** May be cast without paying its mana cost, by choice (Omniscience). */
   freeOptional?: boolean;
-  /** The free cast comes from Warped Space (once each turn). */
-  warpedSpace?: boolean;
   /** Ignores timing restrictions (Etali: cast during resolution, approximation). */
   anyTime?: boolean;
   /** Mana of any type can be spent (Tinybones). */
@@ -1481,16 +1480,6 @@ export function castTerms(s: GameState, player: PlayerId, card: ObjectId): CastT
   ) {
     return { ...terms, freeOptional: true };
   }
-  // Warped Space: "once each turn, you may pay {0} rather than the mana cost for a spell you cast from exile".
-  if (
-    terms?.source === "exile" &&
-    !terms.free &&
-    !terms.freeOptional &&
-    (s.players[player]?.turnStats.freeFromExile ?? 0) === 0 &&
-    playerStatic(s, player, "freeFromExileOncePerTurn")
-  ) {
-    return { ...terms, freeOptional: true, warpedSpace: true };
-  }
   return terms;
 }
 
@@ -1515,7 +1504,7 @@ function freeCastTerms(s: GameState, player: PlayerId, card: ObjectId, terms: Ca
   const perms = controlledAbilitiesWithSource(s, player).filter(
     ({ id, ab }) =>
       ab.kind === "castPermission" &&
-      (ab.freeFrom === "any" || (ab.freeFrom === "hand" && terms.source === "hand")) &&
+      (ab.freeFrom === "any" || ab.freeFrom === terms.source) &&
       // Dracogenesis: only Dragon spells; Omnipresence: mana value at most the number of creatures you control.
       (!ab.freeFilter || matchesView(view, resolveFilter(s, ab.freeFilter, id), player)) &&
       (!ab.condition || checkCondition(s, ab.condition, player, id)) &&
@@ -2066,10 +2055,6 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   if (terms.sorceryTiming && !sorceryTiming(s, player)) throw new RulesError(msg("Only at sorcery speed"));
   const flashback = terms.source === "flashback";
   const free = !!terms.free || (!!choices.free && !!terms.freeOptional);
-  if (free && terms.warpedSpace) {
-    const stats = s.players[player]?.turnStats;
-    if (stats) stats.freeFromExile = (stats.freeFromExile ?? 0) + 1;
-  }
   if (choices.free && !free) throw new RulesError(msg("This spell can't be cast without paying its cost"));
   const alternative = !!choices.alternative && !free;
   if (alternative && !altCostFor(s, player, d)) {
@@ -2934,7 +2919,59 @@ export function blightTarget(s: GameState, player: PlayerId, n: number): ObjectI
 }
 
 /** Can the ability's non-mana costs be paid? */
+/** The fixed parts of a cost: without its "X" parts (`xCosts`), memoized per definition. */
+type FixedCost = Omit<CostDef, "sacrifice" | "tapOthers" | "exileFromGraveyard" | "removeCounters" | "discard"> & {
+  sacrifice?: Omit<NonNullable<CostDef["sacrifice"]>, "count"> & { count: number };
+  tapOthers?: Omit<NonNullable<CostDef["tapOthers"]>, "count"> & { count: number };
+  exileFromGraveyard?: Omit<NonNullable<CostDef["exileFromGraveyard"]>, "count"> & { count: number };
+  removeCounters?: { kind: string; n: number };
+  discard?: number;
+};
+const fixedMemo = new WeakMap<CostDef, FixedCost>();
+export function fixedCost(c: CostDef): FixedCost {
+  let hit = fixedMemo.get(c);
+  if (hit === undefined) {
+    const x = xCosts(c);
+    hit = {
+      ...c,
+      sacrifice: x.sacrifice ? undefined : (c.sacrifice as FixedCost["sacrifice"]),
+      tapOthers: x.tap ? undefined : (c.tapOthers as FixedCost["tapOthers"]),
+      exileFromGraveyard: x.exileFromGraveyard ? undefined : (c.exileFromGraveyard as FixedCost["exileFromGraveyard"]),
+      removeCounters: x.removeCounters ? undefined : (c.removeCounters as FixedCost["removeCounters"]),
+      discard: x.discard ? undefined : (c.discard as number | undefined),
+      payLife: x.payLife ? undefined : c.payLife,
+    };
+    fixedMemo.set(c, hit);
+  }
+  return hit as FixedCost;
+}
+
+/**
+ * The "X" parts of a cost (X chosen on activation), written with `"X"` in the cost keys: tap X untapped permanents
+ * (Secluded Starforge), exile X cards from your graveyard (Winter, Cursed Rider), sacrifice X permanents, X ≥ 1
+ * (Radiant Lotus), discard X cards (Gix, Yawgmoth Praetor), remove X counters of a kind (The Astonishing Ant-Man),
+ * pay X life (`payLife: { kind: "x" }`, Krumar Initiate).
+ */
+export function xCosts(c: CostDef): {
+  tap?: ObjectFilter;
+  exileFromGraveyard?: ObjectFilter;
+  sacrifice?: ObjectFilter;
+  discard?: boolean;
+  removeCounters?: string;
+  payLife?: boolean;
+} {
+  return {
+    ...(c.tapOthers?.count === "X" ? { tap: c.tapOthers.filter } : {}),
+    ...(c.exileFromGraveyard?.count === "X" ? { exileFromGraveyard: c.exileFromGraveyard.filter } : {}),
+    ...(c.sacrifice?.count === "X" ? { sacrifice: c.sacrifice.filter } : {}),
+    ...(c.discard === "X" ? { discard: true } : {}),
+    ...(c.removeCounters?.n === "X" ? { removeCounters: c.removeCounters.kind } : {}),
+    ...(typeof c.payLife === "object" && c.payLife.kind === "x" ? { payLife: true } : {}),
+  };
+}
+
 export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedAbilityDef, index = -1): boolean {
+  const fc = fixedCost(ab.cost);
   const o = s.objects[source];
   if (!o || o.zone !== activationZone(o, ab)) return false;
   if (o.zone === "battlefield" && !ab.specialAction && chars(s, source).keywords.includes("noActivatedAbilities")) return false;
@@ -2955,7 +2992,7 @@ export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedA
     const lc = ab.cost.loyalty === "X" ? 0 : ab.cost.loyalty;
     if (lc < 0 && (o.counters.loyalty ?? 0) < -lc) return false;
   }
-  if (ab.cost.exileFromGraveyard && graveyardExileOptions(s, source, ab).length < ab.cost.exileFromGraveyard.count) return false;
+  if (fc.exileFromGraveyard && graveyardExileOptions(s, source, ab).length < fc.exileFromGraveyard.count) return false;
   if (ab.cost.removeCounterFrom && !counterSources(s, who, source, ab)) return false;
   if (ab.cost.blight && !blightTarget(s, o.controller, ab.cost.blight)) return false;
   if (ab.cost.collectEvidence && !evidenceCards(s, who, source, ab.cost.collectEvidence)) return false;
@@ -2966,15 +3003,15 @@ export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedA
     if (ab.cost.grantor === "sacrifice" && hasKeyword(s, g, "cantBeSacrificed")) return false;
   }
   const player = o.zone !== "battlefield" ? o.owner : o.controller;
-  if (ab.cost.removeCounters && countersFor(o, ab.cost.removeCounters.kind) < ab.cost.removeCounters.n) return false;
-  if (ab.cost.payLife && payableLife(s, player) < lifeCost(s, player, source, ab.cost.payLife)) return false;
-  if (ab.cost.sacrifice) {
+  if (fc.removeCounters && countersFor(o, fc.removeCounters.kind) < fc.removeCounters.n) return false;
+  if (fc.payLife && payableLife(s, player) < lifeCost(s, player, source, fc.payLife)) return false;
+  if (fc.sacrifice) {
     const options = sacrificeOptions(s, player, source, ab);
-    const n = ab.cost.sacrifice.distinct === "name" ? distinctNames(s, options) : options.length;
-    if (n < ab.cost.sacrifice.count) return false;
+    const n = fc.sacrifice.distinct === "name" ? distinctNames(s, options) : options.length;
+    if (n < fc.sacrifice.count) return false;
   }
-  if (ab.cost.tapOthers && tapOthersOptions(s, player, source, ab).length < ab.cost.tapOthers.count) return false;
-  if (ab.cost.discard && discardCostOptions(s, player, source, ab.cost.discardFilter).length < ab.cost.discard) return false;
+  if (fc.tapOthers && tapOthersOptions(s, player, source, ab).length < fc.tapOthers.count) return false;
+  if (fc.discard && discardCostOptions(s, player, source, ab.cost.discardFilter).length < fc.discard) return false;
   if (ab.cost.returnUnblockedAttacker && unblockedAttackers(s, player).length === 0) return false;
   if (ab.cost.bounce && bounceCostOptions(s, player, source, ab.cost.bounce).length === 0) return false;
   if (ab.cost.exile && bounceCostOptions(s, player, source, ab.cost.exile).length === 0) return false;
@@ -3025,6 +3062,8 @@ export function activationPicks(
   x?: number,
 ): CostPick[] {
   const c = ab.cost;
+  const fc = fixedCost(ab.cost);
+  const xc = xCosts(ab.cost);
   const out: CostPick[] = [];
   const mine = (id: ObjectId) => s.objects[id]?.controller === player;
   if (c.blight) {
@@ -3044,18 +3083,18 @@ export function activationPicks(
   }
   // "Remove a counter from this creature": the kind, when the source carries several.
   const self = s.objects[source];
-  if (c.removeCounters?.kind === "any" && self) {
+  if (fc.removeCounters?.kind === "any" && self) {
     const kinds = Object.keys(self.counters).filter((k) => (self.counters[k] ?? 0) > 0);
     if (kinds.length > 1)
       out.push({
         slot: "counterKind",
-        label: msg("Remove {n} counter(s) from this creature", { n: c.removeCounters.n }),
-        count: c.removeCounters.n,
+        label: msg("Remove {n} counter(s) from this creature", { n: fc.removeCounters.n }),
+        count: fc.removeCounters.n,
         options: kinds,
         labels: Object.fromEntries(
           kinds.map((k) => [k, msg("{counter} counter ({n})", { counter: counterLabel(k), n: self.counters[k] ?? 0 })]),
         ),
-        suggested: anyCountersDefault(self, c.removeCounters.n),
+        suggested: anyCountersDefault(self, fc.removeCounters.n),
         repeat: Object.fromEntries(kinds.map((k) => [k, self.counters[k] ?? 0])),
       });
   }
@@ -3075,9 +3114,9 @@ export function activationPicks(
         repeat: Object.fromEntries(options.map((id) => [id, obj(s, id).counters[r.kind] ?? 0])),
       });
   }
-  if (c.exileFromGraveyard) {
+  if (fc.exileFromGraveyard) {
     const options = graveyardExileOptions(s, source, ab);
-    const n = c.exileFromGraveyard.count;
+    const n = fc.exileFromGraveyard.count;
     if (options.length >= n)
       out.push({
         slot: "graveyardExile",
@@ -3087,8 +3126,8 @@ export function activationPicks(
         suggested: options.slice(0, n),
       });
   }
-  if (c.exileFromGraveyardX) {
-    const f = c.exileFromGraveyardX;
+  if (xc.exileFromGraveyard) {
+    const f = xc.exileFromGraveyard;
     const options = (s.players[player]?.graveyard ?? []).filter((id) => id !== source && matchesCard(s, player, id, f, source));
     out.push({
       slot: "graveyardExileX",
@@ -3099,8 +3138,8 @@ export function activationPicks(
       suggested: options.slice(0, x ?? 0),
     });
   }
-  if (c.sacrificeX) {
-    const f = c.sacrificeX;
+  if (xc.sacrifice) {
+    const f = xc.sacrifice;
     // The others first, the source last (Radiant Lotus).
     const options = s.battlefield
       .filter((id) => mine(id) && matchesObjectFilter(s, player, id, f, source))
@@ -3386,6 +3425,8 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   const o = s.objects[source];
   const ab = activatedAbility(s, source, index);
   if (!ab || !o) throw new RulesError(msg("Unknown ability"));
+  const fc = fixedCost(ab.cost);
+  const xc = xCosts(ab.cost);
   const zone = activationZone(o, ab);
   if (o.zone !== zone || (zone === "battlefield" ? o.controller : o.owner) !== player) {
     throw new RulesError(msg("You don't control this permanent"));
@@ -3402,36 +3443,36 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   if (!ab.specialAction && splitSecondOnStack(s))
     throw new RulesError(msg("No spells or abilities now (split second or combat)"));
   let sacrificed: ObjectId[] = [];
-  if (ab.cost.sacrifice) {
+  if (fc.sacrifice) {
     const options = sacrificeOptions(s, player, source, ab);
-    sacrificed = choices.sacrifice ?? options.slice(0, ab.cost.sacrifice.count);
-    if (sacrificed.length !== ab.cost.sacrifice.count || sacrificed.some((id) => !options.includes(id))) {
+    sacrificed = choices.sacrifice ?? options.slice(0, fc.sacrifice.count);
+    if (sacrificed.length !== fc.sacrifice.count || sacrificed.some((id) => !options.includes(id))) {
       throw new RulesError(msg("Invalid sacrifice"));
     }
-    if (ab.cost.sacrifice.distinct === "name" && distinctNames(s, sacrificed) !== sacrificed.length)
+    if (fc.sacrifice.distinct === "name" && distinctNames(s, sacrificed) !== sacrificed.length)
       throw new RulesError(msg("The sacrificed permanents must have different names"));
   }
   const x =
     ab.cost.mana?.x ||
     ab.cost.loyalty === "X" ||
-    ab.cost.tapX ||
-    ab.cost.exileFromGraveyardX ||
-    ab.cost.sacrificeX ||
-    ab.cost.discardX ||
-    ab.cost.removeCountersX
+    xc.tap ||
+    xc.exileFromGraveyard ||
+    xc.sacrifice ||
+    xc.discard ||
+    xc.removeCounters
       ? Math.max(0, Math.floor(choices.x ?? 0))
       : 0;
   const targets = validateTargets(s, player, ab.targets, choices.targets, { sourceId: source, x });
   // Krumar Initiate: "pay X life".
-  if (ab.cost.payLifeX && x > 0 && payableLife(s, player) < x) throw new RulesError(msg("Not enough life"));
-  if (ab.cost.sacrificeX && x < 1) throw new RulesError(msg("Sacrifice at least one permanent"));
+  if (xc.payLife && x > 0 && payableLife(s, player) < x) throw new RulesError(msg("Not enough life"));
+  if (xc.sacrifice && x < 1) throw new RulesError(msg("Sacrifice at least one permanent"));
   if (ab.cost.minX !== undefined && x < ab.cost.minX) throw new RulesError(msg("X must be at least {n}", { n: ab.cost.minX }));
   if (ab.cost.loyalty === "X" && x > (o.counters.loyalty ?? 0)) throw new RulesError(msg("Not enough loyalty counters"));
-  if (ab.cost.removeCountersX && x > (o.counters[ab.cost.removeCountersX] ?? 0)) throw new RulesError(msg("Not enough counters"));
+  if (xc.removeCounters && x > (o.counters[xc.removeCounters] ?? 0)) throw new RulesError(msg("Not enough counters"));
   // "Tap X untapped artifacts": chosen now, they don't pay the ability's mana.
-  const tapXOptions = ab.cost.tapX ? tapXCandidates(s, player, source, ab.cost.tapX) : [];
-  const tapXChosen = ab.cost.tapX ? (choices.tap?.length === x ? choices.tap : tapXOptions.slice(0, x)) : [];
-  if (tapXChosen.length < (ab.cost.tapX ? x : 0) || tapXChosen.some((id) => !tapXOptions.includes(id)))
+  const tapXOptions = xc.tap ? tapXCandidates(s, player, source, xc.tap) : [];
+  const tapXChosen = xc.tap ? (choices.tap?.length === x ? choices.tap : tapXOptions.slice(0, x)) : [];
+  if (tapXChosen.length < (xc.tap ? x : 0) || tapXChosen.some((id) => !tapXOptions.includes(id)))
     throw new RulesError(msg("Not enough permanents to tap"));
   const c = chars(s, source);
   const grantor = grantorOf(s, source, index);
@@ -3489,18 +3530,18 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   // Costs: mana (without tapping the source if it must tap for the cost), then {T}, then sacrifice.
   // The permanents chosen for other costs (sacrifice, tap, crew) are not used to pay the mana.
   // Permanents to tap: chosen by the player (station), otherwise automatically.
-  const tapOptions = ab.cost.tapOthers ? tapOthersOptions(s, player, source, ab) : [];
-  const tapOthers = ab.cost.tapOthers
+  const tapOptions = fc.tapOthers ? tapOthersOptions(s, player, source, ab) : [];
+  const tapOthers = fc.tapOthers
     ? choices.tap?.length
       ? choices.tap
       : [...tapOptions]
           // The source ("tap N creatures", itself included) as a last resort.
           .sort((a, b) => Number(a === source) - Number(b === source) || chars(s, b).power - chars(s, a).power)
-          .slice(0, ab.cost.tapOthers.count)
+          .slice(0, fc.tapOthers.count)
     : [];
   if (
-    ab.cost.tapOthers &&
-    (tapOthers.length !== ab.cost.tapOthers.count ||
+    fc.tapOthers &&
+    (tapOthers.length !== fc.tapOthers.count ||
       new Set(tapOthers).size !== tapOthers.length ||
       tapOthers.some((id) => !tapOptions.includes(id)))
   ) {
@@ -3538,7 +3579,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     }
   }
   if (ab.cost.tap) tapObject(s, o);
-  if (ab.cost.removeCountersX && x > 0) changeCounters(s, o, ab.cost.removeCountersX, -x);
+  if (xc.removeCounters && x > 0) changeCounters(s, o, xc.removeCounters, -x);
   if (ab.cost.grantor === "tap" && grantor) tapObject(s, obj(s, grantor));
   if (ab.cost.loyalty !== undefined) {
     const cost = ab.cost.loyalty === "X" ? -x : ab.cost.loyalty;
@@ -3565,15 +3606,15 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   }
   if (ab.cost.self === "exert") o.exerted = true;
   // "Remove a counter from this creature": the chosen kinds (`counterKind`), otherwise the default choice.
-  if (ab.cost.removeCounters?.kind === "any") {
-    const n = ab.cost.removeCounters.n;
+  if (fc.removeCounters?.kind === "any") {
+    const n = fc.removeCounters.n;
     const kinds = pickNow(s, player, source, ab, x, "counterKind", choices);
     const byKind = new Map<string, number>();
     for (const k of kinds.length ? kinds : anyCountersDefault(o, n)) byKind.set(k, (byKind.get(k) ?? 0) + 1);
     for (const [k, m] of byKind) changeCounters(s, o, k, -m);
-  } else if (ab.cost.removeCounters) changeCounters(s, o, ab.cost.removeCounters.kind, -ab.cost.removeCounters.n);
-  if (ab.cost.payLife) payLife_(s, player, lifeCost(s, player, source, ab.cost.payLife));
-  if (ab.cost.payLifeX && x > 0) payLife_(s, player, x);
+  } else if (fc.removeCounters) changeCounters(s, o, fc.removeCounters.kind, -fc.removeCounters.n);
+  if (fc.payLife) payLife_(s, player, lifeCost(s, player, source, fc.payLife));
+  if (xc.payLife && x > 0) payLife_(s, player, x);
   for (const id of tapOthers) tapObject(s, obj(s, id));
   // The sacrificed permanents remain readable (last known information: "its toughness").
   item.paid = {
@@ -3591,7 +3632,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   if (ab.cost.self === "exile" || ab.cost.self === "discard" || ab.cost.self === "bounce") s.lki[source] ??= snapshot(s, source);
   // Costs paid with objects chosen by the player (otherwise the engine's suggestion): `activationPicks`.
   const pick = (slot: CostSlot) => pickNow(s, player, source, ab, x, slot, choices);
-  if (ab.cost.exileFromGraveyard) for (const id of pick("graveyardExile")) moveObject(s, id, "exile");
+  if (fc.exileFromGraveyard) for (const id of pick("graveyardExile")) moveObject(s, id, "exile");
   // Blight N as a cost (ECL): by default, `blightTarget`.
   const blighted = ab.cost.blight ? pick("blight")[0] : undefined;
   if (blighted && ab.cost.blight) changeCounters(s, obj(s, blighted), "-1/-1", ab.cost.blight, true);
@@ -3606,13 +3647,13 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   // "Tap X untapped artifacts": X chosen on activation (permanents chosen before the mana payment).
   for (const id of tapXChosen) tapObject(s, obj(s, id));
   // Winter, Cursed Rider: "exile X artifact cards from your graveyard".
-  if (ab.cost.exileFromGraveyardX) {
+  if (xc.exileFromGraveyard) {
     const chosen = pick("graveyardExileX");
     if (chosen.length < x) throw new RulesError(msg("Not enough cards to exile"));
     for (const id of chosen) moveObject(s, id, "exile");
   }
   // Radiant Lotus: "sacrifice one or more artifacts" (by default, the others first, the source last).
-  if (ab.cost.sacrificeX) {
+  if (xc.sacrifice) {
     const chosen = pick("sacrificeX");
     if (chosen.length < x) throw new RulesError(msg("Not enough permanents to sacrifice"));
     item.paid = { ...item.paid, sacrificed: chosen };
@@ -3647,17 +3688,16 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     moveObject(s, gone, "exile");
   }
   // "Discard a card": chosen by the player (otherwise the first one in the hand).
-  if (ab.cost.discard) {
+  if (fc.discard) {
     const options = discardCostOptions(s, player, source, ab.cost.discardFilter);
-    const chosen = choices.discard?.length ? choices.discard : options.slice(0, ab.cost.discard);
-    if (chosen.length !== ab.cost.discard || chosen.some((id) => !options.includes(id)))
-      throw new RulesError(msg("Invalid discard"));
+    const chosen = choices.discard?.length ? choices.discard : options.slice(0, fc.discard);
+    if (chosen.length !== fc.discard || chosen.some((id) => !options.includes(id))) throw new RulesError(msg("Invalid discard"));
     emit({ type: "discard", player, defIds: chosen.map((id) => obj(s, id).defId) });
     for (const id of chosen) announceDiscard(s, player, moveDiscarded(s, player, id));
     announceDiscardBatch(s, player, chosen.length);
   }
   // Gix, Yawgmoth Praetor: "discard X cards" (the chosen cards, otherwise the first ones offered).
-  if (ab.cost.discardX && x > 0) {
+  if (xc.discard && x > 0) {
     const options = discardCostOptions(s, player, source, undefined);
     const chosen = choices.discard?.length ? choices.discard : options.slice(0, x);
     if (chosen.length !== x || chosen.some((id) => !options.includes(id))) throw new RulesError(msg("Invalid discard"));

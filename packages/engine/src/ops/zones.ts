@@ -53,7 +53,7 @@ import {
   turnFaceUp,
   untapObject,
 } from "../state";
-import { payableLife, playerStatic, quantityMods, recipientMatches } from "../statics";
+import { payableLife, quantityMods, recipientMatches } from "../statics";
 import { holderOf, matchesCard, matchesObjectFilter, shareCreatureType } from "../targets";
 import { msg } from "../text";
 import { logTurnEvent } from "../turnlog";
@@ -1818,9 +1818,16 @@ export const HANDLERS: OpHandlers = {
         if (r.vars[key(`${k}-done`)]) continue;
         const o = s.objects[id];
         const p = o?.controller;
-        // Twists and Turns: "instead, scry 1, then that creature explores".
-        if (p && playerStatic(s, p, "scryBeforeExplore") && !r.vars[key(`${k}-scried`)]) {
-          const asked = scryOrSurveil(s, r, { op: "scry", amount: 1 }, { ...ctx, controller: p }, (x) => key(`${k}-scry-${x}`));
+        // Twists and Turns: "instead, you scry 1, then that creature explores" (an `explore` replacement, `add`: the
+        // number to scry).
+        const scry = quantityMods(s, "explore", (a) => recipientMatches(s, a, id)).mods.reduce(
+          (n, m) => n + ("add" in m ? (m.add ?? 0) : 0),
+          0,
+        );
+        if (p && scry > 0 && !r.vars[key(`${k}-scried`)]) {
+          const asked = scryOrSurveil(s, r, { op: "scry", amount: scry }, { ...ctx, controller: p }, (x) =>
+            key(`${k}-scry-${x}`),
+          );
           if (asked) return asked;
           r.vars[key(`${k}-scried`)] = [1];
         }

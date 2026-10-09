@@ -29,6 +29,7 @@ import {
   discardCostOptions,
   evidenceCards,
   FACE_DOWN_SPELL,
+  fixedCost,
   graveyardToExile,
   greatestToughness,
   harmonizeOptions,
@@ -60,6 +61,7 @@ import {
   warpOf,
   waterbendAmount,
   webSlingingOptions,
+  xCosts,
 } from "./stack";
 import { payableLife } from "./statics";
 import { ALL_CREATURE_TYPES, holderOf, matchesCard, matchesObjectFilter, NON_CREATURE_SUBTYPES } from "./targets";
@@ -740,6 +742,8 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     abilitiesOf(s, id).forEach((_, index) => {
       const ab = activatedAbility(s, id, index);
       if (!ab || activationZone(o, ab) !== o.zone || !canPayNonManaCost(s, id, ab, index)) return;
+      const fc = fixedCost(ab.cost);
+      const xc = xCosts(ab.cost);
       if (ab.sorcerySpeed && !instantLoyalty(s, player, id, ab) && !sorceryTiming(s, player)) return;
       // Craft: the source and the exiled materials don't pay the mana.
       const exclude = ab.cost.craft
@@ -751,7 +755,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       if (ab.cost.exileGraveyardSymbols && !symbolCards(s, player, ab.cost.exileGraveyardSymbols)) return;
       const abCost = abilityManaCost(s, player, id, ab, "best");
       // The permanents sacrificed by default can pay with an ability that doesn't sacrifice them (Treasure: no).
-      const sacrificed = ab.cost.sacrifice ? sacrificeOptions(s, player, id, ab).slice(0, ab.cost.sacrifice.count) : [];
+      const sacrificed = fc.sacrifice ? sacrificeOptions(s, player, id, ab).slice(0, fc.sacrifice.count) : [];
       const purpose = sacrificed.length
         ? { ...abilityPurpose(id, ab), sacrificedForCost: new Set(sacrificed) }
         : abilityPurpose(id, ab);
@@ -768,14 +772,14 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       const xMax0 =
         ab.cost.loyalty === "X"
           ? (o.counters.loyalty ?? 0)
-          : ab.cost.removeCountersX
-            ? (o.counters[ab.cost.removeCountersX] ?? 0)
-            : ab.cost.tapX
+          : xc.removeCounters
+            ? (o.counters[xc.removeCounters] ?? 0)
+            : xc.tap
               ? tapXMax(
                   s,
                   player,
                   id,
-                  ab.cost.tapX,
+                  xc.tap,
                   (tapped, x) =>
                     !ab.cost.mana ||
                     canPay(
@@ -786,15 +790,15 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
                       purpose,
                     ),
                 )
-              : ab.cost.discardX
+              : xc.discard
                 ? (s.players[player]?.hand ?? []).filter((c) => c !== id).length
-                : ab.cost.exileFromGraveyardX
-                  ? graveyardXOptions(s, player, id, ab.cost.exileFromGraveyardX)
-                  : ab.cost.sacrificeX
-                    ? sacrificeXOptions(s, player, id, ab.cost.sacrificeX)
+                : xc.exileFromGraveyard
+                  ? graveyardXOptions(s, player, id, xc.exileFromGraveyard)
+                  : xc.sacrifice
+                    ? sacrificeXOptions(s, player, id, xc.sacrifice)
                     : maxX(s, player, ab.cost.mana, exclude, abilityPurpose(id, ab));
       // Krumar Initiate: "pay X life" — X doesn't exceed the life total.
-      const xMax = ab.cost.payLifeX && xMax0 !== null ? Math.min(xMax0, Math.max(0, payableLife(s, player))) : xMax0;
+      const xMax = xc.payLife && xMax0 !== null ? Math.min(xMax0, Math.max(0, payableLife(s, player))) : xMax0;
       // "X can't be 0" (and "sacrifice X permanents", Radiant Lotus): offered only if X can reach its minimum.
       // Only an {X} cost (Helix Pinnacle): at X = 0, the activation is free and has no effect; it isn't offered (the
       // engine always accepts it), which keeps an AI from activating it endlessly.
@@ -803,7 +807,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
         !ab.cost.mana.generic &&
         !Object.values(ab.cost.mana.colored).some(Boolean) &&
         Object.keys(ab.cost).every((k) => k === "mana" || (ab.cost as Record<string, unknown>)[k] === undefined);
-      const minX = ab.cost.minX ?? (ab.cost.sacrificeX || onlyX ? 1 : undefined);
+      const minX = ab.cost.minX ?? (xc.sacrifice || onlyX ? 1 : undefined);
       if (minX !== undefined && (xMax ?? 0) < minX) return;
       out.push({
         type: "activate",
@@ -821,18 +825,16 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
           return picks.length ? { picks } : {};
         })(),
         additional:
-          ab.cost.sacrifice || ab.cost.tapOthers || ab.cost.discard || ab.cost.crew !== undefined || ab.cost.craft
+          fc.sacrifice || fc.tapOthers || fc.discard || ab.cost.crew !== undefined || ab.cost.craft
             ? {
-                ...(ab.cost.sacrifice
-                  ? { sacrifice: { count: ab.cost.sacrifice.count, options: sacrificeOptions(s, player, id, ab) } }
+                ...(fc.sacrifice
+                  ? { sacrifice: { count: fc.sacrifice.count, options: sacrificeOptions(s, player, id, ab) } }
                   : {}),
-                ...(ab.cost.discard
-                  ? { discard: { count: ab.cost.discard, options: discardCostOptions(s, player, id, ab.cost.discardFilter) } }
+                ...(fc.discard
+                  ? { discard: { count: fc.discard, options: discardCostOptions(s, player, id, ab.cost.discardFilter) } }
                   : {}),
                 // Station: the player chooses the creature to tap.
-                ...(ab.cost.tapOthers
-                  ? { tap: { count: ab.cost.tapOthers.count, options: tapOthersOptions(s, player, id, ab) } }
-                  : {}),
+                ...(fc.tapOthers ? { tap: { count: fc.tapOthers.count, options: tapOthersOptions(s, player, id, ab) } } : {}),
                 // Crew, saddle: the player chooses the creatures (enough total power).
                 ...(ab.cost.crew !== undefined ? { tap: crewSpec(s, player, id, ab.cost.crew) } : {}),
                 // Craft: the player chooses their materials.

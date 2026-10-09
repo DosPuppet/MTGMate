@@ -490,8 +490,10 @@ export const RECORD_VERSION = 1;
  *   players its own object damaged); untaps logged (The Millennium Calendar only for one or more); Mimeoplasm's copy
  *   exceptions are copiable (707.9b); Consuming Aberration reveals then puts into the graveyard (no mill); Ertha Jo
  *   also sees granted abilities; a card manifested by an effect asks no shock-land or Aura-host question
+ * - 180: PLAN-J J4b: Twists and Turns is an explore replacement (each copy scries 1); Warped Space is a free-cast
+ *   permission from exile, once each turn per permission, never combined with another alternative cost (118.9a)
  */
-export const RULES_VERSION = 179;
+export const RULES_VERSION = 180;
 
 /** One checkpoint every N decisions (plus the last one of the game). */
 export const CHECKPOINT_EVERY = 25;

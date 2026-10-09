@@ -7,6 +7,7 @@ import {
   amount,
   type CardScript,
   CREATURE_YOU_CONTROL,
+  castPermission,
   cond,
   cost,
   entersWith,
@@ -69,7 +70,10 @@ export const LEGENDS2: Record<string, CardScript> = {
     ],
   },
   "Warped Space": {
-    abilities: [playerStatic({ freeFromExileOncePerTurn: true, label: "Once each turn, {0} for a spell cast from exile" })],
+    // "Once each turn, you may pay {0} rather than pay the mana cost for a spell you cast from exile."
+    abilities: [
+      castPermission({ freeFrom: "exile", freeOncePerTurn: true, label: "Once each turn, {0} for a spell cast from exile" }),
+    ],
   },
   "Norin, Swift Survivalist": {
     keywords: ["cantBlock"],

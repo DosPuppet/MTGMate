@@ -580,7 +580,12 @@ export interface CostDef {
   /** Sacrifice other permanents (chosen by the player). */
   /** `includeSelf`: the source may be among the sacrificed permanents (Rat King: "sacrifice three Rats"). */
   /** `distinct: "name"`: permanents with different names (Transmutation Font: "three artifact tokens with different names"). */
-  sacrifice?: { filter: ObjectFilter; count: number; includeSelf?: boolean; distinct?: "name" };
+  /**
+   * `count: "X"`: X matching permanents, X ≥ 1 chosen on activation (Radiant Lotus; chosen automatically, the source
+   * last). The other "X" costs read the same way: `tapOthers`, `exileFromGraveyard`, `removeCounters.n`, `discard`,
+   * `payLife` (`{ kind: "x" }`), see `xCosts` (stack.ts).
+   */
+  sacrifice?: { filter: ObjectFilter; count: number | "X"; includeSelf?: boolean; distinct?: "name" };
   /** Blight N (ECL): N −1/−1 counters on a creature you control (chosen automatically: `blightTarget`). */
   blight?: number;
   /** Collect evidence N (701.59, MKM): graveyard cards with total mana value N or greater (chosen automatically). */
@@ -598,18 +603,16 @@ export interface CostDef {
    * Remove counters from the source. `kind: "any"`: "remove N counters from this creature", of any
    * kind (ECL), removed by the engine: −1/−1 first, +1/+1 last.
    */
-  removeCounters?: { kind: string; n: number };
+  removeCounters?: { kind: string; n: number | "X" };
   /**
    * "Exile any number of [color] cards from your graveyard with N or more [color] mana symbols among
    * their mana costs" (Baron Helmut Zemo: boast): chosen automatically (fewest cards), recorded in
    * `costExiled`.
    */
   exileGraveyardSymbols?: { color: ManaType; n: number };
-  /** "Remove any number of [kind] counters from this creature": X counters (The Astonishing Ant-Man). */
-  removeCountersX?: string;
   /** Tap other untapped permanents you control (chosen automatically). `includeSelf`: "tap N untapped
    * creatures you control", the source may be one of them, even with summoning sickness (302.6). */
-  tapOthers?: { filter: ObjectFilter; count: number; includeSelf?: boolean };
+  tapOthers?: { filter: ObjectFilter; count: number | "X"; includeSelf?: boolean };
   /**
    * Ability granted by another permanent (`Characteristics.grantors`): what is done with it to pay ("Tap Fishing
    * Pole", "Exile The Dominion Bracelet", "Sacrifice Deconstruction Hammer").
@@ -623,26 +626,16 @@ export interface CostDef {
   /** Remove a counter from a permanent you control (chosen automatically: Sunstar Chaplain). */
   /** Remove `n` counters (1 by default) from among matching permanents you control (Iron Spider: two). */
   removeCounterFrom?: { filter: ObjectFilter; kind: string; n?: number };
-  /** Tap X untapped permanents you control (X chosen on activation: Secluded Starforge). */
-  tapX?: ObjectFilter;
-  /** Exile X matching cards from your graveyard (X chosen on activation, cards chosen automatically: Winter). */
-  exileFromGraveyardX?: ObjectFilter;
-  /** Sacrifice X matching permanents, X ≥ 1 (Radiant Lotus; chosen automatically, the source last). */
-  sacrificeX?: ObjectFilter;
-  /** "Discard X cards" (Gix, Yawgmoth Praetor): X chosen, the cards chosen by the player or automatically. */
-  discardX?: boolean;
   /** Exile other cards from your graveyard (chosen automatically: Gallia). */
-  exileFromGraveyard?: { filter: ObjectFilter; count: number };
+  exileFromGraveyard?: { filter: ObjectFilter; count: number | "X" };
   /** Put counters on the source (Mazemind Tome: page counter). */
   addCounters?: { kind: string; n: number };
   /** Crew N (702.122): tap untapped creatures with total power N or greater (chosen automatically). */
   crew?: number;
   /** "Pay N life"; an amount evaluated for the source (War Room: the colors in your commanders' color identity). */
   payLife?: Amount;
-  /** "Pay X life" (Krumar Initiate), X being the ability's. */
-  payLifeX?: boolean;
-  /** Discard N cards (chosen by the player; by default the first ones in hand). */
-  discard?: number;
+  /** Discard N cards (chosen by the player; by default the first ones in hand); `"X"`: Gix, Yawgmoth Praetor. */
+  discard?: number | "X";
   /** "Discard your hand" (payable even with an empty hand). */
   discardHand?: boolean;
   /** … only matching cards (Lluwen: "discard a land card"). */
@@ -875,7 +868,19 @@ export interface EventReplacement {
    * Manipulator: `instead.exileFromLibrary`, that many cards from the top of the library exiled instead).
    */
   /** `connive`: a creature is about to connive; `modify.add`: its controller first draws that many cards (Leader). */
-  event: "damage" | "lifeLoss" | "lifeGain" | "draw" | "mill" | "counters" | "tokens" | "mana" | "untap" | "payLife" | "connive";
+  event:
+    | "damage"
+    | "lifeLoss"
+    | "lifeGain"
+    | "draw"
+    | "mill"
+    | "counters"
+    | "tokens"
+    | "mana"
+    | "untap"
+    | "payLife"
+    | "connive"
+    | "explore";
   /** Source of the damage (filter seen from the controller: `controller: "you"` for "your sources"); mana: the tapped permanent. */
   source?: ObjectFilter;
   /**
@@ -966,10 +971,10 @@ export interface CastPermissionAbilityDef {
   /** "You may cast spells as though they had flash." */
   flash?: true;
   /**
-   * Spells without paying their mana cost: `hand`, those from your hand (Omniscience); `any`, from any zone you can
-   * cast them from (Dracogenesis, As Foretold).
+   * Spells without paying their mana cost: `hand`, those from your hand (Omniscience); `exile`, those cast from exile
+   * (Warped Space, with `freeOncePerTurn`); `any`, from any zone you can cast them from (Dracogenesis, As Foretold).
    */
-  freeFrom?: "hand" | "any";
+  freeFrom?: "hand" | "exile" | "any";
   /** Only matching spells (Dracogenesis: "you may cast Dragon spells without paying"). */
   freeFilter?: ObjectFilter;
   /** Once each turn (Zaffai and the Tempests); `condition`: only when it's met (during your turn). */
@@ -1270,8 +1275,6 @@ export interface PlayerStaticAbilityDef {
   untapOnOthersUntap?: ObjectFilter;
   /** Nowhere to Run: opposing creatures can be targeted despite hexproof; their ward doesn't trigger. */
   ignoreOpponentsHexproofWard?: boolean;
-  /** Warped Space: once each turn, a spell cast from exile may be cast by paying {0}. */
-  freeFromExileOncePerTurn?: boolean;
   /** Leyline of Mutation: alternative cost for all your spells. */
   /**
    * Alternative cost of your spells: a mana cost (Leyline of Mutation: {W}{U}{B}{R}{G}) or collect evidence N
@@ -1308,8 +1311,6 @@ export interface PlayerStaticAbilityDef {
    * (`"combat"`, Frenzied Baloth). Read by `damageUnpreventable` (statics.ts).
    */
   damageUnpreventable?: true | "combat";
-  /** Twists and Turns: "if a creature you control would explore, scry 1 first". */
-  scryBeforeExplore?: boolean;
   label?: string;
 }
 
