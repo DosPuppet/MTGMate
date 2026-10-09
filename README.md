@@ -1,6 +1,6 @@
 # Planecircle
 
-A platform for playing Magic: The Gathering against one or more AIs (head-to-head or multiplayer) and online against other players (2 to 4, best-of-three in duels; Standard, Unlimited or Commander). It is built on a **home-grown rules engine in TypeScript** and a 2D interface designed to be as fluid as MTG Arena:
+A platform for playing Magic: The Gathering against one or more AIs (head-to-head or multiplayer) and online against other players (2 to 4, best-of-three in duels; Standard, Unlimited or Commander). It is built on a **home-grown rules engine in TypeScript** and a 2D interface designed to be a fast way to play and test decks:
 
 - automatic priority passing, with a stop on "End turn" at the end of each of your turns (even with nothing to play);
 - automatic mana payment;
