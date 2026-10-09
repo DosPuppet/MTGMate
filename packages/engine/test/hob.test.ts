@@ -2037,7 +2037,9 @@ describe("lot A, red", () => {
         },
         p2: { battlefield: ["Bear Cub", "Shivan Dragon"] },
       });
-      s = settle(cast(s, "p1", "Desolation of Smaug"), (req) => (req.intent === "manaColor" ? ["R"] : undefined));
+      s = settle(cast(s, "p1", "Desolation of Smaug"), (req) =>
+        req.type === "divide" && req.intent === "manaColor" ? req.among.map((c) => (c === "R" ? 4 : 0)) : undefined,
+      );
       expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
       expect(idsOf(s, "p2", "battlefield", "Shivan Dragon")).toHaveLength(1);
       expect(s.objects[idOf(s, "p1", "battlefield", "Serra Angel")]?.damage).toBe(3);
@@ -2051,7 +2053,9 @@ describe("lot A, red", () => {
       let s = scenario({
         p1: { battlefield: lands("Mountain", 4), hand: ["Desolation of Smaug", "Lightning Strike"] },
       });
-      s = settle(cast(s, "p1", "Desolation of Smaug"), (req) => (req.intent === "manaColor" ? ["R"] : undefined));
+      s = settle(cast(s, "p1", "Desolation of Smaug"), (req) =>
+        req.type === "divide" && req.intent === "manaColor" ? req.among.map((c) => (c === "R" ? 4 : 0)) : undefined,
+      );
       expect(s.players.p1?.restrictedMana).toHaveLength(4);
       expect(() => cast(s, "p1", "Lightning Strike", { targets: { t: ["p2"] } })).toThrow();
     });

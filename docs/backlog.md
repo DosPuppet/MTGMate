@@ -43,7 +43,6 @@ Related deferrals from the same plans:
 - Entry-choice flows not covered by `asEnters` (H9): a token copy created by an effect asks no question; the 1/1 characteristic of Abuelo's Awakening right after arriving (needs `LayerMods` in `MoveSpec`); `shockLand` stays apart (already a common arrival question).
 
 **Approximation groups left by PLAN-C C12** (check each against `docs/approximations.md` before starting; some were touched by later plans)
-- "Add N mana in any combination of colors": the solver and the effects divide it since K2 (rules 73); a mana ability tapped by hand still gives one color (PLAN-L L3).
 - Choices at resolution without a target (about 15 cards, one by one): partly done by D1 (`fx.yourChoice`), H2c (Finality) and H4; remaining ones are listed in `approximations.md`.
 - "Tap N untapped creatures", the source included, and "player who put the counters": done in K2 (rules 73); Orphans of the Wheat and Exemplar of Light were missed (PLAN-L L4); Lasting Tarfire stays approximated (low value).
 - Eriette, the Beguiler: modeled as a static (control while the Aura stays attached) instead of a trigger "whenever an Aura becomes attached" with a timestamped control effect (layer 2). Needs an attachment trigger and a control duration tied to the Aura (single card).

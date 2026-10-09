@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { dealDamage, destroy } from "../src/actions";
 import { activated, fx, ref, spell, target, triggered, when } from "../src/dsl";
 import { addEffect, moveWithSpec } from "../src/effects";
+import { RulesError } from "../src/errors";
 import { bump } from "../src/layers";
 import { legalActions } from "../src/legal";
 import { changeCounters, chars, moveObject } from "../src/state";
@@ -626,6 +627,31 @@ describe("Mana en n'importe quelle combinaison (lot K2)", () => {
     s = act(s, "p1", { type: "cast", card: barrage, targets: { t: [bear] } });
     s = passAccepting(s, (x) => x.stack.length === 0 && x.pending?.kind === "priority");
     expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+  });
+
+  it("tapped by hand (PLAN-L L3): one type per mana, as many as it produces, among its own", () => {
+    // Power 2 (0/3 and two counters): two mana.
+    const s = scenario({ p1: { battlefield: [{ name: "Vivi Ornitier", counters: { "+1/+1": 2 } }] } });
+    const vivi = idOf(s, "p1", "battlefield", "Vivi Ornitier");
+    const offer = legalActions(s, "p1").find((a) => a.type === "tapForMana" && a.source === vivi);
+    expect(offer).toMatchObject({ amount: 2, combination: true, colors: ["U", "R"] });
+    const ability = offer?.type === "tapForMana" ? offer.ability : -1;
+    const t = act(s, "p1", { type: "tapForMana", source: vivi, ability, colors: ["U", "R"] });
+    expect(t.players.p1?.manaPool).toMatchObject({ U: 1, R: 1 });
+    // One color for everything stays possible.
+    expect(act(s, "p1", { type: "tapForMana", source: vivi, ability, color: "R" }).players.p1?.manaPool.R).toBe(2);
+    // Wrong count, or a type it doesn't produce: refused.
+    expect(() => act(s, "p1", { type: "tapForMana", source: vivi, ability, colors: ["U", "R", "R"] })).toThrow(RulesError);
+    expect(() => act(s, "p1", { type: "tapForMana", source: vivi, ability, colors: ["U", "G"] })).toThrow(RulesError);
+  });
+
+  it('a source that is not "in any combination" refuses several types', () => {
+    const s = scenario({ p1: { battlefield: ["Sol Ring"] } });
+    const ring = idOf(s, "p1", "battlefield", "Sol Ring");
+    const offer = legalActions(s, "p1").find((a) => a.type === "tapForMana" && a.source === ring);
+    expect(offer && "combination" in offer).toBe(false);
+    const ability = offer?.type === "tapForMana" ? offer.ability : -1;
+    expect(() => act(s, "p1", { type: "tapForMana", source: ring, ability, colors: ["C", "C"] })).toThrow(RulesError);
   });
 });
 

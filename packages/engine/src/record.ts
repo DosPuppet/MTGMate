@@ -510,8 +510,10 @@ export const RECORD_VERSION = 1;
  * - 186: PLAN-L L2: activated abilities from the command zone (commander ninjutsu, 702.49d); the players of a "one or
  *   more" batch kept with the trigger (`ref.eventPlayers`); a sacrifice that reduces the cost pays {N} each (Dargo)
  *   and never leaves mana in the pool
+ * - 187: PLAN-L L3: a mana ability "in any combination" tapped by hand takes one type per mana (`tapForMana.colors`);
+ *   Baxter Building, Realm-Scorcher Hellkite and Desolation of Smaug ask one division instead of four colors
  */
-export const RULES_VERSION = 186;
+export const RULES_VERSION = 187;
 
 /** One checkpoint every N decisions (plus the last one of the game). */
 export const CHECKPOINT_EVERY = 25;

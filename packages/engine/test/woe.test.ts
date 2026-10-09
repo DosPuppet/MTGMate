@@ -2682,12 +2682,15 @@ describe("Wilds of Eldraine, lot A — rouge", () => {
     it("Realm-Scorcher Hellkite: bargained, four mana of colors of your choice; {1}{R}: 1 damage to any target", () => {
       let s = scenario({ p1: { battlefield: ["Candy Trail", ...lands("Mountain", 6)], hand: ["Realm-Scorcher Hellkite"] } });
       const candy = idOf(s, "p1", "battlefield", "Candy Trail");
-      const colors = ["U", "G", "G", "B"];
-      let k = 0;
-      s = settle(cast(s, "p1", "Realm-Scorcher Hellkite", { kicked: true, sacrifice: [candy] }), (req) =>
-        req.intent === "manaColor" ? [colors[k++] as string] : undefined,
-      );
-      expect(k).toBe(4);
+      // One division (PLAN-L L3): {U}, {G}{G}, {B}.
+      const want: Record<string, number> = { U: 1, G: 2, B: 1 };
+      let asked = 0;
+      s = settle(cast(s, "p1", "Realm-Scorcher Hellkite", { kicked: true, sacrifice: [candy] }), (req) => {
+        if (req.type !== "divide" || req.intent !== "manaColor") return undefined;
+        asked++;
+        return req.among.map((c) => want[c] ?? 0);
+      });
+      expect(asked).toBe(1);
       const pool = s.players.p1?.manaPool;
       expect([pool?.U, pool?.G, pool?.B]).toEqual([1, 2, 1]);
       const hk = idOf(s, "p1", "battlefield", "Realm-Scorcher Hellkite");

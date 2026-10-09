@@ -92,6 +92,7 @@ export function checkDecisionShape(s: GameState, raw: Decision): void {
       objectRef(s, d, "source");
       if (!isIndex(d.ability)) bad("ability");
       opt(d, "color", isStr);
+      opt(d, "colors", isStrArray);
       return;
     case "declareAttackers":
       if (!pairs(d.attackers, "id", "defender")) bad("attackers");

@@ -99,8 +99,8 @@ export const RED: Record<string, CardScript> = {
       [],
       [
         fx.damageAll(3, { types: ["Creature"], notSubtype: "Dragon" }),
-        // "Four mana in any combination of colors": a color chosen for each mana.
-        ...[1, 2, 3, 4].map(() => fx.addManaChoice(1, undefined, { spell: { subtype: "Dragon" } })),
+        // "Four mana in any combination of colors": one division (PLAN-L L3).
+        fx.addManaCombination(4, undefined, { spell: { subtype: "Dragon" } }),
       ],
     ),
   },

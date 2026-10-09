@@ -227,7 +227,11 @@ export type Decision =
   | { type: "playLand"; card: ObjectId; payLife?: boolean; landType?: string; chosen?: string; back?: boolean }
   | ({ type: "cast"; card: ObjectId } & CastChoices)
   | ({ type: "activate"; source: ObjectId; ability: number } & CastChoices)
-  | { type: "tapForMana"; source: ObjectId; ability: number; color?: ManaType }
+  /**
+   * `color`: the type of the mana (one of the ability's); `colors`: the type of each mana of an "in any combination"
+   * ability (as many as it produces; PLAN-L L3).
+   */
+  | { type: "tapForMana"; source: ObjectId; ability: number; color?: ManaType; colors?: ManaType[] }
   /** Undoes tapping a source for its mana, as long as that mana hasn't been used (`GameState.manaUndo`). */
   | { type: "undoMana"; source: ObjectId }
   | { type: "declareAttackers"; attackers: { id: ObjectId; defender: PlayerId }[] }
@@ -402,7 +406,8 @@ export type ActionOption =
       /** Objects paid as a cost to choose (blight, evidence, graveyard exile…), when there is a choice. */
       picks?: CostPick[];
     }
-  | { type: "tapForMana"; source: ObjectId; ability: number; colors: ManaType[] };
+  /** `amount` and `combination`: an "in any combination" ability that produces several mana (a division to ask). */
+  | { type: "tapForMana"; source: ObjectId; ability: number; colors: ManaType[]; amount?: number; combination?: true };
 
 // ---------------------------------------------------------------------------
 // Events (log, animations)

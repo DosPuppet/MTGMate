@@ -2344,6 +2344,20 @@ describe("Lorwyn Eclipsed, batch A — red", () => {
     expect(castable(s, idOf(s, "p1", "hand", "Flame-Chain Mauler"))).toBe(true);
     expect(castable(s, idOf(s, "p1", "hand", "Gristle Glutton"))).toBe(false);
   });
+
+  it("Flamebraider tapped by hand (PLAN-L L3): two restricted mana of the chosen types", () => {
+    const s = scenario({ p1: { battlefield: ["Flamebraider"] } });
+    const fb = idOf(s, "p1", "battlefield", "Flamebraider");
+    const offer = legalActions(s, "p1").find((a) => a.type === "tapForMana" && a.source === fb && a.combination);
+    expect(offer?.type === "tapForMana" && offer.amount).toBe(2);
+    const t = act(s, "p1", {
+      type: "tapForMana",
+      source: fb,
+      ability: offer?.type === "tapForMana" ? offer.ability : -1,
+      colors: ["R", "G"],
+    });
+    expect(t.players.p1?.restrictedMana?.map((m) => m.type).sort()).toEqual(["G", "R"]);
+  });
 });
 
 describe("Lorwyn Eclipsed, batch A — green", () => {

@@ -292,15 +292,11 @@ export const RED: Record<string, CardScript> = {
   "Pest Problem": { spell: spell([], [fx.createTokens(RAT_NO_BLOCK, 2)]) },
   "Realm-Scorcher Hellkite": {
     abilities: [
-      // "four mana in any combination of colors": a color chosen for each mana.
-      triggered(
-        when.entersSelf,
-        [1, 2, 3, 4].map(() => fx.addManaChoice(1)),
-        {
-          condition: cond.kicked,
-          label: "Bargained: four mana in any combination of colors",
-        },
-      ),
+      // "four mana in any combination of colors": one division (PLAN-L L3).
+      triggered(when.entersSelf, [fx.addManaCombination(4)], {
+        condition: cond.kicked,
+        label: "Bargained: four mana in any combination of colors",
+      }),
       activated({
         mana: "{1}{R}",
         targets: [target.any()],

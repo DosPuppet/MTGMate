@@ -1665,6 +1665,9 @@ export const useGame = create<Store>((set, get) => {
           );
         if (activations[0]) return get().beginCasting(activations[0], id);
         const m = mana[0];
+        // Several types (City of Brass, "in any combination"): the menu asks which (PLAN-L L3).
+        if (m?.type === "tapForMana" && (m.colors.length > 1 || m.combination))
+          return set({ abilityMenu: { sourceId: id, options: mana, unavailable } });
         if (m?.type === "tapForMana")
           return get().decide({ type: "tapForMana", source: id, ability: m.ability, color: m.colors[0] });
       }

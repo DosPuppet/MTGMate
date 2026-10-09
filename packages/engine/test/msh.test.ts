@@ -4181,6 +4181,18 @@ describe("lot A, colorless cards and lands", () => {
       expect(handNames(s2)).toEqual(["Opt"]);
     });
 
+    it("Baxter Building: {4}, {T}: four mana in any combination of colors, one division (PLAN-L L3)", () => {
+      let s = scenario({ p1: { battlefield: ["Baxter Building", ...lands("Plains", 4)] } });
+      let asked = 0;
+      s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Baxter Building"), {}, /Four mana/), (req) => {
+        if (req.type !== "divide" || req.intent !== "manaColor") return undefined;
+        asked++;
+        return req.among.map((c) => (c === "U" ? 3 : c === "G" ? 1 : 0));
+      });
+      expect(asked).toBe(1);
+      expect(s.players.p1?.manaPool).toMatchObject({ U: 3, G: 1 });
+    });
+
     it("Surveillance Room: when entering, surveil 1", () => {
       let s = scenario({ p1: { hand: ["Surveillance Room"], library: ["Opt", "Island"] } });
       s = settle(act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Surveillance Room") }), (req) =>

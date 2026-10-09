@@ -103,4 +103,5 @@ History, backlog, summary.
 | L0 | done | 0ea6e9c | — |
 | L1a | done: attack taxes and minimum blockers, arena refusals, Commander bench | 15c6d4a | — |
 | L1b | done: `forAgent` (`fair`), holding a counterspell; attackers weighed against the attacked player measured worse (47.8 % ± 2.8, 1,198 games) and dropped | 968daf5 | — |
-| L2 | done: ten Commander-only reprints (EDH), commander ninjutsu, `ref.eventPlayers`, `sacrificeToPay` `{ filter, each }`; fuzz found a mixed player/planeswalker choice crash (fixed) | | 186 |
+| L2 | done: ten Commander-only reprints (EDH), commander ninjutsu, `ref.eventPlayers`, `sacrificeToPay` `{ filter, each }`; fuzz found a mixed player/planeswalker choice crash (fixed) | 38d07d5 | 186 |
+| L3 | done: `tapForMana.colors`, the division window, a multi-color source asks its color (it took the first), mana symbols in the "Add" buttons, three cards with one division | | 187 |

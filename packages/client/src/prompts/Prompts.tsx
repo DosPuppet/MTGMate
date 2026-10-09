@@ -1,8 +1,17 @@
 /** Choice windows: kept for real decisions (mulligan, modes, X, kicker, discard…). */
 
-import { type ChoiceRequest, type CostPick, costToText, type GameView, msg, type ObjectView, plainText } from "@mtgx/engine";
+import {
+  type ChoiceRequest,
+  type CostPick,
+  costToText,
+  type GameView,
+  type ManaType,
+  msg,
+  type ObjectView,
+  plainText,
+} from "@mtgx/engine";
 import { useState } from "react";
-import { Card, ManaCost } from "../board/Card";
+import { Card, ManaCost, RulesText } from "../board/Card";
 import { faceName, type Lang } from "../i18n";
 import { useLocalize, useT } from "../localize";
 import { myActions, type PlayableOption, useGame } from "../store";
@@ -635,6 +644,48 @@ const LAND_TYPES: Record<string, string> = {
   Forest: msg("ctx:landType|Forest"),
 };
 
+/**
+ * Mana "in any combination" tapped by hand (PLAN-L L3): how many mana of each of the source's types, as many as it
+ * produces in all.
+ */
+function ManaDivision({ colors, amount, onAdd }: { colors: string[]; amount: number; onAdd: (colors: ManaType[]) => void }) {
+  const t = useT();
+  const [counts, setCounts] = useState<number[]>(() => colors.map((_, i) => (i === 0 ? amount : 0)));
+  const sum = counts.reduce((a, b) => a + b, 0);
+  const bump = (i: number, d: number) => setCounts(counts.map((n, k) => (k === i ? Math.max(0, n + d) : n)));
+  const chosen = colors.flatMap((c, i) => Array<ManaType>(counts[i] ?? 0).fill(c as ManaType));
+  return (
+    <div className="mana-division" data-testid="mana-division">
+      <div className="divide-list">
+        {colors.map((c, i) => (
+          <div key={c} className="divide-row">
+            <span className="divide-name">
+              <ManaCost cost={`{${c}}`} />
+            </span>
+            <button type="button" className="btn small" aria-label={t("One less")} onClick={() => bump(i, -1)}>
+              −
+            </button>
+            <span className="divide-value">{counts[i]}</span>
+            <button
+              type="button"
+              className="btn small"
+              aria-label={t("One more")}
+              disabled={sum >= amount}
+              onClick={() => bump(i, 1)}
+            >
+              +
+            </button>
+          </div>
+        ))}
+      </div>
+      <button type="button" className="btn choice" disabled={sum !== amount} onClick={() => onAdd(chosen)}>
+        <RulesText text={t("Add {mana}", { mana: chosen.map((c) => `{${c}}`).join("") })} />
+      </button>
+      {sum !== amount && <p className="hint">{t("Assigned: {sum} / {total}", { sum, total: amount })}</p>}
+    </div>
+  );
+}
+
 function AbilityMenu() {
   const menu = useGame((s) => s.abilityMenu);
   const view = useGame((s) => s.view);
@@ -684,6 +735,16 @@ function AbilityMenu() {
               </button>
             );
           }
+          if (o.type === "tapForMana" && o.combination && o.amount) {
+            return (
+              <ManaDivision
+                key={i}
+                colors={o.colors}
+                amount={o.amount}
+                onAdd={(colors) => decide({ type: "tapForMana", source: o.source, ability: o.ability, colors })}
+              />
+            );
+          }
           if (o.type === "tapForMana") {
             return o.colors.map((c) => (
               <button
@@ -692,7 +753,7 @@ function AbilityMenu() {
                 className="btn choice"
                 onClick={() => decide({ type: "tapForMana", source: o.source, ability: o.ability, color: c })}
               >
-                {t("Add {mana}", { mana: `{${c}}` })}
+                <RulesText text={t("Add {mana}", { mana: `{${c}}` })} />
               </button>
             ));
           }

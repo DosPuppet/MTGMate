@@ -238,8 +238,8 @@ export const ARTIFACTS: Record<string, CardScript> = {
       activated({
         mana: "{4}",
         tap: true,
-        // "Four mana in any combination of colors": a color chosen for each mana.
-        effects: [1, 2, 3, 4].map(() => fx.addManaChoice(1)),
+        // "Four mana in any combination of colors": one division (PLAN-L L3).
+        effects: [fx.addManaCombination(4)],
         label: "Four mana in any combination of colors",
       }),
       activated({

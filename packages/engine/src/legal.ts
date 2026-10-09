@@ -876,7 +876,14 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
   for (const src of manaSources(s, player, undefined, { manual: true })) {
     if (src.ability < 0) continue;
     const ab = manaAbilitiesOf(s, src.id)[src.ability];
-    if (ab) out.push({ type: "tapForMana", source: src.id, ability: src.ability, colors: ab.produce });
+    if (ab)
+      out.push({
+        type: "tapForMana",
+        source: src.id,
+        ability: src.ability,
+        colors: ab.produce,
+        ...(src.combination && src.amount > 1 ? { amount: src.amount, combination: true as const } : {}),
+      });
   }
   // 702.61: split second — no spells or abilities (except mana) while the spell is on the stack; special actions
   // remain possible (702.61b).

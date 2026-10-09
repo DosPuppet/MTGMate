@@ -557,6 +557,9 @@ export function activateManaAbility(
   if (!ab || !canActivateMana(s, id, ab)) throw new RulesError(msg("Mana ability unavailable"));
   const types = Array.isArray(color) ? color : color ? [color] : [];
   if (types.length > 1 && !ab.combination) throw new RulesError(msg("This source produces a single type of mana"));
+  // "In any combination" (by hand: PLAN-L L3): one type for each mana produced.
+  if (types.length > 1 && types.length !== manaAmount(s, id, ab))
+    throw new RulesError(msg("Choose a type for each mana produced"));
   const c = types[0] ?? ab.produce[0];
   if (!c || types.concat(c).some((m) => !ab.produce.includes(m))) throw new RulesError(msg("Invalid mana color"));
   // Type of each mana produced: those asked for, then the first for the rest.
