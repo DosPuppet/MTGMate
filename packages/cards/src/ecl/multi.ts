@@ -515,7 +515,7 @@ export const MULTI: Record<string, CardScript> = {
           {
             id: "t",
             label: "triggered ability you control",
-            filter: { stackItems: { triggeredOnly: true, controller: "you" } },
+            filter: { stackItems: { only: "triggered", controller: "you" } },
           },
         ],
         effects: [fx.copySpell(ref.target(), 1)],

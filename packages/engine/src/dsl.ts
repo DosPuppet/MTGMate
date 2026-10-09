@@ -593,9 +593,9 @@ export const fx = {
   destroy: (what: Ref, store?: string): Effect => ({ op: "destroy", what, store }),
   tapChosen: (filter: ObjectFilter, store: string, opts: { exactly?: number; sharesColorWith?: Ref } = {}): Effect => ({
     op: "tapChosen",
-    filter,
+    filter: opts.sharesColorWith ? { ...filter, shares: { what: "color", with: opts.sharesColorWith } } : filter,
     store,
-    ...opts,
+    ...(opts.exactly !== undefined ? { exactly: opts.exactly } : {}),
   }),
   lkiCountersTo: (to: Ref): Effect => ({ op: "lkiCountersTo", to }),
   /** "Move a counter from [this permanent] onto [that other one]" (kind of your choice). */
@@ -2071,26 +2071,46 @@ export function manaAbility(
     },
     addCounter: opts.addCounter,
     removeCounter: opts.removeCounter,
-    produceLinkedColors: opts.linkedColors,
     ...(opts.drawback ? { drawback: opts.drawback } : {}),
-    ...(opts.colorsOf ? { produceColorsOf: opts.colorsOf } : {}),
-    ...(opts.colorsZone ? { produceColorsZone: opts.colorsZone } : {}),
+    ...(opts.linkedColors ? { produceColorsOf: { kind: "linked" } as Ref } : {}),
+    ...(opts.colorsOf
+      ? {
+          produceColorsOf: {
+            kind: "zone",
+            zone: opts.colorsZone ?? "battlefield",
+            who: { kind: "you" },
+            filter: opts.colorsOf,
+          } as Ref,
+        }
+      : {}),
     ...(opts.likeLands ? { produceLikeLands: opts.likeLands } : {}),
     ...(opts.commanderIdentity ? { produceIdentity: true } : {}),
-    amountGraveyard: opts.perGraveyard,
     oncePerTurn: opts.oncePerTurn,
     produce: Array.isArray(produce) ? produce : [produce],
     ...(opts.combination ? { combination: true } : {}),
     amount: amountProduced,
-    amountPer: opts.per,
+    ...(manaAmountOf(opts) ? { amountOf: manaAmountOf(opts) } : {}),
     restriction: opts.restriction,
     produceChosen: opts.produceChosen,
     rider: opts.rider,
-    amountDistinctPowers: opts.distinctPowers,
     tapAnother: opts.tapAnother,
     condition: opts.condition,
-    amountSelfPower: opts.selfPower,
   };
+}
+
+/** Variable amount of a mana ability (`ManaAbilityDef.amountOf`) from the options of `manaAbility`. */
+function manaAmountOf(opts: {
+  per?: ObjectFilter;
+  perGraveyard?: ObjectFilter;
+  distinctPowers?: boolean;
+  selfPower?: boolean;
+}): Amount | undefined {
+  if (opts.per) return { kind: "count", filter: opts.per };
+  if (opts.perGraveyard) return { kind: "count", zone: "graveyard", filter: opts.perGraveyard };
+  if (opts.distinctPowers)
+    return { kind: "aggregate", fn: "distinct", property: "power", filter: { types: ["Creature"], controller: "you" } };
+  if (opts.selfPower) return { kind: "powerOf", ref: { kind: "self" } };
+  return undefined;
 }
 
 /** "[Filter] spells you cast cost {N} less." */
@@ -2386,7 +2406,12 @@ export const when = {
     ...(combat !== undefined ? { combat } : {}),
   }),
   /** "Whenever one or more [creatures] are dealt excess damage" (120.4a). */
-  excessDamage: (who: ObjectFilter, noncombatOnly = false): TriggerSpec => ({ on: "excessDamage", who, noncombatOnly }),
+  excessDamage: (who: ObjectFilter, noncombatOnly = false): TriggerSpec => ({
+    on: "isDealtDamage",
+    who,
+    excess: true,
+    ...(noncombatOnly ? { combat: false } : {}),
+  }),
   /** "Whenever the enchanted (or equipped) creature is dealt damage" */
   attachedIsDealtDamage: { on: "isDealtDamage", who: "attached" } as TriggerSpec,
   /** "Whenever one or more [creatures] deal combat damage to a player" */
@@ -2467,7 +2492,7 @@ export const when = {
   /** "Whenever equipped creature deals combat damage to a player" */
   attachedDealsCombatDamageToPlayer: { on: "dealsCombatDamage", who: { attached: "host" }, to: TO_PLAYER } as TriggerSpec,
   /** "Whenever equipped creature becomes untapped" */
-  attachedUntaps: { on: "untaps", who: { attached: "host" } } as TriggerSpec,
+  attachedUntaps: { on: "taps", who: { attached: "host" }, untap: true } as TriggerSpec,
   discard: (whose: "you" | "opponent" | "any" = "opponent"): TriggerSpec => ({ on: "discard", whose }),
   tapsSelf: { on: "taps", who: "self" } as TriggerSpec,
   /** "Whenever you cast a spell that targets this creature" */
@@ -2475,7 +2500,7 @@ export const when = {
   /** "Whenever you scry or surveil" */
   scryOrSurveil: { on: "scryOrSurveil" } as TriggerSpec,
   /** "When you discard this card" (with `fromGraveyard`). */
-  discardSelf: { on: "discardSelf" } as TriggerSpec,
+  discardSelf: { on: "discard", whose: "any", self: true } as TriggerSpec,
   /** "When you cycle this card" (with `fromGraveyard`; `amount.eventAmount`: the X of the cost). */
   cycleSelf: { on: "cycleSelf" } as TriggerSpec,
   /** "Whenever you activate an exhaust ability" */
@@ -2610,7 +2635,7 @@ export const cond = {
   wasCast: { kind: "cast" } as Condition,
   /** "if you scried or surveilled this turn" */
   scried: turnAtLeast({ event: "scry", who: "you" }),
-  firstEndStep: { kind: "firstEndStep" } as Condition,
+  firstEndStep: { kind: "step", step: "end", first: true } as Condition,
   firstCombat: { kind: "firstCombat" } as Condition,
   /** An opponent was dealt combat damage by a legendary creature this turn. */
   opponentDamagedByLegendary: turnAtLeast({
@@ -2657,9 +2682,9 @@ export const cond = {
   /** ∞ ability: the source was harnessed. */
   harnessed: { kind: "harnessed" } as Condition,
   /** Storied: "as long as you have an enduring story". */
-  enduringStory: { kind: "enduringStory" } as Condition,
+  enduringStory: { kind: "designation", which: "enduringStory" } as Condition,
   /** Ascend (702.131): "if you have the city's blessing". */
-  citysBlessing: { kind: "citysBlessing" } as Condition,
+  citysBlessing: { kind: "designation", which: "citysBlessing" } as Condition,
   /** You are the monarch. */
   monarch: { kind: "monarch" } as Condition,
   /** "If this spell's sneak cost was paid". */
@@ -2727,7 +2752,7 @@ export const cond = {
   spellCastFromHand: { kind: "cast", from: "hand" } as Condition,
   /** This spell was cast from a graveyard. */
   spellCastFromGraveyard: { kind: "cast", from: "graveyard" } as Condition,
-  sourceDealtCombatDamage: { kind: "sourceDealtCombatDamage" } as Condition,
+  sourceDealtCombatDamage: { kind: "sourceDealtDamage", combat: true } as Condition,
   /** The source has already dealt damage, combat or not. */
   sourceDealtDamage: { kind: "sourceDealtDamage" } as Condition,
   prime: (a: Amount): Condition => ({ kind: "prime", amount: a }),
@@ -2936,7 +2961,7 @@ export function playerStatic(opts: Omit<PlayerStaticAbilityDef, "kind">): Player
 
 export function prevention(
   filter: ObjectFilter,
-  opts: { noncombatOnly?: boolean; combatOnly?: boolean; bySource?: boolean; label?: string } = {},
+  opts: { noncombatOnly?: boolean; combatOnly?: boolean; source?: ObjectFilter; label?: string } = {},
 ): PreventionAbilityDef {
   return { kind: "prevention", filter, ...opts };
 }

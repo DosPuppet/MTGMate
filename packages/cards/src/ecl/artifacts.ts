@@ -48,12 +48,12 @@ export const ARTIFACTS: Record<string, CardScript> = {
   "Gathering Stone": {
     asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
-      costReducer({ subtypeChosen: true }, 1, "Spells of the chosen type you cast cost {1} less"),
+      costReducer({ chosen: "subtype" }, 1, "Spells of the chosen type you cast cost {1} less"),
       ...[when.entersSelf, when.yourUpkeep].map((w) =>
         triggered(
           w,
           [
-            fx.lookAtTop(1, { filter: { subtypeChosen: true }, rest: "top", store: "g" }),
+            fx.lookAtTop(1, { filter: { chosen: "subtype" }, rest: "top", store: "g" }),
             ...fx.when(
               cond.not(cond.v("g")),
               ...fx.may("Put the top card into your graveyard?", fx.moveTo(ref.libraryTop(ref.you), { to: "graveyard" })),
@@ -86,11 +86,11 @@ export const ARTIFACTS: Record<string, CardScript> = {
     asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
       staticAbility(
-        { types: ["Creature"], controller: "you", subtypeChosen: true },
+        { types: ["Creature"], controller: "you", chosen: "subtype" },
         { power: 2, toughness: 2, addKeywords: ["firstStrike", "trample"] },
         { label: "Your creatures of the chosen type: +2/+2, first strike and trample" },
       ),
-      triggered(when.castSpell("you", { subtypeChosen: true }), [fx.draw(1)], {
+      triggered(when.castSpell("you", { chosen: "subtype" }), [fx.draw(1)], {
         label: "Spell of the chosen type: draw a card",
       }),
     ],
@@ -99,14 +99,14 @@ export const ARTIFACTS: Record<string, CardScript> = {
     // A creature type chosen as it enters, among the eight tribes of Lorwyn.
     asEnters: [fx.chooseForSelf("creatureType", { options: LORWYN_TRIBES })],
     abilities: [
-      triggered(when.enters({ controller: "you", subtypeChosen: true }), [fx.gainLife(1)], {
+      triggered(when.enters({ controller: "you", chosen: "subtype" }), [fx.gainLife(1)], {
         label: "A permanent of the chosen type enters under your control: you gain 1 life",
       }),
       activated({
         mana: "{2}",
         tap: true,
         sacrifice: true,
-        targets: [target.cardInGraveyard("t", { subtypeChosen: true }, "you", "card of the chosen type in your graveyard")],
+        targets: [target.cardInGraveyard("t", { chosen: "subtype" }, "you", "card of the chosen type in your graveyard")],
         effects: [fx.toHand(ref.target())],
         label: "Return a card of the chosen type from your graveyard to your hand",
       }),
@@ -168,7 +168,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
     abilities: [
       manaAbility("C"),
       manaAbility([...ANY], 1, {
-        restriction: { spell: { subtypeChosen: true }, abilityOfSource: { subtypeChosen: true } },
+        restriction: { spell: { chosen: "subtype" }, abilityOfSource: { chosen: "subtype" } },
       }),
     ],
   },

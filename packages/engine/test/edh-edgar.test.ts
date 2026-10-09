@@ -496,7 +496,7 @@ describe("Commander (EDH): Edgar Markov's Vampires", () => {
         p1: { battlefield: ["Twilight Prophet", ...lands("Swamp", 9)], library: ["Champion of Dusk", "Forest", "Forest"] },
       });
       expect(card("Twilight Prophet").keywords).toEqual(expect.arrayContaining(["flying", "ascend"]));
-      expect(s.players.p1?.citysBlessing).toBe(true);
+      expect(s.players.p1?.designations).toContain("citysBlessing");
       s = toNextMain(s);
       expect(idsOf(s, "p1", "hand", "Champion of Dusk")).toHaveLength(1);
       expect([life(s, "p1"), life(s, "p2"), life(s, "p3")]).toEqual([25, 15, 15]);
@@ -506,18 +506,18 @@ describe("Commander (EDH): Edgar Markov's Vampires", () => {
       let s = scenario({
         p1: { battlefield: ["Twilight Prophet", ...lands("Swamp", 8)], library: ["Champion of Dusk", "Forest"] },
       });
-      expect(s.players.p1?.citysBlessing).toBeFalsy();
+      expect(s.players.p1?.designations ?? []).not.toContain("citysBlessing");
       s = toNextMain(s);
       expect(life(s, "p2")).toBe(20);
 
       let t = scenario({
         p1: { battlefield: ["Twilight Prophet", "Viscera Seer", ...lands("Swamp", 8)], library: ["Champion of Dusk", "Forest"] },
       });
-      expect(t.players.p1?.citysBlessing).toBe(true);
+      expect(t.players.p1?.designations).toContain("citysBlessing");
       const seer = idOf(t, "p1", "battlefield", "Viscera Seer");
       t = settle(activateLabel(t, "p1", seer, "scry", { sacrifice: [seer] }));
       t = toNextMain(t);
-      expect(t.players.p1?.citysBlessing).toBe(true);
+      expect(t.players.p1?.designations).toContain("citysBlessing");
       expect(life(t, "p2")).toBe(15);
     });
   });

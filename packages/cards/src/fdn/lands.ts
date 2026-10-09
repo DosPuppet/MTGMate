@@ -86,7 +86,7 @@ export const LANDS: Record<string, CardScript> = {
     abilities: [
       manaAbility("C"),
       manaAbility(["W", "U", "B", "R", "G"], 1, {
-        restriction: { spell: { types: ["Creature"], subtypeChosen: true }, abilityOfCreature: { subtypeChosen: true } },
+        restriction: { spell: { types: ["Creature"], chosen: "subtype" }, abilityOfCreature: { chosen: "subtype" } },
       }),
     ],
   },

@@ -111,10 +111,10 @@ export type Effect =
   | { op: "destroy"; what: Ref; store?: string; noRegenerate?: boolean }
   /** "Tap any number of untapped [permanents] you control": `store` remembers their number. */
   /**
-   * Tap chosen untapped permanents; `exactly`: none or exactly N (conspire: "you may tap two untapped creatures");
-   * `sharesColorWith`: that share a color with the designated object.
+   * Tap chosen untapped permanents matching the filter (resolved by `withX`); `exactly`: none or exactly N (conspire:
+   * "you may tap two untapped creatures [that share a color with it]").
    */
-  | { op: "tapChosen"; filter: ObjectFilter; store: string; exactly?: number; sharesColorWith?: Ref }
+  | { op: "tapChosen"; filter: ObjectFilter; store: string; exactly?: number }
   /** "Put those counters on [target]": the counters the event object had (last known information). */
   | { op: "lkiCountersTo"; to: Ref }
   /** Moves a counter from one permanent onto another; its kind at your choice if it has several (Nesting Grounds). */

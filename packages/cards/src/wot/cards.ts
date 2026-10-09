@@ -203,10 +203,10 @@ export const CARDS: Record<string, CardScript> = {
   "Kindred Discovery": {
     asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
-      triggered(when.enters({ ...YOUR_CREATURES, subtypeChosen: true }), [fx.draw(1)], {
+      triggered(when.enters({ ...YOUR_CREATURES, chosen: "subtype" }), [fx.draw(1)], {
         label: "A creature of the chosen type enters: draw",
       }),
-      triggered(when.attacks({ ...YOUR_CREATURES, subtypeChosen: true }), [fx.draw(1)], {
+      triggered(when.attacks({ ...YOUR_CREATURES, chosen: "subtype" }), [fx.draw(1)], {
         label: "A creature of the chosen type attacks: draw",
       }),
     ],
@@ -550,7 +550,7 @@ export const CARDS: Record<string, CardScript> = {
                 ref.zone("battlefield", ref.eachPlayer, {
                   types: ["Creature"],
                   attacking: true,
-                  sharesCreatureTypeWith: ref.eventObject,
+                  shares: { what: "creatureType", with: ref.eventObject },
                 }),
                 ref.eventObject,
               ),

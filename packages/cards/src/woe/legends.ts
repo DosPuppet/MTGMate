@@ -70,7 +70,7 @@ export const LEGENDS: Record<string, CardScript> = {
   "Talion, the Kindly Lord": {
     asEnters: [fx.chooseForSelf("number")],
     abilities: [
-      triggered(when.castSpell("opponent", { numberChosen: true }), [fx.loseLife(2, ref.eventPlayer), fx.draw(1)], {
+      triggered(when.castSpell("opponent", { chosen: "number" }), [fx.loseLife(2, ref.eventPlayer), fx.draw(1)], {
         label: "Opponent's spell of the chosen number: they lose 2 life, you draw",
       }),
     ],
@@ -135,7 +135,7 @@ export const LEGENDS: Record<string, CardScript> = {
       }),
       staticAbility(
         { types: ["Creature"], controller: "you", withCounter: "+1/+1" },
-        { gainLinkedActivated: true },
+        { gainAbilitiesOf: { zone: "linked" } },
         { label: "Your creatures with a +1/+1 counter: activated abilities of the exiled creature cards" },
       ),
       activated({

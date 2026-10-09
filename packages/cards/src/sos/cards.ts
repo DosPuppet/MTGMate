@@ -146,7 +146,7 @@ export const CARDS: Record<string, CardScript> = {
       triggered(when.entersSelf, [fx.chooseForSelf("landName")], { label: "Choose a land card name" }),
       manaAbility("C"),
       staticAbility(
-        { types: ["Land"], nameChosen: true },
+        { types: ["Land"], chosen: "cardName" },
         { addAbilities: [manaAbility("C")] },
         {
           label: 'Lands with the chosen name have "{T}: Add {C}"',

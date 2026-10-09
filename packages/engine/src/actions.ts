@@ -384,25 +384,17 @@ function _redSource(s: GameState, source: DamageSource): boolean {
 
 export function dealDamage(s: GameState, source: DamageSource, target: string, amount: number, combat: boolean): void {
   if (amount <= 0) return;
-  // Ancient Adamantoise: damage to its controller and to their other permanents is dealt to it instead.
-  const owner = isPlayer(s, target)
-    ? target
-    : s.objects[target]?.zone === "battlefield"
-      ? s.objects[target]?.controller
-      : undefined;
-  const absorber = owner
-    ? s.battlefield.find(
-        (id) => id !== target && s.objects[id]?.controller === owner && isCreature(s, id) && hasKeyword(s, id, "absorbsDamage"),
-      )
-    : undefined;
-  if (absorber) target = absorber;
-  // With Great Power…: "damage that would be dealt to you is dealt to enchanted creature instead".
-  for (const a of eventReplacements(s, "damage")) {
-    if (!a.r.redirectToAttached || !a.sourceId || !damageReplacementApplies(s, a, source, target, combat)) continue;
-    const host = s.objects[a.sourceId]?.attachedTo;
-    if (host && s.objects[host]?.zone === "battlefield" && host !== target) {
-      target = host;
-      break;
+  // Redirections (`redirectTo`): to the replacement's source first (Ancient Adamantoise: "damage that would be dealt
+  // to you and other permanents you control is dealt to it instead"), then to the permanent the source is attached to
+  // (With Great Power…: "damage that would be dealt to you is dealt to enchanted creature instead").
+  for (const to of ["source", "attached"] as const) {
+    for (const a of eventReplacements(s, "damage")) {
+      if (a.r.redirectTo !== to || !a.sourceId || !damageReplacementApplies(s, a, source, target, combat)) continue;
+      const into = to === "source" ? a.sourceId : s.objects[a.sourceId]?.attachedTo;
+      if (into && s.objects[into]?.zone === "battlefield" && into !== target) {
+        target = into;
+        break;
+      }
     }
   }
   // Sunspine Lynx: "damage can't be prevented"; Frenzied Baloth: combat damage.
@@ -417,7 +409,7 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
   // Another player's prevention therefore comes before the modifications (The Mindskinner mills the least), their own
   // after (New Way Forward sends back the most).
   const reps = eventReplacements(s, "damage").filter(
-    (a) => !a.r.redirectToAttached && damageReplacementApplies(s, a, source, target, combat),
+    (a) => !a.r.redirectTo && damageReplacementApplies(s, a, source, target, combat),
   );
   const foreignPrevention = unpreventable ? undefined : reps.find((a) => a.r.modify.prevent && a.controller !== victim);
   if (foreignPrevention) {
@@ -435,8 +427,10 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
   for (const p of unpreventable ? [] : preventions(s)) {
     if (p.ab.noncombatOnly && combat) continue;
     if (p.ab.combatOnly && !combat) continue;
-    if (p.ab.bySource) {
-      if (source.id === p.sourceId) return;
+    // Fog Bank: the damage dealt by matching sources (`source`: itself).
+    if (p.ab.source) {
+      const v = sourceView(s, source.id, source.defId, source.controller);
+      if (v && matchesView(v, p.ab.source, p.controller, p.sourceId)) return;
       continue;
     }
     if (targetObj?.zone === "battlefield" && matchesObjectFilter(s, p.controller, target, p.ab.filter, p.sourceId)) return;

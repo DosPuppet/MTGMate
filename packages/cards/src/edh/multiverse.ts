@@ -410,12 +410,12 @@ export const EDH_MULTIVERSE: Record<string, CardScript> = {
     abilities: [
       staticAbility(
         CREATURE_YOU,
-        { addProtections: [protection.from({ typeChosen: true }, "Protection from the chosen type")] },
+        { addProtections: [protection.from({ chosen: "cardType" }, "Protection from the chosen type")] },
         {
           label: "Creatures you control have protection from the chosen type",
         },
       ),
-      playerStatic({ protection: { typeChosen: true }, label: "You have protection from the chosen type" }),
+      playerStatic({ protection: { chosen: "cardType" }, label: "You have protection from the chosen type" }),
     ],
   },
   "Tamiyo, Upriser Crowned": {

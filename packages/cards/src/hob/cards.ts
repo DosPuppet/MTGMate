@@ -265,7 +265,7 @@ export const CARDS: Record<string, CardScript> = {
     asEnters: [fx.chooseForSelf("parity")],
     abilities: [
       triggeredModal(
-        when.castSpell("opponent", { parityChosen: true }),
+        when.castSpell("opponent", { chosen: "parity" }),
         [
           mode("A +1/+1 counter on Gollum", [], [fx.addCounters(ref.self, 1)]),
           mode("Drain 2", [], fx.drain(2)),

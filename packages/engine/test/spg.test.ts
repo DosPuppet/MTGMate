@@ -76,7 +76,7 @@ describe("Special Guests", () => {
       expect(s.exile.map((id) => nameOf(s, id))).toEqual(["Shock"]);
       const mox = idOf(s, "p1", "battlefield", "Chrome Mox");
       const def = s.defs[s.objects[mox]?.defId ?? ""];
-      expect(def?.abilities.find((a) => a.kind === "mana")).toMatchObject({ produceLinkedColors: true });
+      expect(def?.abilities.find((a) => a.kind === "mana")).toMatchObject({ produceColorsOf: { kind: "linked" } });
     });
   });
 

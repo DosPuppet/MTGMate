@@ -1,5 +1,16 @@
 /** Engine types — filters, targets, triggers, conditions, references and amounts. Re-exported by `types.ts`. */
-import type { CardType, CastVia, Color, Keyword, ManaType, PlayerId, Step, TurnLogQuery, Zone } from "../types";
+import type {
+  CardType,
+  CastVia,
+  Color,
+  Keyword,
+  ManaType,
+  PlayerDesignation,
+  PlayerId,
+  Step,
+  TurnLogQuery,
+  Zone,
+} from "../types";
 
 export interface TargetSpec {
   id: string;
@@ -91,10 +102,8 @@ export interface TargetFilter {
   /** `controller`: that you control; `source`: whose source matches (Scientist Supreme: "from an artifact source"). */
   stackItems?: {
     singleTarget?: boolean;
-    abilitiesOnly?: boolean;
-    /** Spells only ("target spell with a single target": Misdirection). */
-    spellsOnly?: boolean;
-    triggeredOnly?: boolean;
+    /** Only spells ("target spell with a single target": Misdirection), only abilities, or only triggered abilities. */
+    only?: "spells" | "abilities" | "triggered";
     controller?: "you";
     source?: ObjectFilter;
   };
@@ -145,15 +154,12 @@ export interface ObjectFilter {
    * legendary permanent you control"); under `not`: "doesn't have the same name as a token you control" (Yenna). */
   sameNameAs?: ObjectFilter;
   /**
-   * Shares a creature type with the designated object, evaluated on resolution by `withX` (zone references, `moveAll`,
-   * search; Shared Animosity: the event object).
+   * Shares a characteristic with the designated objects, resolved on resolution by `withX`: a creature type (Shared
+   * Animosity: the event object; Path of Ancestry: your commanders), a card type (Braids, Arisen Nightmare: their last
+   * known information if they left the battlefield), a color (Raiding Schemes) or the name (Dragonlord Kolaghan: "with
+   * the same name as a card in their graveyard"). Nothing designated: nothing matches.
    */
-  sharesCreatureTypeWith?: Ref;
-  /** "That shares a card type with it" (Braids, Arisen Nightmare): the card types of the designated objects (their last
-   * known information if they left the battlefield), resolved by `withX`. */
-  sharesCardTypeWith?: Ref;
-  /** Same name as the designated object, resolved by `withX` (Dragonlord Kolaghan: "with the same name as a card in their graveyard"). */
-  nameOf?: Ref;
+  shares?: { what: "creatureType" | "cardType" | "color" | "name"; with: Ref };
   /** Equipped creature (at least one Equipment attached). */
   equipped?: boolean;
   /** Modified (700.9): has a counter on it, is equipped, or is enchanted by an Aura its controller controls. */
@@ -208,13 +214,15 @@ export interface ObjectFilter {
   minToughness?: number;
   /** Was dealt damage by the source this turn (Predator Ooze). */
   damagedBySource?: boolean;
-  /** Of the creature type / color chosen by the source as it entered. */
-  subtypeChosen?: boolean;
-  colorChosen?: boolean;
+  /**
+   * Of the choice made by the source (its `chosen`), resolved by `withChosen`: the creature type or color chosen as it
+   * entered (`subtype`, `color`); the name (`cardName`, Petrified Hamlet: "lands with the chosen name"); the card type
+   * (`cardType`, Arachne: an entry mode whose options are card types); the parity of the mana value (`parity`, Gollum,
+   * Riddle Master); a mana value, power or toughness equal to the chosen number (`number`, Talion, the Kindly Lord).
+   */
+  chosen?: "subtype" | "color" | "cardName" | "cardType" | "parity" | "number";
   /** Put into its current zone this turn ("card put into a graveyard this turn"). */
   enteredThisTurn?: boolean;
-  /** Of the card type chosen by the source (Arachne: an entry mode whose options are card types). */
-  typeChosen?: boolean;
   /** Put into its zone from the battlefield this turn (Supper for Spiders). */
   fromBattlefieldThisTurn?: boolean;
   /** Legendary (true) or nonlegendary (false). */
@@ -246,12 +254,6 @@ export interface ObjectFilter {
    * Key: "an artifact card with a mana ability").
    */
   withActivatedAbility?: boolean | "mana";
-  /** Mana value of the parity chosen by the source (Gollum, Riddle Master). */
-  parityChosen?: boolean;
-  /** Mana value, power or toughness equal to the number chosen by the source (Talion, the Kindly Lord). */
-  numberChosen?: boolean;
-  /** Of the name chosen by the source as it entered (Petrified Hamlet: "lands with the chosen name"). */
-  nameChosen?: boolean;
   /** Dealt damage this turn (Treacherous Greed). */
   dealtDamageThisTurn?: boolean;
   /** Suspected or not (701.60: "target suspected creature"). */
@@ -420,7 +422,8 @@ export type TriggerSpec =
       spellToSoleTarget?: boolean;
     }
   /** "Whenever an opponent discards a card" */
-  | { on: "discard"; whose: "you" | "opponent" | "any" }
+  /** `self`: "when you discard this card" (triggers from the graveyard, Titanbones). */
+  | { on: "discard"; whose: "you" | "opponent" | "any"; self?: boolean }
   /** "Whenever [this creature] becomes the target of a spell or ability [an opponent controls]" */
   /** `spells`: matching spells too ("a creature or creature spell you control", Surrak). */
   | {
@@ -436,21 +439,19 @@ export type TriggerSpec =
       /** A targeted player counts too (Loki, God of Mischief: "a player or permanent"). */
       players?: boolean;
       /** Only by an ability (not a spell). */
-      abilitiesOnly?: boolean;
+      only?: "abilities";
     }
   /** "Whenever [equipped creature] becomes untapped" */
-  | { on: "untaps"; who: "self" | ObjectFilter }
   /** "Whenever [this creature] becomes tapped" */
   /** `byYou`: "whenever you tap [a creature]" (Solitary Sanctuary: an opponent's creature). */
   /**
    * `cause: "teamwork"`: tapped to pay for teamwork (Agent Maria Hill); `firstThisTurn`: the first time it becomes
    * tapped this turn (Captain America, Living Legend).
    */
-  | { on: "taps"; who: "self" | ObjectFilter; byYou?: boolean; cause?: "teamwork"; firstThisTurn?: boolean }
+  /** `untap`: "whenever [it] becomes untapped" instead (Fishing Pole). */
+  | { on: "taps"; who: "self" | ObjectFilter; byYou?: boolean; cause?: "teamwork"; firstThisTurn?: boolean; untap?: boolean }
   /** "Whenever you scry or surveil" (Reality Fracture). */
   | { on: "scryOrSurveil" }
-  /** "When you discard this card" (triggers from the graveyard). */
-  | { on: "discardSelf" }
   /** "When you cast this spell" (the source is the spell on the stack). */
   | { on: "castSelf" }
   /** Saga chapter (714.2): a lore counter makes the count reach or exceed one of these chapters. */
@@ -483,11 +484,10 @@ export type TriggerSpec =
    * `"opponent"` (from any source); `combat`: only combat damage (`true`) or the other damage (`false`). The event
    * object is the source for a damaged player.
    */
-  | { on: "isDealtDamage"; who: "self" | "attached" | "you" | "opponent" | ObjectFilter; combat?: boolean }
+  /** `excess`: "are dealt excess [noncombat] damage" (120.4a, Magmatic Galleon): the amount is the excess. */
+  | { on: "isDealtDamage"; who: "self" | "attached" | "you" | "opponent" | ObjectFilter; combat?: boolean; excess?: boolean }
   /** "Whenever you copy a [matching] spell" (Kalamax, the Stormsire); `ref.eventObject`: the copy. */
   | { on: "copySpell"; filter?: ObjectFilter }
-  /** "Whenever one or more [creatures] are dealt excess [noncombat] damage" (120.4a). */
-  | { on: "excessDamage"; who: ObjectFilter; noncombatOnly?: boolean }
   /** "Whenever one or more [creatures] deal combat damage to a player": once per step and per player. */
   /** `to`: only the damage dealt to these players ("to you": Tamiyo, Upriser Crowned). */
   | { on: "combatDamageBatch"; who: ObjectFilter; to?: TargetFilter }
@@ -586,8 +586,6 @@ export type Condition =
   /** X of the spell resolving. */
   | { kind: "xAtLeast"; n: number }
   /** "as long as you have N or more unspent mana" (Ozai, the Phoenix King). */
-  /** It is the first end step of this turn (Y'shtola Rhul). */
-  | { kind: "firstEndStep" }
   /** It is the first combat phase of the turn (Genji Glove). */
   | { kind: "firstCombat" }
   /** You control a creature with the greatest power or tied for it (Summon: Fenrir). */
@@ -599,10 +597,8 @@ export type Condition =
   | { kind: "spentColor"; color: ManaType; n: number }
   /** Sneak: declare blockers step, with an unblocked attacker you control. */
   | { kind: "sneakWindow" }
-  /** You have an enduring story (Storied). */
-  | { kind: "enduringStory" }
-  /** You have the city's blessing (ascend, 702.131). */
-  | { kind: "citysBlessing" }
+  /** You have a designation kept for the game: an enduring story (Storied), the city's blessing (ascend, 702.131). */
+  | { kind: "designation"; which: PlayerDesignation }
   /** You are the monarch (724). */
   | { kind: "monarch" }
   /** The source is harnessed (Harness): its ∞ abilities are active. */
@@ -621,12 +617,10 @@ export type Condition =
   | { kind: "attackingAlone" }
   /** An opponent was dealt noncombat damage last turn (Command the Stage). */
   | { kind: "opponentDealtNoncombatDamageLastTurn" }
-  /** The source has already dealt combat damage (Ruric Thar, Magecrusher). */
-  | { kind: "sourceDealtCombatDamage" }
   /** Sieges: the source chose this mode as it entered. */
   | { kind: "chosenMode"; mode: string }
-  /** The source has already dealt damage, combat or not (Karakyk Guardian). */
-  | { kind: "sourceDealtDamage" }
+  /** The source has already dealt damage, combat or not (Karakyk Guardian), or combat damage (`combat`: Ruric Thar). */
+  | { kind: "sourceDealtDamage"; combat?: boolean }
   /** Room (709.5): the source's door N is locked; all its doors are unlocked. */
   | { kind: "doorLocked"; door: number }
   /** Class: the source is at exactly this level. Case: the source is solved. */
@@ -641,7 +635,8 @@ export type Condition =
   /** It is at least your Nth turn (Jace Reawakened: "not during your first three turns"). */
   | { kind: "turnsTakenAtLeast"; n: number }
   /** It is this step (Smoky Lounge: "your first main phase"). */
-  | { kind: "step"; step: Step }
+  /** `first`: the first end step of the turn (Y'shtola Rhul). */
+  | { kind: "step"; step: Step; first?: boolean }
   /** The amount is a prime number (Zimone, All-Questioning). */
   | { kind: "prime"; amount: Amount }
   /** At least one of the conditions. */

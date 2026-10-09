@@ -305,7 +305,7 @@ export const BLUE: Record<string, CardScript> = {
   "Fog Bank": {
     abilities: [
       prevention({ self: true }, { combatOnly: true, label: "Combat damage dealt to it prevented" }),
-      prevention({}, { combatOnly: true, bySource: true, label: "Combat damage it deals prevented" }),
+      prevention({}, { combatOnly: true, source: { self: true }, label: "Combat damage it deals prevented" }),
     ],
   },
   "Gateway Sneak": {

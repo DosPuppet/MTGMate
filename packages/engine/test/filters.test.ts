@@ -214,11 +214,11 @@ describe("ObjectFilter.compare: dynamic comparisons (one field removed per test)
     const s = board(1);
     expect(matching(s, { compare: [cmp.parity("odd")] })).toEqual(["Trois", "Un"]);
     expect(matching(s, { compare: [cmp.parity("even")] })).toEqual(["Deux", "Zero"]);
-    expect(withChosen({ parityChosen: true }, { chosen: { parity: "odd" } })).toEqual({
+    expect(withChosen({ chosen: "parity" }, { chosen: { parity: "odd" } })).toEqual({
       compare: [{ what: "manaValue", cmp: "odd" }],
     });
     // With no choice: even.
-    expect(matching(s, withChosen({ parityChosen: true }, {}))).toEqual(["Deux", "Zero"]);
+    expect(matching(s, withChosen({ chosen: "parity" }, {}))).toEqual(["Deux", "Zero"]);
   });
 
   it("an unresolved amount (filter read directly on a view) is ignored, like the former fields", () => {

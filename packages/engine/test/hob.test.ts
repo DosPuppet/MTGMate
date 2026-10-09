@@ -7,7 +7,6 @@ import { describe, expect, it } from "vitest";
 import { createTokens, destroy } from "../src/actions";
 import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
-import { playerStatic } from "../src/statics";
 import { canBlock } from "../src/turn";
 import type { ActionOption, CardDef, ChoiceRequest, ChoiceValue, GameState, PlayerId, TokenSpec } from "../src/types";
 import {
@@ -275,7 +274,7 @@ describe("The Hobbit", () => {
       s = act(s, "p1", { type: "pass" });
       s = act(s, "p2", { type: "pass" });
       s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number > 3);
-      expect(playerStatic(s, "p1", "enduringStory")).toBe(true);
+      expect(s.players.p1?.designations).toContain("enduringStory");
       // Free Equip {2}, with a single untapped Mountain that stays untapped.
       s = settle(activate(s, "p1", pole, undefined, { targets: { t: [kili] } }));
       expect(s.objects[pole]?.attachedTo).toBe(kili);
@@ -297,7 +296,7 @@ describe("The Hobbit", () => {
         });
         s = settle(cast(s, "p1", "Iron Hills Blacksmith"));
         s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number > 3);
-        expect(playerStatic(s, "p1", "enduringStory")).toBe(true);
+        expect(s.players.p1?.designations).toContain("enduringStory");
         return s;
       };
       const tappedPlains = (s: GameState) => idsOf(s, "p1", "battlefield", "Plains").filter((id) => s.objects[id]?.tapped).length;
@@ -323,7 +322,7 @@ describe("The Hobbit", () => {
 
     it("without storied, Equip is paid normally", () => {
       const s = scenario({ p1: { battlefield: ["Kíli the Resourceful", "Fishing Pole", "Bear Cub"] } });
-      expect(playerStatic(s, "p1", "enduringStory")).toBe(false);
+      expect(s.players.p1?.designations ?? []).not.toContain("enduringStory");
       expect(canActivate(s, "p1", idOf(s, "p1", "battlefield", "Fishing Pole"))).toBe(false);
     });
   });
@@ -1913,7 +1912,7 @@ describe("lot A, red", () => {
           },
         });
         s = settle(cast(s, "p1", "Dori, Bearer of Friends"), yes);
-        expect(playerStatic(s, "p1", "enduringStory")).toBe(true);
+        expect(s.players.p1?.designations).toContain("enduringStory");
         expect(namesIn(s, s.players.p1?.hand)).toEqual(["Island", "Island"]);
         expect(s.players.p2?.life).toBe(18);
       });

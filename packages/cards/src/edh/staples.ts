@@ -47,7 +47,7 @@ const OPPONENT_SPELL_OR_NONLAND: TargetSpec = {
   filter: { spells: { controller: "opponent" }, objects: { permanent: true, notTypes: ["Land"], controller: "opponent" } },
 };
 
-const CREATURE_OF_CHOSEN_TYPE = { types: ["Creature" as const], subtypeChosen: true };
+const CREATURE_OF_CHOSEN_TYPE = { types: ["Creature" as const], chosen: "subtype" as const };
 
 export const EDH_STAPLES: Record<string, CardScript> = {
   // --- Protection ---

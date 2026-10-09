@@ -49,7 +49,10 @@ export const COMMANDER_CARDS: Record<string, CardScript> = {
         commanderIdentity: true,
         // "When that mana is spent to cast a creature spell that shares a creature type with your commander,
         // scry 1."
-        rider: { spell: { types: ["Creature"], sharesCreatureTypeWith: ref.commanders() }, effects: [fx.scry(1)] },
+        rider: {
+          spell: { types: ["Creature"], shares: { what: "creatureType", with: ref.commanders() } },
+          effects: [fx.scry(1)],
+        },
       }),
     ],
   },

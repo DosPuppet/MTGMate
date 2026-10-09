@@ -721,7 +721,7 @@ describe("Meta, lot M5", () => {
       },
     });
     s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Thorin Oakenshield") }));
-    expect(playerStatic(s, "p1", "enduringStory")).toBe(true);
+    expect(s.players.p1?.designations).toContain("enduringStory");
     const pole = idOf(s, "p1", "battlefield", "Fishing Pole");
     expect(chars(s, pole).abilities.some((a) => a.kind === "triggered" && a.trigger.on === "becomesTarget")).toBe(true);
   });

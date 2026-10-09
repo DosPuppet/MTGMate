@@ -135,7 +135,7 @@ export const UNIQUE: Record<string, CardScript> = {
     abilities: [
       staticAbility(
         "self",
-        { gainActivatedFromGraveyard: { subtype: "Elf" } },
+        { gainAbilitiesOf: { zone: "graveyard", filter: { subtype: "Elf" } } },
         {
           label: "The activated abilities of Elf cards in your graveyard",
         },

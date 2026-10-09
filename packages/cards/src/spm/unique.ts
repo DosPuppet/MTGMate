@@ -159,7 +159,7 @@ export const UNIQUE: Record<string, CardScript> = {
             "The Clone Saga",
             "Whenever a creature with the chosen name deals combat damage to a player this turn, draw a card.",
             [
-              triggered(when.combatDamage({ types: ["Creature"], nameChosen: true }, true), [fx.draw(1)], {
+              triggered(when.combatDamage({ types: ["Creature"], chosen: "cardName" }, true), [fx.draw(1)], {
                 label: "A creature with the chosen name deals damage to a player: draw a card",
               }),
             ],
@@ -324,7 +324,7 @@ export const UNIQUE: Record<string, CardScript> = {
     abilities: [
       {
         kind: "costReduction",
-        filter: { typeChosen: true },
+        filter: { chosen: "cardType" },
         generic: -1,
         everyone: true,
         label: "Spells of the chosen type cost {1} more",
@@ -346,7 +346,7 @@ export const UNIQUE: Record<string, CardScript> = {
         event: "damage",
         to: "you",
         modify: {},
-        redirectToAttached: true,
+        redirectTo: "attached",
         label: "Damage that would be dealt to you is dealt to the enchanted creature instead",
       }),
     ],

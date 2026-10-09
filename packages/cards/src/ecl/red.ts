@@ -187,7 +187,7 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       eventReplacement({
         event: "damage",
-        source: { controller: "you", subtypeChosen: true },
+        source: { controller: "you", chosen: "subtype" },
         modify: { times: 2 },
         label: "Your sources of the chosen type deal double damage",
       }),

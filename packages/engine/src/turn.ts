@@ -53,7 +53,6 @@ import {
   untapObject,
 } from "./state";
 import {
-  addPlayerEffect,
   cantLose,
   consumePlayerEffect,
   playerEffectValues,
@@ -1921,21 +1920,25 @@ function stateBasedActionsOnce(s: GameState): boolean {
     // with this ability gains an enduring story, for the rest of the game.
     for (const id of s.battlefield) {
       const p = obj(s, id).controller;
-      if (!s.defs[obj(s, id).defId]?.storied || playerStatic(s, p, "enduringStory")) continue;
+      const pl = s.players[p];
+      if (!pl || !s.defs[obj(s, id).defId]?.storied || pl.designations?.includes("enduringStory")) continue;
       const n = s.battlefield.filter((x) => {
         if (obj(s, x).controller !== p) return false;
         const c = chars(s, x);
         return c.types.includes("Artifact") || c.supertypes.includes("Legendary") || c.subtypes.includes("Saga");
       }).length;
-      if (n >= 3) addPlayerEffect(s, p, { enduringStory: true }, null);
+      if (n >= 3) {
+        pl.designations = [...(pl.designations ?? []), "enduringStory"];
+        bump(s);
+      }
     }
     // Ascend (702.131b): the controller of a permanent that has it and controls ten or more permanents gets the
     // city's blessing for the rest of the game (a static ability, checked at the same moments as these actions).
     for (const id of s.battlefield) {
       const pl = s.players[obj(s, id).controller];
-      if (!pl || pl.citysBlessing || !hasKeyword(s, id, "ascend")) continue;
+      if (!pl || pl.designations?.includes("citysBlessing") || !hasKeyword(s, id, "ascend")) continue;
       if (s.battlefield.filter((x) => obj(s, x).controller === pl.id).length >= 10) {
-        pl.citysBlessing = true;
+        pl.designations = [...(pl.designations ?? []), "citysBlessing"];
         bump(s);
       }
     }

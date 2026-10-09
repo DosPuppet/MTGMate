@@ -584,7 +584,7 @@ export const UNIQUE: Record<string, CardScript> = {
         },
       ),
       staticAbility(
-        { types: ["Creature"], controller: "you", subtypeChosen: true, other: true },
+        { types: ["Creature"], controller: "you", chosen: "subtype", other: true },
         { power: 1, toughness: 1 },
         {
           label: "+1/+1",

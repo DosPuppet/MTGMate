@@ -141,7 +141,7 @@ export const BLUE: Record<string, CardScript> = {
           {
             id: "t",
             label: "activated or triggered ability you control from a creature source",
-            filter: { stackItems: { abilitiesOnly: true, controller: "you", source: { types: ["Creature"] } } },
+            filter: { stackItems: { only: "abilities", controller: "you", source: { types: ["Creature"] } } },
           },
         ],
         effects: [fx.copySpell(ref.target(), 1)],
@@ -461,7 +461,7 @@ export const BLUE: Record<string, CardScript> = {
   },
   "Loki, God of Mischief": {
     abilities: [
-      triggered({ on: "becomesTarget", who: {}, players: true, abilitiesOnly: true, by: "you" }, [fx.draw(1)], {
+      triggered({ on: "becomesTarget", who: {}, players: true, only: "abilities", by: "you" }, [fx.draw(1)], {
         oncePerTurn: true,
         label: "A player or permanent becomes the target of an ability you control: draw (once each turn)",
       }),

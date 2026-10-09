@@ -1233,19 +1233,44 @@ function printedAbilityMana(s: GameState, source: ObjectId, ab: ActivatedAbility
   return { ...m, generic: Math.max(0, m.generic - own.generic), colored };
 }
 
-/** Reduction specific to an ability's target (Warrior's Blades, Dragonfire Blade, equip reduced by the targeted creature). */
-function targetReduction(s: GameState, player: PlayerId, ab: ActivatedAbilityDef, target: ObjectId | undefined): number {
+/** Does the ability's own reduction read its target ("{1} less for each color of target creature")? */
+function reductionReadsTarget(ab: ActivatedAbilityDef): boolean {
+  const red = ab.reduction;
+  if (!red) return false;
+  let hit = readsTargetMemo.get(red);
+  if (hit === undefined) {
+    hit = JSON.stringify(red.generic).includes('"kind":"target"');
+    readsTargetMemo.set(red, hit);
+  }
+  return hit;
+}
+const readsTargetMemo = new WeakMap<object, boolean>();
+
+/**
+ * Reduction specific to an ability's target: its own reduction when it reads the target (Warrior's Blades: "for each
+ * +1/+1 counter on target creature"; Dragonfire Blade: "for each color of target creature"), the equip reductions of
+ * the targeted creature.
+ */
+function targetReduction(
+  s: GameState,
+  player: PlayerId,
+  source: ObjectId,
+  ab: ActivatedAbilityDef,
+  target: ObjectId | undefined,
+): number {
   if (!target || !s.objects[target]) return 0;
-  return (
-    (ab.reduceByTargetColors ? chars(s, target).colors.length : 0) +
-    (ab.reduceByTargetCounters ? (s.objects[target]?.counters["+1/+1"] ?? 0) : 0) +
-    equipDiscount(s, player, ab, target)
-  );
+  let own = 0;
+  const red = ab.reduction;
+  if (red && reductionReadsTarget(ab) && (!red.condition || checkCondition(s, red.condition, player, source))) {
+    const ctx = reductionContext(s, player, source, s.objects[source]?.defId ?? "");
+    own = Math.max(0, evalAmount(s, { ...ctx, targets: { [ab.targets?.[0]?.id ?? "t"]: [target] } }, red.generic));
+  }
+  return own + equipDiscount(s, player, ab, target);
 }
 
 /** Does the ability have a cost that depends on its target? */
 export function costDependsOnTarget(ab: ActivatedAbilityDef): boolean {
-  return !!ab.reduceByTargetColors || !!ab.reduceByTargetCounters || !!ab.equip;
+  return reductionReadsTarget(ab) || !!ab.equip;
 }
 
 /**
@@ -1264,9 +1289,9 @@ export function abilityManaCost(
   const byTarget =
     target === "best"
       ? costDependsOnTarget(ab)
-        ? Math.max(0, ...s.battlefield.map((c) => targetReduction(s, player, ab, c)))
+        ? Math.max(0, ...s.battlefield.map((c) => targetReduction(s, player, source, ab, c)))
         : 0
-      : targetReduction(s, player, ab, target);
+      : targetReduction(s, player, source, ab, target);
   // A special action (turning face up, plotting, unlocking) is not an activated ability: Agatha's Soul Cauldron ("to
   // activate abilities") doesn't apply to it.
   const mana = ab.specialAction ? ab.cost.mana : abilityMana(s, source, ab);
@@ -1277,7 +1302,8 @@ export function abilityReduction(s: GameState, player: PlayerId, source: ObjectI
   const mods = abilityCostReduction(s, player, source, ab);
   const red = ab.reduction;
   const tax = chosenNameTax(s, source) - mods;
-  if (!red) return -tax;
+  // A reduction that reads the target is counted with the target (`targetReduction`).
+  if (!red || reductionReadsTarget(ab)) return -tax;
   // "This ability costs {N} less to activate" (Starport Security, Survey Mechan, The Dominion Bracelet).
   if (red.condition && !checkCondition(s, red.condition, player, source)) return 0;
   return -tax + Math.max(0, evalAmount(s, reductionContext(s, player, source, s.objects[source]?.defId ?? ""), red.generic));

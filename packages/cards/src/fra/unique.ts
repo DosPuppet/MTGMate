@@ -124,7 +124,7 @@ export const UNIQUE: Record<string, CardScript> = {
     ],
   },
   "Kindred Judgment": {
-    spell: spell([], [fx.chooseForSelf("creatureType"), fx.destroyAll({ types: ["Creature"], not: { subtypeChosen: true } })]),
+    spell: spell([], [fx.chooseForSelf("creatureType"), fx.destroyAll({ types: ["Creature"], not: { chosen: "subtype" } })]),
   },
   "Danitha, Sword of Hope": {
     abilities: [

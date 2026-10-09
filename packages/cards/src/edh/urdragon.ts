@@ -264,7 +264,7 @@ export const EDH_URDRAGON: Record<string, CardScript> = {
     asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
       staticAbility(
-        { types: ["Creature"], subtypeChosen: true },
+        { types: ["Creature"], chosen: "subtype" },
         { addKeywords: ["shroud"] },
         { label: "Creatures of the chosen type have shroud" },
       ),
@@ -367,7 +367,10 @@ export const EDH_URDRAGON: Record<string, CardScript> = {
         { label: "Other creatures you control have haste" },
       ),
       triggered(when.castSpell("opponent", { types: ["Creature", "Planeswalker"] }), [fx.loseLife(10, ref.eventPlayer)], {
-        condition: cond.amountAtLeast(amount.refCount(ref.zone("graveyard", ref.eventPlayer, { nameOf: ref.eventObject })), 1),
+        condition: cond.amountAtLeast(
+          amount.refCount(ref.zone("graveyard", ref.eventPlayer, { shares: { what: "name", with: ref.eventObject } })),
+          1,
+        ),
         label: "An opponent casts a spell with the same name as a card in their graveyard: they lose 10 life",
       }),
     ],

@@ -2,9 +2,11 @@
  * Commander (EDH pseudo-set): rules tests for the "Counter Blitz" preconstructed deck (Final Fantasy X). Counters
  * moved and proliferated, multikicker, prevention changed into counters, creature Sagas, oaths, returning with flying.
  */
+
 import { describe, expect, it } from "vitest";
 import { chars } from "../src/layers";
 import { legalActions } from "../src/legal";
+import { availableMana } from "../src/mana";
 import type { GameState, PlayerId } from "../src/types";
 import {
   type Answer,
@@ -94,8 +96,9 @@ describe("Counter Blitz (EDH)", () => {
     it("Gyre Sage: {G} per +1/+1 counter", () => {
       const s = scenario({ p1: { battlefield: [{ name: "Gyre Sage", counters: { "+1/+1": 3 } }] } });
       const sage = idOf(s, "p1", "battlefield", "Gyre Sage");
-      const ab = chars(s, sage).abilities.find((a) => a.kind === "mana");
-      expect(ab?.kind === "mana" ? ab.amountCounters : undefined).toBe("+1/+1");
+      expect(chars(s, sage).abilities.some((a) => a.kind === "mana")).toBe(true);
+      // Three +1/+1 counters: three mana.
+      expect(availableMana(s, "p1")).toBe(3);
     });
 
     it("Bane of Progress: destroys artifacts and enchantments, one counter per permanent destroyed", () => {

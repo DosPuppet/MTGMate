@@ -80,6 +80,7 @@ describe("choice on the board", () => {
 
 describe("shownOptions: options of a choice window", () => {
   const library = Array.from({ length: 90 }, (_, i) => `o${i}`);
+  // i18n-ignore: card names in both languages, the search reads the French one
   const name = (id: string) => (id === "o85" ? "Sol Ring Anneau solaire" : `Forest Forêt ${id}`);
 
   it("a whole library searched: every card is shown (Commander, 90 cards)", () => {

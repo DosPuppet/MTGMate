@@ -142,7 +142,7 @@ export const CARDS: Record<string, CardScript> = {
       eventReplacement({
         event: "damage",
         to: "you",
-        redirectToAttached: true,
+        redirectTo: "attached",
         modify: {},
         label: "Damage that would be dealt to you is dealt to the enchanted creature",
       }),

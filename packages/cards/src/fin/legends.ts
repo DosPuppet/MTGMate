@@ -87,7 +87,7 @@ export const LEGENDS: Record<string, CardScript> = {
         {
           id: "t",
           label: "activated or triggered ability, or noncreature spell",
-          filter: { spells: { notTypes: ["Creature"] }, stackItems: { abilitiesOnly: true } },
+          filter: { spells: { notTypes: ["Creature"] }, stackItems: { only: "abilities" } },
         } satisfies TargetSpec,
       ],
       [fx.counter(ref.target())],

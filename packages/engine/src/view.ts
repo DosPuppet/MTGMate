@@ -581,7 +581,7 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
       libraryCount: pl.library.length,
       handCount: pl.hand.length,
       speed: pl.speed,
-      ...(pl.citysBlessing ? { citysBlessing: true as const } : {}),
+      ...(pl.designations?.includes("citysBlessing") ? { citysBlessing: true as const } : {}),
       ...(s.monarch === p ? { monarch: true as const } : {}),
       ...(pl.counters?.poison ? { poison: pl.counters.poison } : {}),
       ...(pl.counters?.rad ? { rad: pl.counters.rad } : {}),

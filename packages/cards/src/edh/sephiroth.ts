@@ -133,7 +133,10 @@ export const EDH_SEPHIROTH: Record<string, CardScript> = {
           ...fx.when(
             cond.v("braids"),
             fx.forEachPlayer(ref.eachOpponent, (p, n) => [
-              fx.sacrifice(p, { sharesCardTypeWith: ref.stored("braids") }, 1, { optional: true, store: `braids${n}` }),
+              fx.sacrifice(p, { shares: { what: "cardType", with: ref.stored("braids") } }, 1, {
+                optional: true,
+                store: `braids${n}`,
+              }),
               ...fx.when(cond.all(seated(p), cond.not(cond.v(`braids${n}`))), fx.loseLife(2, p), fx.draw(1)),
             ]),
           ),

@@ -191,7 +191,7 @@ export const EDH_UR_SPHINX: Record<string, CardScript> = {
           }),
           fx.chooseForSelf("cardName", { who: ref.eventPlayer }),
           ...fx.when(
-            cond.refMatches(ref.stored("s"), { types: ["Creature"], not: { nameChosen: true } }),
+            cond.refMatches(ref.stored("s"), { types: ["Creature"], not: { chosen: "cardName" } }),
             fx.may(
               "Put that creature card onto the battlefield under your control?",
               fx.toBattlefield(ref.stored("s"), { underYourControl: true }),
@@ -322,7 +322,7 @@ export const EDH_UR_SPHINX: Record<string, CardScript> = {
       [],
       [
         fx.chooseForSelf("creatureType"),
-        fx.moveAll("battlefield", ref.eachPlayer, { types: ["Creature"], not: { subtypeChosen: true } }, { to: "hand" }),
+        fx.moveAll("battlefield", ref.eachPlayer, { types: ["Creature"], not: { chosen: "subtype" } }, { to: "hand" }),
       ],
     ),
   },
@@ -340,7 +340,7 @@ export const EDH_UR_SPHINX: Record<string, CardScript> = {
     asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
       {
-        ...costReducer({ types: ["Creature"], subtypeChosen: true }, 2, "Creature spells of the chosen type cost {2} less"),
+        ...costReducer({ types: ["Creature"], chosen: "subtype" }, 2, "Creature spells of the chosen type cost {2} less"),
         everyone: true,
       },
     ],

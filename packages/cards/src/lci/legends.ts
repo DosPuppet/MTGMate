@@ -253,7 +253,7 @@ export const LEGENDS: Record<string, CardScript> = {
   },
   "Locus of Enlightenment": {
     abilities: [
-      staticAbility("self", { gainLinkedActivated: true }, { label: "Activated abilities of the exiled cards" }),
+      staticAbility("self", { gainAbilitiesOf: { zone: "linked" } }, { label: "Activated abilities of the exiled cards" }),
       triggered({ on: "activateAbility" }, [fx.copySpell(ref.eventObject, 1)], { label: "Copy the ability" }),
     ],
   },
@@ -314,7 +314,7 @@ export const LEGENDS: Record<string, CardScript> = {
           target.optional({
             id: "t",
             label: "activated or triggered ability",
-            filter: { stackItems: { abilitiesOnly: true } },
+            filter: { stackItems: { only: "abilities" } },
           }),
         ],
         label: "Counter an ability",
@@ -661,7 +661,7 @@ export const LEGENDS: Record<string, CardScript> = {
     abilities: [
       staticAbility("self", { addChosen: "subtype" }, { label: "Of the chosen type" }),
       playerStatic({
-        triggerMod: { effect: "again", sources: { types: ["Creature"], subtypeChosen: true, other: true } },
+        triggerMod: { effect: "again", sources: { types: ["Creature"], chosen: "subtype", other: true } },
         label: "Triggers of the chosen type doubled",
       }),
     ],
@@ -672,8 +672,8 @@ export const LEGENDS: Record<string, CardScript> = {
     abilities: [
       manaAbility("C"),
       manaAbility([...ANY], 1, {
-        restriction: { spell: { types: ["Creature"], subtypeChosen: true } },
-        rider: { spell: { types: ["Creature"], subtypeChosen: true }, effect: "uncounterable" },
+        restriction: { spell: { types: ["Creature"], chosen: "subtype" } },
+        rider: { spell: { types: ["Creature"], chosen: "subtype" }, effect: "uncounterable" },
       }),
     ],
   },

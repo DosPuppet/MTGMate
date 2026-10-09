@@ -235,7 +235,7 @@ export const EDH_VIVI: Record<string, CardScript> = {
   Misdirection: {
     altCost: pitch("U"),
     spell: spell(
-      [{ id: "t", label: "spell with a single target", filter: { stackItems: { singleTarget: true, spellsOnly: true } } }],
+      [{ id: "t", label: "spell with a single target", filter: { stackItems: { singleTarget: true, only: "spells" } } }],
       [fx.changeTarget(ref.target())],
     ),
   },

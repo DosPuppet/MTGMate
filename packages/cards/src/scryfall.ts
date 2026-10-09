@@ -548,8 +548,15 @@ function intrinsicAbilities(
       ],
       effects: [{ op: "attach", what: { kind: "self" }, to: { kind: "target", id: "t" } }],
       sorcerySpeed: true,
-      reduceByTargetCounters: equipReduced || undefined,
-      reduceByTargetColors: equipKind.byColors,
+      ...(equipReduced || equipKind.byColors
+        ? {
+            reduction: {
+              generic: equipReduced
+                ? ({ kind: "countersOn", ref: { kind: "target", id: "t" }, counter: "+1/+1" } as const)
+                : ({ kind: "aggregate", fn: "distinct", property: "color", of: { kind: "target", id: "t" } } as const),
+            },
+          }
+        : {}),
       equip: true,
       label: equipKind.worthy ? msg("Equip worthy {cost}", { cost: equip }) : msg("Equip {cost}", { cost: equip }),
     });

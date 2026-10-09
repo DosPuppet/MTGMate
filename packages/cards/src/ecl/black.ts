@@ -138,7 +138,7 @@ export const BLACK: Record<string, CardScript> = {
       [],
       [
         fx.chooseForSelf("creatureType"),
-        fx.moveAll("graveyard", ref.you, { types: ["Creature"], subtypeChosen: true }, { to: "battlefield" }),
+        fx.moveAll("graveyard", ref.you, { types: ["Creature"], chosen: "subtype" }, { to: "battlefield" }),
       ],
     ),
   },

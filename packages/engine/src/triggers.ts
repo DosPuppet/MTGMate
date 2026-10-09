@@ -264,7 +264,7 @@ export function checkCondition(
 ): boolean {
   switch (c.kind) {
     case "step":
-      return s.turn.step === c.step;
+      return s.turn.step === c.step && (!c.first || (s.turn.endSteps ?? 0) <= 1);
     case "cast": {
       const info = castInfoOf(s, sourceId);
       return !!info && (!c.from || info.from === c.from) && (!c.via || info.via === c.via);
@@ -279,8 +279,6 @@ export function checkCondition(
       return (s.players[controller]?.turnsTaken ?? 0) >= c.n;
     case "maxSpeed":
       return (s.players[controller]?.speed ?? 0) >= 4;
-    case "firstEndStep":
-      return (s.turn.endSteps ?? 0) <= 1;
     case "firstCombat":
       return (s.turn.combats ?? 0) <= 1;
     case "controlsGreatestPower": {
@@ -302,12 +300,10 @@ export function checkCondition(
       return !!s.objects[sourceId ?? ""]?.solved;
     case "doorLocked":
       return !!sourceId && !s.objects[sourceId]?.unlocked?.includes(c.door);
-    case "sourceDealtCombatDamage":
-      return !!(sourceId && s.objects[sourceId]?.dealtCombatDamage);
     case "chosenMode":
       return !!sourceId && s.objects[sourceId]?.chosen?.mode === c.mode;
     case "sourceDealtDamage":
-      return !!(sourceId && s.objects[sourceId]?.dealtDamage);
+      return !!(sourceId && (c.combat ? s.objects[sourceId]?.dealtCombatDamage : s.objects[sourceId]?.dealtDamage));
     case "behold": {
       const f = { ...c.filter, controller: "you" as const };
       const here = s.battlefield.some((id) => matchesObjectFilter(s, controller, id, f, sourceId));
@@ -332,10 +328,8 @@ export function checkCondition(
         s.pending?.kind !== "declareBlockers" &&
         !!s.combat?.attackers.some((a) => !a.blocked && s.objects[a.id]?.controller === controller)
       );
-    case "enduringStory":
-      return playerStatic(s, controller, "enduringStory");
-    case "citysBlessing":
-      return !!s.players[controller]?.citysBlessing;
+    case "designation":
+      return !!s.players[controller]?.designations?.includes(c.which);
     case "monarch":
       return s.monarch === controller;
     case "harnessed":
@@ -711,6 +705,7 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       return { objectId: ev.stackId, player: ev.player, amount: ev.instantSorceryBefore };
     }
     case "discard":
+      if (t.self) return ev.e === "discard" && ev.cards.includes(src.id) ? { objectId: src.id, player: ev.player } : null;
       return ev.e === "discard" && whose(t.whose, ev.player, me) ? { objectId: ev.cards[0], player: ev.player } : null;
     case "discardBatch":
       return ev.e === "discardBatch" && whose(t.whose, ev.player, me) ? { player: ev.player, amount: ev.count } : null;
@@ -740,8 +735,11 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
         return { player: ev.target, amount: ev.amount, ...(ev.sourceId ? { objectId: ev.sourceId } : {}) };
       }
       if (typeof t.who === "object") {
-        if (ev.e !== "damage" || ev.amount <= 0) return null;
+        if (ev.e !== "damage" || ev.amount <= 0 || (t.excess && !ev.excess)) return null;
         const v = liveView(s, ev.target);
+        // Excess damage (120.4a, Magmatic Galleon): the excess, for the controller of the damaged creature.
+        if (t.excess)
+          return v && matchWho(t.who, v, src) ? { objectId: ev.target, amount: ev.excess, player: v.controller } : null;
         return v && matchWho(t.who, v, src) ? { objectId: ev.target, amount: ev.amount, player: me } : null;
       }
       // The enchanted or equipped creature (Cryoshatter, Pain for All), the enchanted player (Grievous Wound), or the source.
@@ -750,12 +748,6 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       return ev.e === "damage" && who && ev.target === who && ev.amount > 0
         ? { objectId: who, amount: ev.amount, player: me }
         : null;
-    }
-    case "excessDamage": {
-      if (ev.e !== "damage" || !ev.excess || (t.noncombatOnly && ev.combat)) return null;
-      const v = liveView(s, ev.target);
-      if (!v || !matchWho(t.who, v, src)) return null;
-      return { objectId: ev.target, amount: ev.excess, player: v.controller };
     }
     case "blocks": {
       if (ev.e !== "block") return null;
@@ -922,8 +914,6 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       return ev.e === "transformed" && ev.objectId === src.id ? { objectId: src.id, player: me } : null;
     case "cycleSelf":
       return ev.e === "cycled" && ev.card === src.id ? { objectId: src.id, player: ev.player, amount: ev.x } : null;
-    case "discardSelf":
-      return ev.e === "discard" && ev.cards.includes(src.id) ? { objectId: src.id, player: ev.player } : null;
     case "step": {
       if (ev.e !== "step" || !whose(t.whose, ev.active, me)) return null;
       const main = ev.step === "main1" || ev.step === "main2";
@@ -946,14 +936,14 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
         ? { player: ev.player, amount: 1, objectId: ev.objectId }
         : null;
     case "taps": {
+      if (t.untap) {
+        if (ev.e !== "untap") return null;
+        const v = liveView(s, ev.objectId);
+        return v && matchWho(t.who, v, src) ? { objectId: ev.objectId, player: v.controller } : null;
+      }
       if (ev.e !== "tap" || (t.byYou && ev.by !== me)) return null;
       if (t.cause && ev.cause !== t.cause) return null;
       if (t.firstThisTurn && !ev.first) return null;
-      const v = liveView(s, ev.objectId);
-      return v && matchWho(t.who, v, src) ? { objectId: ev.objectId, player: v.controller } : null;
-    }
-    case "untaps": {
-      if (ev.e !== "untap") return null;
       const v = liveView(s, ev.objectId);
       return v && matchWho(t.who, v, src) ? { objectId: ev.objectId, player: v.controller } : null;
     }
@@ -973,7 +963,7 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
               return !!v && (zone === "battlefield" || (!!t.spells && zone === "stack")) && matchWho(who, v, src);
             });
       if (!hit) return null;
-      if (t.abilitiesOnly && s.stack.find((x) => x.id === ev.stackId)?.kind === "spell") return null;
+      if (t.only === "abilities" && s.stack.find((x) => x.id === ev.stackId)?.kind === "spell") return null;
       if (t.by === "opponent" && ev.controller === me) return null;
       // Valiant: a spell or ability you control.
       if (t.by === "you" && ev.controller !== me) return null;

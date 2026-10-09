@@ -100,7 +100,6 @@ export const KEYWORD_LABEL: Record<Keyword, string> = {
   mustAttack: msg("Attacks each combat"),
   noActivatedAbilities: msg("Activated abilities can't be activated"),
   keepsDamage: msg("Damage isn't removed"),
-  absorbsDamage: msg("Absorbs damage"),
   convoke: msg("Convoke"),
   improvise: msg("Improvise"),
   delve: msg("Delve"),

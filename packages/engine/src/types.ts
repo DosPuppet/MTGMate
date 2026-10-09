@@ -95,8 +95,6 @@ export type Keyword =
   | "noActivatedAbilities"
   /** Ancient Adamantoise: "damage isn't removed from this creature during cleanup steps". */
   | "keepsDamage"
-  /** Ancient Adamantoise: damage that would be dealt to its controller and their other permanents is dealt to it instead. */
-  | "absorbsDamage"
   /** Convoke (702.51): creatures can help pay for the spell. */
   | "convoke"
   /** Improvise (702.126): untapped artifacts can each pay {1} of the spell's cost. */
@@ -130,7 +128,6 @@ export const RESTRICTIONS: readonly Keyword[] = [
   "mustAttack",
   "noActivatedAbilities",
   "keepsDamage",
-  "absorbsDamage",
   "damageHealsFirst",
   "cantBeSacrificed",
   "cantBeSuspected",

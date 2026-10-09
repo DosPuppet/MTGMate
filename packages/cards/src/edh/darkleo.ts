@@ -175,7 +175,7 @@ export const EDH_DARK_LEO: Record<string, CardScript> = {
     asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
       triggered(
-        when.enters({ types: ["Creature"], controller: "you", other: true, subtypeChosen: true }),
+        when.enters({ types: ["Creature"], controller: "you", other: true, chosen: "subtype" }),
         [fx.addCounters(ref.self, 1)],
         { label: "Another creature of the chosen type enters: a +1/+1 counter" },
       ),
@@ -217,7 +217,7 @@ export const EDH_DARK_LEO: Record<string, CardScript> = {
     asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
       staticAbility(
-        { types: ["Creature"], subtypeChosen: true },
+        { types: ["Creature"], chosen: "subtype" },
         { addBlockRules: [block.fear] },
         { label: "Creatures of the chosen type have fear" },
       ),
@@ -297,7 +297,7 @@ export const EDH_DARK_LEO: Record<string, CardScript> = {
           {
             id: "t",
             label: "triggered ability you control",
-            filter: { stackItems: { triggeredOnly: true, controller: "you" } },
+            filter: { stackItems: { only: "triggered", controller: "you" } },
           },
         ],
         effects: [fx.copySpell(ref.target(), 1)],

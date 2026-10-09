@@ -87,7 +87,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
     asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
       staticAbility(
-        { types: ["Creature"], controller: "you", subtypeChosen: true },
+        { types: ["Creature"], controller: "you", chosen: "subtype" },
         { power: 1, toughness: 1 },
         { label: "+1/+1" },
       ),
@@ -231,7 +231,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
     asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
       manaAbility("C"),
-      paidMana("{2}", { amountPer: { types: ["Creature"], controller: "you", subtypeChosen: true } }),
+      paidMana("{2}", { amountOf: { kind: "count", filter: { types: ["Creature"], controller: "you", chosen: "subtype" } } }),
     ],
   },
   // Special cards (outside the main set).

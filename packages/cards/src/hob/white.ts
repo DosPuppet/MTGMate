@@ -291,7 +291,7 @@ export const WHITE: Record<string, CardScript> = {
     asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
       staticAbility(
-        { ...CREATURES_YOU_CONTROL, subtypeChosen: true },
+        { ...CREATURES_YOU_CONTROL, chosen: "subtype" },
         { power: 2, toughness: 2 },
         { label: "Your creatures of the chosen type get +2/+2" },
       ),

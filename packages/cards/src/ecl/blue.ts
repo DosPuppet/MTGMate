@@ -94,13 +94,13 @@ export const BLUE: Record<string, CardScript> = {
   "Harmonized Crescendo": {
     spell: spell(
       [],
-      [fx.chooseForSelf("creatureType"), fx.draw(amount.count({ permanent: true, controller: "you", subtypeChosen: true }))],
+      [fx.chooseForSelf("creatureType"), fx.draw(amount.count({ permanent: true, controller: "you", chosen: "subtype" }))],
     ),
   },
   "Rimefire Torque": {
     asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
-      triggered(when.enters({ permanent: true, controller: "you", subtypeChosen: true }), [fx.counters(ref.self, "charge")], {
+      triggered(when.enters({ permanent: true, controller: "you", chosen: "subtype" }), [fx.counters(ref.self, "charge")], {
         label: "A permanent of the chosen type enters: charge counter",
       }),
       activated({
@@ -150,7 +150,7 @@ export const BLUE: Record<string, CardScript> = {
             "Creatures you control of the chosen type get +3/+3 and have vigilance and hexproof.",
             [
               staticAbility(
-                { types: ["Creature"], controller: "you", subtypeChosen: true },
+                { types: ["Creature"], controller: "you", chosen: "subtype" },
                 { power: 3, toughness: 3, addKeywords: ["vigilance", "hexproof"] },
                 { label: "Your creatures of the chosen type: +3/+3, vigilance and hexproof" },
               ),

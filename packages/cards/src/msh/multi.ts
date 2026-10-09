@@ -82,7 +82,7 @@ const STURDY_SHIELD: TokenSpec = {
   text: "Equipped creature gets +1/+2.\nEquip {2}",
 };
 
-/** "Choose odd or even" on resolution (Thanos): the choice is kept on the source (`parityChosen`). */
+/** "Choose odd or even" on resolution (Thanos): the choice is kept on the source (filter `chosen: "parity"`). */
 const CHOOSE_PARITY: Effect = { op: "chooseOnEnter", kind: "parity" };
 
 /** "You may sacrifice an artifact or discard a nonland card.": `s` or `d` is 1 if it is done. */
@@ -469,7 +469,7 @@ export const MULTI: Record<string, CardScript> = {
         effects: [
           fx.addCounters(ref.self, 2),
           CHOOSE_PARITY,
-          fx.destroyAll({ types: ["Creature"], other: true, parityChosen: true }),
+          fx.destroyAll({ types: ["Creature"], other: true, chosen: "parity" }),
         ],
         label: "Power-up: two +1/+1 counters, destroy the creatures of the chosen parity",
       }),
@@ -662,7 +662,7 @@ export const MULTI: Record<string, CardScript> = {
           {
             id: "t",
             label: "ability you control from an artifact source",
-            filter: { stackItems: { abilitiesOnly: true, controller: "you", source: { types: ["Artifact"] } } },
+            filter: { stackItems: { only: "abilities", controller: "you", source: { types: ["Artifact"] } } },
           },
         ],
         effects: [fx.copySpell(ref.target(), 1)],

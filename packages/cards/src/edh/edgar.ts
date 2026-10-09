@@ -355,8 +355,8 @@ export const EDH_EDGAR: Record<string, CardScript> = {
       [target.player()],
       [
         fx.chooseForSelf("creatureType"),
-        fx.draw(amount.refCount(ref.permanentsOf(ref.target(), { types: ["Creature"], subtypeChosen: true })), ref.target()),
-        fx.loseLife(amount.refCount(ref.permanentsOf(ref.target(), { types: ["Creature"], subtypeChosen: true })), ref.target()),
+        fx.draw(amount.refCount(ref.permanentsOf(ref.target(), { types: ["Creature"], chosen: "subtype" })), ref.target()),
+        fx.loseLife(amount.refCount(ref.permanentsOf(ref.target(), { types: ["Creature"], chosen: "subtype" })), ref.target()),
       ],
     ),
   },

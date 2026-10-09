@@ -303,3 +303,4 @@ Three read-only surveys (2026-10-09) checked every tracked entry against the for
 |---|---|---|---|
 | J0 | done | — | housekeeping |
 | J1 | done | — | exact merges: 7 variants, 18 single-card keys; fingerprints (seed 7) identical; `putFaceDown` → J4a (manifest through `MoveSpec` would ask a shock land's question) |
+| J2 | done | — | small shared forms: 5 variants, 14 single-card keys, 1 player static, 1 keyword; whole pool and mixed fingerprints identical; Commander c42297fe → 637ffb4c (Chrome Mox offers its colors in WUBRG order, no rules change) |

@@ -516,7 +516,7 @@ export const CARDS: Record<string, CardScript> = {
       [],
       [
         fx.chooseForSelf("creatureType"),
-        fx.copyToken(ref.permanentsOf(ref.you, { types: ["Creature"], subtypeChosen: true }), {
+        fx.copyToken(ref.permanentsOf(ref.you, { types: ["Creature"], chosen: "subtype" }), {
           addKeywords: ["haste"],
           exileAtEndStep: true,
         }),
@@ -1015,11 +1015,11 @@ export const CARDS: Record<string, CardScript> = {
   "Door of Destinies": {
     asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
-      triggered(when.castSpell("you", { subtypeChosen: true }), [fx.counters(ref.self, "charge")], {
+      triggered(when.castSpell("you", { chosen: "subtype" }), [fx.counters(ref.self, "charge")], {
         label: "Spell of the chosen type: a charge counter",
       }),
       staticAbility(
-        { types: ["Creature"], controller: "you", subtypeChosen: true },
+        { types: ["Creature"], controller: "you", chosen: "subtype" },
         { power: 1, toughness: 1 },
         {
           perCounter: "charge",
@@ -1108,7 +1108,7 @@ export const CARDS: Record<string, CardScript> = {
       { label: "Counter target spell", targets: [target.spell("s")], effects: [fx.counter(ref.target("s"))] },
       {
         label: "Counter target activated or triggered ability",
-        targets: [{ id: "a", label: "activated or triggered ability", filter: { stackItems: { abilitiesOnly: true } } }],
+        targets: [{ id: "a", label: "activated or triggered ability", filter: { stackItems: { only: "abilities" } } }],
         effects: [fx.counter(ref.target("a"))],
       },
       { label: "Return a nonland permanent", targets: [target.nonland("n")], effects: [fx.bounce(ref.target("n"))] },
@@ -1196,7 +1196,7 @@ export const CARDS: Record<string, CardScript> = {
         {
           id: "t",
           label: "triggered ability or colorless spell",
-          filter: { stackItems: { triggeredOnly: true }, spells: { colorCount: 0 } },
+          filter: { stackItems: { only: "triggered" }, spells: { colorCount: 0 } },
         },
       ],
       [fx.counter(ref.target())],

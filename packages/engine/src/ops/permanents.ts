@@ -385,13 +385,13 @@ export const HANDLERS: OpHandlers = {
     // frozen in the effect (another activation chooses another one).
     const chosen = r.vars.$chosen?.[0] === "color" ? (String(r.vars.$chosen[1]) as Color) : undefined;
     let mods = e.mods;
-    if (chosen && (mods.setColorsChosen || mods.addProtections?.some((p) => p.from.colorChosen)))
+    if (chosen && (mods.setColorsChosen || mods.addProtections?.some((p) => p.from.chosen === "color")))
       mods = {
         ...mods,
         setColorsChosen: undefined,
         setColors: mods.setColorsChosen ? [chosen] : mods.setColors,
         addProtections: mods.addProtections?.map((p) =>
-          p.from.colorChosen ? { ...p, from: { ...p.from, colorChosen: undefined, colors: [chosen] } } : p,
+          p.from.chosen === "color" ? { ...p, from: { ...p.from, chosen: undefined, colors: [chosen] } } : p,
         ),
       };
     bump(s);

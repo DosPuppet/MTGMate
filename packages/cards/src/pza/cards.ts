@@ -117,7 +117,7 @@ export const CARDS: Record<string, CardScript> = {
       staticAbility("self", { addChosen: "subtype" }, { label: "Is the chosen type" }),
       entersWith({
         counters: 1,
-        affects: { types: ["Creature"], controller: "you", subtypeChosen: true, other: true },
+        affects: { types: ["Creature"], controller: "you", chosen: "subtype", other: true },
         label: "Your other creatures of the chosen type enter with a +1/+1 counter",
       }),
     ],

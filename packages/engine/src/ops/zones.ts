@@ -19,7 +19,6 @@ import {
   readVar,
   resolveRef,
   store,
-  viewOf,
   withX,
   zoneCards,
 } from "../effects";
@@ -320,13 +319,12 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   tapChosen(s, r, e, ctx, key) {
-    const shared = e.sharesColorWith ? resolveRef(s, ctx, e.sharesColorWith).flatMap((id) => viewOf(s, id)?.colors ?? []) : null;
+    const filter = withX(s, e.filter, ctx);
     const options = s.battlefield.filter(
       (id) =>
         s.objects[id]?.controller === ctx.controller &&
         !s.objects[id]?.tapped &&
-        matchesObjectFilter(s, ctx.controller, id, e.filter, ctx.sourceId) &&
-        (!shared || chars(s, id).colors.some((c) => shared.includes(c))),
+        matchesObjectFilter(s, ctx.controller, id, filter, ctx.sourceId),
     );
     let chosen: string[] = [];
     if (e.exactly !== undefined && options.length < e.exactly) {

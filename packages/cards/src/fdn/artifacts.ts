@@ -146,12 +146,12 @@ export const ARTIFACTS: Record<string, CardScript> = {
     asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [
       entersWith({
-        counters: amount.count({ types: ["Creature"], controller: "you", subtypeChosen: true }),
+        counters: amount.count({ types: ["Creature"], controller: "you", chosen: "subtype" }),
         counterKind: "fellowship",
         label: "Fellowship counters",
       }),
       staticAbility(
-        { types: ["Creature"], controller: "you", subtypeChosen: true },
+        { types: ["Creature"], controller: "you", chosen: "subtype" },
         { power: 1, toughness: 1 },
         { perCounter: "fellowship", label: "+1/+1 for each fellowship counter" },
       ),
@@ -160,7 +160,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
   "Heraldic Banner": {
     asEnters: [fx.chooseForSelf("color")],
     abilities: [
-      staticAbility({ types: ["Creature"], controller: "you", colorChosen: true }, { power: 1 }, { label: "+1/+0" }),
+      staticAbility({ types: ["Creature"], controller: "you", chosen: "color" }, { power: 1 }, { label: "+1/+0" }),
       manaAbility(["W"], 1, { produceChosen: true }),
     ],
   },
@@ -171,7 +171,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
     abilities: [
       staticAbility("self", { addChosen: "subtype" }, { label: "Has the chosen type" }),
       staticAbility(
-        { ...CREATURE_YOU_CONTROL, other: true, subtypeChosen: true },
+        { ...CREATURE_YOU_CONTROL, other: true, chosen: "subtype" },
         { power: 1, toughness: 1 },
         {
           label: "Other creatures of the chosen type +1/+1",
@@ -186,7 +186,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
   "Darksteel Colossus": { shuffleIntoLibrary: true },
   "Diamond Mare": {
     asEnters: [fx.chooseForSelf("color")],
-    abilities: [triggered(when.castSpell("you", { colorChosen: true }), [fx.gainLife(1)], { label: "+1 life" })],
+    abilities: [triggered(when.castSpell("you", { chosen: "color" }), [fx.gainLife(1)], { label: "+1 life" })],
   },
   "Expedition Map": {
     abilities: [

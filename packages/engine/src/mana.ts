@@ -2,8 +2,9 @@
  * Mana: reading costs, available sources and the automatic payment solver.
  */
 import { dealDamage, gainLife, payLife, sacrifice, sourceFromObject } from "./actions";
+import { evalAmount, resolveRef, staticContext } from "./effects";
 import { RulesError } from "./errors";
-import { bumpFor, linkedColors } from "./layers";
+import { bumpFor } from "./layers";
 import { type AmountMod, chooseReplacementOrder } from "./modifiers";
 import { collectEvidence, evidenceCards } from "./stack";
 import {
@@ -22,7 +23,7 @@ import {
   tapObject,
 } from "./state";
 import { type ActiveReplacement, eventReplacements, lifeCost, payableLife, playerSide, replacementAdd } from "./statics";
-import { matchesCard, matchesObjectFilter, matchesView, withChosen } from "./targets";
+import { matchesObjectFilter, matchesView, withChosen } from "./targets";
 import { msg } from "./text";
 import { checkCondition } from "./triggers";
 import type {
@@ -160,20 +161,12 @@ export function manaAbilitiesOf(s: GameState, id: ObjectId): ManaAbilityDef[] {
   for (const a of c.abilities) {
     if (a.kind !== "mana") continue;
     // "Add one mana of the chosen color" (Heraldic Banner).
-    // Pit of Offerings: the colors of the cards exiled with the source.
-    if (a.produceLinkedColors) list.push({ ...a, produce: linkedColors(s, o.linked) });
-    // Meteor Crater: the colors of the matching permanents you control.
-    else if (a.produceColorsOf) {
+    // The colors of the designated objects: the matching permanents you control (Meteor Crater), the matching cards in
+    // your graveyard (The Grey Havens), the cards exiled with the source (Pit of Offerings).
+    if (a.produceColorsOf) {
       const colors = new Set<ManaType>();
-      // The Grey Havens: the colors of the matching cards in your graveyard.
-      if (a.produceColorsZone === "graveyard") {
-        for (const cid of s.players[o.controller]?.graveyard ?? [])
-          if (matchesCard(s, o.controller, cid, { ...a.produceColorsOf, controller: undefined }, id))
-            for (const c of defOf(s, cid).colors) colors.add(c);
-      } else
-        for (const pid of s.battlefield)
-          if (obj(s, pid).controller === o.controller && matchesObjectFilter(s, o.controller, pid, a.produceColorsOf, id))
-            for (const c of chars(s, pid).colors) colors.add(c);
+      for (const x of resolveRef(s, staticContext(s, o.controller, id), a.produceColorsOf))
+        for (const c of s.objects[x]?.zone === "battlefield" ? chars(s, x).colors : defOf(s, x).colors) colors.add(c);
       list.push({ ...a, produce: MANA_TYPES.filter((m) => colors.has(m)) });
     }
     // Reflecting Pool: the types your other lands could produce (without sources of the same kind, 106.7);
@@ -286,26 +279,9 @@ function manaAmount(s: GameState, id: ObjectId, ab: ManaAbilityDef, gone?: Reado
 }
 
 function baseManaAmount(s: GameState, id: ObjectId, controller: PlayerId, ab: ManaAbilityDef): number {
-  const o = obj(s, id);
-  // The Eternity Elevator: as much mana as charge counters.
-  if (ab.amountCounters) return o.counters[ab.amountCounters] ?? 0;
-  // The Core: "X mana, where X is the number of permanent cards in your graveyard".
-  if (ab.amountGraveyard) {
-    const f = ab.amountGraveyard;
-    return (s.players[controller]?.graveyard ?? []).filter((x) => matchesCard(s, controller, x, { ...f, controller: undefined }))
-      .length;
-  }
-  if (ab.amountSelfPower) return Math.max(0, chars(s, id).power);
-  // Loot, the Nexus: one mana for each different power among your creatures.
-  if (ab.amountDistinctPowers) {
-    const powers = s.battlefield
-      .filter((x) => obj(s, x).controller === controller && isCreature(s, x))
-      .map((x) => chars(s, x).power);
-    return new Set(powers).size;
-  }
-  if (!ab.amountPer) return ab.amount;
-  const f = ab.amountPer;
-  return s.battlefield.filter((x) => matchesObjectFilter(s, controller, x, f, id)).length;
+  // "{G} for each Elf you control", "as much mana as charge counters", "X mana, where X is the number of permanent
+  // cards in your graveyard", "equal to its power", "one mana for each different power among your creatures".
+  return ab.amountOf ? Math.max(0, evalAmount(s, staticContext(s, controller, id), ab.amountOf)) : ab.amount;
 }
 
 /** What the mana is for (restricted mana: "spend this mana only to cast an Angel spell"). */

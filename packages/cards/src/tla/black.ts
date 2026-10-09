@@ -405,7 +405,7 @@ export const BLACK: Record<string, CardScript> = {
       }),
       staticAbility(
         "self",
-        { gainLinkedActivated: { triggered: true, chosenName: true } },
+        { gainAbilitiesOf: { zone: "linked", filter: { chosen: "cardName" }, triggered: true } },
         { label: "Has the activated and triggered abilities of the last chosen card" },
       ),
     ],

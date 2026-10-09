@@ -200,15 +200,7 @@ function hasSubtype(v: LkiSnapshot, t: string): boolean {
 
 /** Does the filter read a choice made by its source ("of the chosen type / color / name")? */
 export function hasChosen(f: ObjectFilter): boolean {
-  return !!(
-    f.subtypeChosen ||
-    f.colorChosen ||
-    f.nameChosen ||
-    f.parityChosen ||
-    f.numberChosen ||
-    f.typeChosen ||
-    (f.not && hasChosen(f.not))
-  );
+  return !!(f.chosen || (f.not && hasChosen(f.not)));
 }
 
 /** Replaces "of the chosen type / color" with the choice made by the source as it entered. */
@@ -230,17 +222,8 @@ export function withChosen(
   if (!hasChosen(f)) return f;
   // "Not of the chosen name / type" (Sphinx Ambassador): the choice is also read inside `not`.
   const not = f.not && hasChosen(f.not) ? withChosen(f.not, source) : f.not;
-  const out: ObjectFilter = {
-    ...f,
-    not,
-    typeChosen: undefined,
-    subtypeChosen: undefined,
-    colorChosen: undefined,
-    nameChosen: undefined,
-    parityChosen: undefined,
-    numberChosen: undefined,
-  };
-  if (f.numberChosen) {
+  const out: ObjectFilter = { ...f, not, chosen: undefined };
+  if (f.chosen === "number") {
     // Without a choice, nothing matches (no value is negative).
     const n = source?.chosen?.number ?? -1;
     out.anyOf = [
@@ -249,13 +232,13 @@ export function withChosen(
       { types: ["Creature"], minToughness: n, maxToughness: n },
     ];
   }
-  if (f.parityChosen) out.compare = [...(f.compare ?? []), { what: "manaValue", cmp: source?.chosen?.parity ?? "even" }];
-  if (f.nameChosen) out.name = source?.chosen?.cardName ?? "—";
+  if (f.chosen === "parity") out.compare = [...(f.compare ?? []), { what: "manaValue", cmp: source?.chosen?.parity ?? "even" }];
+  if (f.chosen === "cardName") out.name = source?.chosen?.cardName ?? "—";
   // Without a choice (entered without resolving), nothing matches.
-  if (f.subtypeChosen) out.subtype = source?.chosen?.creatureType ?? "—";
-  if (f.colorChosen) out.colors = source?.chosen?.color ? [source.chosen.color] : [];
+  if (f.chosen === "subtype") out.subtype = source?.chosen?.creatureType ?? "—";
+  if (f.chosen === "color") out.colors = source?.chosen?.color ? [source.chosen.color] : [];
   // Without a choice, no type matches.
-  if (f.typeChosen) out.types = [(source?.chosen?.mode ?? "—") as CardType];
+  if (f.chosen === "cardType") out.types = [(source?.chosen?.mode ?? "—") as CardType];
   return out;
 }
 
@@ -407,12 +390,13 @@ export function isLegalTarget(s: GameState, controller: PlayerId, spec: TargetSp
   // Spell or ability on the stack ("target spell or ability with a single target").
   const stackItem = s.stack.find((x) => x.id === id);
   // "target activated or triggered ability": spells fall under the `spells` filter (Louisoix's Sacrifice).
-  const onlyTriggered = spec.filter.stackItems?.triggeredOnly;
+  const only = spec.filter.stackItems?.only;
+  const onlyTriggered = only === "triggered";
   if (
     stackItem &&
     spec.filter.stackItems &&
-    !((spec.filter.stackItems.abilitiesOnly || onlyTriggered) && stackItem.kind === "spell") &&
-    !(spec.filter.stackItems.spellsOnly && stackItem.kind !== "spell") &&
+    !((only === "abilities" || onlyTriggered) && stackItem.kind === "spell") &&
+    !(only === "spells" && stackItem.kind !== "spell") &&
     !(
       onlyTriggered &&
       stackItem.abilityIndex >= 0 &&

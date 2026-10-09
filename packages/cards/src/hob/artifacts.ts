@@ -168,7 +168,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
         when.attachedDealsCombatDamageToPlayer,
         [
           fx.chooseForSelf("creatureType"),
-          fx.createTokens(TREASURE, amount.count({ types: ["Creature"], controller: "you", subtypeChosen: true })),
+          fx.createTokens(TREASURE, amount.count({ types: ["Creature"], controller: "you", chosen: "subtype" })),
         ],
         { label: "Choose a type: a Treasure for each creature of that type you control" },
       ),

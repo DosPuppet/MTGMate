@@ -58,6 +58,9 @@ export const STEPS: readonly Step[] = [
   "cleanup",
 ];
 
+/** A designation a player keeps for the rest of the game (`PlayerState.designations`). */
+export type PlayerDesignation = "citysBlessing" | "enduringStory";
+
 export interface GameObject {
   /** Changes on each zone change (rule 400.7). */
   id: ObjectId;
@@ -229,8 +232,11 @@ export interface PlayerState {
   turnsTaken?: number;
   /** Speed (702.179): absent as long as no "Start your engines!" has started it; 4 = max speed. */
   speed?: number;
-  /** The city's blessing (702.131): gained through ascend, for the rest of the game. */
-  citysBlessing?: boolean;
+  /**
+   * Designations kept for the rest of the game: the city's blessing (702.131, gained through ascend), an enduring story
+   * (Storied, The Hobbit).
+   */
+  designations?: PlayerDesignation[];
   /** Mana that doesn't empty until end of turn (Savage Ventmaw). */
   manaKeep?: Partial<Record<ManaType, number>>;
   /** Mana that doesn't empty until end of combat (firebending). */

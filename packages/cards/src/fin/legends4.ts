@@ -85,7 +85,7 @@ export const LEGENDS4: Record<string, CardScript> = {
           {
             id: "t",
             label: "activated or triggered ability you control",
-            filter: { stackItems: { abilitiesOnly: true } },
+            filter: { stackItems: { only: "abilities" } },
           } satisfies TargetSpec,
         ],
         effects: [fx.copySpell(ref.target(), amount.x)],
@@ -207,7 +207,14 @@ export const LEGENDS4: Record<string, CardScript> = {
   },
   "Ancient Adamantoise": {
     abilities: [
-      staticAbility("self", { addKeywords: ["keepsDamage", "absorbsDamage"] }, { label: "Absorbs damage" }),
+      staticAbility("self", { addKeywords: ["keepsDamage"] }, { label: "Damage isn't removed" }),
+      eventReplacement({
+        event: "damage",
+        to: "yourSide",
+        redirectTo: "source",
+        modify: {},
+        label: "Absorbs damage",
+      }),
       triggered(when.diesSelf, [fx.exileCard(ref.selfCard), fx.createTappedTokens(TREASURE, 10)], {
         label: "Exile it, ten tapped Treasures",
       }),

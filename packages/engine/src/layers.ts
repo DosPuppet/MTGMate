@@ -589,7 +589,7 @@ interface CacheDeps {
   turnLog: boolean;
   /** The players' life (`perLife`, `lifeTotal`, `mostLife`, `opponentHasMore` of life). */
   life: boolean;
-  /** "As long as it hasn't dealt (combat) damage yet" (`sourceDealtDamage`, `sourceDealtCombatDamage`). */
+  /** "As long as it hasn't dealt (combat) damage yet" (`sourceDealtDamage`). */
   dealt: boolean;
   /** Declared blocks (`blocked` and `blocking` filters: attacker blocked or not, blocker). */
   blocks: boolean;
@@ -619,7 +619,7 @@ function scanDeps(x: unknown, out: CacheDeps): void {
     if (x === "turnEvents") out.turnLog = true;
     // To be safe, any "life" value (`opponentHasMore` of life, granted "gain life" trigger).
     if (x === "life" || x === "lifeTotal" || x === "mostLife") out.life = true;
-    if (x === "sourceDealtDamage" || x === "sourceDealtCombatDamage") out.dealt = true;
+    if (x === "sourceDealtDamage") out.dealt = true;
     return;
   }
   for (const [k, v] of Object.entries(x)) {
@@ -1001,33 +1001,34 @@ function evalStatic(s: GameState, slot: StaticSlot, sig: (string | number)[]): {
     if (!ok) return { entry: null, dependent };
   }
   let mods = ab.mods;
-  if (mods.gainLinkedActivated) {
+  const gain = mods.gainAbilitiesOf;
+  if (gain?.zone === "linked") {
     // Territory Forge: the activated (and mana) abilities of the linked cards; Koh: also triggered, of the chosen card.
-    const g = typeof mods.gainLinkedActivated === "object" ? mods.gainLinkedActivated : {};
+    const chosenName = gain.filter?.chosen === "cardName";
     const extra = (o.linked ?? [])
       .filter((c) => s.objects[c]?.zone === "exile")
       .map((c) => s.defs[s.objects[c]?.defId ?? ""])
-      .filter((d) => !g.chosenName || (!!d && hasName(printedName(d), o.chosen?.cardName)))
-      .slice(0, g.chosenName ? 1 : undefined)
+      .filter((d) => !chosenName || (!!d && hasName(printedName(d), o.chosen?.cardName)))
+      .slice(0, chosenName ? 1 : undefined)
       .flatMap((d) => d?.abilities ?? [])
-      .filter((a) => a.kind === "activated" || a.kind === "mana" || (g.triggered && a.kind === "triggered"));
+      .filter((a) => a.kind === "activated" || a.kind === "mana" || (gain.triggered && a.kind === "triggered"));
     sig.push(`gl${o.chosen?.cardName ?? ""}`);
-    mods = { ...mods, gainLinkedActivated: undefined, addAbilities: [...(mods.addAbilities ?? []), ...extra] };
+    mods = { ...mods, gainAbilitiesOf: undefined, addAbilities: [...(mods.addAbilities ?? []), ...extra] };
   }
-  if (mods.gainActivatedFromGraveyard) {
+  if (gain?.zone === "graveyard") {
     // Thranduil, the Elvenking: the printed activated abilities of the Elf cards in your graveyard.
-    const f = mods.gainActivatedFromGraveyard;
+    const f = gain.filter ?? {};
     const extra = (s.players[o.controller]?.graveyard ?? [])
       .filter((x) => matchesView(snapshot(s, x), { ...f, controller: undefined }, o.controller, id))
       .flatMap((x) => s.defs[s.objects[x]?.defId ?? ""]?.abilities ?? [])
       .filter((a) => (a.kind === "activated" && !a.specialAction && !a.fromHand && !a.fromGraveyard) || a.kind === "mana");
-    mods = { ...mods, gainActivatedFromGraveyard: undefined, addAbilities: [...(mods.addAbilities ?? []), ...extra] };
+    mods = { ...mods, gainAbilitiesOf: undefined, addAbilities: [...(mods.addAbilities ?? []), ...extra] };
     dependent = true;
     sig.push(`ag${extra.length}`);
   }
-  if (mods.gainActivatedFrom) {
+  if (gain?.zone === "battlefield") {
     // Marvin, Murderous Mimic: the printed activated abilities of the matching creatures that don't have its name.
-    const f = mods.gainActivatedFrom;
+    const f = gain.filter ?? {};
     const own = s.defs[o.defId];
     const name = own && printedName(own);
     const extra = s.battlefield
@@ -1038,7 +1039,7 @@ function evalStatic(s: GameState, slot: StaticSlot, sig: (string | number)[]): {
       })
       .flatMap((x) => s.defs[s.objects[x]?.defId ?? ""]?.abilities ?? [])
       .filter((a) => (a.kind === "activated" && !a.specialAction && !a.fromHand && !a.fromGraveyard) || a.kind === "mana");
-    mods = { ...mods, gainActivatedFrom: undefined, addAbilities: [...(mods.addAbilities ?? []), ...extra] };
+    mods = { ...mods, gainAbilitiesOf: undefined, addAbilities: [...(mods.addAbilities ?? []), ...extra] };
     dependent = true;
     sig.push(`a${extra.length}`);
   }

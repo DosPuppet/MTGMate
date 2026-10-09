@@ -64,7 +64,7 @@ export const UNIQUE: Record<string, CardScript> = {
           fx.chooseForSelf("color"),
           fx.modify(ref.self, {
             setColorsChosen: true,
-            addProtections: [protection.hexproofFrom({ colorChosen: true }, "Hexproof from the chosen color")],
+            addProtections: [protection.hexproofFrom({ chosen: "color" }, "Hexproof from the chosen color")],
           }),
         ],
         label: "Becomes the chosen color and gains hexproof from it",

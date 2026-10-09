@@ -203,7 +203,12 @@ export const STATION: Record<string, CardScript> = {
   "The Eternity Elevator": {
     abilities: [manaAbility("C", 3)],
     stationAbilities: {
-      20: [{ ...manaAbility(["W", "U", "B", "R", "G"]), amountCounters: "charge" } satisfies ManaAbilityDef],
+      20: [
+        {
+          ...manaAbility(["W", "U", "B", "R", "G"]),
+          amountOf: { kind: "countersOn", ref: { kind: "self" }, counter: "charge" },
+        } satisfies ManaAbilityDef,
+      ],
     },
   },
   "The Seriema": {

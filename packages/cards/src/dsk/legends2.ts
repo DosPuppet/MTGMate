@@ -248,7 +248,7 @@ export const LEGENDS2: Record<string, CardScript> = {
     abilities: [
       staticAbility(
         "self",
-        { gainActivatedFrom: { types: ["Creature"], controller: "you" } },
+        { gainAbilitiesOf: { zone: "battlefield", filter: { types: ["Creature"], controller: "you" } } },
         {
           label: "Has the activated abilities of your other creatures",
         },

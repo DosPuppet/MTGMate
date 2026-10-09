@@ -109,7 +109,7 @@ export const GREEN: Record<string, CardScript> = {
         [
           fx.chooseForSelf("creatureType"),
           fx.modifyAll(
-            { permanent: true, controller: "you", other: true, subtypeChosen: true },
+            { permanent: true, controller: "you", other: true, chosen: "subtype" },
             { addKeywords: ["hexproof", "indestructible"] },
           ),
         ],

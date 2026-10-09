@@ -101,41 +101,44 @@ export interface EffectContext {
  * the Mighty); "that shares a creature type with it" (Shared Animosity: the object of the event).
  */
 export function withX(s: GameState, f: ObjectFilter, ctx: EffectContext): ObjectFilter {
-  if (f.sharesCreatureTypeWith) {
+  const shares = f.shares;
+  if (shares) f = { ...f, shares: undefined };
+  if (shares?.what === "creatureType") {
     // Several designated objects (two commanders): a creature type of one of them is enough.
-    const vs = resolveRef(s, ctx, f.sharesCreatureTypeWith)
+    const vs = resolveRef(s, ctx, shares.with)
       .filter((x) => s.objects[x])
       .map((x) => snapshot(s, x));
     const all = vs.some((v) => v.keywords.includes("changeling") || v.subtypes.includes(ALL_CREATURE_TYPES));
     const types = [...new Set(vs.flatMap((v) => v.subtypes.filter((st) => !NON_CREATURE_SUBTYPES.has(st))))];
     // A changeling shares each of its types with any creature (approximated: any creature).
-    f = all
-      ? { ...f, sharesCreatureTypeWith: undefined, types: [...(f.types ?? []), "Creature"] }
-      : { ...f, sharesCreatureTypeWith: undefined, anySubtype: types };
+    f = all ? { ...f, types: [...(f.types ?? []), "Creature"] } : { ...f, anySubtype: types };
   }
-  if (f.sharesCardTypeWith) {
+  if (shares?.what === "cardType") {
     // A sacrificed permanent: its last known information.
     const types = new Set(
-      resolveRef(s, ctx, f.sharesCardTypeWith).flatMap((x) =>
+      resolveRef(s, ctx, shares.with).flatMap((x) =>
         s.objects[x]?.zone === "battlefield"
           ? chars(s, x).types
           : (s.lki[x]?.types ?? s.defs[s.objects[x]?.defId ?? ""]?.types ?? []),
       ),
     );
     // Nothing designated: nothing matches (an empty `types` would not constrain the type).
-    f = types.size
-      ? { ...f, sharesCardTypeWith: undefined, types: [...types] }
-      : { ...f, sharesCardTypeWith: undefined, not: {} };
+    f = types.size ? { ...f, types: [...types] } : { ...f, not: {} };
+  }
+  if (shares?.what === "color") {
+    // "That share a color with it" (Raiding Schemes): any color of the designated objects.
+    const colors = [...new Set(resolveRef(s, ctx, shares.with).flatMap((x) => viewOf(s, x)?.colors ?? []))];
+    f = colors.length ? { ...f, colors } : { ...f, not: {} };
   }
   // "… attacking that player" (Namor, Atlantean King): the designated players.
   if (f.attacking && typeof f.attacking === "object" && !Array.isArray(f.attacking))
     f = { ...f, attacking: resolveRef(s, ctx, f.attacking).filter((p) => isPlayer(s, p)) };
-  if (f.nameOf) {
-    const id = resolveRef(s, ctx, f.nameOf).find((x) => s.objects[x] || s.lki[x]);
+  if (shares?.what === "name") {
+    const id = resolveRef(s, ctx, shares.with).find((x) => s.objects[x] || s.lki[x]);
     // Its computed (or last known) name: "A // B" for a split card, which shares each of its names.
     const name = id ? ((s.objects[id] ? chars(s, id).name : s.lki[id]?.name) ?? "") : "";
     // Without a designated object, nothing matches.
-    f = { ...f, nameOf: undefined, name: name || "\u0000" };
+    f = { ...f, name: name || "\u0000" };
   }
   return resolveCompare(s, f, ctx.sourceId, ctx);
 }

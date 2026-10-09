@@ -145,7 +145,7 @@ export const CARDS: Record<string, CardScript> = {
         {
           id: "t",
           label: "instant, sorcery or triggered ability",
-          filter: { spells: INSTANT_SORCERY, stackItems: { triggeredOnly: true } },
+          filter: { spells: INSTANT_SORCERY, stackItems: { only: "triggered" } },
         },
       ],
       [fx.counter(ref.target())],

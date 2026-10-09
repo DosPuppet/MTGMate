@@ -283,7 +283,7 @@ export const BIG_SCRIPTS: Record<string, CardScript> = {
         targets: [target.permanent("t", ["Artifact", "Land"], {}, "artifact or land")],
         label: "Exile an artifact or land",
       }),
-      staticAbility("self", { gainLinkedActivated: true }, { label: "Activated abilities of the exiled card" }),
+      staticAbility("self", { gainAbilitiesOf: { zone: "linked" } }, { label: "Activated abilities of the exiled card" }),
     ],
   },
 

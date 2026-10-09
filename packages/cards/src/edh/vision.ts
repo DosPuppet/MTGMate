@@ -152,7 +152,7 @@ export const EDH_VISION: Record<string, CardScript> = {
   // "Choose artifact, creature, enchantment, instant, or sorcery": an "as enters" choice (like Arachne).
   "Cloud Key": {
     asEnters: [fx.chooseForSelf("mode", { options: ["Artifact", "Creature", "Enchantment", "Instant", "Sorcery"] })],
-    abilities: [costReducer({ typeChosen: true }, 1, "Spells you cast of the chosen type cost {1} less")],
+    abilities: [costReducer({ chosen: "cardType" }, 1, "Spells you cast of the chosen type cost {1} less")],
   },
   "Darksteel Forge": {
     abilities: [

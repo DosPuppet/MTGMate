@@ -480,17 +480,17 @@ export interface ManaAbilityDef {
   addCounter?: string;
   /** Temple of Cyclical Time: "remove a [time] counter from this land" when it's activated. */
   removeCounter?: string;
-  /** Pit of Offerings: one mana of any of the colors of the cards linked to the source (exiled with it). */
-  produceLinkedColors?: boolean;
   /**
    * Drawback of the mana ability, applied as it resolves (605.3b): the source deals damage to its
    * controller (Ancient Tomb, "pain" lands), each opponent gains life (Grove of the Burnwillows).
    */
   drawback?: { damageYou?: number; opponentsGainLife?: number };
-  /** One mana of any of the colors among permanents you control matching the filter (Meteor Crater, Plaza of Heroes). */
-  produceColorsOf?: ObjectFilter;
-  /** With `produceColorsOf`: the colors of the matching cards in your graveyard (The Grey Havens). */
-  produceColorsZone?: "graveyard";
+  /**
+   * One mana of any of the colors among the designated objects: the matching permanents you control (Meteor Crater,
+   * Plaza of Heroes), the matching cards in your graveyard (The Grey Havens), the cards exiled with the source (Pit of
+   * Offerings: `ref.linked`).
+   */
+  produceColorsOf?: Ref;
   /**
    * One mana of a type of `produce` that a matching land could produce: that you control (Reflecting Pool;
    * Star Compass: basic), or an opponent's if the filter says so (`controller: "opponent"`: Exotic Orchard).
@@ -501,8 +501,6 @@ export interface ManaAbilityDef {
    * Signet); without a commander, no mana (903.4f).
    */
   produceIdentity?: boolean;
-  /** The Core: as much mana as there are cards in your graveyard matching the filter. */
-  amountGraveyard?: ObjectFilter;
   /**
    * Effect if this mana is spent to cast a matching spell (Carnelian Orb: haste; Pyromancer's Goggles: copy;
    * `uncounterable`: "that spell can't be countered", Cavern of Souls). `effects`: "when this mana is spent
@@ -510,14 +508,12 @@ export interface ManaAbilityDef {
    */
   rider?: { spell: ObjectFilter; effect?: "haste" | "copy" | "uncounterable"; effects?: Effect[] };
   amount: number;
-  /** "{G} for each Elf you control": the amount is the number of matching permanents. */
-  amountPer?: ObjectFilter;
-  /** The Eternity Elevator: as much mana as there are counters of this type on the source. */
-  amountCounters?: string;
-  /** Redshift: as much mana as the source's power. */
-  amountSelfPower?: boolean;
-  /** Loot, the Nexus: one mana for each different power among creatures you control. */
-  amountDistinctPowers?: boolean;
+  /**
+   * Variable amount, evaluated for the source ("{G} for each Elf you control"; The Eternity Elevator: its charge
+   * counters; The Core: permanent cards in your graveyard; Redshift: its power; Loot, the Nexus: different powers among
+   * your creatures); otherwise `amount`.
+   */
+  amountOf?: Amount;
 }
 
 export interface ActivatedAbilityDef {
@@ -546,15 +542,15 @@ export interface ActivatedAbilityDef {
   oncePerTurn?: boolean;
   /** "Activate only if…" / "… only during your turn". */
   activationCondition?: Condition;
-  /** "Costs {1} less to activate for each +1/+1 counter on target creature" (Warrior's Blades). */
-  reduceByTargetCounters?: boolean;
-  /** Dragonfire Blade: "costs {1} less for each color of target creature". */
-  reduceByTargetColors?: boolean;
   /** Equip ability (Kíli: the first each turn may cost {0}). */
   equip?: boolean;
   /** Special action (116): no stack, immediate effects (unlock a door of a Room). */
   specialAction?: boolean;
-  /** "This ability costs {N} less to activate [if …]" (N evaluated on activation). */
+  /**
+   * "This ability costs {N} less to activate [if …]" (N evaluated on activation); an amount that reads the target is
+   * evaluated for it ("{1} less for each +1/+1 counter on target creature": Warrior's Blades; "for each color of target
+   * creature": Dragonfire Blade).
+   */
   reduction?: { generic: Amount; condition?: Condition };
 }
 
@@ -805,14 +801,12 @@ export interface LayerMods {
   /** Assimilation Aegis: copy of the card exiled by the source (linked by "exile until"). */
   copyLinkedExile?: boolean;
   /**
-   * Territory Forge: has the activated abilities of the cards linked to the source; `triggered`: also their triggered
-   * abilities; `chosenName`: only the linked card whose name was chosen last (Koh, the Face Stealer).
+   * Has the printed activated (and mana) abilities of other objects: the cards linked to the source (`linked`:
+   * Territory Forge; `triggered`: also their triggered abilities, and `filter` `chosen: "cardName"`: only the linked card
+   * whose name was chosen, Koh, the Face Stealer), the matching cards in its controller's graveyard (`graveyard`:
+   * Thranduil, the Elvenking), the matching creatures that don't have its name (`battlefield`: Marvin, Murderous Mimic).
    */
-  gainLinkedActivated?: boolean | { triggered?: boolean; chosenName?: boolean };
-  /** Marvin: has the (printed) activated abilities of matching creatures that don't have its name. */
-  gainActivatedFrom?: ObjectFilter;
-  /** The activated abilities of matching cards in its controller's graveyard (Thranduil, the Elvenking). */
-  gainActivatedFromGraveyard?: ObjectFilter;
+  gainAbilitiesOf?: { zone: "linked" | "graveyard" | "battlefield"; filter?: ObjectFilter; triggered?: boolean };
   /** Layer 7b: P/T set. */
   setPower?: number;
   setToughness?: number;
@@ -942,8 +936,9 @@ export interface EventReplacement {
    * that many counters of this type on the replacement's source, in the same replacement (Anti-Venom), or on the
    * permanent that would have been dealt the damage (`countersOnDamaged`: Vigor). */
   onPrevent?: { opponentsMill?: boolean; reflexive?: Effect[]; counters?: string; countersOnDamaged?: string };
-  /** Damage: dealt instead to the permanent the source is attached to (With Great Power). */
-  redirectToAttached?: boolean;
+  /** Damage: dealt instead to the permanent the source is attached to (`attached`: With Great Power) or to the source
+   * itself (`source`: Ancient Adamantoise). */
+  redirectTo?: "attached" | "source";
   /** Shield: only this source, chosen at creation (`sourceDefIs` for a spell without an object). */
   sourceIs?: ObjectId;
   sourceDefIs?: string;
@@ -1256,8 +1251,6 @@ export interface PlayerStaticAbilityDef {
   activateAsThoughHaste?: ObjectFilter;
   /** Wonder Man, Hollywood Hero: each power-up of your permanents may be activated N more times. */
   powerUpExtraUses?: number;
-  /** Enduring story (Storied, The Hobbit): gained for the rest of the game (permanent player effect). */
-  enduringStory?: boolean;
   /**
    * What the player skips (500.11): their next turn (`turn`, Ral Zarek: one effect per skipped turn, consumed), their
    * draw step (`drawStep`, Necropotence, Necrodominance) or the extra turns they would begin
@@ -1326,8 +1319,8 @@ export interface PreventionAbilityDef {
   filter: ObjectFilter;
   noncombatOnly?: boolean;
   combatOnly?: boolean;
-  /** Also prevents the damage dealt BY the source (Fog Bank). */
-  bySource?: boolean;
+  /** Prevents instead the damage dealt by matching sources (Fog Bank: `{ self: true }`). */
+  source?: ObjectFilter;
   label?: string;
 }
 

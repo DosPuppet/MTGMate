@@ -447,7 +447,7 @@ export const GREEN: Record<string, CardScript> = {
           },
         ],
         effects: fx.when(
-          cond.refMatches(ref.target(), { subtypeChosen: true }),
+          cond.refMatches(ref.target(), { chosen: "subtype" }),
           fx.addCounters(ref.target(), 3),
           fx.pump(ref.target(), 0, 0, ["deathtouch"]),
         ),

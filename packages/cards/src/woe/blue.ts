@@ -333,7 +333,7 @@ export const BLUE: Record<string, CardScript> = {
         {
           id: "t",
           label: "activated or triggered ability you control",
-          filter: { stackItems: { abilitiesOnly: true, controller: "you" } },
+          filter: { stackItems: { only: "abilities", controller: "you" } },
         },
       ],
       [fx.copySpell(ref.target(), 1)],

@@ -413,7 +413,7 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
     abilities: [triggered(when.combatDamage("self", TO_PLAYER_OR_PLANESWALKER), [fx.proliferate()], { label: "Proliferate" })],
   },
   "Gyre Sage": {
-    abilities: [evolve, { ...manaAbility("G"), amountCounters: "+1/+1" }],
+    abilities: [evolve, { ...manaAbility("G"), amountOf: { kind: "countersOn", ref: { kind: "self" }, counter: "+1/+1" } }],
   },
   "Incubation Druid": {
     abilities: [
@@ -582,7 +582,7 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
     // Multikicker {2}: read from the text (X = number of times).
     abilities: [
       entersWith({ counters: amount.x, counterKind: "charge", label: "A charge counter for each time it was kicked" }),
-      { ...manaAbility("C"), amountCounters: "charge" },
+      { ...manaAbility("C"), amountOf: { kind: "countersOn", ref: { kind: "self" }, counter: "charge" } },
     ],
   },
   "Fight Rigging": {
