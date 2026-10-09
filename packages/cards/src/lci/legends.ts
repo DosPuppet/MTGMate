@@ -204,7 +204,7 @@ export const LEGENDS: Record<string, CardScript> = {
     abilities: [
       manaAbility("W"),
       triggered(
-        { on: "castSpell", by: "you", filter: ARTIFACT_OR_CREATURE, usingManaFromSelf: true },
+        { on: "castSpell", by: "you", filter: ARTIFACT_OR_CREATURE, usingManaFrom: { self: true } },
         [fx.createTokens(GNOME_SOLDIER)],
         { label: "Gnome Soldier" },
       ),

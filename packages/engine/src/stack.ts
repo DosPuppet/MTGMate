@@ -657,6 +657,8 @@ export function playFromRules(
       if (!r || r.zone !== zone || (r.what && r.what !== what)) return [];
       if (zone === "linked" && !(id && s.objects[id]?.linked?.includes(card))) return [];
       if (r.filter && !matchesCard(s, player, card, { ...r.filter, controller: undefined }, id)) return [];
+      // Granted mayhem (702.191a): only a card discarded this turn.
+      if (r.mayhem && !objectDidThisTurn(s, card, "discard")) return [];
       // Maralen: mana value at most an amount evaluated for the source.
       if (r.maxManaValue !== undefined && id) {
         const max = evalAmount(s, reductionContext(s, player, id, obj(s, id).defId), r.maxManaValue);
@@ -964,11 +966,11 @@ export function spellCost(
   const cost2 = behold?.orPay && !beheld ? totalCost(cost1b, 0, behold.orPay) : cost1b;
   // Aang, Master of Elements: "{W}{U}{B}{R}{G} less"; a symbol with no match in the cost reduces the generic part.
   const symbols = playerStatics(s, player, "spellCost").filter(
-    ({ ab }) => ab.spellCost?.reduceSymbols && matchesView(spellView(d, player), ab.spellCost.filter, player),
+    ({ ab }) => ab.spellCost?.colored && matchesView(spellView(d, player), ab.spellCost.filter, player),
   );
   const cost = symbols.length ? { ...cost2, colored: { ...cost2.colored } } : cost2;
   for (const { ab } of symbols) {
-    for (const [m, n] of Object.entries(ab.spellCost?.reduceSymbols ?? {}) as [ManaType, number][]) {
+    for (const [m, n] of Object.entries(ab.spellCost?.colored ?? {}) as [ManaType, number][]) {
       for (let i = 0; i < n; i++) {
         const left = cost.colored[m] ?? 0;
         if (left > 1) cost.colored[m] = left - 1;
@@ -1135,21 +1137,16 @@ function abilityCostReduction(s: GameState, player: PlayerId, source: ObjectId, 
     const m = x.abilityCost;
     if (!m || !kind(m) || (m.notSelf && id === source)) continue;
     if (m.source && !matchesObjectFilter(s, player, source, m.source)) continue;
-    if (m.firstThisTurnFree) {
-      if (m.ability !== "equip" || countTurnEvents(s, { event: "activate", who: "you", equip: true }, player) > 0) continue;
-      n += 99;
-    } else {
-      const by = id ?? source;
-      let k =
-        m.reduce === undefined
-          ? 0
-          : typeof m.reduce === "number"
-            ? m.reduce
-            : evalAmount(s, reductionContext(s, player, by, s.objects[by]?.defId ?? ""), m.reduce);
-      // "Can't reduce the mana in that cost to less than one mana": at most the mana value minus one.
-      if (m.minOneMana) k = Math.min(k, Math.max(0, manaValue(ab.cost.mana ?? null) - 1));
-      n += Math.max(0, k);
-    }
+    const by = id ?? source;
+    let k =
+      m.reduce === undefined
+        ? 0
+        : typeof m.reduce === "number"
+          ? m.reduce
+          : evalAmount(s, reductionContext(s, player, by, s.objects[by]?.defId ?? ""), m.reduce);
+    // "Can't reduce the mana in that cost to less than one mana": at most the mana value minus one.
+    if (m.minOneMana) k = Math.min(k, Math.max(0, manaValue(ab.cost.mana ?? null) - 1));
+    n += Math.max(0, k);
   }
   return n;
 }
@@ -1489,14 +1486,11 @@ function freeCastTerms(s: GameState, player: PlayerId, card: ObjectId, terms: Ca
     return !!n?.free && (!n.filter || matchesView(view, n.filter, player));
   });
   if (next) return { ...terms, freeOptional: true };
-  // Omnipresence: only if the mana value doesn't exceed the number of creatures you control.
-  const creatures = () => s.battlefield.filter((id) => obj(s, id).controller === player && isCreature(s, id)).length;
   const perms = controlledAbilitiesWithSource(s, player).filter(
     ({ id, ab }) =>
       ab.kind === "castPermission" &&
       (ab.freeFrom === "any" || (ab.freeFrom === "hand" && terms.source === "hand")) &&
-      (!ab.freeMaxManaValueCreatures || manaValue(d.manaCost) <= creatures()) &&
-      // Dracogenesis: only Dragon spells.
+      // Dracogenesis: only Dragon spells; Omnipresence: mana value at most the number of creatures you control.
       (!ab.freeFilter || matchesView(view, resolveFilter(s, ab.freeFilter, id), player)) &&
       (!ab.condition || checkCondition(s, ab.condition, player, id)) &&
       // Zaffai and the Tempests: once each turn (the permission is consumed by a spell cast for free).
@@ -1560,11 +1554,12 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     if (fromGy && (!fromGy.condition || checkCondition(s, fromGy.condition, player, card))) {
       // Wickerfolk Indomitable: "by paying 2 life and sacrificing an artifact or creature in addition".
       if (fromGy.payLife && payableLife(s, player) < fromGy.payLife) return null;
+      // Quilled Greatwurm: "by removing six counters from among creatures you control".
+      const counters = fromGy.removeCountersAmong;
+      if (counters)
+        return countersAmongCreatures(s, player) >= counters ? { source: "graveyard", removeCounters: counters } : null;
       // Hundred-Battle Veteran: "if you do, it enters with a finality counter".
       return { source: "graveyard", payLife: fromGy.payLife, finality: fromGy.finality };
-    }
-    if (d.graveyardCastRemoveCounters && countersAmongCreatures(s, player) >= d.graveyardCastRemoveCounters) {
-      return { source: "graveyard", removeCounters: d.graveyardCastRemoveCounters };
     }
     return null;
   }
@@ -2955,14 +2950,14 @@ export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedA
   if (ab.cost.tapOthers && tapOthersOptions(s, player, source, ab).length < ab.cost.tapOthers.count) return false;
   if (ab.cost.discard && discardCostOptions(s, player, source, ab.cost.discardFilter).length < ab.cost.discard) return false;
   if (ab.cost.returnUnblockedAttacker && unblockedAttackers(s, player).length === 0) return false;
-  if (ab.cost.bounceOther && bounceCostOptions(s, player, source, ab.cost.bounceOther).length === 0) return false;
-  if (ab.cost.exileOther && bounceCostOptions(s, player, source, ab.cost.exileOther).length === 0) return false;
+  if (ab.cost.bounce && bounceCostOptions(s, player, source, ab.cost.bounce).length === 0) return false;
+  if (ab.cost.exile && bounceCostOptions(s, player, source, ab.cost.exile).length === 0) return false;
   if (ab.cost.forage && !canForage(s, player)) return false;
   if (ab.cost.craft && !craftMaterials(s, player, source, ab)) return false;
   return true;
 }
 
-/** Permanents the player can return to hand for a cost (`bounceOther`), cheapest first. */
+/** Permanents the player can return to hand for a cost (`CostDef.bounce`), cheapest first. */
 export function bounceCostOptions(s: GameState, player: PlayerId, source: ObjectId, f: ObjectFilter): ObjectId[] {
   const mv = (id: ObjectId) => manaValue(s.defs[obj(s, id).defId]?.manaCost);
   return s.battlefield
@@ -3093,8 +3088,8 @@ export function activationPicks(
       suggested: options.slice(0, x ?? 0),
     });
   }
-  if (c.exileOther) {
-    const options = bounceCostOptions(s, player, source, c.exileOther);
+  if (c.exile) {
+    const options = bounceCostOptions(s, player, source, c.exile);
     if (options.length)
       out.push({ slot: "exileOther", label: msg("Exile a permanent"), count: 1, options, suggested: options.slice(0, 1) });
   }
@@ -3610,8 +3605,8 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     moveObject(s, weakest, "hand");
   }
   // Urban Retreat: "return a tapped creature you control to its owner's hand".
-  if (ab.cost.bounceOther) {
-    const options = bounceCostOptions(s, player, source, ab.cost.bounceOther);
+  if (ab.cost.bounce) {
+    const options = bounceCostOptions(s, player, source, ab.cost.bounce);
     const back = choices.bounce?.length ? choices.bounce[0] : options[0];
     if (!back || !options.includes(back) || (choices.bounce?.length ?? 1) !== 1)
       throw new RulesError(msg("No permanent to return"));
@@ -3619,7 +3614,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     moveObject(s, back, "hand");
   }
   // The Soul Stone: "exile a creature you control".
-  if (ab.cost.exileOther) {
+  if (ab.cost.exile) {
     const gone = pick("exileOther")[0];
     if (!gone) throw new RulesError(msg("No permanent to exile"));
     removeFromCombat(s, gone);

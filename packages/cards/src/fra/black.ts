@@ -314,7 +314,10 @@ export const BLACK: Record<string, CardScript> = {
       staticAbility(
         "self",
         { power: 2 },
-        { perGraveyard: {}, perDivisor: 7, label: "+2/+0 for every seven cards in your graveyard" },
+        {
+          perAmount: amount.per({ kind: "count", zone: "graveyard", filter: {} }, 7),
+          label: "+2/+0 for every seven cards in your graveyard",
+        },
       ),
     ],
   },

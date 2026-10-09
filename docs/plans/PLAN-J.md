@@ -302,3 +302,4 @@ Three read-only surveys (2026-10-09) checked every tracked entry against the for
 | Lot | State | Rules | Commit |
 |---|---|---|---|
 | J0 | done | — | housekeeping |
+| J1 | done | — | exact merges: 7 variants, 18 single-card keys; fingerprints (seed 7) identical; `putFaceDown` → J4a (manifest through `MoveSpec` would ask a shock land's question) |

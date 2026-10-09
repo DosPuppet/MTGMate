@@ -12,6 +12,7 @@ import {
   CREATURE_OPP,
   CREATURE_YOU_CONTROL,
   castPermission,
+  cmp,
   cond,
   DRAGON_5,
   empower,
@@ -326,7 +327,7 @@ export const UNIQUE: Record<string, CardScript> = {
   "Extrapolate the Impossible": { spell: spell([], []) },
   "Danitha, Spear of Agony": {
     abilities: [
-      triggered(when.castSpell("you", undefined, { opponent: true, objects: { controller: "opponent" } }), [
+      triggered(when.castSpell("you", undefined, { players: "opponent", objects: { controller: "opponent" } }), [
         fx.addCounters(ref.self, 1),
       ]),
     ],
@@ -546,7 +547,7 @@ export const UNIQUE: Record<string, CardScript> = {
     abilities: [
       castPermission({
         freeFrom: "hand",
-        freeMaxManaValueCreatures: true,
+        freeFilter: { compare: [cmp.manaValue("<=", amount.count({ types: ["Creature"], controller: "you" }))] },
         label: "Spells with mana value ≤ your creatures: without paying their cost",
       }),
     ],

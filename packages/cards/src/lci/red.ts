@@ -295,7 +295,7 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       manaAbility("R"),
       triggered(
-        { on: "castSpell", by: "you", filter: { permanent: true }, usingManaFromSelf: true },
+        { on: "castSpell", by: "you", filter: { permanent: true }, usingManaFrom: { self: true } },
         [fx.discover(amount.manaValueOf(ref.eventObject))],
         { label: "Discover X" },
       ),

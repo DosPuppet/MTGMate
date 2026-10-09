@@ -22,8 +22,8 @@ import {
   counterItem,
   dropNowPermissions,
   evidenceCards,
-  isPermanentCard,
   plotCard,
+  spellView,
   stackItemSpecs,
   suspendCard,
   timesCost,
@@ -46,7 +46,7 @@ import {
   shuffle,
 } from "../state";
 import { payableLife } from "../statics";
-import { legalTargets, matchesCard, matchesObjectFilter } from "../targets";
+import { legalTargets, matchesCard, matchesObjectFilter, matchesView } from "../targets";
 import { msg } from "../text";
 import type { ChoiceValue, GameState, ManaCost, ObjectId, PlayerId, Resolution, StackItem } from "../types";
 
@@ -178,13 +178,17 @@ export const HANDLERS: OpHandlers = {
     for (const id of resolveRef(s, ctx, e.what)) {
       const item = s.stack.find((x) => x.id === id);
       const d = item ? s.defs[item.sourceDefId] : undefined;
-      const perm = !!e.exilePermanents && item?.kind === "spell" && !item.copy && !!d && isPermanentCard(d);
+      // "If a permanent spell is countered this way, exile it instead" (Thranduil's Decree): `exile` as a filter.
+      const exile =
+        typeof e.exile === "object"
+          ? item?.kind === "spell" && !item.copy && !!d && matchesView(spellView(d, item.controller), e.exile, ctx.controller)
+          : !!e.exile;
       const uid = item ? s.objects[item.sourceId]?.uid : undefined;
-      if (!counterItem(s, id, ctx.sourceDefId, e.exile || perm)) continue;
+      if (!counterItem(s, id, ctx.sourceDefId, exile)) continue;
       n++;
       // The countered card, wherever it went (exile, graveyard): Thranduil's Decree, Desertion.
       const card =
-        (perm || e.storeMoved) && uid
+        e.storeMoved && uid
           ? Object.values(s.objects).find((o) => o.uid === uid && (o.zone === "exile" || o.zone === "graveyard"))?.id
           : undefined;
       if (card) moved.push(card);

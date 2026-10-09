@@ -529,7 +529,7 @@ export const SPEED: Record<string, CardScript> = {
   },
   "Samut, the Driving Force": {
     abilities: [
-      staticAbility(OTHER_CREATURE_YOU_CONTROL, { power: 1 }, { perSpeed: true, label: "+X/+0 (your speed)" }),
+      staticAbility(OTHER_CREATURE_YOU_CONTROL, { power: 1 }, { perAmount: amount.speed, label: "+X/+0 (your speed)" }),
       costReducer({ notTypes: ["Creature"] }, 0, "Noncreature spells cost {X} less (your speed)", {
         genericAmount: amount.speed,
       }),

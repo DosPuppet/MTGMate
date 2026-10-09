@@ -236,7 +236,7 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       manaAbility("U"),
       triggered(
-        { on: "castSpell", by: "you", filter: { permanent: true }, usingManaFromSelf: true },
+        { on: "castSpell", by: "you", filter: { permanent: true }, usingManaFrom: { self: true } },
         [fx.becomeCopy(ref.target(), ref.eventObject)],
         {
           targets: [target.optional(targetObj("t", { controller: "you", other: true }, "other permanent you control"))],

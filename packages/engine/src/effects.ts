@@ -318,10 +318,6 @@ export function evalCondition(s: GameState, ctx: EffectContext, c: Condition): b
       const p = c.ref ? resolveRef(s, ctx, c.ref).find((x) => isPlayer(s, x)) : ctx.controller;
       return !!p && mostLife(s, p);
     }
-    case "refLife": {
-      const p = resolveRef(s, ctx, c.ref)[0];
-      return !!p && s.players[p]?.life === c.equals;
-    }
     case "refMatches": {
       // "of the chosen type": the choice of the source (its last information if it was sacrificed: A Killer Among Us).
       const f = resolveFilter(s, c.filter, ctx.sourceId);
@@ -714,16 +710,6 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
         .map((p) => evalAmount(s, { ...ctx, controller: p }, a.amount));
       return a.sum ? values.reduce((n, v) => n + v, 0) : Math.max(0, ...values);
     }
-    case "unlockedDoorNames": {
-      const names = new Set<string>();
-      for (const id of s.battlefield) {
-        const o = s.objects[id];
-        if (o?.controller !== ctx.controller) continue;
-        const faces = s.defs[o.defId]?.faceDefs ?? [];
-        for (const d of o.unlocked ?? []) if (faces[d]) names.add(faces[d].name);
-      }
-      return names.size;
-    }
     case "unlockedDoors":
       return s.battlefield.reduce(
         (n, id) => n + (s.objects[id]?.controller === ctx.controller ? (s.objects[id]?.unlocked?.length ?? 0) : 0),
@@ -735,10 +721,6 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       return s.players[ctx.controller]?.[a.zone].length ?? 0;
     case "inExile":
       return resolveRef(s, ctx, a.ref).filter((id) => s.objects[id]?.zone === "exile").length;
-    case "opponentsWithMoreInHand": {
-      const mine = s.players[ctx.controller]?.hand.length ?? 0;
-      return opponentsOf(s, ctx.controller).filter((p) => (s.players[p]?.hand.length ?? 0) > mine).length;
-    }
     case "turnEvents":
       if (!a.of) return countTurnEvents(s, a.query, ctx.controller);
       return resolveRef(s, ctx, a.of)
@@ -890,7 +872,8 @@ function spentOn(s: GameState, id: ObjectId, what: "x" | "mana" | "colors" | "ca
       return item?.x ?? s.objects[id]?.x ?? 0;
     }
     case "mana":
-      return castInfoOf(s, id, true)?.manaSpent ?? 0;
+      // An object that has left the battlefield: its last known information (Satoru).
+      return castInfoOf(s, id, true)?.manaSpent ?? s.lki[id]?.manaSpent ?? 0;
     case "colors": {
       const spent = castInfoOf(s, id)?.spentColors ?? {};
       return (["W", "U", "B", "R", "G"] as const).filter((c) => (spent[c] ?? 0) > 0).length;

@@ -96,7 +96,6 @@ export interface CardScript {
    */
   asEnters?: Effect[];
   shuffleIntoLibrary?: boolean;
-  graveyardCastRemoveCounters?: number;
   /** Activated abilities of sources with the chosen name: {N} more (Skyseer's Chariot) or forbidden except mana (`"forbid"`). */
   chosenNameAbilities?: number | "forbid";
   equipDiscountWhenTargeted?: number;
@@ -424,7 +423,8 @@ export const amount = {
   v: (name: string): Amount => ({ kind: "var", name }),
   /** Card types among the cards in all graveyards (Tarmogoyf). */
   cardTypesInGraveyards: agg("distinct", "cardType", { zone: "graveyard", whose: "all" }),
-  unlockedDoorNames: { kind: "unlockedDoorNames" } as Amount,
+  /** "different names among unlocked doors of Rooms you control": a Room's name is that of its unlocked doors (709.5c). */
+  unlockedDoorNames: agg("distinct", "name", { filter: { subtype: "Room", controller: "you" } }),
   /** X of the spell that put the source onto the battlefield. */
   sourceX: spent("x"),
   max: (...of: Amount[]): Amount => ({ kind: "max", of }),
@@ -501,7 +501,22 @@ export const amount = {
     kind: "refCount",
     ref: { kind: "playersWhere", of: { kind: "eachOpponent" }, where: { kind: "handAtMost", ref: { kind: "you" }, n } },
   }),
-  opponentsWithMoreInHand: { kind: "opponentsWithMoreInHand" } as Amount,
+  /** "each opponent who has more cards in hand than you" (inside `playersWhere`, "you" is the opponent examined). */
+  opponentsWithMoreInHand: {
+    kind: "refCount",
+    ref: {
+      kind: "playersWhere",
+      of: { kind: "eachOpponent" },
+      where: {
+        kind: "amountGreater",
+        a: { kind: "cardsIn", zone: "hand" },
+        b: {
+          kind: "refCount",
+          ref: { kind: "zone", zone: "hand", who: { kind: "controllerOf", ref: { kind: "self" } }, filter: {} },
+        },
+      },
+    },
+  } as Amount,
   greatestManaValueOf: (r: Ref): Amount => agg("max", "manaValue", { of: r }),
   totalPowerOf: (r: Ref): Amount => agg("sum", "power", { of: r }),
   colorPairsAmong: (filter: ObjectFilter): Amount => agg("distinct", "colorPair", { filter }),
@@ -2151,9 +2166,9 @@ export function activated(opts: {
   /** Ninjutsu: "return an unblocked attacker you control to hand". */
   returnUnblockedAttacker?: boolean;
   /** "Return [a permanent] you control to its owner's hand" (Urban Retreat). */
-  bounceOther?: ObjectFilter;
+  bounce?: ObjectFilter;
   /** "Exile [a permanent] you control" (The Soul Stone). */
-  exileOther?: ObjectFilter;
+  exile?: ObjectFilter;
   /** "Forage" (701.61). */
   forage?: boolean;
   /** Craft (702.167): see `craft()`. */
@@ -2211,8 +2226,8 @@ export function activated(opts: {
       ...(opts.discardHand ? { discardHand: true } : {}),
       discardFilter: opts.discardFilter,
       returnUnblockedAttacker: opts.returnUnblockedAttacker,
-      bounceOther: opts.bounceOther,
-      exileOther: opts.exileOther,
+      bounce: opts.bounce,
+      exile: opts.exile,
       forage: opts.forage,
       craft: opts.craft,
     },
@@ -2327,7 +2342,7 @@ export const when = {
   castSpell: (
     by: "you" | "opponent" | "any" = "you",
     filter?: ObjectFilter,
-    targeting?: { objects?: ObjectFilter; opponent?: boolean; orFilter?: boolean },
+    targeting?: Pick<TargetFilter, "objects" | "players"> & { orFilter?: boolean },
   ): TriggerSpec => ({ on: "castSpell", by, filter, targeting }),
   /** "Whenever you cast your Nth spell each turn" */
   castNthSpell: (nth: number): TriggerSpec => ({ on: "castSpell", by: "you", nth }),
@@ -2378,7 +2393,7 @@ export const when = {
   combatDamageBatch: (who: ObjectFilter, toYou?: boolean): TriggerSpec => ({
     on: "combatDamageBatch",
     who,
-    ...(toYou ? { toYou } : {}),
+    ...(toYou ? { to: { players: "you" } } : {}),
   }),
   /** "When this permanent is put into a graveyard from the battlefield" */
   putIntoGraveyardSelf: { on: "leaves", who: "self", to: "graveyard" } as TriggerSpec,
@@ -2569,7 +2584,14 @@ export const cond = {
   v: (name: string, atLeast = 1): Condition => ({ kind: "var", name, atLeast }),
   not: (c: Condition): Condition => ({ kind: "not", cond: c }),
   all: (...of: Condition[]): Condition => ({ kind: "all", of }),
-  refLife: (r: Ref, equals: number): Condition => ({ kind: "refLife", ref: r, equals }),
+  /** "has exactly N life": at least N and not N + 1 (N ≥ 1). */
+  refLife: (r: Ref, equals: number): Condition => ({
+    kind: "all",
+    of: [
+      { kind: "amountAtLeast", amount: { kind: "lifeTotal", who: r }, n: equals },
+      { kind: "not", cond: { kind: "amountAtLeast", amount: { kind: "lifeTotal", who: r }, n: equals + 1 } },
+    ],
+  }),
   battlefieldCount: (filter: ObjectFilter, atLeast: number): Condition => ({ kind: "battlefieldCount", filter, atLeast }),
   sourceMatches: (filter: ObjectFilter): Condition => ({ kind: "sourceMatches", filter }),
   targetMatches: (spec: string, filter: ObjectFilter): Condition => ({ kind: "targetMatches", spec, filter }),
@@ -2582,7 +2604,7 @@ export const cond = {
   amountGreater: (a: Amount, b: Amount): Condition => ({ kind: "amountGreater", a, b }),
   xAtLeast: (n: number): Condition => ({ kind: "xAtLeast", n }),
   /** "as long as you have N or more unspent mana" (the mana pool changes: `bump` at each change). */
-  manaPoolAtLeast: (n: number): Condition => ({ kind: "manaPoolAtLeast", n }),
+  manaPoolAtLeast: (n: number): Condition => ({ kind: "amountAtLeast", amount: { kind: "manaInPool" }, n }),
   castFromHand: { kind: "cast", from: "hand" } as Condition,
   /** The source was cast (the spell, or the permanent that entered from a cast spell). */
   wasCast: { kind: "cast" } as Condition,
@@ -2681,8 +2703,21 @@ export const cond = {
     someone({ kind: "eachOpponent" }, { kind: "not", cond: { kind: "amountAtLeast", amount: { kind: "lifeTotal" }, n: n + 1 } }),
   /** "Max speed": you have the maximum speed (4). */
   maxSpeed: { kind: "maxSpeed" } as Condition,
-  exileAtLeast: (n: number): Condition => ({ kind: "exileAtLeast", n }),
-  evenCounters: { kind: "evenCounters" } as Condition,
+  /** "N or more cards in exile" (all owners, face-down cards included). */
+  exileAtLeast: (n: number): Condition => ({
+    kind: "amountAtLeast",
+    amount: { kind: "count", zone: "exile", whose: "all", filter: {} },
+    n,
+  }),
+  /** "if [the amount] is odd": a - 2 × floor(a / 2) ≥ 1. */
+  odd: (a: Amount): Condition => ({
+    kind: "amountAtLeast",
+    amount: {
+      kind: "sum",
+      of: [a, { kind: "neg", of: { kind: "div", of: a, by: 2 } }, { kind: "neg", of: { kind: "div", of: a, by: 2 } }],
+    },
+    n: 1,
+  }),
   /** "if you committed a crime this turn" */
   crime: turnAtLeast({ event: "crime", who: "you" }),
   /** "if you cast a spell from your hand this turn" */
@@ -3040,11 +3075,8 @@ export function staticAbility(
     per?: ObjectFilter;
     perCounter?: string;
     perGraveyard?: ObjectFilter;
-    perDivisor?: number;
-    perSpeed?: boolean;
     perLife?: boolean;
     perHand?: boolean;
-    perTurnEvents?: TurnLogQuery;
     perAmount?: Amount;
   } = {},
 ): StaticAbilityDef {
@@ -3057,11 +3089,8 @@ export function staticAbility(
     per: opts.per,
     perCounter: opts.perCounter,
     perGraveyard: opts.perGraveyard,
-    perDivisor: opts.perDivisor,
-    perSpeed: opts.perSpeed,
     perLife: opts.perLife,
     perHand: opts.perHand,
-    perTurnEvents: opts.perTurnEvents,
     perAmount: opts.perAmount,
   };
 }

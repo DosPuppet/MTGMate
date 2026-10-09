@@ -52,7 +52,7 @@ export const MULTI: Record<string, CardScript> = {
           target.creature("t", {
             controller: "you",
             token: false,
-            notSameNameAs: { token: true, controller: "you" },
+            not: { sameNameAs: { token: true, controller: "you" } },
           }),
         ],
         label: "Chapters I and II — A token copy (Reflection, nonlegendary, haste)",
@@ -67,7 +67,12 @@ export const MULTI: Record<string, CardScript> = {
         tap: true,
         sorcerySpeed: true,
         targets: [
-          target.permanent("t", ["Enchantment"], { controller: "you", notSameNameAs: { controller: "you" } }, "enchantment"),
+          target.permanent(
+            "t",
+            ["Enchantment"],
+            { controller: "you", not: { sameNameAs: { controller: "you" } } },
+            "enchantment",
+          ),
         ],
         effects: [
           fx.copyToken(ref.target(), { nonlegendary: true, store: "y" }),

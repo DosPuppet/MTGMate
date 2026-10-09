@@ -496,13 +496,17 @@ export const UNIQUE: Record<string, CardScript> = {
         "self",
         { addKeywords: ["cantAttack", "cantBlock"] },
         {
-          condition: cond.not(cond.evenCounters),
+          condition: cond.odd(amount.countersOn(ref.self, "any")),
           label: "Odd number of counters: can't attack or block",
         },
       ),
-      triggered(when.step("main1"), [fx.addCounters(ref.self, 1), fx.when(cond.not(cond.evenCounters), fx.draw(2))], {
-        label: "+1/+1 counter; odd: draw two cards",
-      }),
+      triggered(
+        when.step("main1"),
+        [fx.addCounters(ref.self, 1), fx.when(cond.odd(amount.countersOn(ref.self, "any")), fx.draw(2))],
+        {
+          label: "+1/+1 counter; odd: draw two cards",
+        },
+      ),
     ],
   },
   "Sita Varma, Masked Racer": {

@@ -91,7 +91,7 @@ export const UNIQUE: Record<string, CardScript> = {
         label: "Spells cast from your graveyard cost {2} less",
       },
       playerStatic({
-        playFrom: { zone: "graveyard", filter: { notTypes: ["Land"], discardedThisTurn: true }, what: "spells", mayhem: true },
+        playFrom: { zone: "graveyard", filter: { notTypes: ["Land"] }, what: "spells", mayhem: true },
         label: "Goblin Formula — Each nonland card in your graveyard has mayhem (its mana cost)",
       }),
     ],
@@ -121,7 +121,7 @@ export const UNIQUE: Record<string, CardScript> = {
       manaAbility(["G", "W", "U"]),
       activated({
         mana: "{2}",
-        bounceOther: { types: ["Creature"], tapped: true },
+        bounce: { types: ["Creature"], tapped: true },
         fromHand: true,
         sorcerySpeed: true,
         effects: [fx.toBattlefield(ref.selfCard)],
@@ -211,7 +211,7 @@ export const UNIQUE: Record<string, CardScript> = {
       activated({
         mana: "{6}{B}",
         tap: true,
-        exileOther: { types: ["Creature"] },
+        exile: { types: ["Creature"] },
         effects: [fx.harness],
         label: "Exile a creature: harness The Soul Stone",
       }),

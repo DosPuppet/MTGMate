@@ -17,7 +17,6 @@ import type {
   Ref,
   TargetSpec,
   TriggerSpec,
-  TurnLogQuery,
 } from "../types";
 
 export interface CardDef {
@@ -158,8 +157,6 @@ export interface CardDef {
   equipDiscountWhenTargeted?: number;
   /** "If this card would be put into a graveyard from anywhere, shuffle it into its owner's library instead." */
   shuffleIntoLibrary?: boolean;
-  /** May be cast from the graveyard by removing N counters from among your creatures (Quilled Greatwurm). */
-  graveyardCastRemoveCounters?: number;
   /** "[This card] has flash as long as …" (Take for a Ride, Colossal Rattlewurm). */
   flashIf?: Condition;
   /**
@@ -182,7 +179,8 @@ export interface CardDef {
   /** "You may cast this card from your graveyard [if…]" (Lightwheel Enhancements: max speed). */
   /**
    * Castable from the graveyard; `discard`: by discarding that many additional cards (Alien Symbiosis), matching
-   * `discardFilter` (retrace, 702.81: a land card, read from the text).
+   * `discardFilter` (retrace, 702.81: a land card, read from the text); `removeCountersAmong`: by removing N counters
+   * from among your creatures (Quilled Greatwurm, same key as `PlayFromZone`).
    */
   castFromGraveyard?: {
     condition?: Condition;
@@ -191,6 +189,7 @@ export interface CardDef {
     discard?: number;
     discardFilter?: ObjectFilter;
     finality?: boolean;
+    removeCountersAmong?: number;
   };
   /** "You can't cast this spell unless…" (Proft, Sinister Mastermind: threshold). */
   castCondition?: Condition;
@@ -656,9 +655,9 @@ export interface CostDef {
   returnUnblockedAttacker?: boolean;
   /** "Return [a permanent] you control to its owner's hand" (Urban Retreat: a tapped
    * creature); chosen by the player (`bounce`), otherwise the cheapest. */
-  bounceOther?: ObjectFilter;
+  bounce?: ObjectFilter;
   /** "Exile [a permanent] you control" (The Soul Stone: a creature), the cheapest by default. */
-  exileOther?: ObjectFilter;
+  exile?: ObjectFilter;
   /** Forage (701.61): exile three cards from your graveyard or sacrifice a Food (automatic choice). */
   forage?: boolean;
 }
@@ -980,8 +979,6 @@ export interface CastPermissionAbilityDef {
   freeFilter?: ObjectFilter;
   /** Once each turn (Zaffai and the Tempests); `condition`: only when it's met (during your turn). */
   freeOncePerTurn?: true;
-  /** Omnipresence: only spells with mana value ≤ the number of creatures you control. */
-  freeMaxManaValueCreatures?: true;
   condition?: Condition;
   /** Tinybones: during your turn, play the cards exiled with a stash counter that you don't own (mana of any type). */
   stash?: true;
@@ -1081,8 +1078,6 @@ export interface AbilityCostMod {
    * of creatures you control).
    */
   anyMana?: boolean;
-  /** The first of these abilities activated this turn costs {0} (Kíli the Resourceful, Equip). */
-  firstThisTurnFree?: boolean;
 }
 
 /**
@@ -1132,7 +1127,8 @@ export interface PlayFromZone {
   sneak?: ManaCost;
   /** "Pay life equal to its mana value rather than pay its mana cost" (Gwenom, Remorseless; Valgavoth, Terror Eater). */
   payLifeManaValue?: boolean;
-  /** The card has mayhem (Goblin Formula): cast from the graveyard for its mayhem cost, its mana cost. */
+  /** The card has mayhem (Goblin Formula): cast from the graveyard for its mayhem cost, its mana cost, if it was
+   * discarded this turn. */
   mayhem?: boolean;
   cost?: ManaCost;
 }
@@ -1150,10 +1146,10 @@ export interface PlayerStaticAbilityDef {
   /**
    * Cost of matching spells: {N} less (`reduce`, Goblin Maskmaker: "face-down spells you cast this
    * turn"); mana is spent as though it were mana of any color (`anyMana`, Case File Auditor); fewer
-   * colored symbols (`reduceSymbols`, Aang, Master of Elements: "{W}{U}{B}{R}{G} less"), each removing
+   * colored symbols (`colored`, Aang, Master of Elements: "{W}{U}{B}{R}{G} less"), each removing
    * a symbol of its color, otherwise {1} of the generic (601.2f).
    */
-  spellCost?: { filter: ObjectFilter; reduce?: number; anyMana?: boolean; reduceSymbols?: ManaCost["colored"] };
+  spellCost?: { filter: ObjectFilter; reduce?: number; anyMana?: boolean; colored?: ManaCost["colored"] };
   /** Triggers doubled or suppressed (family G, R4.5). */
   triggerMod?: TriggerMod;
   /** Replacement or prevention of a numeric event, set by an effect (families E and F, R1). */
@@ -1356,19 +1352,13 @@ export interface StaticAbilityDef {
   perCounter?: string;
   /** P/T multiplied by the number of cards in the controller's graveyard matching the filter (Winter). */
   perGraveyard?: ObjectFilter;
-  /** … per group of N cards (Dark Matter Manipulator: "for every seven cards"). */
-  perDivisor?: number;
-  /** P/T multiplied by the controller's speed (Samut, the Driving Force). */
-  perSpeed?: boolean;
   /** P/T multiplied by the controller's life total (The Last Ride). */
   perLife?: boolean;
   /** P/T multiplied by the number of cards in the controller's hand (Stingerback Terror). */
   perHand?: boolean;
-  /** P/T multiplied by a count from the turn log (Kinbinding: "creatures that entered under your control this turn"). */
-  perTurnEvents?: TurnLogQuery;
   /**
    * P/T multiplied by an amount computed like a P/T defined by an ability (Earthen Ally: "for each color
-   * among Allies you control"): amounts readable during the layers (`colorsAmong`, `count`…).
+   * among Allies you control"): amounts readable during the layers (`colorsAmong`, `count`, the turn log, speed, `div`…).
    */
   perAmount?: Amount;
   label?: string;

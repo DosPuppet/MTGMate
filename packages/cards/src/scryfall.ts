@@ -1301,7 +1301,6 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     impending: parseImpending(raw.oracleText)?.n,
     cdaPT: script?.cdaPT,
     shuffleIntoLibrary: script?.shuffleIntoLibrary,
-    graveyardCastRemoveCounters: script?.graveyardCastRemoveCounters,
     // Retrace (702.81): from the graveyard, by discarding a land card in addition.
     castFromGraveyard:
       script?.castFromGraveyard ??

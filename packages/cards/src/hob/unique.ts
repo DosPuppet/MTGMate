@@ -53,7 +53,7 @@ export const UNIQUE: Record<string, CardScript> = {
     spell: spell(
       [target.spell("t", {}, "spell")],
       [
-        { op: "counter", what: ref.target(), exilePermanents: true, storeMoved: "d" },
+        { op: "counter", what: ref.target(), exile: { permanent: true }, storeMoved: "d" },
         fx.grantPlay(ref.stored("d"), { free: true, forever: true }),
       ],
     ),

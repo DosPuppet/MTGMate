@@ -277,12 +277,6 @@ export function checkCondition(
     }
     case "turnsTakenAtLeast":
       return (s.players[controller]?.turnsTaken ?? 0) >= c.n;
-    case "exileAtLeast":
-      return s.exile.length >= c.n;
-    case "evenCounters": {
-      const o = sourceId ? s.objects[sourceId] : undefined;
-      return !!o && Object.values(o.counters).reduce((n, x) => n + x, 0) % 2 === 0;
-    }
     case "maxSpeed":
       return (s.players[controller]?.speed ?? 0) >= 4;
     case "firstEndStep":
@@ -422,11 +416,6 @@ export function checkCondition(
         checkAmount(s, c.a, controller, sourceId, eventObject, event) >
         checkAmount(s, c.b, controller, sourceId, eventObject, event)
       );
-    case "manaPoolAtLeast": {
-      const pool = s.players[controller]?.manaPool;
-      const n = pool ? (Object.values(pool) as number[]).reduce((a, b) => a + b, 0) : 0;
-      return n + (s.players[controller]?.restrictedMana?.length ?? 0) >= c.n;
-    }
     case "amountAtLeast": {
       const a = c.amount;
       if (typeof a === "number") return a >= c.n;
@@ -465,7 +454,6 @@ export function checkCondition(
       return resolveRef(s, ctx, c.ref).some((p) => !!s.players[p] && (s.players[p]?.hand.length ?? 0) <= c.n);
     }
     case "var":
-    case "refLife":
       return false; // evaluated during the resolution (effects.ts)
   }
 }
@@ -665,7 +653,9 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
         const targets = item ? Object.values(item.targets).flat() : [];
         const tg = t.targeting;
         const ok = targets.some((id) =>
-          s.players[id] ? !!tg.opponent && id !== me : !!tg.objects && matchesObjectFilter(s, me, id, tg.objects, src.id),
+          s.players[id]
+            ? !!tg.players && whose(tg.players, id, me)
+            : !!tg.objects && matchesObjectFilter(s, me, id, tg.objects, src.id),
         );
         // Danitha, Sword of Hope: "an Equipment spell or a spell that targets…".
         if (!ok && !(t.targeting.orFilter && f && filterOk)) return null;
@@ -685,7 +675,6 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       if (t.notFromHand && from === "hand") return null;
       if (t.fromExile && from !== "exile") return null;
       if (t.fromHand && from !== "hand") return null;
-      if (t.usingManaFromSelf && !s.stack.find((x) => x.id === ev.stackId)?.manaSources?.includes(src.id)) return null;
       if (t.usingManaFrom) {
         const f = t.usingManaFrom;
         const sources = s.stack.find((x) => x.id === ev.stackId)?.manaSources ?? [];
@@ -815,7 +804,7 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       return n > 0 ? { player: rows[0]?.player, amount: n } : null;
     }
     case "combatDamageBatch": {
-      if (ev.e !== "combatDamageBatch" || (t.toYou && ev.player !== me)) return null;
+      if (ev.e !== "combatDamageBatch" || !damagedMatches(s, ev.player, t.to, me, src.id)) return null;
       // The creatures of the batch that match ("those creatures", "one of those Dragons").
       const matching = ev.sources.filter((id) => {
         const v = liveView(s, id) ?? s.lki[id];

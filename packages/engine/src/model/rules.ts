@@ -141,11 +141,9 @@ export interface ObjectFilter {
    * that put it onto the battlefield). See `FilterCompare`.
    */
   compare?: FilterCompare[];
-  /** Has the same name as a matching permanent (Key to the Side-Door: "a legendary card with the same name as a
-   * legendary permanent you control"). */
+  /** Has the same name as another matching permanent (Key to the Side-Door: "a legendary card with the same name as a
+   * legendary permanent you control"); under `not`: "doesn't have the same name as a token you control" (Yenna). */
   sameNameAs?: ObjectFilter;
-  /** Doesn't have the same name as another matching permanent ("as a token you control", Yenna). */
-  notSameNameAs?: ObjectFilter;
   /**
    * Shares a creature type with the designated object, evaluated on resolution by `withX` (zone references, `moveAll`,
    * search; Shared Animosity: the event object).
@@ -219,8 +217,6 @@ export interface ObjectFilter {
   typeChosen?: boolean;
   /** Put into its zone from the battlefield this turn (Supper for Spiders). */
   fromBattlefieldThisTurn?: boolean;
-  /** Card discarded this turn (Mayhem: "if you discarded it this turn"). */
-  discardedThisTurn?: boolean;
   /** Legendary (true) or nonlegendary (false). */
   legendary?: boolean;
   /** Prepared spell (copy cast from exile, Codie). */
@@ -239,8 +235,6 @@ export interface ObjectFilter {
    * `controller: "opponent"`: Coveted Falcon; "you control but don't own": Laughing Jasper Flint).
    */
   owner?: "you" | "opponent";
-  /** No mana was spent to cast it (or it wasn't cast): Satoru. */
-  noManaSpent?: boolean;
   /** None of these subtypes ("non-Outlaw": Shoot the Sheriff). */
   noneOfSubtypes?: string[];
   /** Card with no abilities (Fang-Druid Summoner, Rise from the Wreck). */
@@ -346,13 +340,13 @@ export type TriggerSpec =
    * Nuisance), "to a creature" (Mephidross Vampire).
    */
   | { on: "dealsCombatDamage"; who: "self" | ObjectFilter; to?: TargetFilter }
-  /** `targeting`: the spell targets a matching object, or an opponent (`opponent`). */
+  /** `targeting`: the spell targets a matching object (`objects`) or player (`players`). */
   | {
       on: "castSpell";
       by: "you" | "opponent" | "any";
       filter?: ObjectFilter;
       /** `orFilter`: the spell matches the filter OR targets what is indicated (Danitha, Sword of Hope). */
-      targeting?: { objects?: ObjectFilter; opponent?: boolean; orFilter?: boolean };
+      targeting?: Pick<TargetFilter, "objects" | "players"> & { orFilter?: boolean };
       /** "your second spell each turn": the Nth spell cast by that player this turn. */
       nth?: number;
       /** "a spell with a single target" (Spinerock Tyrant). */
@@ -372,10 +366,9 @@ export type TriggerSpec =
        * other than the source.
        */
       firstOf?: string[];
-      /** "using mana produced by [this source]" (Tecutlan, Barracks of the Thousand). */
-      usingManaFromSelf?: boolean;
       /** "if mana from a [Treasure] was spent to cast it" (Smaug, Wicked Worm): a matching source, seen through its
-       * last known information if it is gone. */
+       * last known information if it is gone; `{ self: true }`: "using mana produced by [this source]" (Tecutlan,
+       * Barracks of the Thousand). */
       usingManaFrom?: ObjectFilter;
       /** Cast from exile (Quintorius Kand). */
       fromExile?: boolean;
@@ -496,8 +489,8 @@ export type TriggerSpec =
   /** "Whenever one or more [creatures] are dealt excess [noncombat] damage" (120.4a). */
   | { on: "excessDamage"; who: ObjectFilter; noncombatOnly?: boolean }
   /** "Whenever one or more [creatures] deal combat damage to a player": once per step and per player. */
-  /** `toYou`: only the damage dealt to you (Tamiyo, Upriser Crowned). */
-  | { on: "combatDamageBatch"; who: ObjectFilter; toYou?: boolean }
+  /** `to`: only the damage dealt to these players ("to you": Tamiyo, Upriser Crowned). */
+  | { on: "combatDamageBatch"; who: ObjectFilter; to?: TargetFilter }
   /**
    * "Whenever one or more [nonland] cards are milled" (once per mill); `whose`: by that player ("whenever an opponent
    * mills a nonland card"); `amount.eventAmount`: the number of those cards.
@@ -571,7 +564,6 @@ export type Condition =
   | { kind: "var"; name: string; atLeast?: number }
   | { kind: "all"; of: Condition[] }
   /** The designated player has exactly N life (evaluated during the resolution). */
-  | { kind: "refLife"; ref: Ref; equals: number }
   /** At least N permanents matching the filter on the whole battlefield (Blasphemous Edict). */
   | { kind: "battlefieldCount"; filter: ObjectFilter; atLeast: number }
   /** The source matches the filter ("if Kellan is a Scout"). */
@@ -594,7 +586,6 @@ export type Condition =
   /** X of the spell resolving. */
   | { kind: "xAtLeast"; n: number }
   /** "as long as you have N or more unspent mana" (Ozai, the Phoenix King). */
-  | { kind: "manaPoolAtLeast"; n: number }
   /** It is the first end step of this turn (Y'shtola Rhul). */
   | { kind: "firstEndStep" }
   /** It is the first combat phase of the turn (Genji Glove). */
@@ -646,9 +637,7 @@ export type Condition =
   /** Max speed (4); `not` for "a player who doesn't have max speed". */
   | { kind: "maxSpeed" }
   /** At least N cards in exile (Ketramose). */
-  | { kind: "exileAtLeast"; n: number }
   /** Total number of counters on the source is even (Sab-Sunen). */
-  | { kind: "evenCounters" }
   /** It is at least your Nth turn (Jace Reawakened: "not during your first three turns"). */
   | { kind: "turnsTakenAtLeast"; n: number }
   /** It is this step (Smoky Lounge: "your first main phase"). */
@@ -876,11 +865,9 @@ export type Amount =
   /** Number of graveyards that contain at least N cards (Master's Councillors, The Master of Lake-town). */
   | { kind: "graveyardsWithAtLeast"; n: number }
   /** Different names among the unlocked doors of their Rooms (Promising Stairs). */
-  | { kind: "unlockedDoorNames" }
   /** Designated objects still in exile (Dragonhawk: "those of these cards still exiled"). */
   | { kind: "inExile"; ref: Ref }
   /** Opponents who have more cards in hand than you (Wojek Investigator). */
-  | { kind: "opponentsWithMoreInHand" }
   /** Power of the source when the ability triggered ("when this creature dies, … equal to its power"). */
   | { kind: "lkiPower" }
   /** Turn log (`turnlog.ts`): matching entries, seen from the ability's controller. */

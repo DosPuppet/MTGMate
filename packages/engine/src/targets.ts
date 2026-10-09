@@ -8,7 +8,7 @@ import { firstOfEachName, shareName } from "./names";
 import { commanderIdentity, obj } from "./state";
 import { playerProtectedFrom, playerStatic, playerStatics } from "./statics";
 import { msg } from "./text";
-import { attackedThisTurn, countersPutThisTurn, dealtDamageThisTurn, objectDidThisTurn } from "./turnlog";
+import { attackedThisTurn, countersPutThisTurn, dealtDamageThisTurn } from "./turnlog";
 import type {
   CardType,
   Color,
@@ -150,7 +150,6 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   // "with a mana ability" (Moonsilver Key): a mana ability, activated or not (605.1a).
   if (f.withActivatedAbility === "mana" && !(v.abilities ?? []).some(isAnyManaAbility)) return false;
   if (f.withActivatedAbility === true && !(v.abilities ?? []).some((a) => a.kind === "activated")) return false;
-  if (f.noManaSpent && (v.manaSpent ?? 0) > 0) return false;
   if (f.noneOfSubtypes && (v.subtypes.includes(ALL_CREATURE_TYPES) || f.noneOfSubtypes.some((t) => v.subtypes.includes(t))))
     return false;
   if (f.preparedSpell !== undefined && !!v.preparedSpell !== f.preparedSpell) return false;
@@ -280,22 +279,12 @@ export function matchesCard(s: GameState, controller: PlayerId, id: ObjectId, f:
   if (f.other && sourceId && o.uid && o.uid === (s.objects[sourceId]?.uid ?? s.lki[sourceId]?.uid)) return false;
   // "put into a graveyard this turn": the object was created in its zone during this turn.
   if (f.enteredThisTurn && o.controlledSince !== s.turn.number) return false;
-  if (f.discardedThisTurn && !objectDidThisTurn(s, id, "discard")) return false;
   // "put into a graveyard from the battlefield this turn" (Supper for Spiders).
   if (f.fromBattlefieldThisTurn && (o.arrivedFrom !== "battlefield" || o.controlledSince !== s.turn.number)) return false;
   // "milled this turn": put into the graveyard from the library during this turn (Raul, Tato Farmer).
   if (f.milledThisTurn && (o.zone !== "graveyard" || o.arrivedFrom !== "library" || o.controlledSince !== s.turn.number))
     return false;
-  if (f.sameNameAs) {
-    const name = chars(s, id).name;
-    const like = f.sameNameAs;
-    if (
-      !s.battlefield.some(
-        (x) => x !== id && shareName(chars(s, x).name, name) && matchesObjectFilter(s, controller, x, like, sourceId),
-      )
-    )
-      return false;
-  }
+  if (f.sameNameAs && !sameNameOnBattlefield(s, controller, id, f.sameNameAs, sourceId)) return false;
   // "creature card with no abilities": no rules text.
   if (f.noAbilities && (s.defs[o.defId]?.text ?? "").trim()) return false;
   if (f.adventure !== undefined && (s.defs[o.defId]?.layout === "adventure") !== f.adventure) return false;
@@ -305,6 +294,20 @@ export function matchesCard(s: GameState, controller: PlayerId, id: ObjectId, f:
   return (
     matchesView(snapshot(s, id), { ...f, controller: undefined, anyOf: undefined, not: undefined }, controller, sourceId) &&
     (f.controller === undefined || (f.controller === "you" ? o.owner === controller : o.owner !== controller))
+  );
+}
+
+/** Another permanent matching `like` has the same name as the object (`ObjectFilter.sameNameAs`). */
+function sameNameOnBattlefield(
+  s: GameState,
+  controller: PlayerId,
+  id: ObjectId,
+  like: ObjectFilter,
+  sourceId?: ObjectId,
+): boolean {
+  const name = chars(s, id).name;
+  return s.battlefield.some(
+    (x) => x !== id && shareName(chars(s, x).name, name) && matchesObjectFilter(s, controller, x, like, sourceId),
   );
 }
 
@@ -337,16 +340,7 @@ export function matchesObjectFilter(
   // "other than the enchanted creature" (Sporogenic Infection, Saw); "the equipped creature / the enchanted land".
   if (f.attached === "notHost" && sourceId && s.objects[sourceId]?.attachedTo === id) return false;
   if (f.attached === "host" && (!sourceId || s.objects[sourceId]?.attachedTo !== id)) return false;
-  if (f.notSameNameAs) {
-    const name = chars(s, id).name;
-    const other = f.notSameNameAs;
-    if (
-      s.battlefield.some(
-        (x) => x !== id && shareName(chars(s, x).name, name) && matchesObjectFilter(s, controller, x, other, sourceId),
-      )
-    )
-      return false;
-  }
+  if (f.sameNameAs && !sameNameOnBattlefield(s, controller, id, f.sameNameAs, sourceId)) return false;
   // Sub-filters: evaluated like the filter itself (fields specific to the object, chosen values), not only on the view.
   if (f.anyOf && !f.anyOf.some((g) => matchesObjectFilter(s, controller, id, g, sourceId))) return false;
   if (f.not && matchesObjectFilter(s, controller, id, f.not, sourceId)) return false;

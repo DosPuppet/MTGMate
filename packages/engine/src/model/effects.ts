@@ -415,9 +415,9 @@ export type Effect =
     }
   /** Counters a spell or ability on the stack (701.5). */
   /** `store`: number of spells and abilities countered. */
-  /** `exilePermanents`: a countered permanent spell is exiled (Thranduil's Decree); `storeMoved`: the countered
-   * cards, where they went (Desertion). */
-  | { op: "counter"; what: Ref; exile?: boolean; store?: string; exilePermanents?: boolean; storeMoved?: string }
+  /** `exile`: exiled instead of put into the graveyard, all of them or the spells matching a filter (Thranduil's
+   * Decree: permanent spells); `storeMoved`: the countered cards, where they went (Desertion). */
+  | { op: "counter"; what: Ref; exile?: boolean | ObjectFilter; store?: string; storeMoved?: string }
   /** "… unless [player] pays X": if they pay, the next `skip` effects are skipped. */
   | {
       op: "unlessPay";

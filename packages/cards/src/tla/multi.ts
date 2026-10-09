@@ -592,7 +592,7 @@ export const MULTI: Record<string, CardScript> = {
   "Aang, Master of Elements": {
     abilities: [
       playerStatic({
-        spellCost: { filter: {}, reduceSymbols: { W: 1, U: 1, B: 1, R: 1, G: 1 } },
+        spellCost: { filter: {}, colored: { W: 1, U: 1, B: 1, R: 1, G: 1 } },
         label: "Your spells cost {W}{U}{B}{R}{G} less",
       }),
       triggered(

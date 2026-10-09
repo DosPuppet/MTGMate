@@ -188,8 +188,12 @@ export const CARDS: Record<string, CardScript> = {
   "Kíli the Resourceful": {
     abilities: [
       playerStatic({
-        abilityCost: { ability: "equip", firstThisTurnFree: true },
-        condition: cond.enduringStory,
+        // "the first equip ability you activate each turn costs {0}": no equip activated yet this turn.
+        abilityCost: { ability: "equip", reduce: 99 },
+        condition: cond.all(
+          cond.enduringStory,
+          cond.not(cond.amountAtLeast(amount.turnEvents({ event: "activate", who: "you", equip: true }), 1)),
+        ),
         label: "Enduring story: first equip of the turn for {0}",
       }),
       triggered(

@@ -178,6 +178,9 @@ export const CDA_AMOUNT_KINDS: ReadonlySet<string> = new Set([
   "sum",
   // Omnath, Locus of the Void: its controller's unspent mana.
   "manaInPool",
+  // Dark Matter Manipulator: "for every seven cards"; Samut, the Driving Force: your speed.
+  "div",
+  "speed",
   "graveyardsWithAtLeast",
   "turnEvents",
   "count",
@@ -262,6 +265,8 @@ function cdaValue(s: GameState, o: GameObject, a: Amount): number {
   if (typeof a === "number") return a;
   if (a.kind === "sum") return a.of.reduce<number>((n, x) => n + cdaValue(s, o, x), 0);
   if (a.kind === "max") return Math.max(0, ...a.of.map((x) => cdaValue(s, o, x)));
+  if (a.kind === "div") return (a.up ? Math.ceil : Math.floor)(cdaValue(s, o, a.of) / a.by);
+  if (a.kind === "speed") return s.players[o.controller]?.speed ?? 0;
   // Master's Councillors: graveyards with N or more cards.
   if (a.kind === "graveyardsWithAtLeast")
     return s.playerOrder.filter((p) => !s.players[p]?.lost && (s.players[p]?.graveyard.length ?? 0) >= a.n).length;
@@ -574,7 +579,7 @@ interface Applied {
 
 /**
  * What the cached computation depends on (PLAN-C, lot C15): the tapped state of permanents (`tapped` filter, "as long as
- * it's tapped" condition) and the mana pool (`manaPoolAtLeast`, `amount.manaInPool`). Tapping, untapping or paying mana invalidates the cache
+ * it's tapped" condition) and the mana pool (`amount.manaInPool`). Tapping, untapping or paying mana invalidates the cache
  * only if a static ability, an effect or a P/T defined by an ability in force reads them (`bumpFor`).
  */
 interface CacheDeps {
@@ -582,7 +587,7 @@ interface CacheDeps {
   mana: boolean;
   /** The turn log (`amount.turnEvents`, "attacked / dealt damage this turn" filters). */
   turnLog: boolean;
-  /** The players' life (`perLife`, `lifeTotal`, `mostLife`, `refLife`, `opponentHasMore` of life). */
+  /** The players' life (`perLife`, `lifeTotal`, `mostLife`, `opponentHasMore` of life). */
   life: boolean;
   /** "As long as it hasn't dealt (combat) damage yet" (`sourceDealtDamage`, `sourceDealtCombatDamage`). */
   dealt: boolean;
@@ -610,19 +615,18 @@ function scanDeps(x: unknown, out: CacheDeps): void {
   }
   if (!x || typeof x !== "object") {
     // The mana pool: "as long as you have N mana" condition or "unspent mana" amount (Omnath).
-    if (x === "manaPoolAtLeast" || x === "manaInPool") out.mana = true;
+    if (x === "manaInPool") out.mana = true;
     if (x === "turnEvents") out.turnLog = true;
     // To be safe, any "life" value (`opponentHasMore` of life, granted "gain life" trigger).
-    if (x === "life" || x === "lifeTotal" || x === "mostLife" || x === "refLife") out.life = true;
+    if (x === "life" || x === "lifeTotal" || x === "mostLife") out.life = true;
     if (x === "sourceDealtDamage" || x === "sourceDealtCombatDamage") out.dealt = true;
     return;
   }
   for (const [k, v] of Object.entries(x)) {
-    // A key without a value reads nothing (`perTurnEvents: undefined`, always written by `staticAbility`).
+    // A key without a value reads nothing (`perAmount: undefined`, always written by `staticAbility`).
     if (v === undefined) continue;
     if (k === "tapped" || k === "whileSourceTapped") out.tapped = true;
-    if (k === "attackedThisTurn" || k === "dealtDamageThisTurn" || k === "perTurnEvents" || k === "countersPutByYouThisTurn")
-      out.turnLog = true;
+    if (k === "attackedThisTurn" || k === "dealtDamageThisTurn" || k === "countersPutByYouThisTurn") out.turnLog = true;
     if (k === "perLife") out.life = true;
     if (k === "blocked" || k === "blocking") out.blocks = true;
     scanDeps(v, out);
@@ -1054,27 +1058,24 @@ function evalStatic(s: GameState, slot: StaticSlot, sig: (string | number)[]): {
     const defId = card ? s.objects[card]?.defId : undefined;
     mods = defId ? { ...mods, copyOf: defId, copyLinkedExile: undefined } : { ...mods, copyLinkedExile: undefined };
   }
-  if (ab.perSpeed || ab.perLife || ab.perHand || ab.perTurnEvents) {
+  if (ab.perLife || ab.perHand) {
     const pl = s.players[o.controller];
-    const n = ab.perTurnEvents
-      ? countTurnEvents(s, ab.perTurnEvents, o.controller)
-      : ab.perSpeed
-        ? (pl?.speed ?? 0)
-        : ab.perHand
-          ? (pl?.hand.length ?? 0)
-          : Math.max(0, pl?.life ?? 0);
+    const n = ab.perHand ? (pl?.hand.length ?? 0) : Math.max(0, pl?.life ?? 0);
     mods = { ...mods, power: (mods.power ?? 0) * n, toughness: (mods.toughness ?? 0) * n };
     // Aettir and Priwen: "base power and toughness X/X, where X is your life total".
     if (mods.setPower !== undefined) mods = { ...mods, setPower: mods.setPower * n };
     if (mods.setToughness !== undefined) mods = { ...mods, setToughness: mods.setToughness * n };
   } else if (ab.perAmount !== undefined) {
-    // Earthen Ally: "+1/+0 for each color among Allies you control" (computed like a CDA P/T).
+    // Earthen Ally: "+1/+0 for each color among Allies you control" (computed like a CDA P/T); Kinbinding: the turn
+    // log; Samut: your speed; Dark Matter Manipulator: "for every seven cards in your graveyard".
     const n = cdaValue(s, o, ab.perAmount);
     if (readsBattlefield(ab.perAmount)) {
       dependent = true;
       sig.push(`a${n}`);
     }
     mods = { ...mods, power: (mods.power ?? 0) * n, toughness: (mods.toughness ?? 0) * n };
+    if (mods.setPower !== undefined) mods = { ...mods, setPower: mods.setPower * n };
+    if (mods.setToughness !== undefined) mods = { ...mods, setToughness: mods.setToughness * n };
   } else if (ab.per || ab.perCounter || ab.perGraveyard) {
     // "+1/+1 for each Forest" / "for each fellowship counter" / "for each creature card in your graveyard".
     const f = ab.per ? withChosen(ab.per, o) : null;
@@ -1084,7 +1085,7 @@ function evalStatic(s: GameState, slot: StaticSlot, sig: (string | number)[]): {
       : f
         ? s.battlefield.filter((x) => matchesView(snapshotBase(s, x), f, o.controller, id)).length
         : (o.counters[ab.perCounter as string] ?? 0);
-    const n = ab.perDivisor ? Math.floor(raw / ab.perDivisor) : raw;
+    const n = raw;
     if (f) {
       dependent = true;
       sig.push(`n${n}`);

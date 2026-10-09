@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { dealDamage, sacrifice, sourceFromObject } from "../src/actions";
 import { announceDiscard, moveDiscarded } from "../src/effects";
 import { changeCounters, moveObject, obj, tapObject, untapObject } from "../src/state";
-import { matchesCard, matchesObjectFilter } from "../src/targets";
+import { matchesObjectFilter } from "../src/targets";
 import { countersPutThisTurn, countTurnEvents, objectDidThisTurn, objectTurnEvents } from "../src/turnlog";
 import type { TurnLogQuery } from "../src/types";
 import { act, advanceUntil, canActivate, idOf, passBoth, scenario } from "./helpers";
@@ -100,7 +100,7 @@ describe("turn log", () => {
     const forest = idOf(s, "p1", "hand", "Forest");
     const discarded = moveDiscarded(s, "p1", forest);
     announceDiscard(s, "p1", discarded);
-    expect(matchesCard(s, "p1", discarded ?? "", { discardedThisTurn: true })).toBe(true);
+    expect(objectDidThisTurn(s, discarded ?? "", "discard")).toBe(true);
     expect(objectDidThisTurn(s, forest, "discard")).toBe(false);
   });
 });

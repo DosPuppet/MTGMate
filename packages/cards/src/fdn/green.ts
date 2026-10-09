@@ -353,7 +353,7 @@ export const GREEN: Record<string, CardScript> = {
     ],
   },
   "Quilled Greatwurm": {
-    graveyardCastRemoveCounters: 6,
+    castFromGraveyard: { removeCountersAmong: 6 },
     abilities: [
       triggered(when.combatDamage(CREATURE_YOU_CONTROL), [fx.addCounters(ref.eventObject, amount.eventAmount)], {
         condition: cond.yourTurn,

@@ -55,7 +55,7 @@ export const WHITE: Record<string, CardScript> = {
         YOUR_CREATURES,
         { power: 1, toughness: 1 },
         {
-          perTurnEvents: { event: "zone", to: "battlefield", types: ["Creature"], who: "you" },
+          perAmount: amount.turnEvents({ event: "zone", to: "battlefield", types: ["Creature"], who: "you" }),
           label: "Your creatures: +X/+X, where X is the number of creatures that entered under your control this turn",
         },
       ),

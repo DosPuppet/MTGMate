@@ -728,7 +728,7 @@ export const UNIQUE: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.enters({ types: ["Creature"], controller: "you", token: false }),
-        [fx.when(cond.eventObjectMatches({ noManaSpent: true }), fx.draw(1))],
+        [fx.when(cond.not(cond.amountAtLeast(amount.eventManaSpent, 1)), fx.draw(1))],
         { batched: true, label: "Draw" },
       ),
     ],
