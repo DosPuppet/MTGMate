@@ -146,12 +146,14 @@ interface Tally {
   draws: number;
   unfinished: number;
   turns: number;
+  /** AI decisions refused by the engine (RulesError, replaced by the default decision). */
+  refused: number;
   time: Record<"a" | "b", number[]>;
   /** The slowest decisions, from the slowest down (at most `TOP_SLOW`). */
   slow: Slow[];
 }
 
-const emptyTally = (): Tally => ({ a: 0, b: 0, draws: 0, unfinished: 0, turns: 0, time: { a: [], b: [] }, slow: [] });
+const emptyTally = (): Tally => ({ a: 0, b: 0, draws: 0, unfinished: 0, turns: 0, refused: 0, time: { a: [], b: [] }, slow: [] });
 
 const TOP_SLOW = 5;
 const isSlow = (list: Slow[], ms: number) => list.length < TOP_SLOW || ms > (list.at(-1)?.ms ?? 0);
@@ -259,6 +261,7 @@ function playMulti(g: number, t: Tally): void {
     }),
   );
   t.turns += r.turns;
+  t.refused += r.illegal;
   if (!r.state.over) t.unfinished++;
   else if (!r.state.winner) t.draws++;
   else if (isA(Number(String(r.state.winner).slice(1)) - 1)) t.a++;
@@ -288,6 +291,7 @@ function playDuel(g: number, t: Tally): void {
     }),
   );
   t.turns += r.turns;
+  t.refused += r.illegal;
   if (!r.state.over) t.unfinished++;
   else if (!r.state.winner) t.draws++;
   else if ((r.state.winner === "p1") !== swap) t.a++;
@@ -303,6 +307,7 @@ function merge(into: Tally, r: Tally): void {
   into.draws += r.draws;
   into.unfinished += r.unfinished;
   into.turns += r.turns;
+  into.refused += r.refused;
   for (const x of r.time.a) into.time.a.push(x);
   for (const x of r.time.b) into.time.b.push(x);
   for (const x of r.slow) noteSlow(into.slow, x);
@@ -354,7 +359,7 @@ function report(t: Tally, ms: number): void {
   );
   if (byDeck && COMMANDER_PRECONS.length) console.log(`  A = ${COMMANDER_PRECONS[0]?.name}`);
   console.log(
-    `  ${A} wins ${pct(p)} % ± ${pct(ci)} (${t.a} / ${decided}) · draws ${t.draws} · unfinished ${t.unfinished} · ${(t.turns / games).toFixed(1)} turns on average`,
+    `  ${A} wins ${pct(p)} % ± ${pct(ci)} (${t.a} / ${decided}) · draws ${t.draws} · unfinished ${t.unfinished} · ${(t.turns / games).toFixed(1)} turns on average · refused decisions ${t.refused}`,
   );
   console.log(`  ${A}: ${stat(t.time.a)}`);
   console.log(`  ${B}: ${stat(t.time.b)}`);

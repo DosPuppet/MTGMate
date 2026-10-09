@@ -5,17 +5,17 @@ import {
   type Agent,
   allowedDefenders,
   attackCandidates,
-  attackTaxFor,
   blockCandidates,
   type Decision,
   forcedAttackers,
   type GameState,
   legalActions,
+  minBlockers,
   type PlayerId,
   repairAttacks,
-  solvePayment,
 } from "@mtgx/engine";
 import { mulberryChoice } from "./choices";
+import { payableAttacks } from "./heuristic";
 import { buildCastDecision } from "./options";
 
 export function mulberry32(seed: number): () => number {
@@ -59,26 +59,16 @@ export function randomAgent(seed: number, passChance = 0.4): Agent {
             const defender = pick(rand, allowedDefenders(s, id));
             return defender ? [{ id, defender }] : [];
           });
-        // Attack taxes (Propaganda, Ghostly Prison): taxed attacks are removed as long as the total cannot be paid.
-        const taxOf = (list: typeof attackers) => list.reduce((n, a) => n + attackTaxFor(s, a.defender), 0);
-        const payable = (list: typeof attackers) =>
-          taxOf(list) === 0 || solvePayment(s, me, { generic: taxOf(list), colored: {}, x: 0 }) !== null;
-        while (!payable(attackers)) {
-          const i = attackers.findLastIndex((a) => attackTaxFor(s, a.defender) > 0);
-          if (i < 0) break;
-          attackers.splice(i, 1);
-        }
-        return { type: "declareAttackers", attackers: repairAttacks(s, me, attackers) };
+        return { type: "declareAttackers", attackers: payableAttacks(s, me, repairAttacks(s, me, attackers)) };
       }
       case "declareBlockers": {
         const blocks: { blocker: string; attacker: string }[] = [];
         for (const c of blockCandidates(s, me)) {
           if (rand() < 0.5) blocks.push({ blocker: c.blocker, attacker: pick(rand, c.attackers) as string });
         }
-        // Removes the lone blocks on a creature with menace.
+        // Blocks below an attacker's minimum (menace) are removed; the requirements are not completed (random AI).
         const count = (a: string) => blocks.filter((b) => b.attacker === a).length;
-        const menace = (a: string) => s.defs[s.objects[a]?.defId ?? ""]?.keywords.includes("menace");
-        return { type: "declareBlockers", blocks: blocks.filter((b) => !(menace(b.attacker) && count(b.attacker) < 2)) };
+        return { type: "declareBlockers", blocks: blocks.filter((b) => count(b.attacker) >= minBlockers(s, b.attacker)) };
       }
       case "choice":
         return { type: "choose", values: mulberryChoice(rand, p.request) };

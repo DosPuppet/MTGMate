@@ -77,6 +77,7 @@ export {
   forcedAttackers,
   forcedAttacks,
   MAX_HAND_SIZE,
+  minBlockers,
   preferredDefenders,
   repairAttacks,
   repairBlocks,

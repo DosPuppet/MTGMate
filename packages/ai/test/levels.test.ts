@@ -79,6 +79,34 @@ describe("beginner AI", () => {
     // The medium AI, for its part, saves its Cub.
     expect(aiAgent("medium")(s, "p1").type).toBe("cast");
   });
+
+  it("does not declare an attack whose tax it cannot pay (508.1h)", () => {
+    for (let seed = 1; seed <= 10; seed++) {
+      let s = scenario({
+        p1: { battlefield: ["Savannah Lions", "Savannah Lions", "Plains"] },
+        p2: { battlefield: ["Propaganda"] },
+      });
+      s = passUntil(s, (x) => x.pending?.kind === "declareAttackers");
+      for (const level of ["beginner", "medium"] as const) {
+        const d = aiAgent(level, { seed })(s, "p1");
+        expect(d.type === "declareAttackers" && d.attackers.length).toBe(0);
+        expect(() => submit(s, "p1", d)).not.toThrow();
+      }
+    }
+  });
+
+  it("does not block a creature with menace alone (702.110b)", () => {
+    const menace = customCard({ name: "Menacing Brute", power: 1, toughness: 1, keywords: ["menace"] });
+    for (let seed = 1; seed <= 10; seed++) {
+      const s = attackedBy(
+        scenario({ active: "p2", p1: { battlefield: ["Bear Cub", "Bear Cub"] }, p2: { battlefield: [menace] } }),
+        ["Menacing Brute"],
+      );
+      const d = aiAgent("beginner", { seed })(s, "p1");
+      expect(d.type === "declareBlockers" && d.blocks.length).not.toBe(1);
+      expect(() => submit(s, "p1", d)).not.toThrow();
+    }
+  });
 });
 
 describe("AI choices (PLAN-C, lot C17)", () => {

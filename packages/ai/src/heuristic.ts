@@ -9,6 +9,7 @@ import {
   type Agent,
   attackableDefenders,
   attackCandidates,
+  attackTaxFor,
   blockCandidates,
   chars,
   commanderOf,
@@ -19,12 +20,14 @@ import {
   hasKeyword,
   legalActions,
   manaValue,
+  minBlockers,
   type ObjectId,
   opponentsOf,
   type PlayerId,
   preferredDefenders,
   repairAttacks,
   repairBlocks,
+  solvePayment,
 } from "@mtgx/engine";
 import { heuristicChoice, keepValue } from "./choices";
 import { searchAttackers, searchBlocks } from "./combat";
@@ -55,7 +58,7 @@ export function decide(s: GameState, me: PlayerId, pr: Profile): Decision {
             : chooseAttackers(s, me);
       return {
         type: "declareAttackers",
-        attackers: chooseDefenders(s, me, [...new Set([...chosen, ...forcedAttackers(s, me)])]),
+        attackers: payableAttacks(s, me, chooseDefenders(s, me, [...new Set([...chosen, ...forcedAttackers(s, me)])])),
       };
     }
     case "declareBlockers": {
@@ -147,13 +150,42 @@ function attackTarget(s: GameState, me: PlayerId, attackers: string[]): PlayerId
   return [...opps].sort((a, b) => threat(b) - threat(a))[0] ?? targetOpponent(s, me);
 }
 
-/** Completes the blocks to respect as many blocking requirements as possible (509.1c, `repairBlocks`). */
+/**
+ * Removes the blocks of an attacker that has fewer blockers than its minimum (menace, "except by three or more"
+ * creatures), then completes the blocks to respect as many blocking requirements as possible (509.1c, `repairBlocks`).
+ */
 export function withRequiredBlocks(
   s: GameState,
   me: PlayerId,
   blocks: { blocker: string; attacker: string }[],
 ): { blocker: string; attacker: string }[] {
-  return repairBlocks(s, me, blocks);
+  const count = (a: string) => blocks.filter((b) => b.attacker === a).length;
+  return repairBlocks(
+    s,
+    me,
+    blocks.filter((b) => count(b.attacker) >= minBlockers(s, b.attacker)),
+  );
+}
+
+/**
+ * Attack taxes (Propaganda, Ghostly Prison, 508.1h): the taxed attacks are removed, the last ones first, as long as the
+ * total cannot be paid. The attack requirements are then repaired (508.1d).
+ */
+export function payableAttacks(
+  s: GameState,
+  me: PlayerId,
+  decl: { id: string; defender: string }[],
+): { id: string; defender: string }[] {
+  const out = [...decl];
+  const tax = () => out.reduce((n, a) => n + attackTaxFor(s, a.defender), 0);
+  const payable = () => tax() === 0 || solvePayment(s, me, { generic: tax(), colored: {}, x: 0 }) !== null;
+  if (payable()) return decl;
+  while (!payable()) {
+    const i = out.findLastIndex((a) => attackTaxFor(s, a.defender) > 0);
+    if (i < 0) break;
+    out.splice(i, 1);
+  }
+  return repairAttacks(s, me, out);
 }
 
 // ---------------------------------------------------------------------------

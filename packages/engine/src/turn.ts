@@ -1257,7 +1257,7 @@ export function canBlock(s: GameState, blocker: ObjectId, attacker: ObjectId): b
 }
 
 /** Minimum number of blockers of an attacker: 1, 2 with menace, more according to its block rules. */
-function minBlockers(s: GameState, id: ObjectId): number {
+export function minBlockers(s: GameState, id: ObjectId): number {
   const rules = chars(s, id).blockRules.map((r) => r.minBlockers ?? 0);
   return Math.max(hasKeyword(s, id, "menace") ? 2 : 1, ...rules);
 }
