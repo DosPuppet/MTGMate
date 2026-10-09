@@ -81,17 +81,18 @@
   "variant": {
     "Amount.numberChosen": "Wheel of Misfortune — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists",
     "Amount.pow": "Mathemagics — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists",
+    "Condition.behold": "Molten Exhale — \"as though it had flash if you behold a Dragon\": can a Dragon be beheld now (flashIf); Theorist's Sanctum, its other user, became a real \"as it enters\" behold (PLAN-L L5)",
     "Condition.beholdSharingType": "Celestial Reunion — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists",
+    "Condition.extraTurn": "Medomai the Ageless — \"during extra turns\" (500.7, TurnState.extra); generic condition for every \"extra turn\" text, a single card for now",
     "Condition.opponentDealtNoncombatDamageLastTurn": "Command the Stage — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists",
     "Condition.prime": "Zimone, All-Questioning — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists",
     "Ref.abilitiesFromEventObject": "Firebender Ascension — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists",
     "Ref.attachmentsOf": "Light of Judgment — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists",
+    "Ref.chosenPlayer": "Saskia the Unyielding — \"the chosen player\" (chooseForSelf \"player\", 702: \"as it enters, choose a player\"); every \"choose a player/opponent as it enters\" card shares it",
     "Ref.combatPartners": "Ride Down — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists",
     "Ref.numberChoosers": "Wheel of Misfortune — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists",
     "Ref.targetsOfEventObject": "Storm, Windrider — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists",
-    "TriggerSpec.destroyed": "Karmic Justice — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists",
-    "Condition.extraTurn": "Medomai the Ageless — \"during extra turns\" (500.7, TurnState.extra); generic condition for every \"extra turn\" text, a single card for now",
-    "Ref.chosenPlayer": "Saskia the Unyielding — \"the chosen player\" (chooseForSelf \"player\", 702: \"as it enters, choose a player\"); every \"choose a player/opponent as it enters\" card shares it"
+    "TriggerSpec.destroyed": "Karmic Justice — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists"
   },
   "singleCardKeys": {
     "absolute": "Loot, the Anomaly — a unique PowerRule (negative power used as its absolute value); no other card",

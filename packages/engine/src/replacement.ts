@@ -53,6 +53,8 @@ export interface EntersContext {
   chosen?: GameObject["chosen"];
   /** Shock land: the life was paid (otherwise it enters tapped). */
   shockPaid?: boolean;
+  /** "As it enters, you may behold" (Theorist's Sanctum): something was beheld (`cond.beheld` as it enters). */
+  beheld?: boolean;
   /** "Enters as a copy" (707.9): definition copied as it enters (layer 1). */
   copyOf?: string;
   /** 707.9b: copiable exceptions of the model (`copiableExceptions`) and of the copy (`chooseCopy.except`). */
@@ -109,7 +111,17 @@ export function defaultRiot(s: GameState, o: GameObject): "counter" | "haste" {
 /** What the "as it enters" effects bring to the entering (614.1c, 614.12), read by `applyEntersReplacements`. */
 export type EntersChoices = Pick<
   EntersContext,
-  "asEnters" | "chosen" | "riot" | "copyOf" | "copyMods" | "copyDuration" | "counters" | "tapped" | "linked" | "exileCopied"
+  | "asEnters"
+  | "chosen"
+  | "riot"
+  | "copyOf"
+  | "copyMods"
+  | "copyDuration"
+  | "counters"
+  | "tapped"
+  | "linked"
+  | "exileCopied"
+  | "beheld"
 >;
 
 /**
@@ -139,9 +151,9 @@ type EntersAsk = Extract<OpResult, { ask: unknown }>;
 export const ENTERS_PREFIX = "enter:";
 
 /** "As it enters" effects that only choose: the only ones done outside a resolution, and probed for a land. */
-const CHOICE_OPS: ReadonlySet<Effect["op"]> = new Set(["chooseOnEnter", "chooseCopy"]);
+const CHOICE_OPS: ReadonlySet<Effect["op"]> = new Set(["chooseOnEnter", "chooseCopy", "behold"]);
 /** Results of these choices, removed before each effect (a second choice of the same kind is properly asked). */
-const RESULT_KEYS = ["$chosen", "$copyOf", "$copyCard", "$devoured", "$ids:devoured"];
+const RESULT_KEYS = ["$chosen", "$copyOf", "$copyCard", "$devoured", "$ids:devoured", "$beheld"];
 
 /** Riot (702.136a): a +1/+1 counter or haste; suggestion: haste if it can still attack this turn. */
 function riotRequest(s: GameState, controller: PlayerId): ChoiceRequest {
@@ -194,6 +206,9 @@ function collectEntering(
     if (e.tapped) out.tapped = true;
     const card = diff.$copyCard?.[0];
     if (e.exile && card !== undefined) out.exileCopied = String(card);
+  } else if (e.op === "behold") {
+    // "As this land enters, you may behold a Jace" (Theorist's Sanctum): read by `cond.beheld` as it enters.
+    out.beheld = Number(diff.$beheld?.[0] ?? 0) > 0;
   } else if (e.op === "devour") {
     const n = Number(diff.$devoured?.[0] ?? 0);
     if (n > 0) out.counters = [...(out.counters ?? []), { kind: P1P1, n: e.n * n }];
@@ -391,6 +406,7 @@ function amountAtEntry(s: GameState, a: Amount, o: GameObject, ctx: EntersContex
 /** Condition of an "enters with" ability: the kicker and X of the cast spell are known as it enters. */
 function conditionAtEntry(s: GameState, c: Condition, o: GameObject, ctx: EntersContext): boolean {
   if (c.kind === "kicked") return !!ctx.kicked;
+  if (c.kind === "beheld" && ctx.beheld !== undefined) return ctx.beheld;
   if (c.kind === "xAtLeast") return (ctx.x ?? 0) >= c.n;
   if (c.kind === "not") return !conditionAtEntry(s, c.cond, o, ctx);
   if (c.kind === "all") return c.of.every((x) => conditionAtEntry(s, x, o, ctx));

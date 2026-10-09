@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
 import { createTokens, dealDamage, destroy, drawCards, gainLife, sourceFromObject } from "../src/actions";
 import { eventReplacement } from "../src/dsl";
 import { RulesError } from "../src/errors";
+import { submit } from "../src/game";
 import { bump } from "../src/layers";
 import { legalActions } from "../src/legal";
 import { manaAbilitiesOf } from "../src/mana";
@@ -1562,6 +1563,25 @@ describe("Reality Fracture, batch K8: mythic, rare and uncommon cards", () => {
       let u = scenario({ p1: { battlefield: ["Theorist's Sanctum", ...lands("Island", 3)] } });
       u = resolve(activate(u, "p1", idOf(u, "p1", "battlefield", "Theorist's Sanctum"), "Empower"));
       expect(jaceLoyalty(u)).toBe(2);
+    });
+
+    it("Theorist's Sanctum: the Jace to behold is chosen with the land (a card from hand revealed); none: tapped (PLAN-L L5)", () => {
+      const setup = () => scenario({ p1: { hand: ["Theorist's Sanctum", "Jace, Reality Sculptor"] } });
+      const s0 = setup();
+      const land = idOf(s0, "p1", "hand", "Theorist's Sanctum");
+      const jace = idOf(s0, "p1", "hand", "Jace, Reality Sculptor");
+      const option = legalActions(s0, "p1").find((a) => a.type === "playLand" && a.card === land);
+      const req = option?.type === "playLand" ? option.choose : undefined;
+      expect(req?.type === "pick" && req.options).toEqual([jace]);
+      // Beheld: untapped, the card revealed.
+      const yes = submit(s0, "p1", { type: "playLand", card: land, chosen: jace });
+      expect(yes.state.objects[idOf(yes.state, "p1", "battlefield", "Theorist's Sanctum")]?.tapped).toBe(false);
+      expect(yes.events.some((e) => e.type === "reveal")).toBe(true);
+      // Declined: tapped, nothing revealed.
+      const s1 = setup();
+      const no = submit(s1, "p1", { type: "playLand", card: idOf(s1, "p1", "hand", "Theorist's Sanctum"), chosen: "" });
+      expect(no.state.objects[idOf(no.state, "p1", "battlefield", "Theorist's Sanctum")]?.tapped).toBe(true);
+      expect(no.events.some((e) => e.type === "reveal")).toBe(false);
     });
 
     it("Variable Chaser: flying, prowess, enters prepared; Arc of Fortune: each player may discard their hand and draw seven cards", () => {

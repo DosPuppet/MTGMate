@@ -1243,14 +1243,14 @@ describe("PLAN-H H9: 'as it enters' (614.1c, 614.12) and copies (707.9, 707.10)"
     expect(chars(s, back).name).toBe("Bear Cub");
   });
 
-  it("a token copy of a permanent with a choice (Electroduplicate on Adaptive Automaton): the default choice, no question", () => {
+  it("a token copy of a permanent with a choice (Electroduplicate on Adaptive Automaton): its controller is asked (614.12, PLAN-L L5)", () => {
     const s0 = scenario({
       p1: { battlefield: ["Adaptive Automaton", ...lands("Mountain", 3)], hand: ["Electroduplicate"] },
     });
     const automaton = idOf(s0, "p1", "battlefield", "Adaptive Automaton");
     const cast = act(s0, "p1", { type: "cast", card: idOf(s0, "p1", "hand", "Electroduplicate"), targets: { t: [automaton] } });
     const { s, asked } = play(cast);
-    expect(asked.filter((r) => r.intent === "chooseOnEnter")).toHaveLength(0);
+    expect(asked.filter((r) => r.intent === "chooseOnEnter")).toHaveLength(1);
     const token = s.battlefield.find((id) => s.objects[id]?.isToken) as string;
     expect(s.objects[token]?.chosen?.creatureType).toBeDefined();
   });

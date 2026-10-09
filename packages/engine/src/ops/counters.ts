@@ -24,6 +24,7 @@ import {
 import { matchesObjectFilter } from "../targets";
 import { msg } from "../text";
 import type { GameObject, ObjectId, TokenSpec } from "../types";
+import { askCopiesInstead } from "./permanents";
 
 /** Endure token (701.64): white N/N Spirit. */
 const ENDURE_SPIRIT: TokenSpec = {
@@ -65,13 +66,30 @@ export const HANDLERS: OpHandlers = {
     }
     return;
   },
-  counterOnOrCreate(s, _r, e, ctx) {
+  counterOnOrCreate(s, r, e, ctx, key) {
     // Reinforce Jace (a Jace token), amass (an Army): the player's first matching permanent, otherwise a token created
     // first; then the counters, and the extra subtypes (701.47a).
     const n = Math.max(0, evalAmount(s, ctx, e.amount));
-    for (const p of resolveRef(s, ctx, e.who).filter((x) => !!s.players[x])) {
-      let id = s.battlefield.find((x) => s.objects[x]?.controller === p && matchesObjectFilter(s, p, x, e.find));
-      if (!id) id = createTokens(s, p, e.token, 1)[0];
+    const players = resolveRef(s, ctx, e.who).filter((x) => !!s.players[x]);
+    const found = (p: string) =>
+      s.battlefield.find((x) => s.objects[x]?.controller === p && matchesObjectFilter(s, p, x, e.find));
+    // Moonlit Meditation: its "you may", for the players who will create the token, before anything changes.
+    const declined = askCopiesInstead(
+      s,
+      r,
+      key,
+      players.filter((p) => !found(p)),
+      e.token,
+      1,
+    );
+    if (!(declined instanceof Set)) return declined;
+    for (const p of players) {
+      let id = found(p);
+      if (!id) {
+        id = createTokens(s, p, e.token, 1, true, {}, declined.has(p))[0];
+        // A copy that isn't an Army (or a Jace) gets nothing: the counters go on "an Army you control" (701.47a).
+        if (id && !matchesObjectFilter(s, p, id, e.find)) continue;
+      }
       const o = id ? s.objects[id] : undefined;
       if (!o) continue;
       if (n > 0) changeCounters(s, o, e.kind, n);
@@ -252,7 +270,13 @@ export const HANDLERS: OpHandlers = {
       choice = String(answer[0]);
     }
     if (choice === "counters" && o) changeCounters(s, o, P1P1, n);
-    else createTokens(s, ctx.controller, { ...ENDURE_SPIRIT, power: n, toughness: n }, 1, true);
+    else {
+      const spirit = { ...ENDURE_SPIRIT, power: n, toughness: n };
+      // Moonlit Meditation: its "you may" (PLAN-L L5).
+      const declined = askCopiesInstead(s, r, key, [ctx.controller], spirit, 1);
+      if (!(declined instanceof Set)) return declined;
+      createTokens(s, ctx.controller, spirit, 1, true, {}, declined.has(ctx.controller));
+    }
     return;
   },
   addCounters(s, _r, e, ctx) {

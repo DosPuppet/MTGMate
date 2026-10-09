@@ -1765,7 +1765,11 @@ export function additionalOptions(
   if (gy?.discard) add = { ...add, discard: gy.discard, ...(gy.discardFilter ? { discardFilter: gy.discardFilter } : {}) };
   if (!add) return {};
   // Mandatory behold (Monstrous Emergence): there must be a permanent or a card to choose.
-  if (add.behold?.required && beholdOptions(s, player, card, add.behold.filter, add.behold.exiled).length === 0) return null;
+  if (
+    add.behold?.required &&
+    beholdOptions(s, player, card, add.behold.filter, add.behold.exiled).length < (add.behold.count ?? 1)
+  )
+    return null;
   const out: ReturnType<typeof additionalOptions> = {};
   if (add.discard) {
     const df = add.discardFilter;
@@ -1922,25 +1926,42 @@ function beholdSuggestion(s: GameState, options: ObjectId[], required?: boolean)
   return best;
 }
 
+/** Suggested objects to behold: one (`beholdSuggestion`), or `count` of them, the permanents first (nothing to reveal). */
+function beholdSuggestions(s: GameState, options: ObjectId[], required: boolean | undefined, count: number): ObjectId[] {
+  if (count <= 1) {
+    const one = beholdSuggestion(s, options, required);
+    return one ? [one] : [];
+  }
+  return options.length >= count ? options.slice(0, count) : [];
+}
+
 /**
- * The permanent or card beheld on casting: the chosen one (checked; empty list: none, unless beholding is mandatory),
- * otherwise the suggestion.
+ * The permanents or cards beheld on casting (`count` of them, distinct): the chosen ones (checked; empty list: none,
+ * unless beholding is mandatory), otherwise the suggestion.
  */
-function beholdChoice(s: GameState, player: PlayerId, card: ObjectId, d: CardDef, chosen: ObjectId[] | undefined) {
-  const behold = d.additionalCost?.behold;
+function beholdChoice(
+  s: GameState,
+  player: PlayerId,
+  card: ObjectId,
+  d: CardDef,
+  chosen: ObjectId[] | undefined,
+  flashback: boolean,
+): ObjectId[] {
+  const behold = additionalCostOf(d, flashback)?.behold;
   if (!behold) {
     if (chosen?.length) throw new RulesError(msg("This spell doesn't ask you to behold"));
-    return null;
+    return [];
   }
+  const count = behold.count ?? 1;
   const options = beholdOptions(s, player, card, behold.filter, behold.exiled);
-  const id = chosen === undefined ? beholdSuggestion(s, options, behold.required) : (chosen[0] ?? null);
-  if (chosen && chosen.length > 1) throw new RulesError(msg("Invalid behold choice"));
-  if (id === null) {
+  const ids = chosen === undefined ? beholdSuggestions(s, options, behold.required, count) : chosen;
+  if (ids.length === 0) {
     if (behold.required) throw new RulesError(msg("Choose what the additional cost asks for"));
-    return null;
+    return [];
   }
-  if (!options.includes(id)) throw new RulesError(msg("Invalid behold choice"));
-  return id;
+  if (ids.length !== count || new Set(ids).size !== ids.length || ids.some((id) => !options.includes(id)))
+    throw new RulesError(msg("Invalid behold choice"));
+  return ids;
 }
 
 /** Slot of each additional cost chosen by the player. */
@@ -2173,7 +2194,8 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   const autoPaid = autoAdditional(s, player, card, d, flashback);
   if (!autoPaid) throw new RulesError(msg("Can't pay the additional cost"));
   const auto = chosenAdditional(s, player, card, d, flashback, autoPaid, choices.picks);
-  const beheldId = beholdChoice(s, player, card, d, choices.picks?.behold);
+  const beheldIds = beholdChoice(s, player, card, d, choices.picks?.behold, flashback);
+  const beheldId = beheldIds[0];
   // "… if you controlled a Faerie as you cast this spell": evaluated now (601.2), before the payment.
   const metWhenCast = d.whenCast ? checkCondition(s, d.whenCast, player, card) : undefined;
   // Molten Exhale: "as though it had flash if you behold": cast that way, it must behold.
@@ -2363,14 +2385,14 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     paid: {
       sacrificed: sacrifice.length ? [...sacrifice] : undefined,
       exiled: costExiled.length ? costExiled : undefined,
-      beheld: beheldId ? [beheldId] : undefined,
+      beheld: beheldIds.length ? beheldIds : undefined,
     },
     uncounterable: uncounterable || undefined,
   };
   s.stack.push(item);
-  // Beholding a card from the hand: it is revealed.
-  if (beheldId && s.objects[beheldId]?.zone === "hand")
-    emit({ type: "reveal", player, defIds: [s.objects[beheldId]?.defId ?? ""] });
+  // Beholding cards from the hand: they are revealed.
+  const revealed = beheldIds.filter((id) => s.objects[id]?.zone === "hand");
+  if (revealed.length) emit({ type: "reveal", player, defIds: revealed.map((id) => s.objects[id]?.defId ?? "") });
   try {
     const taps: { id: ObjectId; ab?: ManaAbilityDef; amount: number; chosen?: GameObject["chosen"] }[] = [];
     const spent: Partial<Record<ManaType, number>> = {};
@@ -3241,24 +3263,26 @@ export function spellPicks(
 ): CostPick[] {
   const out: CostPick[] = additionalPicks(s, player, card, d, flashback);
   if (removeCounters) out.push(countersAmongPick(s, player, removeCounters));
-  // Behold: a permanent or a card from the hand, or nothing ("you may", or pay the extra cost).
-  const behold = d.additionalCost?.behold;
+  // Behold: a permanent or a card from the hand (or `count` of them), or nothing ("you may", or pay the extra cost).
+  const behold = additionalCostOf(d, flashback)?.behold;
   if (behold) {
     const options = beholdOptions(s, player, card, behold.filter, behold.exiled);
-    const suggested = beholdSuggestion(s, options, behold.required);
+    const suggested = beholdSuggestions(s, options, behold.required, behold.count ?? 1);
     if (options.length)
       out.push({
         slot: "behold",
         label: behold.required
-          ? behold.exiled
-            ? msg("Choose a permanent you control or an exiled card")
-            : msg("Choose a permanent you control or reveal a card from your hand")
+          ? (behold.count ?? 1) > 1
+            ? msg("Behold {n}: choose permanents you control or reveal cards from your hand", { n: behold.count ?? 1 })
+            : behold.exiled
+              ? msg("Choose a permanent you control or an exiled card")
+              : msg("Choose a permanent you control or reveal a card from your hand")
           : behold.orPay
             ? msg("Behold (or choose nothing and pay the extra cost)")
             : msg("You may behold (a permanent or a card from your hand, revealed)"),
-        count: 1,
+        count: behold.count ?? 1,
         options,
-        suggested: suggested ? [suggested] : [],
+        suggested,
         ...(behold.required ? {} : { optional: true }),
       });
   }

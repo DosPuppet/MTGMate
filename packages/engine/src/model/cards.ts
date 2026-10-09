@@ -406,7 +406,8 @@ export interface AdditionalCost {
    * `required`: mandatory ("choose a creature you control or reveal a creature card from your hand",
    * Monstrous Emergence); `exiled`: a matching exiled card instead of a card from hand (Close Encounter).
    */
-  behold?: { filter: ObjectFilter; orPay?: ManaCost; required?: boolean; exiled?: ExiledFilter };
+  /** `count`: "behold three Elementals" (Kindle the Inner Flame's flashback): that many distinct objects. */
+  behold?: { filter: ObjectFilter; orPay?: ManaCost; required?: boolean; exiled?: ExiledFilter; count?: number };
   /** Collect evidence X, X being the total mana value of the targeted permanents (Urgent Necropsy). */
   collectEvidenceTargetsManaValue?: boolean;
   /**

@@ -43,6 +43,7 @@ import { matchesObjectFilter } from "../targets";
 import { msg } from "../text";
 import { eliminate, endTheTurn } from "../turn";
 import type { Step } from "../types";
+import { askCopiesInstead } from "./permanents";
 
 export const HANDLERS: OpHandlers = {
   playerEffect(s, _r, e0, ctx) {
@@ -105,7 +106,7 @@ export const HANDLERS: OpHandlers = {
         );
     return;
   },
-  gift(s, r, e, ctx) {
+  gift(s, r, e, ctx, key) {
     // 702.174: the opponent chosen while casting the spell gets the gift (`CastInfo.giftTo`, on the spell or on the
     // permanent it became); with a single opponent, nothing was asked: it is that one. Left the game: nothing.
     // Approximation: a permanent that has already left the battlefield no longer has its choice (the next opponent).
@@ -114,7 +115,10 @@ export const HANDLERS: OpHandlers = {
     if (!to || !isAlive(s, to)) return;
     if (e.kind === "card") drawCards(s, to, 1);
     else if (e.token) {
-      const created = createTokens(s, to, e.token, 1);
+      // Moonlit Meditation of the gift's recipient: its "you may" (PLAN-L L5).
+      const declined = askCopiesInstead(s, r, key, [to], e.token, 1);
+      if (!(declined instanceof Set)) return declined;
+      const created = createTokens(s, to, e.token, 1, true, {}, declined.has(to));
       for (const id of created) {
         const o = s.objects[id];
         if (o && e.kind === "fish") o.tapped = true;

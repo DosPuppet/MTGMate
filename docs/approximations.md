@@ -20,7 +20,7 @@ Each entry carries its nature:
 - `auto choice` **Aura that enters without being cast, outside a resolution** (return from a linked exile, state-based actions): the first possible host is chosen for the player. During a resolution (`moveTo`), the choice is asked (303.4f).
 - `rule` **Eriette, the Beguiler:** modeled by a static ability, and not by the trigger "whenever an Aura becomes attached": control lasts as long as the Aura stays attached, the mana value condition holds and Eriette is on the battlefield (losing her returns the stolen permanents; a new Eriette steals retroactively).
 - `rule` **Convoke:** a creature that has a mana ability is not used for convoke (it pays through its mana ability).
-- `auto choice` **"Enters" effects outside a resolution** (return from a linked exile, token copy created by an effect, ninjutsu, sneak, state-based actions; 614.1c, 614.12): only the choices are made (type, color, name, mode, model of a copy), with the suggested answer; the other "enters" effects are not (Sin removes no counters, Mox Diamond enters without a discard, devour sacrifices nothing), and riot takes the default choice. A permanent spell that resolves, a land played (the first question comes with the decision, the following ones take the suggestion) and a permanent put onto the battlefield by an effect (`moveTo`, `arrivalChoices`) ask the player the questions (`asEntersChoices`, PLAN-H H9).
+- `auto choice` **"Enters" effects outside a resolution** (return from a linked exile, ninjutsu, sneak, state-based actions; 614.1c, 614.12): only the choices are made (type, color, name, mode, model of a copy), with the suggested answer; the other "enters" effects are not (Sin removes no counters, Mox Diamond enters without a discard, devour sacrifices nothing), and riot takes the default choice. A permanent spell that resolves, a land played (the first question comes with the decision, the following ones take the suggestion) a permanent put onto the battlefield by an effect (`moveTo`, `arrivalChoices`) and a token copy created by an effect (`copyToken`, PLAN-L L5) ask the player the questions (`asEntersChoices`, PLAN-H H9).
 - `auto choice` **Untap up to N lands:** the lands are chosen automatically.
 - `auto choice` **Mana abilities with a cost (605.1a):** they resolve without the stack, but only when activated by hand: the automatic payment does not use them (Ramos, Capital City, Loot, the Pathfinder, Phyrexian Altar, Phyrexian Tower, Sunken Ruins...; the automatic payment never sacrifices a creature).
 - `auto choice` **Amass (701.47a):** the counters go on your first Army (no choice when you control several).
@@ -48,7 +48,7 @@ In the order they were added, set by set.
 
 - **Several sets:**
   - `rule` Soulstone Sanctuary ("all creature types"): any subtype except the known land, artifact and enchantment ones;
-  - `auto choice` Moonlit Meditation, Mirrormind Crown: "you may" is asked for the tokens created by a token-creating effect; those from amass, endure or a gift are always replaced by copies.
+  - `rule` Moonlit Meditation, Mirrormind Crown: the token copies created by an effect ("create a token that's a copy of …": Kindle the Inner Flame, myriad) are not replaced (the "you may" is asked for the other tokens, amass, endure and gifts included since PLAN-L L5).
 - **Foundations (`docs/extensions/fdn.md`):**
   - `auto choice` Quilled Greatwurm (and Dawnhand Dissident): you divide the removed counters among your creatures, but the kind of counters removed from a single creature is chosen for you (−1/−1 first, +1/+1 last);
   - `auto choice` Muldrotha: a card with several permanent types automatically uses the first type still free.
@@ -94,7 +94,6 @@ In the order they were added, set by set.
   - `rule` Locus of Enlightenment: the gained abilities are not limited to one activation per turn;
   - `timing` Ojer Kaslem: the creature card is put onto the battlefield just before the land card (and not at the same time);
 - **Reality Fracture (`docs/extensions/fra.md`):**
-  - `auto choice` Theorist's Sanctum: you behold a Jace on entering as soon as possible, without revealing the card;
   - `rule` Extrapolate the Impossible: does nothing, as on Arena in BO1 (no "outside the game" cards);
   - `rule` Garruk, Curse Breaker −4, Jace, Reality Sculptor −3: temporary emblems; Garruk triggers when you attack (not when another player attacks one of your opponents, in multiplayer) and strengthens all your attacking creatures, even those attacking a planeswalker or a battle;
   - `rule` Emrakul, the Exigent Doom: the ability granted to the land ends as soon as the card leaves exile, in any way (and not only when it is cast); once cast, it lasts until the spell is cast (601.2i) and can be used to pay for it.
@@ -105,7 +104,6 @@ In the order they were added, set by set.
   - `rule` Interdimensional Web Watch: the two mana are usable for any spell cast from anywhere but the hand (and not only from exile).
 - **Lorwyn Eclipsed (`docs/extensions/ecl.md`):**
   - `rule` Rhys, the Evermore: removes all −1/−1 counters from the target, and only those (neither the number nor the other kinds of counters can be chosen);
-  - `rule` Kindle the Inner Flame: beholding three Elementals (flashback) is a casting condition: nothing is chosen or revealed;
   - `rule` Isilu, Carrier of Twilight, Rhys, the Evermore: the granted persist is a triggered ability named "Persist" (without a keyword badge);
   - `rule` Nameless Inversion: "loses all creature types" removes all subtypes and changeling until end of turn;
   - `rule` Foraging Wickermaw: five abilities (one per color), activatable only while it is colorless;

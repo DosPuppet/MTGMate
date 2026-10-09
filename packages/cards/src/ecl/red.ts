@@ -26,7 +26,6 @@ import {
 } from "./common";
 
 const ELEMENTAL = { subtype: "Elemental" };
-const ELEMENTAL_YOU_CONTROL = { types: ["Creature" as const], subtype: "Elemental", controller: "you" as const };
 
 /** "Exile the top N cards of your library. Until the end of your next turn, you may play those cards." */
 const exileTopPlayable = (n: Parameters<typeof fx.exileTop>[1], name = "x") => [
@@ -293,12 +292,10 @@ export const RED: Record<string, CardScript> = {
     spell: spell([target.creature()], [fx.pump(ref.target(), 0, 0, ["trample", "haste"]), fx.draw(1)]),
   },
   "Kindle the Inner Flame": {
-    // Flashback {1}{R} by beholding three Elementals (your Elementals and the Elemental cards in your hand).
+    // Flashback—{1}{R}, behold three Elementals (your Elementals and the Elemental cards in your hand, revealed;
+    // PLAN-L L5).
     flashback: "{1}{R}",
-    castCondition: cond.any(
-      cond.not(cond.amountAtLeast(amount.countIn("graveyard", { self: true }), 1)),
-      cond.amountAtLeast(amount.plus(amount.count(ELEMENTAL_YOU_CONTROL), amount.countIn("hand", ELEMENTAL)), 3),
-    ),
+    flashbackCost: { behold: { filter: ELEMENTAL, required: true, count: 3 } },
     spell: spell(
       [target.creature("t", { controller: "you" })],
       [fx.copyToken(ref.target(), { addKeywords: ["haste"], sacrificeAtEndStep: true })],

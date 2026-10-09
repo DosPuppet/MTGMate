@@ -1,5 +1,6 @@
 /** Engine effects: flow control (if, may, reflexive, delayed). Each key is an `op` of `Effect` (see `runEffect`, effects.ts). */
 import { canForage, forage, payLife } from "../actions";
+import { cardRef } from "../choices";
 import type { OpHandlers } from "../effects";
 import { concreteSpec, evalAmount, evalCondition, nameOf, nextTurnOf, resolveRef, store } from "../effects";
 import { RulesError } from "../errors";
@@ -200,6 +201,8 @@ export const HANDLERS: OpHandlers = {
   },
   behold(s, r, e, ctx, key) {
     const options = beholdOptions(s, ctx.controller, ctx.sourceId, e.filter);
+    // Noted for "as it enters" (Theorist's Sanctum: "if you don't, it enters tapped").
+    r.vars.$beheld = [0];
     if (options.length === 0) return { skip: e.skip };
     const answer = r.vars[key("behold")];
     if (!answer) {
@@ -214,6 +217,8 @@ export const HANDLERS: OpHandlers = {
               card: nameOf(s, ctx.sourceId),
             }),
             options,
+            // Named: a card from the hand is not on the board (land played, PLAN-L L5).
+            labels: Object.fromEntries(options.map((id) => [id, cardRef(s.objects[id]?.defId ?? "")])),
             min: 0,
             max: 1,
             suggested: options.slice(0, 1),
@@ -223,6 +228,7 @@ export const HANDLERS: OpHandlers = {
     }
     const chosen = answer.map(String).find((id) => options.includes(id));
     if (!chosen) return { skip: e.skip };
+    r.vars.$beheld = [1];
     if (s.objects[chosen]?.zone === "hand")
       emit({ type: "reveal", player: ctx.controller, defIds: [s.objects[chosen]?.defId ?? ""] });
     return;

@@ -9,6 +9,7 @@ import { addEffect } from "../src/effects";
 import { GameHost } from "../src/host";
 import { legalActions } from "../src/legal";
 import { changeCounters, chars, decider, moveObject } from "../src/state";
+import { plainText } from "../src/text";
 import { canBlock, declareBlockers } from "../src/turn";
 import type { ChoiceRequest, ChoiceValue, GameObject, GameState, PlayerId, TokenSpec } from "../src/types";
 import { projectView } from "../src/view";
@@ -511,6 +512,54 @@ describe("Edge of Eternities, lot D", () => {
     createTokens(s, "p1", DRONE, 1);
     expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(2);
     expect(idsOf(s, "p1", "battlefield", "Drone")).toHaveLength(1);
+  });
+
+  describe('Moonlit Meditation\'s "you may" on every token path (PLAN-L L5)', () => {
+    /** Moonlit Meditation on Serra Angel, then `hand` cast; `copy`: the answer to "copy instead?". */
+    const withMoonlit = (hand: string, copy: boolean, extra: Record<string, unknown> = {}) => {
+      let s = scenario({
+        p1: {
+          battlefield: ["Plains", "Island", "Island", "Serra Angel", ...lands("Swamp", 3), ...lands("Plains", 2)],
+          hand: ["Moonlit Meditation", hand],
+        },
+      });
+      s = cast(s, "p1", "Moonlit Meditation", { targets: { enchant: [idOf(s, "p1", "battlefield", "Serra Angel")] } });
+      s = passBoth(s);
+      let asked = 0;
+      s = settle(cast(s, "p1", hand, extra), (req) => {
+        if (req.type === "yesNo" && req.intent === "may" && /instead/.test(plainText(req.prompt ?? ""))) {
+          asked++;
+          return [copy ? 1 : 0];
+        }
+        if (req.type === "pick" && req.options.includes("token")) return ["token"];
+        if (req.type === "pick" && req.options.includes("p2")) return ["p2"];
+        return undefined;
+      });
+      return { s, asked };
+    };
+
+    it("endure (a Spirit): asked; yes, a copy of the Angel", () => {
+      const { s, asked } = withMoonlit("Fortress Kin-Guard", true);
+      expect(asked).toBe(1);
+      expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(2);
+      expect(idsOf(s, "p1", "battlefield", "Spirit")).toHaveLength(0);
+    });
+
+    it("endure: no, the Spirit, and the first time of the turn has passed", () => {
+      const { s, asked } = withMoonlit("Fortress Kin-Guard", false);
+      expect(asked).toBe(1);
+      expect(idsOf(s, "p1", "battlefield", "Spirit")).toHaveLength(1);
+      createTokens(s, "p1", DRONE, 1);
+      expect(idsOf(s, "p1", "battlefield", "Drone")).toHaveLength(1);
+    });
+
+    it("amass: asked; a copy that isn't an Army gets no counter", () => {
+      const { s, asked } = withMoonlit("Orcish Bowmasters", true);
+      expect(asked).toBe(1);
+      const angels = idsOf(s, "p1", "battlefield", "Serra Angel");
+      expect(angels).toHaveLength(2);
+      expect(angels.every((id) => !s.objects[id]?.counters["+1/+1"])).toBe(true);
+    });
   });
 
   it("Pinnacle Starcage: exiles MV <= 2, then puts them in the graveyard in exchange for Robots", () => {

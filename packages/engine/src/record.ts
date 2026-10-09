@@ -523,8 +523,11 @@ export const RECORD_VERSION = 1;
  * - 189: PLAN-L L5a: Hawkeye pays {1} up to three times, then chooses up to that many modes in one ability; Nuka-Nuke
  *   Launcher's rad counters for the defending player until the end of their next turn, and intimidate with the color;
  *   Kíli replaces the whole equip cost; Abuelo's Awakening enters 1/1; Heirloom Epic's convoke
+ * - 190: PLAN-L L5b: Moonlit Meditation's "you may" for amass, endure and gift tokens; the "as it enters" choices of
+ *   token copies created by an effect are asked; Theorist's Sanctum beholds as it enters (a real choice, the card
+ *   revealed); behold of several objects, also as a flashback cost (Kindle the Inner Flame)
  */
-export const RULES_VERSION = 189;
+export const RULES_VERSION = 190;
 
 /** One checkpoint every N decisions (plus the last one of the game). */
 export const CHECKPOINT_EVERY = 25;

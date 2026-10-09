@@ -8,6 +8,7 @@ import { dealDamage, destroy, sourceFromObject } from "../src/actions";
 import * as dsl from "../src/dsl";
 import { runEffect } from "../src/effects";
 import { RulesError } from "../src/errors";
+import { submit } from "../src/game";
 import { legalActions } from "../src/legal";
 import { manaAbilitiesOf, manaValue } from "../src/mana";
 import { spellCost } from "../src/stack";
@@ -2202,6 +2203,32 @@ describe("Lorwyn Eclipsed, batch A — red", () => {
     );
     expect(idsOf(three, "p1", "battlefield", "Fire Elemental")).toHaveLength(2);
     expect(three.exile.some((id) => nameOf(three, id) === "Kindle the Inner Flame")).toBe(true);
+  });
+
+  it("Kindle the Inner Flame: the three Elementals are chosen, the cards from the hand revealed (PLAN-L L5)", () => {
+    const s = scenario({
+      p1: {
+        battlefield: [...lands("Mountain", 2), "Fire Elemental", "Enraged Flamecaster"],
+        hand: ["Flame-Chain Mauler", "Opt"],
+        graveyard: ["Kindle the Inner Flame"],
+      },
+    });
+    const kindle = idOf(s, "p1", "graveyard", "Kindle the Inner Flame");
+    const fire = idOf(s, "p1", "battlefield", "Fire Elemental");
+    const three = [fire, idOf(s, "p1", "battlefield", "Enraged Flamecaster"), idOf(s, "p1", "hand", "Flame-Chain Mauler")];
+    const cast = (behold: string[]) =>
+      submit(s, "p1", { type: "cast", card: kindle, targets: { t: [fire] }, picks: { behold } } as never);
+    const ok = cast(three);
+    expect(ok.events.find((e) => e.type === "reveal")).toMatchObject({ defIds: [s.objects[three[2] as string]?.defId] });
+    // The Elementals stay where they are.
+    expect(ok.state.players.p1?.hand).toContain(three[2]);
+    expect(() => cast(three.slice(0, 2))).toThrow(RulesError);
+    expect(() => cast([fire, fire, three[2] as string])).toThrow(RulesError);
+    expect(() => cast([...three.slice(0, 2), idOf(s, "p1", "hand", "Opt")])).toThrow(RulesError);
+    // Cast from the hand: no behold.
+    const h = scenario({ p1: { battlefield: [...lands("Mountain", 4), "Fire Elemental"], hand: ["Kindle the Inner Flame"] } });
+    const option = legalActions(h, "p1").find((a) => a.type === "cast" && nameOf(h, a.card) === "Kindle the Inner Flame");
+    expect(option?.type === "cast" && (option.picks ?? []).some((p) => p.slot === "behold")).toBe(false);
   });
 
   it("Kulrath Zealot and Sizzling Changeling: the top card is exiled and playable until the end of your next turn", () => {

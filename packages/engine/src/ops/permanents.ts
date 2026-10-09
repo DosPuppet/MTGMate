@@ -19,7 +19,7 @@ import {
 import { blockRulePlaceholder, copiableExceptions, copiedDefId, mergeMods, resolveBlockRules } from "../layers";
 import { manaValue } from "../mana";
 import { CREATURE_TYPES, gameNames, isCreatureType, nameList, printedName, tokenCreatureTypes } from "../names";
-import { asEntersChoices, chosenValue, ENTERS_PREFIX } from "../replacement";
+import { asEntersChoices, chosenValue, ENTERS_PREFIX, type EntersChoices, withEntersChoices } from "../replacement";
 import {
   bump,
   chars,
@@ -39,7 +39,18 @@ import { msg } from "../text";
 import { createDelayed, onceKey } from "../triggers";
 import { attackableDefenders } from "../turn";
 import { logTurnEvent } from "../turnlog";
-import type { AbilityDef, ChoiceRequest, Color, Effect, GameState, NameKind, PlayerId, Resolution } from "../types";
+import type {
+  AbilityDef,
+  ChoiceRequest,
+  Color,
+  Effect,
+  GameObject,
+  GameState,
+  NameKind,
+  PlayerId,
+  Resolution,
+  TokenSpec,
+} from "../types";
 import { BASIC_LAND_TYPES } from "../types";
 
 /**
@@ -158,6 +169,46 @@ const CARD_TYPE_LABEL: Record<string, string> = {
  * suggestion: during the resolution of a permanent spell, when playing a land, or when an effect puts it into play.
  * `preset`: the options imposed by the effect.
  */
+/**
+ * Moonlit Meditation, Mirrormind Crown: "you may instead create that many tokens that are copies of [the host]",
+ * asked of the replacement's controller for each creator of tokens, before any creation (every path that creates
+ * tokens during a resolution: tokens, gift, amass, endure). Returns the question, or the creators who declined.
+ */
+export function askCopiesInstead(
+  s: GameState,
+  r: Resolution,
+  key: (suffix: string) => string,
+  creators: readonly PlayerId[],
+  token: TokenSpec,
+  n: number,
+): Extract<OpResult, { ask: unknown }> | Set<string> {
+  const declined = new Set<string>();
+  for (const p of creators) {
+    const rep = n > 0 ? tokenCopyReplacement(s, p, token) : undefined;
+    if (!rep?.may) continue;
+    const answer = r.vars[key(`copies:${p}`)];
+    if (!answer) {
+      return {
+        ask: {
+          player: rep.controller,
+          key: key(`copies:${p}`),
+          request: {
+            type: "yesNo",
+            intent: "may",
+            prompt:
+              n > 1
+                ? msg("{card}: create copies of {host} instead?", { card: nameOf(s, rep.sourceId), host: nameOf(s, rep.host) })
+                : msg("{card}: create a copy of {host} instead?", { card: nameOf(s, rep.sourceId), host: nameOf(s, rep.host) }),
+            suggested: [1],
+          },
+        },
+      };
+    }
+    if (answer[0] !== 1) declined.add(p);
+  }
+  return declined;
+}
+
 /** Records the source's choice (`chooseOnEnter`). */
 function chooseOnEnterDone(
   s: GameState,
@@ -517,36 +568,8 @@ export const HANDLERS: OpHandlers = {
     }
     const enters = (p: string) => ({ tapped: !!(e.tapped || e.attacking), attacking: attacking.get(p) });
     // Moonlit Meditation, Mirrormind Crown: "you may instead create copies" — asked before any creation.
-    const declined = new Set<string>();
-    for (const p of creators) {
-      const rep = n > 0 ? tokenCopyReplacement(s, p, token) : undefined;
-      if (!rep?.may) continue;
-      const answer = r.vars[key(`copies:${p}`)];
-      if (!answer) {
-        return {
-          ask: {
-            player: rep.controller,
-            key: key(`copies:${p}`),
-            request: {
-              type: "yesNo",
-              intent: "may",
-              prompt:
-                n > 1
-                  ? msg("{card}: create copies of {host} instead?", {
-                      card: nameOf(s, rep.sourceId),
-                      host: nameOf(s, rep.host),
-                    })
-                  : msg("{card}: create a copy of {host} instead?", {
-                      card: nameOf(s, rep.sourceId),
-                      host: nameOf(s, rep.host),
-                    }),
-              suggested: [1],
-            },
-          },
-        };
-      }
-      if (answer[0] !== 1) declined.add(p);
-    }
+    const declined = askCopiesInstead(s, r, key, creators, token, n);
+    if (!(declined instanceof Set)) return declined;
     if (e.attachTo) {
       for (const host of resolveRef(s, ctx, e.attachTo).filter((x) => onBattlefield(s, x))) {
         const made = createTokens(s, ctx.controller, token, n, true, enters(ctx.controller), declined.has(ctx.controller));
@@ -604,6 +627,8 @@ export const HANDLERS: OpHandlers = {
     }
     // Doubling Season also applies to token copies.
     const base = attackEach ? attackEach.length : e.count === undefined ? 1 : evalAmount(s, ctx, e.count);
+    // The copies to make: for each creator and each model, its definition and its number.
+    const plan: { who: string; id: string; model: GameObject | undefined; defId: string; n: number }[] = [];
     for (const who of creators)
       for (const id of resolveRef(s, ctx, e.of)) {
         const model = s.objects[id] ?? undefined;
@@ -612,77 +637,97 @@ export const HANDLERS: OpHandlers = {
         if (!defId) continue;
         const view = model?.zone === "battlefield" ? snapshot(s, id) : s.lki[id];
         const types = [...new Set([...(view?.types ?? s.defs[defId]?.types ?? []), ...(e.addTypes ?? [])])];
-        const n = view ? tokenCopyCount(s, who, { ...view, types, isToken: true }, base) : base;
-        for (let i = 0; i < n; i++) {
-          // Tapped, types, abilities and P/T in place before the entering event (no "becomes tapped").
-          // 707.9b: the exceptions of the model, then those of this effect ("except it's a 1/1"), are copiable.
-          const token = createTokenCopy(s, who, defId, {
-            tapped: !!e.tapped,
-            mods: mergeMods(model?.zone === "battlefield" ? copiableExceptions(s, id) : undefined, {
-              addTypes: e.addTypes?.length ? e.addTypes : undefined,
-              addKeywords: e.addKeywords?.length ? e.addKeywords : undefined,
-              addSubtypes: e.addSubtypes?.length ? e.addSubtypes : undefined,
-              addSupertypes: e.legendary ? ["Legendary"] : undefined,
-              removeSupertypes: e.nonlegendary ? ["Legendary"] : undefined,
-              addAbilities: e.addAbilities?.length ? e.addAbilities : undefined,
-              addColors: e.addColors?.length ? e.addColors : undefined,
-              // Ardyn, the Usurper: "except it's a black Demon".
-              setColors: e.setColors,
-              setSubtypes: e.setSubtypes,
-              ...(e.pt !== undefined ? { setPower: e.pt, setToughness: e.pt } : {}),
-            }),
-            modsCopiable: true,
-          });
-          made.push(token);
-          // Firion: cheaper equip abilities (added; the cheapest will be used).
-          if (e.equipDiscount) {
-            const equips = (s.defs[defId]?.abilities ?? []).flatMap((ab) =>
-              ab.kind === "activated" && ab.equip && ab.cost.mana
-                ? [
-                    {
-                      ...ab,
-                      cost: {
-                        ...ab.cost,
-                        mana: { ...ab.cost.mana, generic: Math.max(0, ab.cost.mana.generic - (e.equipDiscount ?? 0)) },
-                      },
-                      label: msg("{label} (reduced)", { label: ab.label ?? "" }),
+        plan.push({ who, id, model, defId, n: view ? tokenCopyCount(s, who, { ...view, types, isToken: true }, base) : base });
+      }
+    // 614.12: the "as it enters" choices of each copy (a creature type, a color, riot…), asked of its controller before
+    // any copy is created (PLAN-L L5).
+    const entry = new Map<string, EntersChoices>();
+    for (const { who, id, defId, n } of plan)
+      for (let i = 0; i < n; i++) {
+        const res = asEntersChoices(s, r.vars, { id: "", defId, controller: who }, key(`enter-${who}-${id}-${i}:`), "ask");
+        if ("ask" in res) return res;
+        entry.set(`${who}|${id}|${i}`, res);
+      }
+    for (const { who, id, model, defId, n } of plan) {
+      for (let i = 0; i < n; i++) {
+        // Tapped, types, abilities and P/T in place before the entering event (no "becomes tapped").
+        // 707.9b: the exceptions of the model, then those of this effect ("except it's a 1/1"), are copiable.
+        const choices = entry.get(`${who}|${id}|${i}`) ?? { asEnters: true };
+        const token = createTokenCopy(
+          s,
+          who,
+          defId,
+          withEntersChoices(
+            {
+              tapped: !!e.tapped,
+              mods: mergeMods(model?.zone === "battlefield" ? copiableExceptions(s, id) : undefined, {
+                addTypes: e.addTypes?.length ? e.addTypes : undefined,
+                addKeywords: e.addKeywords?.length ? e.addKeywords : undefined,
+                addSubtypes: e.addSubtypes?.length ? e.addSubtypes : undefined,
+                addSupertypes: e.legendary ? ["Legendary"] : undefined,
+                removeSupertypes: e.nonlegendary ? ["Legendary"] : undefined,
+                addAbilities: e.addAbilities?.length ? e.addAbilities : undefined,
+                addColors: e.addColors?.length ? e.addColors : undefined,
+                // Ardyn, the Usurper: "except it's a black Demon".
+                setColors: e.setColors,
+                setSubtypes: e.setSubtypes,
+                ...(e.pt !== undefined ? { setPower: e.pt, setToughness: e.pt } : {}),
+              }),
+              modsCopiable: true,
+            },
+            choices,
+          ),
+        );
+        made.push(token);
+        // Firion: cheaper equip abilities (added; the cheapest will be used).
+        if (e.equipDiscount) {
+          const equips = (s.defs[defId]?.abilities ?? []).flatMap((ab) =>
+            ab.kind === "activated" && ab.equip && ab.cost.mana
+              ? [
+                  {
+                    ...ab,
+                    cost: {
+                      ...ab.cost,
+                      mana: { ...ab.cost.mana, generic: Math.max(0, ab.cost.mana.generic - (e.equipDiscount ?? 0)) },
                     },
-                  ]
-                : [],
-            );
-            if (equips.length) addEffect(s, [token], { addAbilities: equips }, "permanent");
-          }
-          if ((e.attacking || attackEach) && s.combat) {
-            // Calamity: "tapped and attacking"; myriad: the defender chosen for the player of its copy (the extra copies from a
-            // doubler are spread among them and keep that choice).
-            const tok = s.objects[token];
-            if (tok) tok.tapped = true;
-            const defender = attackEach ? attackEach[Math.floor((i * attackEach.length) / n)] : attacking.get(who);
-            if (defender) s.combat.attackers.push({ id: token, defender, blockers: [], blocked: false });
-            bump(s);
-          }
-          if (e.atEnd) {
-            // Sacrificed or exiled at the beginning of the next end step, at end of combat or at the next upkeep.
-            const { fate, at } = typeof e.atEnd === "string" ? { fate: e.atEnd, at: undefined } : e.atEnd;
-            const it = { kind: "target", id: "copy" } as const;
-            // Firion (next upkeep): the delayed ability has the token itself as its source, without a label.
-            const upkeep = at === "nextUpkeep";
-            createDelayed(
-              s,
-              ctx.controller,
-              upkeep ? token : ctx.sourceId,
-              upkeep ? (s.objects[token]?.defId ?? defId) : ctx.sourceDefId,
-              {
-                targets: [],
-                effects: [fate === "exile" ? { op: "exile", what: it } : { op: "sacrificeIt", what: it }],
-                bound: { copy: [token] },
-                ...(upkeep ? {} : { label: fate === "exile" ? msg("exile the copy") : msg("sacrifice the copy") }),
-              },
-              at,
-            );
-          }
+                    label: msg("{label} (reduced)", { label: ab.label ?? "" }),
+                  },
+                ]
+              : [],
+          );
+          if (equips.length) addEffect(s, [token], { addAbilities: equips }, "permanent");
+        }
+        if ((e.attacking || attackEach) && s.combat) {
+          // Calamity: "tapped and attacking"; myriad: the defender chosen for the player of its copy (the extra copies from a
+          // doubler are spread among them and keep that choice).
+          const tok = s.objects[token];
+          if (tok) tok.tapped = true;
+          const defender = attackEach ? attackEach[Math.floor((i * attackEach.length) / n)] : attacking.get(who);
+          if (defender) s.combat.attackers.push({ id: token, defender, blockers: [], blocked: false });
+          bump(s);
+        }
+        if (e.atEnd) {
+          // Sacrificed or exiled at the beginning of the next end step, at end of combat or at the next upkeep.
+          const { fate, at } = typeof e.atEnd === "string" ? { fate: e.atEnd, at: undefined } : e.atEnd;
+          const it = { kind: "target", id: "copy" } as const;
+          // Firion (next upkeep): the delayed ability has the token itself as its source, without a label.
+          const upkeep = at === "nextUpkeep";
+          createDelayed(
+            s,
+            ctx.controller,
+            upkeep ? token : ctx.sourceId,
+            upkeep ? (s.objects[token]?.defId ?? defId) : ctx.sourceDefId,
+            {
+              targets: [],
+              effects: [fate === "exile" ? { op: "exile", what: it } : { op: "sacrificeIt", what: it }],
+              bound: { copy: [token] },
+              ...(upkeep ? {} : { label: fate === "exile" ? msg("exile the copy") : msg("sacrifice the copy") }),
+            },
+            at,
+          );
         }
       }
+    }
     if (e.store) r.vars[`$ids:${e.store}`] = made;
     return;
   },

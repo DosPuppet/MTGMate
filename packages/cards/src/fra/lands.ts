@@ -80,8 +80,10 @@ export const LANDS: Record<string, CardScript> = {
     ],
   },
   "Theorist's Sanctum": {
+    // "As this land enters, you may behold a Jace. If you don't, it enters tapped" (PLAN-L L5).
+    asEnters: [...fx.mayBehold({ subtype: "Jace" })],
     abilities: [
-      entersWith({ tapped: true, condition: cond.not(cond.beholdJace), label: "Tapped, unless you behold a Jace" }),
+      entersWith({ tapped: true, condition: cond.not(cond.beheld), label: "Tapped, unless you behold a Jace" }),
       activated({ mana: "{2}{U}", tap: true, effects: [empower(2)], label: "Empower Jace 2" }),
     ],
   },
