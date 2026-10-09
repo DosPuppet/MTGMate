@@ -987,7 +987,7 @@ export const fx = {
     {
       sacrificeAtEndStep,
       ...opts
-    }: { haste?: boolean; sacrificeAtEndStep?: boolean; nonlegendary?: boolean; loyalty?: Amount } = {},
+    }: { haste?: boolean; sacrificeAtEndStep?: boolean; nonlegendary?: boolean; loyalty?: Amount; for?: Ref } = {},
   ): Effect => ({
     op: "copySpell",
     what,
@@ -1377,7 +1377,14 @@ export const fx = {
     what: Ref,
     chooser: Ref,
     store: string,
-    opts: { anyNumber?: boolean; anyZone?: boolean; prompt?: string; optional?: boolean; random?: boolean } = {},
+    opts: {
+      anyNumber?: boolean;
+      max?: number;
+      anyZone?: boolean;
+      prompt?: string;
+      optional?: boolean;
+      random?: boolean;
+    } = {},
   ): Effect => ({
     op: "chooseAmong",
     what,
@@ -1460,6 +1467,10 @@ export const fx = {
   extraLandThisTurn: { op: "playerEffect", ability: { extraLands: 1 } } as Effect,
   nextSpellUncounterable: { op: "playerEffect", ability: { nextSpell: { uncounterable: true } }, once: true } as Effect,
   tap: (what: Ref): Effect => ({ op: "tap", what }),
+  /** "Look at [these cards]" (only the controller sees them); `random`: that many at random ("a card at random"). */
+  look: (what: Ref, random?: number): Effect => ({ op: "look", what, ...(random !== undefined ? { random } : {}) }),
+  /** Soulbond (702.95): pairs the two creatures. */
+  pair: (what: Ref, withRef: Ref): Effect => ({ op: "pair", what, with: withRef }),
   /** "Remove [the creature] from combat" (506.4). */
   removeFromCombat: (what: Ref): Effect => ({ op: "removeFromCombat", what }),
   untap: (what: Ref): Effect => ({ op: "tap", what, untap: true }),
@@ -2979,6 +2990,33 @@ export function myriadAbility(): AbilityDef {
     ],
     { label: msg("Myriad: a copy attacks each of your other opponents") },
   );
+}
+
+/**
+ * Soulbond (702.95a): "you may pair this creature with another unpaired creature when either enters". Two abilities: when
+ * it enters, with another unpaired creature you control; when another unpaired creature you control enters, if it is
+ * unpaired. Read from the text (`scryfall.ts`).
+ */
+export function soulbondAbilities(): AbilityDef[] {
+  const unpairedOther: ObjectFilter = { types: ["Creature"], controller: "you", other: true, paired: false };
+  return [
+    triggered(
+      when.entersSelf,
+      [
+        fx.chooseAmong(ref.permanentsOf(ref.you, unpairedOther), ref.you, "soulbond", {
+          optional: true,
+          prompt: msg("Soulbond: pair it with another unpaired creature you control?"),
+        }),
+        fx.pair(ref.self, ref.stored("soulbond")),
+      ],
+      { label: msg("Soulbond: pair it with another creature") },
+    ),
+    triggered(
+      when.enters(unpairedOther),
+      fx.may(msg("Soulbond: pair this creature with the one that entered?"), fx.pair(ref.self, ref.eventObject)),
+      { condition: cond.sourceMatches({ paired: false }), label: msg("Soulbond: pair it with the creature that entered") },
+    ),
+  ];
 }
 
 /** Blocking rule printed on the card: a static ability on itself. */

@@ -12,6 +12,7 @@ import cmdTurtlePower from "../decks/cmd-turtle-power.json";
 import cmdUrDragon from "../decks/cmd-ur-dragon.json";
 import cmdUrSphinx from "../decks/cmd-ur-sphinx.json";
 import cmdVision from "../decks/cmd-vision.json";
+import cmdVivi from "../decks/cmd-vivi.json";
 import cmdYshtola from "../decks/cmd-yshtola.json";
 import finCloud from "../decks/fin-cloud.json";
 import finSephiroth from "../decks/fin-sephiroth.json";
@@ -85,6 +86,7 @@ export const DECKS: DeckList[] = [
   cmdVision,
   cmdDarkLeo,
   cmdUrSphinx,
+  cmdVivi,
 ].map((d) => withArt({ ...(d as DeckList), builtin: true }));
 
 function withArt(d: DeckList): DeckList {

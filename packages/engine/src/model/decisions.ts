@@ -430,7 +430,8 @@ export type GameEvent =
   | { type: "destroy"; objectId: ObjectId; defId: string }
   | { type: "token"; objectId: ObjectId; defId: string; controller: PlayerId }
   /** Cards revealed to everyone (top of the library of a creature that explores…). */
-  | { type: "reveal"; player: PlayerId; defIds: string[] }
+  /** `look`: the player only looks at the cards (Gitaxian Probe, Mishra's Bauble): nobody else receives the event. */
+  | { type: "reveal"; player: PlayerId; defIds: string[]; look?: boolean }
   /** Gift (702.174) offered by `player` to `to`. */
   | { type: "gift"; player: PlayerId; to: PlayerId; kind: GiftKind }
   /** A face-down permanent is turned face up (the card is revealed). */

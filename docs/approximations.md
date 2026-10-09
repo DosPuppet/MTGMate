@@ -288,3 +288,8 @@ In the order they were added, set by set.
   - `timing` Breach the Multiverse: the chosen cards enter one graveyard after the other (not simultaneously);
   - `rule` Sphinx Ambassador: the search of the opponent's library is a choice among its cards (no "search" event: "whenever a player searches" doesn't trigger); the named card is remembered by the Sphinx;
   - `rule` Sphinx of the Second Sun: only the second main phase of the turn is "postcombat" (not a main phase added after an additional combat).
+  - `rule` Desperate Ritual: splice onto Arcane is not done (no other Arcane spell in the deck; two in the catalog: We Say Thee Nay!, Hex Magic);
+  - `rule` Jeweled Amulet: the type of the mana spent is not noted: the stored mana is one mana of any type;
+  - `rule` Tandem Lookout (soulbond, 702.95e): a pair breaks when state-based actions are checked, not at the very moment one of the creatures leaves, changes controller or stops being a creature;
+  - `rule` Intuition: the three cards are shown to the choosing opponent only (not to the other players);
+  - `timing` Final Fortune, Last Chance, Warrior's Oath: you lose at the end step of your next turn (the extra turn, unless another one is inserted before it).

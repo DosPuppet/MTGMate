@@ -82,5 +82,53 @@
     "name": "Érudit du trésor perdu",
     "typeLine": "Créature : sphinx",
     "text": "Vol\nQuand l'Érudit du trésor perdu arrive sur le champ de bataille, vous pouvez lancer une carte d'éphémère, de rituel ou d'artefact ciblée de votre cimetière sans payer son coût de mana. Si un sort d'éphémère ou de rituel lancé de cette manière devait être mis dans votre cimetière, exilez-le à la place."
+  },
+  "City of Traitors": {
+    "typeLine": "Terrain",
+    "text": "Quand vous jouez un autre terrain, sacrifiez la Cité des traîtres.\n{T} : Ajoutez {C}{C}."
+  },
+  "Intuition": {
+    "typeLine": "Éphémère",
+    "text": "Cherchez dans votre bibliothèque trois cartes et révélez-les. L'adversaire ciblé en choisit une. Mettez cette carte dans votre main et les autres dans votre cimetière. Mélangez ensuite votre bibliothèque."
+  },
+  "Jeweled Amulet": {
+    "typeLine": "Artefact",
+    "text": "{1}, {T} : Mettez un marqueur « charge » sur l'Amulette ornée de joyaux. Notez le type de mana dépensé pour payer ce coût d'activation. N'activez cette capacité que s'il n'y a pas de marqueur « charge » sur l'Amulette ornée de joyaux.\n{T}, retirez un marqueur « charge » de l'Amulette ornée de joyaux : Ajoutez un mana du dernier type noté pour elle."
+  },
+  "Lion's Eye Diamond": {
+    "typeLine": "Artefact",
+    "text": "Défaussez-vous de votre main, sacrifiez le Diamant de l'œil du lion : Ajoutez trois manas d'une même couleur au choix. N'activez cette capacité que lorsque vous pourriez lancer un éphémère."
+  },
+  "Lotus Petal": {
+    "typeLine": "Artefact",
+    "text": "{T}, sacrifiez le Pétale de lotus : Ajoutez un mana de la couleur de votre choix."
+  },
+  "Misdirection": {
+    "typeLine": "Éphémère",
+    "text": "Vous pouvez exiler une carte bleue de votre main plutôt que de payer le coût de mana de ce sort.\nChangez la cible du sort ciblé qui n'a qu'une seule cible."
+  },
+  "Pyroblast": {
+    "typeLine": "Éphémère",
+    "text": "Choisissez l'un —\n• Contrecarrez le sort ciblé s'il est bleu.\n• Détruisez le permanent ciblé s'il est bleu."
+  },
+  "Pyrokinesis": {
+    "typeLine": "Éphémère",
+    "text": "Vous pouvez exiler une carte rouge de votre main plutôt que de payer le coût de mana de ce sort.\nLa Pyrokinésie inflige 4 blessures réparties comme vous le souhaitez entre un nombre quelconque de créatures ciblées."
+  },
+  "Red Elemental Blast": {
+    "typeLine": "Éphémère",
+    "text": "Choisissez l'un —\n• Contrecarrez le sort bleu ciblé.\n• Détruisez le permanent bleu ciblé."
+  },
+  "Submerge": {
+    "typeLine": "Éphémère",
+    "text": "Si un adversaire contrôle une forêt et que vous contrôlez une île, vous pouvez lancer ce sort sans payer son coût de mana.\nMettez la créature ciblée au-dessus de la bibliothèque de son propriétaire."
+  },
+  "Urza's Bauble": {
+    "typeLine": "Artefact",
+    "text": "{T}, sacrifiez la Babiole d'Urza : Regardez une carte au hasard dans la main du joueur ciblé. Vous piochez une carte au début de l'entretien du prochain tour."
+  },
+  "Wheel of Fortune": {
+    "typeLine": "Rituel",
+    "text": "Chaque joueur se défausse de sa main, puis pioche sept cartes."
   }
 }

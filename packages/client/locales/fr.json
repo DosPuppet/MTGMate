@@ -684,6 +684,7 @@
  "You have the city's blessing for the rest of the game.": "Vous avez la bénédiction de la cité, pour le reste de la partie.",
  "You have two **instants** in hand. They can be cast at any time, even during your opponent's turn, and even **in response** to another spell.": "Vous avez deux **éphémères** en main. Ils se lancent à tout moment, même pendant le tour adverse, et même **en réponse** à un autre sort.",
  "You keep {n} cards.": "Vous gardez {n} cartes.",
+ "You look at {cards}.": "Vous regardez {cards}.",
  "You lose ({reason}).": "Vous perdez ({reason}).",
  "You lose {n} life ({life}).": "Vous perdez {n} PV ({life}).",
  "You lose.": "Vous perdez.",

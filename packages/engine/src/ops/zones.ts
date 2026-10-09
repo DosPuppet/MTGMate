@@ -58,7 +58,7 @@ import { payableLife, playerStatic, quantityMods, recipientMatches } from "../st
 import { holderOf, matchesCard, matchesObjectFilter, shareCreatureType } from "../targets";
 import { msg } from "../text";
 import { logTurnEvent } from "../turnlog";
-import type { CardType, Effect, GameState, MoveSpec, ObjectFilter, ObjectId, PlayerId, Resolution } from "../types";
+import type { CardType, Effect, GameObject, GameState, MoveSpec, ObjectFilter, ObjectId, PlayerId, Resolution } from "../types";
 import { PERMANENT_TYPES } from "../types";
 import { chooseAttacked } from "./permanents";
 
@@ -237,13 +237,17 @@ export const HANDLERS: OpHandlers = {
               prompt: e.prompt ?? msg("Choose any number of these creatures"),
               options: ids,
               min: 0,
-              max: ids.length,
-              suggested: ids,
+              // Intuition: "three cards" at most.
+              max: Math.min(ids.length, e.max ?? ids.length),
+              suggested: ids.slice(0, e.max ?? ids.length),
             },
           },
         };
       }
-      const chosen = answer.map(String).filter((id) => ids.includes(id));
+      const chosen = answer
+        .map(String)
+        .filter((id) => ids.includes(id))
+        .slice(0, e.max ?? ids.length);
       r.vars[`$ids:${e.store}`] = chosen;
       r.vars[`$ids:${e.store}Rest`] = ids.filter((x) => !chosen.includes(x));
       return;
@@ -1045,6 +1049,33 @@ export const HANDLERS: OpHandlers = {
       if (e.store) r.vars[`$ids:${e.store}`] = [...(r.vars[`$ids:${e.store}`] ?? []), ...chosen];
       for (const id of chosen) if (onBattlefield(s, id)) sacrifice(s, id);
     }
+    return;
+  },
+  look(s, _r, e, ctx) {
+    let ids = resolveRef(s, ctx, e.what).filter((id) => !!s.objects[id]);
+    if (e.random !== undefined) {
+      const left = [...ids];
+      ids = [];
+      while (left.length && ids.length < e.random) ids.push(left.splice(Math.floor(random(s) * left.length), 1)[0] as string);
+    }
+    if (ids.length)
+      emit({ type: "reveal", player: ctx.controller, defIds: ids.map((id) => s.objects[id]?.defId ?? ""), look: true });
+    return;
+  },
+  pair(s, _r, e, ctx) {
+    // 702.95c: nothing if either is no longer an unpaired creature controlled by the ability's controller.
+    const a = resolveRef(s, ctx, e.what)[0];
+    const b = resolveRef(s, ctx, e.with)[0];
+    const ok = (id: string | undefined) =>
+      !!id &&
+      s.objects[id]?.zone === "battlefield" &&
+      s.objects[id]?.controller === ctx.controller &&
+      isCreature(s, id) &&
+      !s.objects[id]?.pairedWith;
+    if (!a || !b || a === b || !ok(a) || !ok(b)) return;
+    (s.objects[a] as GameObject).pairedWith = b;
+    (s.objects[b] as GameObject).pairedWith = a;
+    bump(s);
     return;
   },
   removeFromCombat(s, _r, e, ctx) {

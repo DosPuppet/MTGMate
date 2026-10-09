@@ -120,6 +120,9 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
     if ((counters || !!v.equipped || (v.enchantedBy ?? []).includes(v.controller)) !== f.modified) return false;
   }
   if (f.attached === "toSource" && (!sourceId || v.attachedTo !== sourceId)) return false;
+  if (f.paired === "source") {
+    if (!sourceId || !(v.id === sourceId ? !!v.pairedWith : v.pairedWith === sourceId)) return false;
+  } else if (f.paired !== undefined && !!v.pairedWith !== f.paired) return false;
   if (f.enchanted !== undefined) {
     const by = v.enchantedBy ?? [];
     if (f.enchanted === "byYou" ? !by.includes(perspective) : by.length > 0 !== f.enchanted) return false;
@@ -415,6 +418,7 @@ export function isLegalTarget(s: GameState, controller: PlayerId, spec: TargetSp
     stackItem &&
     spec.filter.stackItems &&
     !((spec.filter.stackItems.abilitiesOnly || onlyTriggered) && stackItem.kind === "spell") &&
+    !(spec.filter.stackItems.spellsOnly && stackItem.kind !== "spell") &&
     !(
       onlyTriggered &&
       stackItem.abilityIndex >= 0 &&

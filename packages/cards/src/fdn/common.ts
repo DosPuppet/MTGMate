@@ -52,6 +52,7 @@ export const {
   powerRuleAbility,
   firebending,
   TO_CREATURE,
+  TO_OPPONENT,
   TO_PLAYER_OR_PLANESWALKER,
 } = dsl;
 

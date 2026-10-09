@@ -92,6 +92,8 @@ export interface TargetFilter {
   stackItems?: {
     singleTarget?: boolean;
     abilitiesOnly?: boolean;
+    /** Spells only ("target spell with a single target": Misdirection). */
+    spellsOnly?: boolean;
     triggeredOnly?: boolean;
     controller?: "you";
     source?: ObjectFilter;
@@ -121,6 +123,11 @@ export interface ObjectFilter {
    * the triggers for `host`); `toSource` and `wasToSource` on any view.
    */
   attached?: "host" | "notHost" | "toSource" | "toHost" | "wasToSource";
+  /**
+   * Soulbond (702.95): paired (`true`) or unpaired (`false`); `source`: the source itself while it is paired, and the
+   * creature paired with it ("each of those creatures", Tandem Lookout).
+   */
+  paired?: boolean | "source";
   /**
    * Crew or saddle this turn: `bySource`, a Vehicle the source crewed (Balthier and Fran); `source`, a creature that
    * crewed or saddled the source (Giant Beaver: "a creature that saddled it this turn").

@@ -83,7 +83,8 @@
     "tripleTriad": "Triple Triad — operation specific to one card (R4.6)",
     "foretell": "foretell (702.143, special action read from the text): a single Standard card (Sozin's Comet) for now",
     "chooseNumbers": "Wheel of Misfortune — each player secretly chooses a number (ref.numberChoosers, amount.numberChosen); family of simultaneous secret choices (votes, auctions) to attach when another card needs it",
-    "removeFromCombat": "Reconnaissance — \"remove [the creature] from combat\" (506.4), a rules action shared by many cards (Maze of Ith family); generic op, a single card for now"
+    "removeFromCombat": "Reconnaissance — \"remove [the creature] from combat\" (506.4), a rules action shared by many cards (Maze of Ith family); generic op, a single card for now",
+    "pair": "soulbond (702.95, Tandem Lookout): pairing of two creatures, the keyword's own action; shared by every soulbond card"
   },
   "variant": {
     "Amount.lkiDamage": "Tangled Colony — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists",
@@ -229,7 +230,6 @@
     "stash": "Tinybones, Bauble Burglar — property of a single card (audit of 2026-10-02, § 5.1): to attach to a family as soon as another card needs it",
     "storeGraveyard": "Intrude on the Mind — property of a single card, invisible to the guard until the audit of 2026-10-07 (key written without a value by the builders, or declared away from the start of a line): to attach to a family",
     "strictAmongAll": "Selvala, Heart of the Wilds — property of a single card, invisible to the guard until the audit of 2026-10-07 (key written without a value by the builders, or declared away from the start of a line): to attach to a family",
-    "switchPT": "Wandering Fumarole — switching power and toughness (613.4d), a generic engine rule that had no card yet",
     "tapX": "Secluded Starforge — property of a single card, invisible to the guard until the audit of 2026-10-07 (key written without a value by the builders, or declared away from the start of a line): to attach to a family",
     "thenExtraTurn": "Emrakul, the Promised End — property of a single card, invisible to the guard until the audit of 2026-10-07 (key written without a value by the builders, or declared away from the start of a line): to attach to a family",
     "topDamage": "Clash of Elements — property of a single card, invisible to the guard until the audit of 2026-10-07 (key written without a value by the builders, or declared away from the start of a line): to attach to a family",
@@ -238,22 +238,23 @@
     "usingManaFrom": "Smaug, Wicked Worm — property of a single card (audit of 2026-10-02, § 5.1): to attach to a family as soon as another card needs it",
     "which": "Wheel of Misfortune — property of a single card, invisible to the guard until the audit of 2026-10-07 (key written without a value by the builders, or declared away from the start of a line): to attach to a family",
     "whileCrafting": "Market Gnome — \"leaves the battlefield\" trigger limited to exile as craft material (702.167): field of the `leaves` family, counted since its declaration spans several lines (PLAN-S, S7)",
-    "with": "Vanille, Cheerful l'Cie — property of a single card, invisible to the guard until the audit of 2026-10-07 (key written without a value by the builders, or declared away from the start of a line): to attach to a family",
     "withWarp": "Blade of the Swarm — target \"card exiled with warp\" (a card that has warp); Close Encounter, which used it, reads `warped` (card exiled by warp, PLAN-A A3): to reuse for any card exiled \"with warp\"",
     "oneOfEach": "Academy Manufactor — token replacement \"instead create one of each\" (EventReplacement.instead, family H); each such replacement applies once (616.1)",
     "revealFirstUpkeep": "Chancellor of the Spires — opening-hand reveal (CardDef.leyline, 103.6): the Chancellor cycle (Annex, Dross, Forge, Tangle) uses the same form",
-    "storeAll": "Dazzling Sphinx — exileUntil remembers every exiled card (\"the exiled cards that weren't cast\"); to reuse for any \"exile until … put the rest\" text"
+    "storeAll": "Dazzling Sphinx — exileUntil remembers every exiled card (\"the exiled cards that weren't cast\"); to reuse for any \"exile until … put the rest\" text",
+    "spellsOnly": "Misdirection — \"target spell with a single target\" (stackItems target filter); to reuse for any spell-only stack target",
+    "paired": "Tandem Lookout — soulbond filter (702.95: paired, unpaired, paired with the source); shared by every soulbond card"
   },
   "turnFields": {},
   "engineCardLiterals": {},
   "ceilings": {
-    "Single-card values": 106,
+    "Single-card values": 107,
     "CardDef": 91,
-    "GameObject": 49,
+    "GameObject": 50,
     "StackItem": 29,
     "PlayerState": 23,
     "GameState": 41,
-    "ObjectFilter": 72,
+    "ObjectFilter": 73,
     "FilterCompare": 3,
     "CostDef": 33,
     "ActivatedAbilityDef": 19,
@@ -270,8 +271,8 @@
     "AdditionalCost": 11,
     "CastLimit": 9,
     "NextSpell": 9,
-    "Effect": 150,
-    "Effect (fields)": 645,
+    "Effect": 152,
+    "Effect (fields)": 653,
     "TriggerSpec": 61,
     "TriggerSpec (fields)": 162,
     "Condition": 54,
@@ -362,6 +363,7 @@
     "The Vision deck (rules 172): lookAtTop.chooser \"owner\" (Explore the Vastlands: each player chooses in their own library): Effect (fields) 639 → 640; closed-union values written by a single card (DelayedTiming \"next\", 603.7c: Ugin, the Ineffable; AggregateProperty \"colorIdentity\": War Room; withActivatedAbility \"mana\": Moonsilver Key; lookAtTop.chooser \"owner\"; produceColorsZone \"graveyard\": The Grey Havens), partly offset by values that became shared: Single-card values 104 → 105",
     "Dark Leo & Shredder deck (rules 174): blocked filter (Throatseeker), LayerMods.forbidKeywords (Archetype of Courage), BlockRule.cantBeBlockedByPlayer (The Black Gate): ObjectFilter 71 → 72, LayerMods 30 → 31, BlockRule 13 → 14",
     "PLAN-I: player-facing texts (labels, prompts) no longer counted as single-card values: Single-card values 105 → 104",
-    "Ur-Sphinx deck: connives X, during their next turn (castLimit), extra beginning phase, extra turn condition, removeFromCombat, one-of-each tokens, opening-hand reveal (Chancellors), exileUntil storeAll, library zone reference: Single-card values 104 → 106, Effect 149 → 150, Effect (fields) 640 → 645, Condition 53 → 54, Condition (fields) 97 → 98"
+    "Ur-Sphinx deck: connives X, during their next turn (castLimit), extra beginning phase, extra turn condition, removeFromCombat, one-of-each tokens, opening-hand reveal (Chancellors), exileUntil storeAll, library zone reference: Single-card values 104 → 106, Effect 149 → 150, Effect (fields) 640 → 645, Condition 53 → 54, Condition (fields) 97 → 98",
+    "Vivi deck: soulbond (GameObject.pairedWith, filter paired, op pair), look op (Gitaxian Probe, Baubles), spellsOnly stack target (Misdirection): Single-card values 106 → 107, GameObject 49 → 50, ObjectFilter 72 → 73, Effect 150 → 152, Effect (fields) 645 → 653"
   ]
 }

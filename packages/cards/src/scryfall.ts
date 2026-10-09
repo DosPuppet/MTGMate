@@ -421,6 +421,25 @@ export function parseCycling(text: string): CardDef["abilities"][number] | undef
   };
 }
 
+/**
+ * Transmute (702.53): "[cost], discard this card: search your library for a card with the same mana value as this
+ * card, reveal it, put it into your hand, then shuffle. Transmute only as a sorcery."
+ */
+const TRANSMUTE = /^Transmute ((?:\{[^}]+\})+)/m;
+export function parseTransmute(text: string, manaValue: number): CardDef["abilities"][number] | undefined {
+  const m = TRANSMUTE.exec(stripReminder(text));
+  if (!m) return undefined;
+  return {
+    kind: "activated",
+    cost: { mana: parseManaCost(m[1] as string), self: "discard" },
+    targets: [],
+    effects: [{ op: "search", filter: {}, count: 1, to: { to: "hand" }, manaValue }],
+    fromHand: true,
+    sorcerySpeed: true,
+    label: msg("Transmute"),
+  };
+}
+
 export function onlyKeywords(text: string): boolean {
   const t = stripReminder(text);
   if (!t) return true;
@@ -1034,6 +1053,8 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
   // Myriad (702.116): whenever it attacks, for each opponent other than the defending player, you may create a tapped
   // copy attacking that player or a planeswalker they control, exiled at end of combat.
   if (myriad) bloomburrowAbilities.push(dsl.myriadAbility());
+  // Soulbond (702.95): the two pairing abilities.
+  if (/^Soulbond\b/m.test(raw.oracleText)) bloomburrowAbilities.push(...dsl.soulbondAbilities());
   if (exalted) {
     bloomburrowAbilities.push(
       dsl.triggered(dsl.when.attacksAlone({ types: ["Creature"], controller: "you" }), [dsl.fx.pump(dsl.ref.eventObject, 1, 1)], {
@@ -1195,6 +1216,9 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
       ...impendingAbilities(raw.oracleText),
       ...jobSelectAbility(raw.keywords),
       ...(parseCycling(raw.oracleText) ? [parseCycling(raw.oracleText) as CardDef["abilities"][number]] : []),
+      ...(parseTransmute(raw.oracleText, raw.cmc ?? 0)
+        ? [parseTransmute(raw.oracleText, raw.cmc ?? 0) as CardDef["abilities"][number]]
+        : []),
       ...extraAbilities,
       ...bloomburrowAbilities,
     ],

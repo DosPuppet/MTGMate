@@ -23,6 +23,7 @@ The scripts are in `packages/cards/src/edh/`; the rules tests in `packages/engin
 | `vision` | The Vision (colorless artifacts, Urza lands, Eldrazi) | 63 |
 | `dark-leo` | Dark Leo & Shredder (Ninjas, white and black) | 27 |
 | `ur-sphinx` | The Ur-Sphinx (Sphinxes, Esper) | 28 |
+| `vivi` | Vivi Ornitier (cEDH storm, blue and red) | 39 |
 
 ## E0 — import ✅
 
@@ -296,3 +297,24 @@ Added on 2026-10-09 at the user's request with the "Add a Commander deck" recipe
 - **Approximations:** Dazzling Sphinx (the rest in exile order), Yennett (top card not shown when not cast), Tivit (votes take effect as cast), Breach the Multiverse (one graveyard after the other), Sphinx Ambassador (no "search" event), Sphinx of the Second Sun (only the second main phase is postcombat).
 - **Balance** (medium AI on both sides, `--by-deck --deck cmd-ur-sphinx`, against the eleven other precons in turn): in a duel, 43.0% ± 6.9 (200 games, 19.4 turns); with four players (seats A, B, A, B, fair share 50%), 35.0% ± 9.3 (100 games, 44.6 turns). Under the target, clearly with four players: a control deck whose strength lies in choices the medium AI makes poorly (free spells, piles, Mystical Tutor, Reconnaissance); to study in the AI first, the list is not touched. Slowest decision: 1.1 s (four players).
 - **Debt:** `removeFromCombat` (Reconnaissance), `Condition.extraTurn` (Medomai), `oneOfEach` (Academy Manufactor), `revealFirstUpkeep` (Chancellor of the Spires) and `storeAll` (Dazzling Sphinx) enter the baseline; `opponentSeparates` leaves it (Fact or Fiction, Sphinx of Uthuun, Unesh); ceilings Single-card values 104 → 106, Effect 149 → 150, Effect (fields) 640 → 645, Condition 53 → 54, Condition (fields) 97 → 98.
+
+## Deck Vivi Ornitier: storm ✅ (721 / 721)
+
+Added on 2026-10-09 at the user's request with the "Add a Commander deck" recipe. List: "Vivi Ornitier Storm [TOODEEP]" by rfoxley on Moxfield (a cEDH deck, updated 2026-04-28), in `docs/commander/decks/vivi.txt`; precon `cmd-vivi` (blue and red), bracket 5 (cEDH; thirteen Game Changers: Ancient Tomb, Chrome Mox, Fierce Guardianship, Force of Will, Gamble, Intuition, Jeska's Will, Lion's Eye Diamond, Mana Vault, Mox Diamond, Mystical Tutor, The One Ring, Underworld Breach). The commander (Final Fantasy) and 59 other cards were already playable (Brain Freeze, Underworld Breach, Force of Will, Daze, Gemstone Caverns...).
+
+**Import:** 39 cards absent from the catalog added to EDH; French text from Scryfall except twelve old printings with a French name but no French text (City of Traitors, Intuition, Jeweled Amulet, Lion's Eye Diamond, Lotus Petal, Misdirection, Pyroblast, Pyrokinesis, Red Elemental Blast, Submerge, Urza's Bauble, Wheel of Fortune), completed by hand in `french-overrides.json`; 0 color identity discrepancies with Scryfall.
+
+**Cards (39, `edh/vivi.ts`):** mana: City of Traitors, Desperate Ritual, Fiery Islet, Jeweled Amulet, Lion's Eye Diamond, Lotus Petal, Mox Amber, Paradise Mantle, Rite of Flame, Simian Spirit Guide, Strike It Rich; cards and information: Borne Upon a Wind, Faithless Looting, Gitaxian Probe, Intuition, Jeska's Will, Mishra's Bauble, Urza's Bauble, Wheel of Fortune; interaction: Chain of Vapor, Crowd's Favor, Dizzy Spell, Gut Shot, Mental Misstep, Misdirection, Mogg Salvage, Pact of Negation, Pyroblast, Pyrokinesis, Red Elemental Blast, Snapback, Submerge, Tormod's Crypt, Twisted Image; creatures: Dragon's Rage Channeler, Tandem Lookout; extra turns that lose: Final Fortune, Last Chance, Warrior's Oath.
+
+- **Engine** (rules 176, details in `docs/engine.md`):
+  - soulbond (702.95): pairing (`GameObject.pairedWith`, `fx.pair`), filter `paired`, the two pairing abilities read from the text, the pair broken by the state-based checks;
+  - transmute (702.53), read from the text (Dizzy Spell);
+  - "look at" cards seen by their player only (`fx.look`, `reveal` event with `look`, filtered for the others): Gitaxian Probe, Mishra's Bauble, Urza's Bauble (a card at random);
+  - "copy this spell" during its own resolution, by another player (`copySpell.for`, Chain of Vapor); a copy may replace targets that no longer exist (707.10c, kept by default);
+  - `chooseAmong` "any number" with a maximum (Intuition: three cards, the opponent picks one); `stackItems.spellsOnly` (Misdirection);
+  - Lion's Eye Diamond, Simian Spirit Guide: mana abilities with a cost (discarding the hand, exile from hand), activated by hand, never by the automatic payment.
+- **Tests:** `engine/test/edh-vivi.test.ts` (29); EDH smoke test (721 cards).
+- **Approximations:** Desperate Ritual (no splice), Jeweled Amulet (the mana type is not noted), Tandem Lookout (pair broken at the state-based checks), Intuition (cards shown to the choosing opponent only), Final Fortune and its cousins (lost at the end step of your next turn).
+- **Balance** (medium AI on both sides, `--by-deck --deck cmd-vivi`, against the twelve other precons in turn): in a duel, 21.0% ± 5.6 (200 games, 18.3 turns); with four players (seats A, B, A, B, fair share 50%), 17.0% ± 7.4 (100 games, 40.1 turns). Far under the target: a storm deck whose engine (Underworld Breach with Lion's Eye Diamond and Brain Freeze, rituals chained in one turn) the AI doesn't assemble; to study in the AI first, the list is not touched.
+- **AI turn length** (measured with self-play, actions of the AI during its own turn, Vivi against the other precons): medium, 2.7 actions per turn on average (others 2.6), 6 at the 95th percentile, 19 at most; expert, 3.8 on average (others 3.1), 10 at the 95th percentile, 24 at most, with 2.2 s of thinking per turn on average outside the interface (others 1.3 s; 10 s at most). In the interface, thinking is capped at 0.7 s per decision and each resolution is shown about 1.5 s (normal pace): a long Vivi turn lasts about 15 to 40 s.
+- **Debt:** `pair` (soulbond), `paired` and `spellsOnly` enter the baseline; `switchPT` and `with` leave it (shared); ceilings Single-card values 106 → 107, GameObject 49 → 50, ObjectFilter 72 → 73, Effect 150 → 152, Effect (fields) 645 → 653.

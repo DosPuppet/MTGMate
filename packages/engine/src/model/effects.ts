@@ -237,6 +237,13 @@ export type Effect =
   /** Doubles the +1/+1 counters (or, `all`, each kind of counter) on the designated permanents. */
   | { op: "doubleCounters"; what: Ref; all?: boolean }
   | { op: "tap"; what: Ref; untap?: boolean }
+  /**
+   * The controller looks at the designated cards (Gitaxian Probe: a hand; Mishra's Bauble: a library's top card);
+   * `random`: that many of them, at random (Urza's Bauble).
+   */
+  | { op: "look"; what: Ref; random?: number }
+  /** Soulbond (702.95): pairs the two designated creatures, if both are unpaired creatures the controller controls. */
+  | { op: "pair"; what: Ref; with: Ref }
   /** Removes the designated creatures from combat (506.4: Reconnaissance). */
   | { op: "removeFromCombat"; what: Ref }
   /** Damage to each creature matching the filter (and possibly to players). */
@@ -542,6 +549,8 @@ export type Effect =
       op: "copySpell";
       what: Ref;
       count: Amount;
+      /** The player who copies it (and controls the copy), instead of the controller (Chain of Vapor). */
+      for?: Ref;
       haste?: boolean;
       atEnd?: "sacrifice";
       nonlegendary?: boolean;
@@ -809,6 +818,8 @@ export type Effect =
       chooser: Ref;
       store: string;
       anyNumber?: boolean;
+      /** With `anyNumber`: at most that many ("search your library for three cards": Intuition). */
+      max?: number;
       anyZone?: boolean;
       prompt?: string;
       optional?: boolean;

@@ -183,7 +183,10 @@ export function applyRetarget(
   const orig = item.targets[specId] ?? [];
   const chosen = values.map(String);
   const fresh = chosen.filter((id) => !orig.includes(id));
-  const next = orig.map((id) => (chosen.includes(id) || !exists(s, id) ? id : (fresh.shift() ?? id)));
+  // The new targets replace first the existing targets not kept, then those that no longer exist (707.10c: they may
+  // be changed too; left as they are, the copy won't find them).
+  const next = orig.map((id) => (exists(s, id) && !chosen.includes(id) ? (fresh.shift() ?? id) : id));
+  for (let i = 0; i < next.length && fresh.length; i++) if (!exists(s, next[i] as string)) next[i] = fresh.shift() as string;
   const g = request.type === "pick" ? request.group : undefined;
   if (g) {
     const holders = next.map((id) => g.holders[id] ?? id);
@@ -252,11 +255,13 @@ export function retargetRequest(s: GameState, item: StackItem, specId: string, n
   const taken = new Set((spec.otherThan ?? []).flatMap((o) => item.targets[o] ?? []));
   const legalSpec = item.kicked && spec.kickedFilter ? { ...spec, filter: spec.kickedFilter } : spec;
   const legal = legalTargets(s, item.controller, legalSpec, item.sourceId).filter((id) => id !== item.id && !taken.has(id));
-  // An original target that no longer exists stays as is (the copy won't find it on resolution).
+  // An original target that no longer exists may be replaced (707.10c: Chain of Vapor's copies); kept by default (the
+  // copy won't find it on resolution).
   const kept = orig.filter((id) => exists(s, id) && !taken.has(id));
   const count = orig.filter((id) => exists(s, id)).length;
+  const missing = orig.length - count;
   const options = [...new Set([...kept, ...legal])];
-  if (count === 0 || options.length <= kept.length) return null;
+  if (options.length <= kept.length || (count === 0 && missing === 0)) return null;
   const suggested = [...kept, ...legal.filter((id) => !kept.includes(id))].slice(0, count);
   if (suggested.length < count) return null;
   const group =
@@ -274,10 +279,10 @@ export function retargetRequest(s: GameState, item: StackItem, specId: string, n
   return {
     type: "pick",
     intent: "changeTarget",
-    prompt: retargetPrompt(name, count, spec.label),
+    prompt: retargetPrompt(name, count || orig.length, spec.label),
     options,
     min: count,
-    max: count,
+    max: count + Math.min(missing, options.length - count),
     suggested,
     ...(group ? { group } : {}),
   };

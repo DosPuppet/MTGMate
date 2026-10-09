@@ -474,8 +474,12 @@ export const RECORD_VERSION = 1;
  *   (Medomai); removal from combat (Reconnaissance); "instead create one of each" tokens (Academy Manufactor);
  *   opening-hand reveal with effects at the first upkeep (Chancellor of the Spires); "not of the chosen name" read
  *   inside `not` (Sphinx Ambassador); another player chooses for the source; library zone reference
+ * - 176: Vivi Ornitier deck (Commander): soulbond (702.95, Tandem Lookout); transmute read from the text (Dizzy
+ *   Spell); "look at" cards seen by their player only (Gitaxian Probe, the Baubles); "copy this spell" while it
+ *   resolves, by another player (Chain of Vapor); a copy may replace targets that no longer exist (707.10c); "any
+ *   number" choices with a maximum (Intuition); "target spell with a single target" (Misdirection)
  */
-export const RULES_VERSION = 175;
+export const RULES_VERSION = 176;
 
 /** One checkpoint every N decisions (plus the last one of the game). */
 export const CHECKPOINT_EVERY = 25;

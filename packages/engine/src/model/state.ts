@@ -98,6 +98,8 @@ export interface GameObject {
   cast?: CastInfo;
   /** Aura or Equipment: the permanent it is attached to (301.5, 303.4). */
   attachedTo?: ObjectId;
+  /** Soulbond (702.95): the creature this one is paired with (each one points to the other). */
+  pairedWith?: ObjectId;
   /** Choices made as it entered (creature type, color, card name). */
   chosen?: {
     creatureType?: string;
@@ -695,6 +697,8 @@ export interface LkiSnapshot {
   /** Blocked attacker (`true`), unblocked once blockers are declared (`false`), otherwise absent (filter `blocked`). */
   blocked?: boolean;
   attachedTo?: ObjectId;
+  /** Soulbond (702.95): the paired creature (filter `paired`). */
+  pairedWith?: ObjectId;
   /** Physical identity (follows the card from one zone to another). */
   uid?: string;
   /** Commander (903.3, filter `commander`). */

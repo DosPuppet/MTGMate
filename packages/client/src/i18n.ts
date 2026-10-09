@@ -438,9 +438,11 @@ export function describeEvents(
       case "reveal":
         if (e.defIds.length)
           add(
-            e.player === me
-              ? msg("You reveal {cards}.", { cards: names(e.defIds) })
-              : msg("{player} reveals {cards}.", { player: player(e.player), cards: names(e.defIds) }),
+            e.look
+              ? msg("You look at {cards}.", { cards: names(e.defIds) })
+              : e.player === me
+                ? msg("You reveal {cards}.", { cards: names(e.defIds) })
+                : msg("{player} reveals {cards}.", { player: player(e.player), cards: names(e.defIds) }),
             kind(e.player),
           );
         break;

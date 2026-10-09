@@ -776,6 +776,7 @@ function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, def
     linked: o.linked,
     damagedBy: o.damagedBy,
     attachedTo: o.attachedTo,
+    pairedWith: o.pairedWith,
     blocking: !!s.combat?.blockers.some((b) => b.id === id),
     blocked: defender !== undefined ? blockedState(s, id) : undefined,
     damaged: o.damage > 0 || undefined,

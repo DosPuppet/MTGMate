@@ -700,19 +700,22 @@ const HIDDEN_ZONES: ReadonlySet<Zone> = new Set(["hand", "library"]);
  * into the library…).
  */
 export function filterEvents(events: GameEvent[], viewer: PlayerId): GameEvent[] {
-  return events.map((e) => {
-    if (e.type === "draw" && e.player !== viewer) return { type: "draw", player: e.player };
-    if (e.type === "moved" && e.owner !== viewer && HIDDEN_ZONES.has(e.from) && HIDDEN_ZONES.has(e.to)) {
-      return { type: "moved", owner: e.owner, from: e.from, to: e.to };
-    }
-    // Exiled face down (406.3): only the players who can look at it see it go by.
-    if (e.type === "moved" && e.faceDown && !e.faceDown.includes(viewer)) {
-      return { type: "moved", owner: e.owner, objectId: e.objectId, from: e.from, to: e.to };
-    }
-    // Foretell: the exiled card is known only to its owner.
-    if (e.type === "foretold" && e.player !== viewer) return { type: "foretold", player: e.player, defId: HIDDEN_CARD_ID };
-    return e;
-  });
+  // Cards looked at by another player (Gitaxian Probe): the event isn't sent at all.
+  return events
+    .filter((e) => !(e.type === "reveal" && e.look && e.player !== viewer))
+    .map((e) => {
+      if (e.type === "draw" && e.player !== viewer) return { type: "draw", player: e.player };
+      if (e.type === "moved" && e.owner !== viewer && HIDDEN_ZONES.has(e.from) && HIDDEN_ZONES.has(e.to)) {
+        return { type: "moved", owner: e.owner, from: e.from, to: e.to };
+      }
+      // Exiled face down (406.3): only the players who can look at it see it go by.
+      if (e.type === "moved" && e.faceDown && !e.faceDown.includes(viewer)) {
+        return { type: "moved", owner: e.owner, objectId: e.objectId, from: e.from, to: e.to };
+      }
+      // Foretell: the exiled card is known only to its owner.
+      if (e.type === "foretold" && e.player !== viewer) return { type: "foretold", player: e.player, defId: HIDDEN_CARD_ID };
+      return e;
+    });
 }
 
 const DEF_KEYS = new Set(["defId", "sourceDefId", "targetDefId", "attackerDefId", "blockerDefId", "toDefId"]);

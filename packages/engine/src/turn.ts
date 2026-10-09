@@ -1888,6 +1888,24 @@ function stateBasedActionsOnce(s: GameState): boolean {
     checkGameOver(s);
     if (s.over) return true;
     if (alive() !== before) acted = true;
+    // Soulbond (702.95e): a pair breaks when one of them leaves the battlefield, changes controller or stops being a
+    // creature (checked with these actions).
+    for (const id of s.battlefield) {
+      const o = obj(s, id);
+      if (!o.pairedWith) continue;
+      const other = s.objects[o.pairedWith];
+      if (
+        other?.zone === "battlefield" &&
+        other.pairedWith === id &&
+        other.controller === o.controller &&
+        isCreature(s, id) &&
+        isCreature(s, other.id)
+      )
+        continue;
+      delete o.pairedWith;
+      if (other?.pairedWith === id) delete other.pairedWith;
+      bump(s);
+    }
     // 702.179a: "Start your engines!" — a player without speed who controls such a permanent has speed 1.
     for (const id of s.battlefield) {
       const c = s.players[obj(s, id).controller];

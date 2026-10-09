@@ -487,12 +487,14 @@ export const HANDLERS: OpHandlers = {
   },
   copySpell(s, _r, e, ctx) {
     const n = evalAmount(s, ctx, e.count);
+    const copier = (e.for && resolveRef(s, ctx, e.for).find((p) => isPlayer(s, p) && !s.players[p]?.lost)) || ctx.controller;
     for (const id of resolveRef(s, ctx, e.what)) {
-      const item = s.stack.find((x) => x.id === id);
+      // "Copy this spell" while it resolves (Chain of Vapor): `ref.self` is its card, the spell on the stack is its item.
+      const item = s.stack.find((x) => x.id === id) ?? s.stack.find((x) => x.kind === "spell" && x.sourceId === id);
       if (!item) continue;
       // Spell, activated or triggered ability (Return the Favor, Ertha Jo): new targets may be chosen before priority.
       for (let i = 0; i < n; i++) {
-        const id = copyStackItem(s, item, ctx.controller);
+        const id = copyStackItem(s, item, copier);
         const copy = id ? s.stack.find((x) => x.id === id) : undefined;
         if (copy && (e.haste || e.atEnd || e.nonlegendary || e.loyalty !== undefined))
           copy.arrival = {

@@ -2102,6 +2102,34 @@
   ]
  },
  {
+  "name": "Borne Upon a Wind",
+  "number": "44",
+  "rarity": "rare",
+  "manaCost": "{1}{U}",
+  "cmc": 2,
+  "typeLine": "Instant",
+  "oracleText": "You may cast spells this turn as though they had flash.\nDraw a card.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/a/9/a9379675-1a32-4e2b-8aaf-5f908c595f31.jpg?1783916321",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/9/a9379675-1a32-4e2b-8aaf-5f908c595f31.jpg?1783916321",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Porté par un vent",
+   "typeLine": "Éphémère",
+   "text": "Vous pouvez lancer des sorts ce tour-ci comme s'ils avaient le flash.\nPiochez une carte.",
+   "image": "https://cards.scryfall.io/normal/front/e/8/e85461f2-8272-4ba1-b92d-19a3b90d334b.jpg?1782822012"
+  },
+  "origin": "LTR",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
   "name": "Boseiju, Who Endures",
   "number": "266",
   "rarity": "rare",
@@ -2566,6 +2594,34 @@
   ]
  },
  {
+  "name": "Chain of Vapor",
+  "number": "84",
+  "rarity": "uncommon",
+  "manaCost": "{U}",
+  "cmc": 1,
+  "typeLine": "Instant",
+  "oracleText": "Return target nonland permanent to its owner's hand. Then that permanent's controller may sacrifice a land of their choice. If the player does, they may copy this spell and may choose a new target for that copy.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/3/8/38f741bf-13ee-4384-98ab-27833ebb9f6d.jpg?1783937074",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/8/38f741bf-13ee-4384-98ab-27833ebb9f6d.jpg?1783937074",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Chaîne de vapeur",
+   "typeLine": "Éphémère",
+   "text": "Renvoyez le permanent non-terrain ciblé dans la main de son propriétaire. Le contrôleur de ce permanent peut ensuite sacrifier un terrain. Si le joueur fait ainsi, il peut copier ce sort et peut choisir une nouvelle cible pour cette copie.",
+   "image": "https://cards.scryfall.io/normal/front/a/8/a8154daf-f3d7-428b-a3a0-60111e0aa0eb.jpg?1782947044"
+  },
+  "origin": "C16",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
   "name": "Champion of Dusk",
   "number": "188",
   "rarity": "rare",
@@ -2861,6 +2917,33 @@
    "image": "https://cards.scryfall.io/normal/front/4/7/477b61cd-18e9-4a51-aa15-178ca4008416.jpg?1782847058"
   },
   "origin": "2X2",
+  "colorIdentity": []
+ },
+ {
+  "name": "City of Traitors",
+  "number": "143",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "When you play another land, sacrifice this land.\n{T}: Add {C}{C}.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/a/7/a7a8b6b8-b95f-4014-b17a-a6d44d965995.jpg?1783946497",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/7/a7a8b6b8-b95f-4014-b17a-a6d44d965995.jpg?1783946497",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Cité des traîtres",
+   "typeLine": "Terrain",
+   "text": "Quand vous jouez un autre terrain, sacrifiez la Cité des traîtres.\n{T} : Ajoutez {C}{C}.",
+   "image": "https://cards.scryfall.io/normal/front/c/c/cca79ca8-e503-467f-bb4e-d51979715948.jpg?1783048836"
+  },
+  "origin": "EXO",
   "colorIdentity": []
  },
  {
@@ -3539,6 +3622,36 @@
   "origin": "J25",
   "colorIdentity": [
    "B"
+  ]
+ },
+ {
+  "name": "Crowd's Favor",
+  "number": "138",
+  "rarity": "common",
+  "manaCost": "{R}",
+  "cmc": 1,
+  "typeLine": "Instant",
+  "oracleText": "Convoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)\nTarget creature gets +1/+0 and gains first strike until end of turn. (It deals combat damage before creatures without first strike.)",
+  "colors": [
+   "R"
+  ],
+  "keywords": [
+   "Convoke"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/5/3/536b8104-9d8d-444b-8535-62bcbe279de2.jpg?1783939175",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/3/536b8104-9d8d-444b-8535-62bcbe279de2.jpg?1783939175",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Faveur de la foule",
+   "typeLine": "Éphémère",
+   "text": "Convocation (Vos créatures peuvent aider à lancer ce sort. Chaque créature que vous engagez en lançant ce sort paie {1} ou un mana de la couleur de cette créature.)\nLa créature ciblée gagne +1/+0 et acquiert l'initiative jusqu'à la fin du tour. (Elle inflige des blessures de combat avant les créatures sans l'initiative.)",
+   "image": "https://cards.scryfall.io/normal/front/a/a/aaa61de0-34b6-40d4-9634-6fbfceb16958.jpg?1782969782"
+  },
+  "origin": "M15",
+  "colorIdentity": [
+   "R"
   ]
  },
  {
@@ -4366,6 +4479,39 @@
   ]
  },
  {
+  "name": "Desperate Ritual",
+  "number": "127",
+  "rarity": "uncommon",
+  "manaCost": "{1}{R}",
+  "cmc": 2,
+  "typeLine": "Instant — Arcane",
+  "oracleText": "Add {R}{R}{R}.\nSplice onto Arcane {1}{R} (As you cast an Arcane spell, you may reveal this card from your hand and pay its splice cost. If you do, add this card's effects to that spell.)",
+  "colors": [
+   "R"
+  ],
+  "keywords": [
+   "Splice"
+  ],
+  "producedMana": [
+   "R"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/3/8/3825b85d-07df-43b9-a8d8-930863262d83.jpg?1783933809",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/8/3825b85d-07df-43b9-a8d8-930863262d83.jpg?1783933809",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Rituel de désespoir",
+   "typeLine": "Éphémère : arcane",
+   "text": "Ajoutez {R}{R}{R} à votre réserve.\nImprégnation d'arcane {1}{R} (Au moment où vous jouez un sort d'arcane, vous pouvez révéler cette carte depuis votre main et payer son coût d'imprégnation. Si vous le faites, ajoutez les effets de cette carte à ce sort.)",
+   "image": "https://cards.scryfall.io/normal/front/8/9/89363b86-afe9-497e-840d-92f49c09fa8f.jpg?1783023952"
+  },
+  "origin": "UMA",
+  "colorIdentity": [
+   "R"
+  ]
+ },
+ {
   "name": "Destroy Evil",
   "number": "26",
   "rarity": "common",
@@ -4448,6 +4594,36 @@
   "origin": "FRC",
   "colorIdentity": [
    "B",
+   "U"
+  ]
+ },
+ {
+  "name": "Dizzy Spell",
+  "number": "43",
+  "rarity": "common",
+  "manaCost": "{U}",
+  "cmc": 1,
+  "typeLine": "Instant",
+  "oracleText": "Target creature gets -3/-0 until end of turn.\nTransmute {1}{U}{U} ({1}{U}{U}, Discard this card: Search your library for a card with the same mana value as this card, reveal it, put it into your hand, then shuffle. Transmute only as a sorcery.)",
+  "colors": [
+   "U"
+  ],
+  "keywords": [
+   "Transmute"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/6/e/6e0db10d-fb6d-44df-9ff2-6f1e0e8f8209.jpg?1783943689",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/e/6e0db10d-fb6d-44df-9ff2-6f1e0e8f8209.jpg?1783943689",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Malaise",
+   "typeLine": "Éphémère",
+   "text": "La créature ciblée gagne -3/-0 jusqu'à la fin du tour.\nTransmutation {1}{U}{U} ({1}{U}{U}, Défaussez-vous de cette carte : Cherchez dans votre bibliothèque une carte ayant le même coût converti de mana que cette carte, révélez-la et mettez-la dans votre main. Mélangez ensuite votre bibliothèque. Ne jouez cette capacité que lorsque vous pourriez jouer un rituel.)",
+   "image": "https://cards.scryfall.io/normal/front/3/f/3fb36dfd-61d5-4ba6-9cab-5993306adba2.jpg?1783019621"
+  },
+  "origin": "RAV",
+  "colorIdentity": [
    "U"
   ]
  },
@@ -4595,6 +4771,39 @@
    "image": "https://cards.scryfall.io/normal/front/f/8/f814a60d-f26b-493c-86fd-51be50fd4428.jpg?1782773992"
   },
   "origin": "FDC",
+  "colorIdentity": [
+   "R"
+  ]
+ },
+ {
+  "name": "Dragon's Rage Channeler",
+  "number": "9",
+  "rarity": "uncommon",
+  "manaCost": "{R}",
+  "cmc": 1,
+  "typeLine": "Creature — Human Shaman",
+  "oracleText": "Whenever you cast a noncreature spell, surveil 1. (Look at the top card of your library. You may put that card into your graveyard.)\nDelirium — As long as there are four or more card types among cards in your graveyard, this creature gets +2/+2, has flying, and attacks each combat if able.",
+  "power": "1",
+  "toughness": "1",
+  "colors": [
+   "R"
+  ],
+  "keywords": [
+   "Delirium",
+   "Surveil"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/c/7/c75cc38d-aee6-44ab-be69-26491fb9b808.jpg?1783911469",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/7/c75cc38d-aee6-44ab-be69-26491fb9b808.jpg?1783911469",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Canaliseuse de la rage du dragon",
+   "typeLine": "Créature : humain et shamane",
+   "text": "À chaque fois que vous lancez un sort non-créature, surveillez 1. (Regardez la carte du dessus de votre bibliothèque. Vous pouvez mettre cette carte dans votre cimetière.)\nDélire — Tant qu'il y a au moins quatre types de carte parmi les cartes de votre cimetière, la Canaliseuse de la rage du dragon gagne +2/+2, a le vol et attaque à chaque combat si possible.",
+   "image": "https://cards.scryfall.io/normal/front/5/6/56b7a6cd-6b00-4796-a4d7-c0cd53ef33df.jpg?1782881491"
+  },
+  "origin": "H2R",
   "colorIdentity": [
    "R"
   ]
@@ -5697,6 +5906,35 @@
   ]
  },
  {
+  "name": "Faithless Looting",
+  "number": "244",
+  "rarity": "common",
+  "manaCost": "{R}",
+  "cmc": 1,
+  "typeLine": "Sorcery",
+  "oracleText": "Draw two cards, then discard two cards.\nFlashback {2}{R} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+  "colors": [
+   "R"
+  ],
+  "keywords": [
+   "Flashback"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/f/c/fc019ffa-4461-4f3d-ab8d-e4d20e77ca0c.jpg?1783903774",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/c/fc019ffa-4461-4f3d-ab8d-e4d20e77ca0c.jpg?1783903774",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Pillage sans foi",
+   "text": "Piochez deux cartes, puis défaussez-vous de deux cartes.\nFlashback {2R} (Vous pouvez lancer cette carte depuis votre cimetière pour son coût de flashback. Exilez-la ensuite.)",
+   "image": "https://cards.scryfall.io/normal/front/0/1/0188b95d-0f8b-465e-8592-1884d5c4af93.jpg?1782759128"
+  },
+  "origin": "SOC",
+  "colorIdentity": [
+   "R"
+  ]
+ },
+ {
   "name": "Fanatic of Mogis",
   "number": "121",
   "rarity": "uncommon",
@@ -5998,6 +6236,37 @@
   ]
  },
  {
+  "name": "Fiery Islet",
+  "number": "278",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}, Pay 1 life: Add {U} or {R}.\n{1}, {T}, Sacrifice this land: Draw a card.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "R",
+   "U"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/d/a/daf68138-63c1-4201-998c-eb412463f664.jpg?1783914582",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/a/daf68138-63c1-4201-998c-eb412463f664.jpg?1783914582",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Îlot ardent",
+   "typeLine": "Terrain",
+   "text": "{T}, payez 1 point de vie : Ajoutez {U} ou {R}.\n{1}, {T}, sacrifiez l'Îlot ardent : Piochez une carte.",
+   "image": "https://cards.scryfall.io/normal/front/1/d/1d5135ba-dd71-4400-8903-ae1b3602f975.jpg?1782811393"
+  },
+  "origin": "WHO",
+  "colorIdentity": [
+   "R",
+   "U"
+  ]
+ },
+ {
   "name": "Fight Rigging",
   "number": "303",
   "rarity": "rare",
@@ -6024,6 +6293,34 @@
   "origin": "FIC",
   "colorIdentity": [
    "G"
+  ]
+ },
+ {
+  "name": "Final Fortune",
+  "number": "182★",
+  "rarity": "rare",
+  "manaCost": "{R}{R}",
+  "cmc": 2,
+  "typeLine": "Instant",
+  "oracleText": "Take an extra turn after this one. At the beginning of that turn's end step, you lose the game.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/f/6/f60b7014-3e29-4308-976c-0d92df5cec3a.jpg?1783945472",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/6/f60b7014-3e29-4308-976c-0d92df5cec3a.jpg?1783945472",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Dernière chance",
+   "typeLine": "Éphémère",
+   "text": "Jouez un autre tour après celui-ci. À la fin de ce tour supplémentaire, vous perdez la partie.",
+   "image": "https://cards.scryfall.io/normal/front/7/1/715587fb-5555-4f89-8ad1-45b7088169d2.jpg?1783037123"
+  },
+  "origin": "7ED",
+  "colorIdentity": [
+   "R"
   ]
  },
  {
@@ -6936,6 +7233,34 @@
   "colorIdentity": []
  },
  {
+  "name": "Gitaxian Probe",
+  "number": "35",
+  "rarity": "common",
+  "manaCost": "{U/P}",
+  "cmc": 1,
+  "typeLine": "Sorcery",
+  "oracleText": "({U/P} can be paid with either {U} or 2 life.)\nLook at target player's hand.\nDraw a card.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/9/9/995486ce-58bb-4753-a812-0ca73ef1a235.jpg?1783941320",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/9/995486ce-58bb-4753-a812-0ca73ef1a235.jpg?1783941320",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Sonde gitaxienne",
+   "typeLine": "Rituel",
+   "text": "({U/P} peut être payé au choix avec {U} ou 2 points de vie.)\nRegardez la main du joueur ciblé.\nPiochez une carte.",
+   "image": "https://cards.scryfall.io/normal/front/c/a/ca52886c-a5df-48ab-8277-e8c81da43ed9.jpg?1782992482"
+  },
+  "origin": "NPH",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
   "name": "Glacial Fortress",
   "number": "73",
   "rarity": "rare",
@@ -7338,6 +7663,34 @@
   "origin": "PIP",
   "colorIdentity": [
    "G"
+  ]
+ },
+ {
+  "name": "Gut Shot",
+  "number": "117",
+  "rarity": "common",
+  "manaCost": "{R/P}",
+  "cmc": 1,
+  "typeLine": "Instant",
+  "oracleText": "({R/P} can be paid with either {R} or 2 life.)\nGut Shot deals 1 damage to any target.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/4/6/461987da-8860-4a04-8f93-d182523ca311.jpg?1783938404",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/6/461987da-8860-4a04-8f93-d182523ca311.jpg?1783938404",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Tire-boyaux",
+   "typeLine": "Éphémère",
+   "text": "({R/P} peut être payé au choix avec {R} ou 2 points de vie.)\nLe Tire-boyaux inflige 1 blessure à une cible, créature ou joueur.",
+   "image": "https://cards.scryfall.io/normal/front/8/a/8ae79ab1-742d-4387-83b4-785031230dc0.jpg?1782992173"
+  },
+  "origin": "MM2",
+  "colorIdentity": [
+   "R"
   ]
  },
  {
@@ -8247,6 +8600,34 @@
   ]
  },
  {
+  "name": "Intuition",
+  "number": "70",
+  "rarity": "rare",
+  "manaCost": "{2}{U}",
+  "cmc": 3,
+  "typeLine": "Instant",
+  "oracleText": "Search your library for three cards and reveal them. Target opponent chooses one. Put that card into your hand and the rest into your graveyard. Then shuffle.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/c/9/c99f6785-e5a1-4fdc-9fb5-e1a372e7e848.jpg?1783946654",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/9/c99f6785-e5a1-4fdc-9fb5-e1a372e7e848.jpg?1783946654",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Intuition",
+   "typeLine": "Éphémère",
+   "text": "Cherchez dans votre bibliothèque trois cartes et révélez-les. L'adversaire ciblé en choisit une. Mettez cette carte dans votre main et les autres dans votre cimetière. Mélangez ensuite votre bibliothèque.",
+   "image": "https://cards.scryfall.io/normal/front/c/7/c7fa0b4a-096d-49c4-ab3f-91c6339154fa.jpg?1783051550"
+  },
+  "origin": "TMP",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
   "name": "Invisible Force Field",
   "number": "19",
   "rarity": "rare",
@@ -8546,6 +8927,68 @@
   "colorIdentity": [
    "U"
   ]
+ },
+ {
+  "name": "Jeska's Will",
+  "number": "156",
+  "rarity": "rare",
+  "manaCost": "{2}{R}",
+  "cmc": 3,
+  "typeLine": "Sorcery",
+  "oracleText": "Choose one. If you control a commander as you cast this spell, you may choose both instead.\n• Add {R} for each card in target opponent's hand.\n• Exile the top three cards of your library. You may play them this turn.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "producedMana": [
+   "R"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/9/9/99e0c371-1024-4432-9fd9-3bc29c8d38e4.jpg?1783912996",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/9/99e0c371-1024-4432-9fd9-3bc29c8d38e4.jpg?1783912996",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Volonté de Jeska",
+   "typeLine": "Rituel",
+   "text": "Choisissez l'un. Si vous contrôlez un commandant au moment où vous lancez ce sort, vous pouvez choisir les deux.\n• Ajoutez {R} pour chaque carte dans la main d'un adversaire ciblé.\n• Exilez les trois cartes du dessus de votre bibliothèque. Vous pouvez les jouer ce tour-ci.",
+   "image": "https://cards.scryfall.io/normal/front/5/f/5fe7b3f6-2c5d-48dd-909a-3c223b085266.jpg?1782803726"
+  },
+  "origin": "MKC",
+  "colorIdentity": [
+   "R"
+  ]
+ },
+ {
+  "name": "Jeweled Amulet",
+  "number": "326",
+  "rarity": "uncommon",
+  "manaCost": "{0}",
+  "cmc": 0,
+  "typeLine": "Artifact",
+  "oracleText": "{1}, {T}: Put a charge counter on this artifact. Note the type of mana spent to pay this activation cost. Activate only if there are no charge counters on this artifact.\n{T}, Remove a charge counter from this artifact: Add one mana of this artifact's last noted type.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/3/4/34f7bad2-d28f-42d2-9246-fe3545ef49a7.jpg?1783947458",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/4/34f7bad2-d28f-42d2-9246-fe3545ef49a7.jpg?1783947458",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Amulette ornée de joyaux",
+   "typeLine": "Artefact",
+   "text": "{1}, {T} : Mettez un marqueur « charge » sur l'Amulette ornée de joyaux. Notez le type de mana dépensé pour payer ce coût d'activation. N'activez cette capacité que s'il n'y a pas de marqueur « charge » sur l'Amulette ornée de joyaux.\n{T}, retirez un marqueur « charge » de l'Amulette ornée de joyaux : Ajoutez un mana du dernier type noté pour elle.",
+   "image": "https://cards.scryfall.io/normal/front/a/8/a8ac59d1-f7c0-44b6-856e-eb6f4583c832.jpg?1783059286"
+  },
+  "origin": "ICE",
+  "colorIdentity": []
  },
  {
   "name": "Jhoira, Weatherlight Corsair",
@@ -9048,6 +9491,34 @@
   ]
  },
  {
+  "name": "Last Chance",
+  "number": "127",
+  "rarity": "mythic",
+  "manaCost": "{R}{R}",
+  "cmc": 2,
+  "typeLine": "Sorcery",
+  "oracleText": "Take an extra turn after this one. At the beginning of that turn's end step, you lose the game.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/c/0/c0efb595-d407-4389-a99d-d97c4d6bdcd0.jpg?1783918459",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/0/c0efb595-d407-4389-a99d-d97c4d6bdcd0.jpg?1783918459",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Ultime chance",
+   "typeLine": "Rituel",
+   "text": "Jouez un tour supplémentaire après celui-ci. Au début de l'étape de fin de ce tour, vous perdez la partie.",
+   "image": "https://cards.scryfall.io/normal/front/7/8/781cd1ac-471e-415c-bbcc-fb6fdc5c82a9.jpg?1782832803"
+  },
+  "origin": "DMR",
+  "colorIdentity": [
+   "R"
+  ]
+ },
+ {
   "name": "Leatherhead, Iron Gator",
   "number": "30",
   "rarity": "rare",
@@ -9377,6 +9848,37 @@
   ]
  },
  {
+  "name": "Lion's Eye Diamond",
+  "number": "307",
+  "rarity": "rare",
+  "manaCost": "{0}",
+  "cmc": 0,
+  "typeLine": "Artifact",
+  "oracleText": "Discard your hand, Sacrifice this artifact: Add three mana of any one color. Activate only as an instant.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/6/3/63bacc32-d6ba-420c-9b49-299c08e5fb39.jpg?1783947041",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/3/63bacc32-d6ba-420c-9b49-299c08e5fb39.jpg?1783947041",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Diamant de l'œil du lion",
+   "typeLine": "Artefact",
+   "text": "Défaussez-vous de votre main, sacrifiez le Diamant de l'œil du lion : Ajoutez trois manas d'une même couleur au choix. N'activez cette capacité que lorsque vous pourriez lancer un éphémère.",
+   "image": "https://cards.scryfall.io/normal/front/6/0/60f87b73-4baf-4755-8f4c-f07c3f036c2f.jpg?1783056946"
+  },
+  "origin": "MIR",
+  "colorIdentity": []
+ },
+ {
   "name": "Liquimetal Torque",
   "number": "145",
   "rarity": "uncommon",
@@ -9506,6 +10008,37 @@
    "B",
    "W"
   ]
+ },
+ {
+  "name": "Lotus Petal",
+  "number": "294",
+  "rarity": "common",
+  "manaCost": "{0}",
+  "cmc": 0,
+  "typeLine": "Artifact",
+  "oracleText": "{T}, Sacrifice this artifact: Add one mana of any color.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/6/c/6c877da3-68fa-41d0-8a24-8c79fcd8ecc1.jpg?1783946602",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/c/6c877da3-68fa-41d0-8a24-8c79fcd8ecc1.jpg?1783946602",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Pétale de lotus",
+   "typeLine": "Artefact",
+   "text": "{T}, sacrifiez le Pétale de lotus : Ajoutez un mana de la couleur de votre choix.",
+   "image": "https://cards.scryfall.io/normal/front/6/9/6911191c-788b-4ca8-952e-ba2fdbeda404.jpg?1783050452"
+  },
+  "origin": "TMP",
+  "colorIdentity": []
  },
  {
   "name": "Lulu, Stern Guardian",
@@ -10182,6 +10715,34 @@
   "colorIdentity": []
  },
  {
+  "name": "Mental Misstep",
+  "number": "38",
+  "rarity": "uncommon",
+  "manaCost": "{U/P}",
+  "cmc": 1,
+  "typeLine": "Instant",
+  "oracleText": "({U/P} can be paid with either {U} or 2 life.)\nCounter target spell with mana value 1.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/6/1/61e9c6df-1c84-4eab-9076-a4feb6347c10.jpg?1783941319",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/1/61e9c6df-1c84-4eab-9076-a4feb6347c10.jpg?1783941319",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Faux-pas mental",
+   "typeLine": "Éphémère",
+   "text": "({U/P} peut être payé au choix avec {U} ou 2 points de vie.)\nContrecarrez le sort ciblé dont le coût converti de mana est de 1.",
+   "image": "https://cards.scryfall.io/normal/front/6/1/6120735a-2379-4361-b86d-9a25f38992e7.jpg?1782992461"
+  },
+  "origin": "NPH",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
   "name": "Michelangelo, the Heart",
   "number": "5",
   "rarity": "mythic",
@@ -10392,6 +10953,58 @@
   ]
  },
  {
+  "name": "Misdirection",
+  "number": "102",
+  "rarity": "rare",
+  "manaCost": "{3}{U}{U}",
+  "cmc": 5,
+  "typeLine": "Instant",
+  "oracleText": "You may exile a blue card from your hand rather than pay this spell's mana cost.\nChange the target of target spell with a single target.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/4/7/470047c9-6775-40be-8250-de8d0442976b.jpg?1783939359",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/7/470047c9-6775-40be-8250-de8d0442976b.jpg?1783939359",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Erreur de visée",
+   "typeLine": "Éphémère",
+   "text": "Vous pouvez exiler une carte bleue de votre main plutôt que de payer le coût de mana de ce sort.\nChangez la cible du sort ciblé qui n'a qu'une seule cible.",
+   "image": "https://cards.scryfall.io/normal/front/f/1/f1374851-e4b7-4aec-9c1c-d7d27402918a.jpg?1783042812"
+  },
+  "origin": "CNS",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
+  "name": "Mishra's Bauble",
+  "number": "274",
+  "rarity": "uncommon",
+  "manaCost": "{0}",
+  "cmc": 0,
+  "typeLine": "Artifact",
+  "oracleText": "{T}, Sacrifice this artifact: Look at the top card of target player's library. Draw a card at the beginning of the next turn's upkeep.",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/4/5/45bbbf9b-8fee-4c32-a513-02dac6ac8a39.jpg?1783930102",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/5/45bbbf9b-8fee-4c32-a513-02dac6ac8a39.jpg?1783930102",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Babiole de Mishra",
+   "typeLine": "Artefact",
+   "text": "{T}, sacrifiez la Babiole de Mishra : Regardez la carte du dessus de la bibliothèque du joueur ciblé. Piochez une carte au début de l'entretien du prochain tour.",
+   "image": "https://cards.scryfall.io/normal/front/b/1/b1eb728e-b4a6-41a3-9cb9-a3840694dacd.jpg?1782902811"
+  },
+  "origin": "2XM",
+  "colorIdentity": []
+ },
+ {
   "name": "Mishra's Workshop",
   "number": "81",
   "rarity": "rare",
@@ -10503,6 +11116,34 @@
   "colorIdentity": [
    "B",
    "U"
+  ]
+ },
+ {
+  "name": "Mogg Salvage",
+  "number": "282",
+  "rarity": "uncommon",
+  "manaCost": "{2}{R}",
+  "cmc": 3,
+  "typeLine": "Instant",
+  "oracleText": "If an opponent controls an Island and you control a Mountain, you may cast this spell without paying its mana cost.\nDestroy target artifact.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/2/b/2b93e65e-8a10-444f-8b0a-9327dd30cce2.jpg?1783926782",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/2/b/2b93e65e-8a10-444f-8b0a-9327dd30cce2.jpg?1783926782",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Destruction par les moggs",
+   "typeLine": "Éphémère",
+   "text": "Si un adversaire contrôle une île et que vous contrôlez une montagne, vous pouvez lancer ce sort sans payer son coût de mana.\nDétruisez un artefact ciblé.",
+   "image": "https://cards.scryfall.io/normal/front/5/f/5f84c968-5949-4122-a3d7-33c95e3739ea.jpg?1782880199"
+  },
+  "origin": "MH2",
+  "colorIdentity": [
+   "R"
   ]
  },
  {
@@ -10646,6 +11287,37 @@
   "colorIdentity": [
    "B"
   ]
+ },
+ {
+  "name": "Mox Amber",
+  "number": "224",
+  "rarity": "mythic",
+  "manaCost": "{0}",
+  "cmc": 0,
+  "typeLine": "Legendary Artifact",
+  "oracleText": "{T}: Add one mana of any color among legendary creatures and planeswalkers you control.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/6/6/66024e69-ad60-4c9a-a0ca-da138d33ad80.jpg?1783934955",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/6/66024e69-ad60-4c9a-a0ca-da138d33ad80.jpg?1783934955",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Mox d'ambre",
+   "typeLine": "Artefact légendaire",
+   "text": "{T} : Ajoutez un mana de la couleur de votre choix parmi les couleurs des créatures et des planeswalkers légendaires que vous contrôlez.",
+   "image": "https://cards.scryfall.io/normal/front/3/c/3cc54406-d9b0-4771-98eb-c34e57132d77.jpg?1782932320"
+  },
+  "origin": "DOM",
+  "colorIdentity": []
  },
  {
   "name": "Mox Diamond",
@@ -11885,6 +12557,34 @@
   ]
  },
  {
+  "name": "Pact of Negation",
+  "number": "77",
+  "rarity": "rare",
+  "manaCost": "{0}",
+  "cmc": 0,
+  "typeLine": "Instant",
+  "oracleText": "Counter target spell.\nAt the beginning of your next upkeep, pay {3}{U}{U}. If you don't, you lose the game.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/1/e/1ed4c0bb-b710-44a1-b8bc-6bd11c27b8b8.jpg?1783927843",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/e/1ed4c0bb-b710-44a1-b8bc-6bd11c27b8b8.jpg?1783927843",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Pacte de négation",
+   "typeLine": "Éphémère",
+   "text": "Contrecarrez un sort ciblé.\nAu début de votre prochain entretien, payez {3}{U}{U}. Si vous ne le faites pas, vous perdez la partie.",
+   "image": "https://cards.scryfall.io/normal/front/c/3/c3edd847-6b60-458b-97a7-210ee24cf90e.jpg?1782890715"
+  },
+  "origin": "TSR",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
   "name": "Pact of the Serpent",
   "number": "206",
   "rarity": "rare",
@@ -11999,6 +12699,39 @@
    "B",
    "W"
   ]
+ },
+ {
+  "name": "Paradise Mantle",
+  "number": "211",
+  "rarity": "uncommon",
+  "manaCost": "{0}",
+  "cmc": 0,
+  "typeLine": "Artifact — Equipment",
+  "oracleText": "Equipped creature has \"{T}: Add one mana of any color.\"\nEquip {1}",
+  "colors": [],
+  "keywords": [
+   "Equip"
+  ],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/1/9/19cd6bcc-ca47-47cc-9fe4-c29e9c176485.jpg?1783939960",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/9/19cd6bcc-ca47-47cc-9fe4-c29e9c176485.jpg?1783939960",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Manteau de paradis",
+   "typeLine": "Artefact : équipement",
+   "text": "La créature équipée a « {T} : Ajoutez un mana de n'importe quelle couleur à votre réserve. »\nÉquipement {1} ({1} : Attachez à la créature ciblée que vous contrôlez. N'attachez l'équipement que lorsque vous pourriez jouer un rituel.)",
+   "image": "https://cards.scryfall.io/normal/front/3/e/3eec0880-cffa-4a37-b83e-48b781eeede1.jpg?1783024708"
+  },
+  "origin": "MMA",
+  "colorIdentity": []
  },
  {
   "name": "Path of Ancestry",
@@ -12765,6 +13498,62 @@
   ]
  },
  {
+  "name": "Pyroblast",
+  "number": "142",
+  "rarity": "uncommon",
+  "manaCost": "{R}",
+  "cmc": 1,
+  "typeLine": "Instant",
+  "oracleText": "Choose one —\n• Counter target spell if it's blue.\n• Destroy target permanent if it's blue.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/b/0/b029eb9a-dd7a-40c2-96c4-0063d9cc002c.jpg?1783937576",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/0/b029eb9a-dd7a-40c2-96c4-0063d9cc002c.jpg?1783937576",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Pyrosalve",
+   "typeLine": "Éphémère",
+   "text": "Choisissez l'un —\n• Contrecarrez le sort ciblé s'il est bleu.\n• Détruisez le permanent ciblé s'il est bleu.",
+   "image": "https://cards.scryfall.io/normal/front/3/d/3d2a8994-5ead-42a5-b1d9-9df0da051728.jpg?1783059607"
+  },
+  "origin": "EMA",
+  "colorIdentity": [
+   "R"
+  ]
+ },
+ {
+  "name": "Pyrokinesis",
+  "number": "143",
+  "rarity": "rare",
+  "manaCost": "{4}{R}{R}",
+  "cmc": 6,
+  "typeLine": "Instant",
+  "oracleText": "You may exile a red card from your hand rather than pay this spell's mana cost.\nPyrokinesis deals 4 damage divided as you choose among any number of target creatures.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/2/5/25f98f02-9ada-4561-93fd-9cfcb0f48b5d.jpg?1783937575",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/2/5/25f98f02-9ada-4561-93fd-9cfcb0f48b5d.jpg?1783937575",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Pyrokinésie",
+   "typeLine": "Éphémère",
+   "text": "Vous pouvez exiler une carte rouge de votre main plutôt que de payer le coût de mana de ce sort.\nLa Pyrokinésie inflige 4 blessures réparties comme vous le souhaitez entre un nombre quelconque de créatures ciblées.",
+   "image": "https://cards.scryfall.io/normal/front/3/5/35142d1e-4ea4-47cf-80b8-727e8ca7e16d.jpg?1783058271"
+  },
+  "origin": "EMA",
+  "colorIdentity": [
+   "R"
+  ]
+ },
+ {
   "name": "Quantum Misalignment",
   "number": "152",
   "rarity": "rare",
@@ -13484,6 +14273,34 @@
   ]
  },
  {
+  "name": "Red Elemental Blast",
+  "number": "147",
+  "rarity": "uncommon",
+  "manaCost": "{R}",
+  "cmc": 1,
+  "typeLine": "Instant",
+  "oracleText": "Choose one —\n• Counter target blue spell.\n• Destroy target blue permanent.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/7/0/70a45e9b-699e-425a-9f3d-267274830d3e.jpg?1783935140",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/0/70a45e9b-699e-425a-9f3d-267274830d3e.jpg?1783935140",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Salve élémentaire rouge",
+   "typeLine": "Éphémère",
+   "text": "Choisissez l'un —\n• Contrecarrez le sort bleu ciblé.\n• Détruisez le permanent bleu ciblé.",
+   "image": "https://cards.scryfall.io/normal/front/a/a/aa9f235a-ad13-4d6c-8fae-5d2610764cfb.jpg?1783948165"
+  },
+  "origin": "A25",
+  "colorIdentity": [
+   "R"
+  ]
+ },
+ {
   "name": "Rejuvenating Springs",
   "number": "260",
   "rarity": "rare",
@@ -13715,6 +14532,37 @@
   "origin": "FIC",
   "colorIdentity": [
    "U"
+  ]
+ },
+ {
+  "name": "Rite of Flame",
+  "number": "96",
+  "rarity": "common",
+  "manaCost": "{R}",
+  "cmc": 1,
+  "typeLine": "Sorcery",
+  "oracleText": "Add {R}{R}, then add {R} for each card named Rite of Flame in each graveyard.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "producedMana": [
+   "R"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/c/0/c062caf7-f0eb-44db-9f74-e6711a13fada.jpg?1783943336",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/0/c062caf7-f0eb-44db-9f74-e6711a13fada.jpg?1783943336",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Rite de flammes",
+   "typeLine": "Rituel",
+   "text": "Ajoutez {R}{R} à votre réserve, puis ajoutez {R} à votre réserve pour chaque carte appelée Rite de flammes dans chaque cimetière.",
+   "image": "https://cards.scryfall.io/normal/front/1/a/1a53c1ac-0f92-4e8d-8daf-e2f41aead08e.jpg?1783016139"
+  },
+  "origin": "CSP",
+  "colorIdentity": [
+   "R"
   ]
  },
  {
@@ -15068,6 +15916,39 @@
   "colorIdentity": []
  },
  {
+  "name": "Simian Spirit Guide",
+  "number": "190",
+  "rarity": "common",
+  "manaCost": "{2}{R}",
+  "cmc": 3,
+  "typeLine": "Creature — Ape Spirit",
+  "oracleText": "Exile this card from your hand: Add {R}.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "producedMana": [
+   "R"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/0/e/0e57335d-4066-4d73-83cd-67a215e01a4e.jpg?1783927787",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/e/0e57335d-4066-4d73-83cd-67a215e01a4e.jpg?1783927787",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Guide spirituel simiesque",
+   "typeLine": "Créature : grand singe et esprit",
+   "text": "Exilez le Guide spirituel simiesque depuis votre main : Ajoutez {R}.",
+   "image": "https://cards.scryfall.io/normal/front/8/c/8c33334e-b724-4c19-823d-80adeeb7adf9.jpg?1782889942"
+  },
+  "origin": "TSR",
+  "colorIdentity": [
+   "R"
+  ]
+ },
+ {
   "name": "Sin, Unending Cataclysm",
   "number": "95",
   "rarity": "rare",
@@ -15098,6 +15979,70 @@
   "origin": "FIC",
   "colorIdentity": [
    "G",
+   "U"
+  ]
+ },
+ {
+  "name": "Sink into Stupor // Soporific Springs",
+  "number": "241",
+  "rarity": "uncommon",
+  "layout": "modal_dfc",
+  "manaCost": "{1}{U}{U}",
+  "cmc": 3,
+  "typeLine": "Instant",
+  "oracleText": "Return target spell or nonland permanent an opponent controls to its owner's hand.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "producedMana": [
+   "U"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/5/3/5358b87a-1a29-426d-b165-40c97da2c14d.jpg?1783911236",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/3/5358b87a-1a29-426d-b165-40c97da2c14d.jpg?1783911236",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "faces": [
+   {
+    "name": "Sink into Stupor",
+    "manaCost": "{1}{U}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Return target spell or nonland permanent an opponent controls to its owner's hand.",
+    "colors": [
+     "U"
+    ],
+    "image": "https://cards.scryfall.io/normal/front/5/3/5358b87a-1a29-426d-b165-40c97da2c14d.jpg?1783911236",
+    "fr": {
+     "name": "Sombrer dans la stupeur",
+     "typeLine": "Éphémère",
+     "text": "Renvoyez une cible qu'un adversaire contrôle, sort ou permanent non-terrain, dans la main de son propriétaire.\nTerrain\n{T} : Ajoutez {U}.",
+     "image": "https://cards.scryfall.io/normal/front/c/2/c27a65b9-1774-4889-8aa4-37856f26a15f.jpg?1782792815"
+    }
+   },
+   {
+    "name": "Soporific Springs",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "As this land enters, you may pay 3 life. If you don't, it enters tapped.\n{T}: Add {U}.",
+    "colors": [],
+    "image": "https://cards.scryfall.io/normal/back/5/3/5358b87a-1a29-426d-b165-40c97da2c14d.jpg?1783911236",
+    "fr": {
+     "name": "Sources soporifiques",
+     "typeLine": "Terrain",
+     "text": "Au moment où les Sources soporifiques arrivent sur le champ de bataille, vous pouvez payer 3 points de vie. Si vous ne le faites pas, elles arrivent sur le champ de bataille engagées.\n{T} : Ajoutez {U}.\nÉphémère\n{1}{U}{U}",
+     "image": "https://cards.scryfall.io/normal/back/c/2/c27a65b9-1774-4889-8aa4-37856f26a15f.jpg?1782792815"
+    }
+   }
+  ],
+  "fr": {
+   "name": "Sombrer dans la stupeur",
+   "typeLine": "Éphémère",
+   "text": "Renvoyez une cible qu'un adversaire contrôle, sort ou permanent non-terrain, dans la main de son propriétaire.\nTerrain\n{T} : Ajoutez {U}.",
+   "image": "https://cards.scryfall.io/normal/front/c/2/c27a65b9-1774-4889-8aa4-37856f26a15f.jpg?1782792815"
+  },
+  "origin": "MH3",
+  "colorIdentity": [
    "U"
   ]
  },
@@ -15305,6 +16250,34 @@
   "colorIdentity": [
    "B",
    "R"
+  ]
+ },
+ {
+  "name": "Snapback",
+  "number": "87",
+  "rarity": "common",
+  "manaCost": "{1}{U}",
+  "cmc": 2,
+  "typeLine": "Instant",
+  "oracleText": "You may exile a blue card from your hand rather than pay this spell's mana cost.\nReturn target creature to its owner's hand.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/3/6/367d46d1-fa7a-403d-8949-b478a1f83f46.jpg?1783927836",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/6/367d46d1-fa7a-403d-8949-b478a1f83f46.jpg?1783927836",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Prise en retour",
+   "typeLine": "Éphémère",
+   "text": "Vous pouvez exiler une carte bleue de votre main à la place de payer le coût de mana de ce sort.\nRenvoyez une créature ciblée dans la main de son propriétaire.",
+   "image": "https://cards.scryfall.io/normal/front/5/8/584c0c18-cce2-4270-9ee1-5f533f32a712.jpg?1782890646"
+  },
+  "origin": "TSR",
+  "colorIdentity": [
+   "U"
   ]
  },
  {
@@ -15912,6 +16885,44 @@
   "colorIdentity": []
  },
  {
+  "name": "Strike It Rich",
+  "number": "12",
+  "rarity": "uncommon",
+  "manaCost": "{R}",
+  "cmc": 1,
+  "typeLine": "Sorcery",
+  "oracleText": "Create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")\nFlashback {2}{R} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+  "colors": [
+   "R"
+  ],
+  "keywords": [
+   "Treasure",
+   "Flashback"
+  ],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/2/0/2099f819-d504-447a-a390-75267d8a7e55.jpg?1783911473",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/2/0/2099f819-d504-447a-a390-75267d8a7e55.jpg?1783911473",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Faire fortune",
+   "typeLine": "Rituel",
+   "text": "Créez un jeton Trésor. (C'est un artefact avec « {T}, sacrifiez cet artefact : Ajoutez un mana de la couleur de votre choix. »)\nFlashback {2}{R} (Vous pouvez lancer cette carte depuis votre cimetière pour son coût de flashback. Exilez-la ensuite.)",
+   "image": "https://cards.scryfall.io/normal/front/3/f/3f9859aa-4a05-4547-8ac1-db7bd0557f3f.jpg?1782881302"
+  },
+  "origin": "H2R",
+  "colorIdentity": [
+   "R"
+  ]
+ },
+ {
   "name": "Strionic Resonator",
   "number": "384",
   "rarity": "rare",
@@ -16056,6 +17067,34 @@
    "image": "https://cards.scryfall.io/normal/front/d/9/d96c8819-9a67-4d86-aa8f-5684879a64aa.jpg?1782968359"
   },
   "origin": "KTK",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
+  "name": "Submerge",
+  "number": "48",
+  "rarity": "uncommon",
+  "manaCost": "{4}{U}",
+  "cmc": 5,
+  "typeLine": "Instant",
+  "oracleText": "If an opponent controls a Forest and you control an Island, you may cast this spell without paying its mana cost.\nPut target creature on top of its owner's library.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/d/2/d2741fe4-37fe-427f-ae85-5107991d4eee.jpg?1783945831",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/2/d2741fe4-37fe-427f-ae85-5107991d4eee.jpg?1783945831",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Submersion",
+   "typeLine": "Éphémère",
+   "text": "Si un adversaire contrôle une forêt et que vous contrôlez une île, vous pouvez lancer ce sort sans payer son coût de mana.\nMettez la créature ciblée au-dessus de la bibliothèque de son propriétaire.",
+   "image": "https://cards.scryfall.io/normal/front/1/c/1c7d6f15-1d40-4b65-a57c-be0e157d4a5c.jpg?1783041513"
+  },
+  "origin": "NEM",
   "colorIdentity": [
    "U"
   ]
@@ -17091,6 +18130,38 @@
   "colorIdentity": [
    "R",
    "W"
+  ]
+ },
+ {
+  "name": "Tandem Lookout",
+  "number": "53",
+  "rarity": "common",
+  "manaCost": "{2}{U}",
+  "cmc": 3,
+  "typeLine": "Creature — Human Scout",
+  "oracleText": "Soulbond (You may pair this creature with another unpaired creature when either enters. They remain paired for as long as you control both of them.)\nAs long as Tandem Lookout is paired with another creature, each of those creatures has \"Whenever this creature deals damage to an opponent, draw a card.\"",
+  "power": "2",
+  "toughness": "1",
+  "colors": [
+   "U"
+  ],
+  "keywords": [
+   "Soulbond"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/3/e/3e44b411-ccb8-44c8-a021-2372c945f0d3.jpg?1783936665",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/e/3e44b411-ccb8-44c8-a021-2372c945f0d3.jpg?1783936665",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Vigies en tandem",
+   "typeLine": "Créature : humain et éclaireur",
+   "text": "Association d'âmes (Vous pouvez associer cette créature à une autre créature dissociée quand l'une d'elles arrive sur le champ de bataille. Elles restent associées tant que vous les contrôlez toutes les deux.)\nTant que les Vigies en tandem sont associées à une autre créature, chacune de ces créatures a « À chaque fois que cette créature inflige des blessures à un adversaire, piochez une carte. »",
+   "image": "https://cards.scryfall.io/normal/front/5/f/5f21a606-d6f5-4fb5-9a20-4cfdb6994709.jpg?1782984980"
+  },
+  "origin": "MM3",
+  "colorIdentity": [
+   "U"
   ]
  },
  {
@@ -18201,6 +19272,30 @@
   ]
  },
  {
+  "name": "Tormod's Crypt",
+  "number": "235",
+  "rarity": "uncommon",
+  "manaCost": "{0}",
+  "cmc": 0,
+  "typeLine": "Artifact",
+  "oracleText": "{T}, Sacrifice this artifact: Exile target player's graveyard.",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/7/5/752bf493-5839-47e8-95f2-6d8201907428.jpg?1783918410",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/5/752bf493-5839-47e8-95f2-6d8201907428.jpg?1783918410",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Crypte de Tormod",
+   "typeLine": "Artefact",
+   "text": "{T}, sacrifiez la Crypte de Tormod : Exilez le cimetière d'un joueur ciblé.",
+   "image": "https://cards.scryfall.io/normal/front/3/f/3fba4261-ca4f-4822-a50e-f7ffb500a53f.jpg?1782832324"
+  },
+  "origin": "DMR",
+  "colorIdentity": []
+ },
+ {
   "name": "Toxic Deluge",
   "number": "161",
   "rarity": "rare",
@@ -18560,6 +19655,34 @@
   "origin": "MKC",
   "colorIdentity": [
    "B"
+  ]
+ },
+ {
+  "name": "Twisted Image",
+  "number": "75",
+  "rarity": "uncommon",
+  "manaCost": "{U}",
+  "cmc": 1,
+  "typeLine": "Instant",
+  "oracleText": "Switch target creature's power and toughness until end of turn.\nDraw a card.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/6/0/60c38f83-32af-4819-b259-a986860f484a.jpg?1783935172",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/0/60c38f83-32af-4819-b259-a986860f484a.jpg?1783935172",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Image perverse",
+   "typeLine": "Éphémère",
+   "text": "Échangez la force et l'endurance de la créature ciblée jusqu'à la fin du tour.\nPiochez une carte.",
+   "image": "https://cards.scryfall.io/normal/front/2/d/2de22ace-af4c-4fda-9eb9-da80e5358e9c.jpg?1782995025"
+  },
+  "origin": "A25",
+  "colorIdentity": [
+   "U"
   ]
  },
  {
@@ -19020,6 +20143,30 @@
    "R",
    "U"
   ]
+ },
+ {
+  "name": "Urza's Bauble",
+  "number": "343",
+  "rarity": "uncommon",
+  "manaCost": "{0}",
+  "cmc": 0,
+  "typeLine": "Artifact",
+  "oracleText": "{T}, Sacrifice this artifact: Look at a card at random in target player's hand. You draw a card at the beginning of the next turn's upkeep.",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/5/8/58c9e9a7-e170-4361-b7d5-22fc0771c489.jpg?1783947454",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/8/58c9e9a7-e170-4361-b7d5-22fc0771c489.jpg?1783947454",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Babiole d'Urza",
+   "typeLine": "Artefact",
+   "text": "{T}, sacrifiez la Babiole d'Urza : Regardez une carte au hasard dans la main du joueur ciblé. Vous piochez une carte au début de l'entretien du prochain tour.",
+   "image": "https://cards.scryfall.io/normal/front/1/2/129b32c2-1951-4e52-8c95-576eba0eb4ce.jpg?1783059237"
+  },
+  "origin": "ICE",
+  "colorIdentity": []
  },
  {
   "name": "Urza's Cave",
@@ -20188,6 +21335,34 @@
   "colorIdentity": []
  },
  {
+  "name": "Warrior's Oath",
+  "number": "130",
+  "rarity": "mythic",
+  "manaCost": "{R}{R}",
+  "cmc": 2,
+  "typeLine": "Sorcery",
+  "oracleText": "Take an extra turn after this one. At the beginning of that turn's end step, you lose the game.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/6/5/65e10759-e862-4b69-8b58-474df2cdae29.jpg?1783921877",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/5/65e10759-e862-4b69-8b58-474df2cdae29.jpg?1783921877",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Serment du guerrier",
+   "typeLine": "Rituel",
+   "text": "Jouez un tour supplémentaire après celui-ci. Au début de l'étape de fin de ce tour, vous perdez la partie.",
+   "image": "https://cards.scryfall.io/normal/front/4/5/452b197f-79f5-4915-91fe-013a9de2673e.jpg?1782847670"
+  },
+  "origin": "2X2",
+  "colorIdentity": [
+   "R"
+  ]
+ },
+ {
   "name": "Watchful Radstag",
   "number": "87",
   "rarity": "rare",
@@ -20300,6 +21475,34 @@
   "origin": "TDC",
   "colorIdentity": [
    "W"
+  ]
+ },
+ {
+  "name": "Wheel of Fortune",
+  "number": "184",
+  "rarity": "rare",
+  "manaCost": "{2}{R}",
+  "cmc": 3,
+  "typeLine": "Sorcery",
+  "oracleText": "Each player discards their hand, then draws seven cards.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/9/0/9052369f-840f-438e-b86d-e2f8d6339585.jpg?1783948618",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/0/9052369f-840f-438e-b86d-e2f8d6339585.jpg?1783948618",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Roue de la fortune",
+   "typeLine": "Rituel",
+   "text": "Chaque joueur se défausse de sa main, puis pioche sept cartes.",
+   "image": "https://cards.scryfall.io/normal/front/e/e/eecdd5a0-f4cf-42da-9570-84ab943e7025.jpg?1783948157"
+  },
+  "origin": "LEB",
+  "colorIdentity": [
+   "R"
   ]
  },
  {
