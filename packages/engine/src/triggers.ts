@@ -1147,7 +1147,8 @@ export function detectTriggers(s: GameState, ev: RulesEvent, only?: (src: Source
  */
 function detectDelayedOnEvent(s: GameState, ev: RulesEvent): void {
   for (const d of [...s.delayed]) {
-    if (!d.on || (d.at === "thisTurn" && d.notBeforeTurn !== s.turn.number)) continue;
+    if (!d.on || (d.at === "thisTurn" && (s.turn.number < d.notBeforeTurn || s.turn.number > (d.untilTurn ?? d.notBeforeTurn))))
+      continue;
     const src = delayedSource(s, d);
     const data = matchTrigger(s, ev, d.on, src);
     // A watched player: the events that concern them ("deals combat damage to that player this turn", Great Train
@@ -1206,7 +1207,7 @@ export function createDelayed(
   sourceDefId: string,
   ability: InlineAbility,
   at: DelayedTiming = "nextEndStep",
-  event?: { on: TriggerSpec; watch?: ObjectId[] },
+  event?: { on: TriggerSpec; watch?: ObjectId[]; untilTurn?: number },
 ): void {
   // "… this turn": on an event, until the end of this turn.
   if (event) {

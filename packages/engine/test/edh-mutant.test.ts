@@ -7,6 +7,7 @@ import { dealDamage, sourceFromObject } from "../src/actions";
 import { chars } from "../src/layers";
 import { legalActions } from "../src/legal";
 import { changeCounters } from "../src/state";
+import { canBlock } from "../src/turn";
 import type { GameState, PlayerId } from "../src/types";
 import { projectView } from "../src/view";
 import {
@@ -14,6 +15,7 @@ import {
   advanceUntil,
   attack,
   attackPlayer,
+  customCard,
   idOf,
   idsOf,
   lands,
@@ -368,5 +370,61 @@ describe("player attacked in multiplayer (PLAN-H, lot H5)", () => {
         ["Llanowar Elves", "p2"],
       ]),
     ).toBe(4);
+  });
+
+  describe("Nuka-Nuke Launcher (PLAN-L L5)", () => {
+    const RED = customCard({ name: "Red Test Creature", power: 1, toughness: 1, colors: ["R"] });
+    const THOPTER = customCard({ name: "Test Thopter", power: 0, toughness: 2, types: ["Artifact", "Creature"] });
+    const equip = (s: GameState, name: string) => {
+      const launcher = idOf(s, "p1", "battlefield", "Nuka-Nuke Launcher");
+      (s.objects[launcher] as { attachedTo?: string }).attachedTo = idOf(s, "p1", "battlefield", name);
+      s.version += 1;
+    };
+    const rad = (s: GameState, p: PlayerId) => s.players[p]?.counters?.rad ?? 0;
+    /** `p` casts Shock at p1 as soon as they have priority (the others pass), then it resolves. */
+    const shockP1 = (s0: GameState, p: PlayerId) => {
+      let s = s0;
+      for (let i = 0; i < 6 && s.pending?.kind === "priority" && s.pending.player !== p; i++)
+        s = act(s, s.pending.player, { type: "pass" });
+      return settle(castIt(s, p, "Shock", { targets: { t: ["p1"] } }));
+    };
+
+    it("the defending player gets two rad counters per spell until the end of their next turn; not the others", () => {
+      let s = scenario({
+        players: 3,
+        p1: { battlefield: ["Nuka-Nuke Launcher", "Bear Cub"] },
+        p2: { battlefield: lands("Mountain", 3), hand: ["Shock", "Shock", "Shock"] },
+        p3: { battlefield: lands("Mountain", 1), hand: ["Shock"] },
+      });
+      equip(s, "Bear Cub");
+      s = attackPlayer(s, [idOf(s, "p1", "battlefield", "Bear Cub")], "p2");
+      s = throughCombat(s);
+      expect(s.players.p2?.life).toBe(15);
+      s = shockP1(s, "p2");
+      expect(rad(s, "p2")).toBe(2);
+      s = shockP1(s, "p3");
+      expect(rad(s, "p3")).toBe(0);
+      // p2's own turn: still in force.
+      s = toMain1Of(s, "p2");
+      s = shockP1(s, "p2");
+      expect(rad(s, "p2")).toBe(4);
+      // After p2's turn: over.
+      s = toMain1Of(s, "p3");
+      s = shockP1(s, "p2");
+      expect(rad(s, "p2")).toBe(4);
+    });
+
+    it("intimidate: blocked only by artifact creatures and creatures sharing a color with it", () => {
+      let s = scenario({
+        p1: { battlefield: ["Nuka-Nuke Launcher", "Bear Cub"] },
+        p2: { battlefield: ["Llanowar Elves", RED, THOPTER] },
+      });
+      equip(s, "Bear Cub");
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      s = attackPlayer(s, [bear], "p2");
+      expect(canBlock(s, idOf(s, "p2", "battlefield", "Llanowar Elves"), bear)).toBe(true);
+      expect(canBlock(s, idOf(s, "p2", "battlefield", THOPTER.name), bear)).toBe(true);
+      expect(canBlock(s, idOf(s, "p2", "battlefield", RED.name), bear)).toBe(false);
+    });
   });
 });

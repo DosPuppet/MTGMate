@@ -380,6 +380,8 @@ export interface DelayedTrigger {
   /** Created during an end step or the cleanup: triggers only at the end step of the following turn. */
   /** `thisTurn`: the turn of its creation (it ends with it). */
   notBeforeTurn: number;
+  /** `thisTurn`: it lasts until the end of this turn rather than of its creation's ("until the end of that player's next turn"). */
+  untilTurn?: number;
   ability: InlineAbility;
   /** Delayed ability on an event ("when this creature dies this turn", Grim Javelineer): the trigger. */
   on?: TriggerSpec;

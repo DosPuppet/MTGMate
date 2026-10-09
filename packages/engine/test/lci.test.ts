@@ -1403,6 +1403,26 @@ describe("Lost Caverns of Ixalan, lot K8: mythic, rare and uncommon cards", () =
       expect(pt(s, idOf(s, "p1", "battlefield", "Nutrient Block"))).toEqual([1, 1]);
     });
 
+    it('Abuelo\'s Awakening: it enters already 1/1 ("a creature with power 1 or greater enters" sees it; PLAN-L L5)', () => {
+      const WATCH = customCard({
+        name: "Test Power Watcher",
+        types: ["Enchantment"],
+        typeLine: "Enchantment",
+        abilities: [
+          triggered(when.enters({ types: ["Creature"], controller: "you", minPower: 1 }), [fx.gainLife(1)], {
+            label: "You gain 1 life",
+          }),
+        ],
+      });
+      let s = scenario({
+        p1: { battlefield: [...lands("Plains", 4), WATCH], hand: ["Abuelo's Awakening"], graveyard: ["Nutrient Block"] },
+      });
+      s = resolve(
+        castCard(s, "p1", "Abuelo's Awakening", { x: 0, targets: { t: [idOf(s, "p1", "graveyard", "Nutrient Block")] } }),
+      );
+      expect(s.players.p1?.life).toBe(21);
+    });
+
     it("Akal Pakal: at each end step, if an artifact entered under your control this turn, one card in hand and the other in the graveyard", () => {
       const run = (withArtifact: boolean) => {
         let s = scenario({

@@ -413,6 +413,8 @@ export type Effect =
       watch?: Ref;
       targets?: TargetSpec[];
       label?: string;
+      /** `thisTurn`: lasts until the end of the watched player's next turn instead (Nuka-Nuke Launcher). */
+      until?: "theirNextTurn";
     }
   /** Reflexive triggered ability ("when you do, …"): its targets are chosen when it is put on the stack. */
   /** `bind`: objects frozen now, read again as targets by the reflexive ability ("this creature"). */
@@ -780,7 +782,8 @@ export type Effect =
   | { op: "countersDivided"; total: Amount; to: Ref; counter?: string; anyNumber?: boolean }
   /** Choose X, then pay {X} (or X life: `life`, Necrodominance); stored under `store` (Wildborn Preserver). */
   /** `who`: that player pays (Plague of Vermin), the controller by default. */
-  | { op: "payX"; prompt: string; store: string; life?: boolean; who?: Ref }
+  /** `max`: "pay {1} up to three times" (Hawkeye). */
+  | { op: "payX"; prompt: string; store: string; life?: boolean; who?: Ref; max?: Amount }
   /**
    * Changes the target of a spell or ability with a single target (Bolt Bend); with several targets, new targets of
    * choice for each word "target", the original ones offered ("you may choose new targets": Commandeer).

@@ -1,7 +1,7 @@
 /** Engine effects: flow control (if, may, reflexive, delayed). Each key is an `op` of `Effect` (see `runEffect`, effects.ts). */
 import { canForage, forage, payLife } from "../actions";
 import type { OpHandlers } from "../effects";
-import { concreteSpec, evalAmount, evalCondition, nameOf, resolveRef, store } from "../effects";
+import { concreteSpec, evalAmount, evalCondition, nameOf, nextTurnOf, resolveRef, store } from "../effects";
 import { RulesError } from "../errors";
 import { canPay, manaValue, payMana } from "../mana";
 import { beholdOptions, collectEvidence, pickEvidence } from "../stack";
@@ -167,7 +167,11 @@ export const HANDLERS: OpHandlers = {
     // "When [this object] … this turn": the watched objects are designated now.
     const watch = e.watch ? resolveRef(s, ctx, e.watch) : undefined;
     if (watch?.length === 0) return;
-    const event = e.on ? { on: e.on, ...(watch ? { watch } : {}) } : undefined;
+    // "Until the end of that player's next turn" (the first watched player).
+    const until = e.until === "theirNextTurn" && watch?.[0] && s.players[watch[0]] ? nextTurnOf(s, watch[0]) : undefined;
+    const event = e.on
+      ? { on: e.on, ...(watch ? { watch } : {}), ...(until !== undefined ? { untilTurn: until } : {}) }
+      : undefined;
     createDelayed(s, ctx.controller, ctx.sourceId, ctx.sourceDefId, ability, e.at, event);
     return;
   },

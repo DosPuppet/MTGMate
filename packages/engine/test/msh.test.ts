@@ -11,6 +11,7 @@ import { fx, manaAbility, ref, spell, target, triggered, when } from "../src/dsl
 import { legalActions } from "../src/legal";
 import { manaAbilitiesOf } from "../src/mana";
 import { changeCounters, chars } from "../src/state";
+import { plainText } from "../src/text";
 import { objectTurnEvents } from "../src/turnlog";
 import type { ActionOption, ChoiceValue, GameState, PlayerId } from "../src/types";
 import {
@@ -2148,11 +2149,6 @@ describe("lot A, rouge", () => {
       const ids = req.options.filter((o) => names.includes(nameOf(cur, String(o)) ?? ""));
       return ids.length > 0 ? ids.slice(0, 1) : undefined;
     };
-  /** Answers "no" to the questions whose prompt matches, and delegates the rest. */
-  const declining =
-    (prompt: RegExp, rest: Answer = () => undefined): Answer =>
-    (req, p, cur) =>
-      req.type === "yesNo" && prompt.test(req.prompt ?? "") ? [0] : rest(req, p, cur);
   const castable = (s: S, player: string, c: string) => legalActions(s, player).some((a) => a.type === "cast" && a.card === c);
   /** Activated ability of `source` whose label matches (the first one otherwise). */
   const ability = (s: S, player: string, source: string, label?: RegExp) =>
@@ -2238,17 +2234,34 @@ describe("lot A, rouge", () => {
       });
     });
 
-    it("Hawkeye, Master Marksman: tap, pay {1} per mode (Net, Explosive, Boomerang)", () => {
+    /** Hawkeye attacks with three Mountains; `paid`: the {1} paid; `modes`: the mode combination chosen (by label). */
+    const hawkeyeAttacks = (paid: number, modes?: (labels: string[]) => number) => {
       let s = scenario({
         p1: { battlefield: ["Hawkeye, Master Marksman", ...lands("Mountain", 3)], hand: ["Forest"], library: ["Opt", "Plains"] },
         p2: { battlefield: ["Bear Cub"] },
       });
       const hawkeye = idOf(s, "p1", "battlefield", "Hawkeye, Master Marksman");
       const bear = idOf(s, "p2", "battlefield", "Bear Cub");
-      expect(chars(s, hawkeye).keywords).toEqual(expect.arrayContaining(["reach", "firstStrike"]));
+      let offered: string[] = [];
       s = toAttack(s);
       s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: hawkeye, defender: "p2" }] });
-      s = settle(s, picking([bear, "p2"]));
+      s = settle(s, (req, p, cur) => {
+        if (req.type === "number" && req.intent === "payX") {
+          expect(req.max).toBe(3);
+          return [paid];
+        }
+        if (req.type === "pick" && req.intent === "triggerMode") {
+          offered = req.options.map((o) => plainText(req.labels?.[String(o)] ?? ""));
+          return [req.options[modes?.(offered) ?? req.options.length - 1] as string];
+        }
+        return picking([bear, "p2"])(req, p, cur);
+      });
+      return { s, bear, offered };
+    };
+
+    it("Hawkeye, Master Marksman: pay {1} up to three times, then up to that many modes (PLAN-L L5)", () => {
+      const { s, bear, offered } = hawkeyeAttacks(3);
+      expect(offered).toHaveLength(7);
       expect(chars(s, bear).keywords).toContain("cantBlock");
       expect(s.players.p2?.life).toBe(18);
       expect(idsOf(s, "p1", "graveyard", "Forest")).toHaveLength(1);
@@ -2256,17 +2269,19 @@ describe("lot A, rouge", () => {
       expect(idsOf(s, "p1", "battlefield", "Mountain").every((id) => s.objects[id]?.tapped)).toBe(true);
     });
 
+    it("Hawkeye, Master Marksman: {1} paid twice, combinations of at most two modes", () => {
+      const { s, bear, offered } = hawkeyeAttacks(2, (labels) => labels.findIndex((l) => /Net/.test(l) && /Explosive/.test(l)));
+      expect(offered).toHaveLength(6);
+      expect(chars(s, bear).keywords).toContain("cantBlock");
+      expect(s.players.p2?.life).toBe(18);
+      expect(idsOf(s, "p1", "graveyard", "Forest")).toHaveLength(0);
+      expect(idsOf(s, "p1", "battlefield", "Mountain").filter((id) => s.objects[id]?.tapped)).toHaveLength(2);
+    });
+
     it("Hawkeye, Master Marksman: without payment, no mode", () => {
-      let s = scenario({
-        p1: { battlefield: ["Hawkeye, Master Marksman", ...lands("Mountain", 3)], hand: ["Forest"] },
-        p2: { battlefield: ["Bear Cub"] },
-      });
-      const hawkeye = idOf(s, "p1", "battlefield", "Hawkeye, Master Marksman");
-      s = toAttack(s);
-      s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: hawkeye, defender: "p2" }] });
-      s = settle(s, declining(/Pay \{1\}/));
+      const { s, bear } = hawkeyeAttacks(0);
       expect(s.players.p2?.life).toBe(20);
-      expect(chars(s, idOf(s, "p2", "battlefield", "Bear Cub")).keywords).not.toContain("cantBlock");
+      expect(chars(s, bear).keywords).not.toContain("cantBlock");
       expect(idsOf(s, "p1", "battlefield", "Mountain").some((id) => s.objects[id]?.tapped)).toBe(false);
     });
 

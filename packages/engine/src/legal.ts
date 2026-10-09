@@ -8,6 +8,7 @@ import { availableMana, canPay, costToText, type ManaPurpose, manaAbilitiesOf, m
 import { asEntersChoices } from "./replacement";
 import {
   abilitiesOf,
+  abilityAsPaid,
   abilityManaCost,
   abilityPurpose,
   activatedAbility,
@@ -757,7 +758,8 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     const o = obj(s, id);
     if (o.zone === "battlefield" ? o.controller !== player : o.owner !== player) continue;
     abilitiesOf(s, id).forEach((_, index) => {
-      const ab = activatedAbility(s, id, index);
+      const printed = activatedAbility(s, id, index);
+      const ab = printed && abilityAsPaid(s, player, id, printed);
       if (!ab || activationZone(o, ab) !== o.zone || !canPayNonManaCost(s, id, ab, index)) return;
       const fc = fixedCost(ab.cost);
       const xc = xCosts(ab.cost);

@@ -1338,7 +1338,13 @@ export const fx = {
     to,
     ...opts,
   }),
-  payX: (prompt: string, store: string): Effect => ({ op: "payX", prompt, store }),
+  /** "Pay {X}" (`max`: "pay {1} up to N times"): X stored under `store`. */
+  payX: (prompt: string, store: string, max?: Amount): Effect => ({
+    op: "payX",
+    prompt,
+    store,
+    ...(max !== undefined ? { max } : {}),
+  }),
   /** "Pay any amount of life": X stored under `store`. */
   payLifeX: (prompt: string, store: string, who?: Ref): Effect => ({
     op: "payX",
@@ -1791,7 +1797,7 @@ export const fx = {
     trigger: TriggerSpec,
     watch: Ref,
     effects: Effects,
-    opts: { targets?: TargetSpec[]; bind?: Record<string, Ref>; label?: string } = {},
+    opts: { targets?: TargetSpec[]; bind?: Record<string, Ref>; label?: string; until?: "theirNextTurn" } = {},
   ): Effect => ({
     op: "delayed",
     at: "thisTurn",
@@ -1801,6 +1807,7 @@ export const fx = {
     ...(opts.bind ? { bind: opts.bind } : {}),
     ...(opts.targets ? { targets: opts.targets } : {}),
     ...(opts.label ? { label: opts.label } : {}),
+    ...(opts.until ? { until: opts.until } : {}),
   }),
   /**
    * Delayed ability "when [the designated object] …" without a duration (603.7c): like `whenThisTurn`, but it triggers
@@ -2218,6 +2225,8 @@ export function activated(opts: {
   linkEvidence?: boolean;
   /** Waterbend (Avatar): the mana cost is a "waterbend" cost (untapped artifacts and creatures: {1} each). */
   waterbend?: boolean;
+  /** Convoke for the ability (Heirloom Epic: "you may tap an untapped creature you control rather than pay that mana"). */
+  convoke?: boolean;
   /** "X can't be 0": smallest allowed value of X. */
   /** "Remove any number of [kind] counters from this creature" (X = the number removed). */
   removeCountersX?: string;
@@ -2293,6 +2302,7 @@ export function activated(opts: {
       collectEvidence: opts.collectEvidence,
       linkEvidence: opts.linkEvidence,
       waterbend: opts.waterbend,
+      ...(opts.convoke ? { convoke: true } : {}),
       minX: opts.minX,
       exileGraveyardSymbols: opts.exileGraveyardSymbols,
       discard: opts.discardX ? "X" : opts.discard,
@@ -3054,6 +3064,11 @@ export const block = {
   notAlone: { notAlone: true, label: msg("Can't attack or block alone") } as BlockRule,
   /** Fear (702.36): can't be blocked except by artifact creatures and/or black creatures. */
   fear: { cantBeBlockedBy: { not: { anyOf: [{ types: ["Artifact"] }, { colors: ["B"] }] } }, label: msg("Fear") } as BlockRule,
+  /** Intimidate (702.13): only by artifact creatures and/or creatures that share a color with it. */
+  intimidate: {
+    cantBeBlockedBy: { not: { anyOf: [{ types: ["Artifact"] }, { shares: { what: "color", with: { kind: "self" } } }] } },
+    label: msg("Intimidate"),
+  } as BlockRule,
   /** "Can't be blocked by creatures that player controls": the designated player, fixed at resolution. */
   notByPlayer: (who: Ref, label: string): BlockRule => ({ cantBeBlockedByPlayer: who, label }),
   /** The most frequent ones. */

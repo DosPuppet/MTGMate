@@ -249,7 +249,33 @@ export function withChosen(
 export function resolveFilter(s: GameState, f: ObjectFilter, sourceId?: ObjectId): ObjectFilter {
   // "Of the chosen type / color": the choice of the source (in play, resolving spell, otherwise last information).
   if (hasChosen(f)) f = withChosen(f, sourceId ? (s.objects[sourceId] ?? s.lki[sourceId]) : undefined);
+  if (sharesSourceColor(f)) f = withSourceColors(s, f, sourceId);
   return resolveCompare(s, f, sourceId);
+}
+
+/** Does the filter (or one of its `not` / `anyOf`) ask for "shares a color with [the source]"? */
+function sharesSourceColor(f: ObjectFilter): boolean {
+  return (
+    (f.shares?.what === "color" && f.shares.with.kind === "self") ||
+    (!!f.not && sharesSourceColor(f.not)) ||
+    !!f.anyOf?.some(sharesSourceColor)
+  );
+}
+
+/**
+ * "That shares a color with [the source]" outside a resolution (intimidate, 702.13: "except by artifact creatures
+ * and/or creatures that share a color with it"): the source's colors now; colorless, nothing matches.
+ */
+function withSourceColors(s: GameState, f: ObjectFilter, sourceId?: ObjectId): ObjectFilter {
+  let out = f;
+  if (f.shares?.what === "color" && f.shares.with.kind === "self") {
+    const { shares: _, ...rest } = f;
+    const colors = sourceId && s.objects[sourceId] ? chars(s, sourceId).colors : (s.lki[sourceId ?? ""]?.colors ?? []);
+    out = colors.length ? { ...rest, colors: [...colors] } : { ...rest, not: {} };
+  }
+  if (out.not) out = { ...out, not: withSourceColors(s, out.not, sourceId) };
+  if (out.anyOf) out = { ...out, anyOf: out.anyOf.map((x) => withSourceColors(s, x, sourceId)) };
+  return out;
 }
 
 /** Filter applied to a card in any zone (graveyard, library, hand…). */

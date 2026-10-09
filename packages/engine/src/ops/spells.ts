@@ -530,7 +530,10 @@ export const HANDLERS: OpHandlers = {
       return;
     }
     const life = payableLife(s, payer);
-    const max = e.life ? Math.max(0, life) : availableMana(s, payer);
+    const max = Math.min(
+      e.life ? Math.max(0, life) : availableMana(s, payer),
+      e.max !== undefined ? evalAmount(s, ctx, e.max) : Number.POSITIVE_INFINITY,
+    );
     const answer = r.vars[key("payx")];
     if (!answer) {
       return {

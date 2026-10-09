@@ -188,8 +188,9 @@ export const CARDS: Record<string, CardScript> = {
   "Kíli the Resourceful": {
     abilities: [
       playerStatic({
-        // "the first equip ability you activate each turn costs {0}": no equip activated yet this turn.
-        abilityCost: { ability: "equip", reduce: 99 },
+        // "Pay {0} rather than pay the equip cost of the first equip ability you activate each turn": the whole cost
+        // (colored mana, life, sacrifice, discard; PLAN-L L5); no equip activated yet this turn.
+        abilityCost: { ability: "equip", free: true },
         condition: cond.all(
           cond.enduringStory,
           cond.not(cond.amountAtLeast(amount.turnEvents({ event: "activate", who: "you", equip: true }), 1)),

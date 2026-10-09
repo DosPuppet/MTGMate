@@ -77,7 +77,9 @@ export const ARTIFACTS: Record<string, CardScript> = {
         mana: "{4}",
         tap: true,
         sorcerySpeed: true,
-        // Approximation: creatures can't help pay this cost.
+        // "For each mana in this ability's activation cost, you may tap an untapped creature you control rather than pay
+        // that mana" (PLAN-L L5).
+        convoke: true,
         effects: [fx.draw(1)],
         label: "Draw a card",
       }),

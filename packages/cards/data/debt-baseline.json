@@ -170,7 +170,8 @@
     "cantBeBlockedByWeakerThan": "Champion of Lambholt — \"creatures with power less than [this]'s power can't block\": blocking rule comparing with the static's source at block time (a layer-time comparison would loop)",
     "bottom": "Grenzo, Dungeon Warden — the bottom card of a library (Ref libraryTop with bottom); to reuse for any \"bottom card of your library\" text",
     "blitz": "Henzie \"Toolbox\" Torre — granted blitz (702.152, altCostAll.blitz, cast via \"blitz\"); printed blitz (SNC) will read the same form from the text",
-    "excess": "Magmatic Galleon — \"are dealt excess [noncombat] damage\" (120.4a) on the isDealtDamage trigger; replaces the TriggerSpec.excessDamage variant (PLAN-J J2)"
+    "excess": "Magmatic Galleon — \"are dealt excess [noncombat] damage\" (120.4a) on the isDealtDamage trigger; replaces the TriggerSpec.excessDamage variant (PLAN-J J2)",
+    "convoke": "Heirloom Epic — convoke for an activated ability (\"for each mana in this ability's activation cost, you may tap an untapped creature you control rather than pay that mana\", PLAN-L L5): family of helpers that pay an ability's mana (waterbend, convoke), to reuse for any ability with that text"
   },
   "turnFields": {},
   "engineCardLiterals": {},
@@ -183,7 +184,7 @@
     "GameState": 41,
     "ObjectFilter": 64,
     "FilterCompare": 3,
-    "CostDef": 27,
+    "CostDef": 28,
     "ActivatedAbilityDef": 18,
     "CastPermissionAbilityDef": 9,
     "PlayFromZone": 21,
@@ -192,14 +193,14 @@
     "EventReplacement": 19,
     "CastInfo": 10,
     "TurnLogQuery": 28,
-    "MoveSpec": 17,
+    "MoveSpec": 18,
     "BlockRule": 15,
     "TargetSpec": 23,
     "AdditionalCost": 12,
     "CastLimit": 9,
     "NextSpell": 9,
     "Effect": 147,
-    "Effect (fields)": 644,
+    "Effect (fields)": 646,
     "TriggerSpec": 40,
     "TriggerSpec (fields)": 142,
     "Condition": 47,
@@ -302,6 +303,7 @@
     "PLAN-J J5 [rules 182]: approximation lifts; CardDef.faceUpCounters (\"as it is turned face up\", Bubble Smuggler and Crowd-Control Warden, replacing two triggered approximations) CardDef 90 → 91; AdditionalCost.payLife (Deep Analysis's flashback life) AdditionalCost 11 → 12; tap cause \"mana\" (Forbidden Orchard) makes cause shared: Single-card values 125 → 126: Single-card values 125 → 126, CardDef 90 → 91, AdditionalCost 11 → 12",
     "PLAN-J J6a: public reveals — search.reveal and lookAtTop.reveal deduced from the Oracle text (\"search … reveal it\", 143 cards; \"look at the top … reveal\", 45 cards), look.reveal (fx.reveal: Parker Luck, Keen Duelist, Yennett, Cloak and Dagger, Intuition): Effect (fields) 639 → 642",
     "PLAN-L L2 [rules 186]: Commander-only reprints; ActivatedAbilityDef.fromCommand (commander ninjutsu, 702.49d: the same flag as on triggered and static abilities) ActivatedAbilityDef 17 → 18; ref.eventPlayers (the players of a \"one or more\" batch: Breeches, Malcolm) Ref 36 → 37; AdditionalCost.sacrificeToPay becomes { filter, each } (Rottenmouth Viper {1}, Dargo {2}): sacrificeToPay and each leave the single-card keys: ActivatedAbilityDef 17 → 18, Ref 36 → 37, Ref (fields) 65 → 66",
-    "PLAN-L L4 [rules 188]: small approximations lifted; CostReductionAbilityDef.colored (\"{U} (or {1}) less\", Eluge: value U), action trigger whose \"chosen\" (Shinryu: \"when the chosen player loses\"), ExiledFilter withWarp becomes withCost \"warp\" | \"flashback\" (Blade of the Swarm, Sorceress's Schemes: one key for two cards, each value single-card); optionsFrom shared by Koh and the player choice (Zenos); withWarp and optionsFrom leave the single-card keys: Single-card values 126 → 130, Effect (fields) 642 → 644, Ref (fields) 66 → 67"
+    "PLAN-L L4 [rules 188]: small approximations lifted; CostReductionAbilityDef.colored (\"{U} (or {1}) less\", Eluge: value U), action trigger whose \"chosen\" (Shinryu: \"when the chosen player loses\"), ExiledFilter withWarp becomes withCost \"warp\" | \"flashback\" (Blade of the Swarm, Sorceress's Schemes: one key for two cards, each value single-card); optionsFrom shared by Koh and the player choice (Zenos); withWarp and optionsFrom leave the single-card keys: Single-card values 126 → 130, Effect (fields) 642 → 644, Ref (fields) 66 → 67",
+    "PLAN-L L5a [rules 189]: Hawkeye (payX max), Nuka-Nuke Launcher (a delayed ability that lasts until the end of the watched player's next turn: delayed until \"theirNextTurn\"; intimidate as a block rule), Kíli (AbilityCostMod free: the whole equip cost), Abuelo's Awakening (MoveSpec.mods: the base P/T in place as it enters), Heirloom Epic (CostDef.convoke: convoke for an ability, single-card key justified): CostDef 27 → 28, MoveSpec 17 → 18, Effect (fields) 644 → 646"
   ]
 }

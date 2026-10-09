@@ -520,8 +520,11 @@ export const RECORD_VERSION = 1;
  *   (Orcish Bowmasters, Notion Thief), curses fall off a protected player, Sorceress's Schemes' exiled card with
  *   flashback, Memories Returning's alternating choices, a sneaked creature whose defender is gone isn't attacking
  *   (508.4a)
+ * - 189: PLAN-L L5a: Hawkeye pays {1} up to three times, then chooses up to that many modes in one ability; Nuka-Nuke
+ *   Launcher's rad counters for the defending player until the end of their next turn, and intimidate with the color;
+ *   Kíli replaces the whole equip cost; Abuelo's Awakening enters 1/1; Heirloom Epic's convoke
  */
-export const RULES_VERSION = 188;
+export const RULES_VERSION = 189;
 
 /** One checkpoint every N decisions (plus the last one of the game). */
 export const CHECKPOINT_EVERY = 25;

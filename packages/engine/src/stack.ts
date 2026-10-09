@@ -1131,6 +1131,20 @@ function reductionContext(s: GameState, controller: PlayerId, sourceId: string, 
 }
 
 /**
+ * The ability as it is paid: a cost replaced by nothing ("pay {0} rather than pay the equip cost", Kíli the Resourceful)
+ * if a matching modifier applies; otherwise the ability itself. `legal.ts` and `activateAbility` read it, so the options
+ * offered and the activation agree.
+ */
+export function abilityAsPaid(s: GameState, player: PlayerId, source: ObjectId, ab: ActivatedAbilityDef): ActivatedAbilityDef {
+  const free = playerStatics(s, player, "abilityCost").some(({ id, ab: x }) => {
+    const m = x.abilityCost;
+    if (!m?.free || (m.ability && !isAbilityKind(ab, m.ability)) || (m.notSelf && id === source)) return false;
+    return !m.source || matchesObjectFilter(s, player, source, m.source);
+  });
+  return free ? { ...ab, cost: { mana: { generic: 0, colored: {}, x: 0 } } } : ab;
+}
+
+/**
  * Cost modifiers of activated abilities (family A): Boom Scholar (exhaust of your other permanents), Mutagen Man (your
  * artifact tokens), Kíli the Resourceful (first equip of the turn free), Inquisitive Glimmer (unlock), Doc Aurlock
  * (plot).
@@ -1202,6 +1216,7 @@ export function abilityPurpose(source: ObjectId, ab: ActivatedAbilityDef): ManaP
     abilitySource: source,
     ...(kinds.length ? { abilityKinds: kinds } : {}),
     ...(ab.cost.waterbend ? { waterbend: Number.POSITIVE_INFINITY } : {}),
+    ...(ab.cost.convoke ? { convoke: true } : {}),
   };
 }
 
@@ -3193,6 +3208,7 @@ export function activationPicks(
       });
   }
   if (c.waterbend) out.push(...manaHelperPicks(s, player, source, { waterbend: true }));
+  if (c.convoke) out.push(...manaHelperPicks(s, player, source, { convoke: true }));
   if (c.collectEvidence) {
     const options = (s.players[player]?.graveyard ?? []).filter((id) => id !== source);
     const suggested = evidenceCards(s, player, source, c.collectEvidence);
@@ -3448,7 +3464,8 @@ function pickNow(
 
 export function activateAbility(s: GameState, player: PlayerId, source: ObjectId, index: number, choices: CastChoices): void {
   const o = s.objects[source];
-  const ab = activatedAbility(s, source, index);
+  const printed = activatedAbility(s, source, index);
+  const ab = printed && abilityAsPaid(s, player, source, printed);
   if (!ab || !o) throw new RulesError(msg("Unknown ability"));
   const fc = fixedCost(ab.cost);
   const xc = xCosts(ab.cost);
@@ -3596,11 +3613,13 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
       // Warrior's Blades, Dragonfire Blade: the cost depends on the targeted creature.
       const cost = abilityManaCost(s, player, source, ab, targets.t?.[0], x);
       const purpose0 = abilityPurpose(source, ab);
-      // Waterbend: the objects chosen by the player (checked), otherwise the automatic payment.
+      // Waterbend, convoke: the objects chosen by the player (checked), otherwise the automatic payment.
       const only =
         ab.cost.waterbend && choices.picks?.waterbend
           ? { waterbend: pickNow(s, player, source, ab, x, "waterbend", choices) }
-          : undefined;
+          : ab.cost.convoke && choices.picks?.convoke
+            ? { convoke: pickNow(s, player, source, ab, x, "convoke", choices) }
+            : undefined;
       const purpose = { ...purpose0, ...(only ? { only } : {}) };
       payMana(s, player, cost, reserved, sacrificed.length ? { ...purpose, sacrificedForCost: new Set(sacrificed) } : purpose);
       if (ab.cost.waterbend) bent(s, player, "water");

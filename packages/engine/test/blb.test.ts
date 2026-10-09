@@ -3633,6 +3633,21 @@ describe("Bloomburrow, lot K8 : peu communes (4)", () => {
     expect(canActivateK8(act(t, "p2", { type: "pass" }), "p1", epic, "Draw")).toBe(false);
   });
 
+  it("Heirloom Epic: creatures you control can pay its mana, summoning sick ones too (convoke, PLAN-L L5)", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["Heirloom Epic", ...lands("Plains", 2), "Bear Cub", { name: "Bear Cub", sick: true }],
+        library: lands("Island", 2),
+      },
+    });
+    const epic = idOf(s, "p1", "battlefield", "Heirloom Epic");
+    expect(canActivateK8(s, "p1", epic, "Draw")).toBe(true);
+    s = resolve(activateK8(s, "p1", epic, "Draw"));
+    expect(handOf(s)).toEqual(["Island"]);
+    expect(idsOf(s, "p1", "battlefield", "Bear Cub").every((id) => s.objects[id]?.tapped)).toBe(true);
+    expect(idsOf(s, "p1", "battlefield", "Plains").every((id) => s.objects[id]?.tapped)).toBe(true);
+  });
+
   it("Starforged Sword: with the gift (a tapped Fish), attaches on entering; +3/+3 and loses flying; equip {3}", () => {
     let s = scenario({ p1: { battlefield: [...lands("Plains", 4), "Healer's Hawk"], hand: ["Starforged Sword"] } });
     const hawk = idOf(s, "p1", "battlefield", "Healer's Hawk");

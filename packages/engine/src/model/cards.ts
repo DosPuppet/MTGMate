@@ -620,6 +620,11 @@ export interface CostDef {
    * you control may be tapped to pay {1} (chosen by the solver, like convoke).
    */
   waterbend?: boolean;
+  /**
+   * "For each mana in this ability's activation cost, you may tap an untapped creature you control rather than pay
+   * that mana" (Heirloom Epic): convoke for an ability (702.51).
+   */
+  convoke?: boolean;
   /** "X can't be 0": smallest allowed value of X (Katara, Water Tribe's Hope; Gogo, Master of Mimicry). */
   minX?: number;
   /** The exiled evidence is linked to the source (Kylox's Voltstrider: "among cards exiled with it"). */
@@ -1099,6 +1104,11 @@ export interface AbilityCostMod {
   reduce?: number | Amount;
   minOneMana?: boolean;
   /**
+   * "You may pay {0} rather than pay the [equip] cost" (Kíli the Resourceful): the whole cost, mana and other costs,
+   * becomes nothing (always used: an automatic choice).
+   */
+  free?: boolean;
+  /**
    * Mana is spent on these abilities as though it were mana of any type (Agatha's Soul Cauldron: abilities
    * of creatures you control).
    */
@@ -1455,6 +1465,8 @@ export interface MoveSpec {
   /** Types and subtypes replaced ("it's an enchantment; it's not a creature", Duskmourn). */
   setTypes?: CardType[];
   setSubtypes?: string[];
+  /** Other modifications in place as it enters ("it's a 1/1 Spirit creature", Abuelo's Awakening: its base P/T). */
+  mods?: LayerMods;
   /** Enters transformed (back face of a double-faced card). */
   transformed?: boolean;
   /**

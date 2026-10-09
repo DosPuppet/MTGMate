@@ -1056,7 +1056,7 @@ export function moveWithSpec(
     enters:
       spec.to === "battlefield"
         ? {
-            mods: { ...mods, setTypes: spec.setTypes, setSubtypes: spec.setSubtypes },
+            mods: { ...spec.mods, ...mods, setTypes: spec.setTypes, setSubtypes: spec.setSubtypes },
             // 508.4: the defender chosen during the resolution (`chooseAttacked`), otherwise that of one of your creatures.
             attacking: spec.attacking === true && s.combat ? attackingDefender(s, newController ?? o.owner) : undefined,
             ...choices,

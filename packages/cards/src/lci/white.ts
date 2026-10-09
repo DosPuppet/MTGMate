@@ -38,20 +38,16 @@ export const WHITE: Record<string, CardScript> = {
         ),
       ],
       [
-        // The X counters, the Spirit creature type and flying are in place on entering (614.1c: "a creature enters" sees
-        // it). Approximation: its base P/T become 1/1 just after it enters.
-        fx.moveTo(
-          ref.target(),
-          {
-            to: "battlefield",
-            counters: { kind: "+1/+1", n: amount.x },
-            addTypes: ["Creature"],
-            addSubtypes: ["Spirit"],
-            addKeywords: ["flying"],
-          },
-          { name: "back" },
-        ),
-        fx.modify(ref.stored("back"), { setPower: 1, setToughness: 1 }, "permanent"),
+        // The X counters, the Spirit creature type, flying and the base 1/1 are in place on entering (614.1c: "a creature
+        // enters" sees it; PLAN-L L5).
+        fx.moveTo(ref.target(), {
+          to: "battlefield",
+          counters: { kind: "+1/+1", n: amount.x },
+          addTypes: ["Creature"],
+          addSubtypes: ["Spirit"],
+          addKeywords: ["flying"],
+          mods: { setPower: 1, setToughness: 1 },
+        }),
       ],
     ),
   },

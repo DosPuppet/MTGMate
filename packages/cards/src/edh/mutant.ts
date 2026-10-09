@@ -9,6 +9,7 @@ import {
   activated,
   amount,
   BASIC_LAND,
+  block,
   CLUE,
   chapter,
   cmp,
@@ -481,27 +482,18 @@ export const EDH_MUTANT: Record<string, CardScript> = {
   "Nuka-Nuke Launcher": {
     // Equip {3}: read from the text.
     abilities: [
-      // Approximation: intimidate is read as "can't be blocked except by artifact creatures" (without the color).
-      staticAbility(
-        "attached",
-        {
-          power: 3,
-          addBlockRules: [{ cantBeBlockedBy: { notTypes: ["Artifact"] }, label: "Intimidate" }],
-        },
-        { label: "+3/+0 and intimidate" },
-      ),
-      // Approximation: until your next turn, each opponent (not only the defending player).
+      staticAbility("attached", { power: 3, addBlockRules: [block.intimidate] }, { label: "+3/+0 and intimidate" }),
+      // "Until the end of defending player's next turn, that player gets two rad counters whenever they cast a spell"
+      // (PLAN-L L5): a delayed ability that watches that player.
       triggered(
         { on: "attacks", who: { attached: "host" } },
         [
-          fx.emblem(
-            "Nuka-Nuke",
-            "Whenever an opponent casts a spell, that player gets two rad counters.",
-            [triggered(when.castSpell("opponent"), [fx.rad(ref.eventPlayer, 2)], { label: "Two rad counters" })],
-            true,
-          ),
+          fx.whenThisTurn(when.castSpell("any"), ref.defendingPlayer, [fx.rad(ref.eventPlayer, 2)], {
+            until: "theirNextTurn",
+            label: "Two rad counters",
+          }),
         ],
-        { label: "Until your next turn, each opposing spell gives two rad counters" },
+        { label: "Until the end of the defending player's next turn, each of their spells gives them two rad counters" },
       ),
     ],
   },

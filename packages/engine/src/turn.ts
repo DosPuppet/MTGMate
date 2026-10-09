@@ -661,8 +661,9 @@ function endStep(s: GameState): void {
     emit({ type: "step", step: next });
   } else {
     s.turn.number += 1;
-    // Delayed abilities "… this turn": they end with the turn.
-    if (s.delayed.some((d) => d.at === "thisTurn")) s.delayed = s.delayed.filter((d) => d.at !== "thisTurn");
+    // Delayed abilities "… this turn": they end with the turn (or with the turn they last until).
+    if (s.delayed.some((d) => d.at === "thisTurn"))
+      s.delayed = s.delayed.filter((d) => d.at !== "thisTurn" || (d.untilTurn ?? 0) >= s.turn.number);
     // 500.7: an extra turn (the last one created first), otherwise the next player.
     let extra = s.extraTurns?.pop();
     // Trouble in Pairs: an opponent who would begin an extra turn skips it.

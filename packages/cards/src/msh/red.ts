@@ -11,6 +11,7 @@ import {
   eventReplacement,
   fx,
   mode,
+  oneOrMore,
   playerStatic,
   ref,
   spell,
@@ -39,6 +40,25 @@ const anyOtherTarget = (id = "t") => {
   };
 };
 
+/** Hawkeye's three arrows. */
+const TRICK_ARROWS = [
+  {
+    label: "Net — target creature can't block this turn",
+    targets: [target.creature("c")],
+    effects: [fx.modify(ref.target("c"), { addKeywords: ["cantBlock"] })],
+  },
+  { label: "Explosive — 2 damage to target player", targets: [target.player("p")], effects: [fx.damage(2, ref.target("p"))] },
+  { label: "Boomerang — discard a card, then draw a card", effects: [fx.discard(1), fx.draw(1)] },
+];
+
+/** When exactly `k` was paid: a reflexive ability offering the combinations of at most `k` of the modes. */
+const upToModes = (k: number, modes: typeof TRICK_ARROWS) => {
+  const sizeOf = (mask: number) => [...mask.toString(2)].filter((b) => b === "1").length;
+  // `oneOrMore` lists the combinations by mask, from 1 up.
+  const combos = oneOrMore(...modes).filter((_, i) => sizeOf(i + 1) <= k);
+  const paid = cond.all(cond.amountAtLeast(amount.v("x"), k), cond.not(cond.amountAtLeast(amount.v("x"), k + 1)));
+  return fx.when(paid, fx.reflexiveModal(combos));
+};
 export const RED: Record<string, CardScript> = {
   // Prowess: read from the text.
   "Crimson Operative": {
@@ -78,30 +98,14 @@ export const RED: Record<string, CardScript> = {
     ],
   },
   /**
-   * "Pay {1} up to three times; when you do, choose up to that many modes": each mode is offered in turn for {1} (same
-   * result: N different modes for {N}), with its own reflexive ability.
+   * "You may pay {1} up to three times. When you do, choose up to that many —": one payment of X (at most 3), then one
+   * reflexive ability whose modes are the combinations of at most X of the three (PLAN-L L5).
    */
   "Hawkeye, Master Marksman": {
     abilities: [
       triggered(
         when.tapsSelf,
-        [
-          ...fx.mayPay(
-            "{1}",
-            "Pay {1} for Net (target creature can't block this turn)?",
-            fx.reflexive([target.creature("c")], [fx.modify(ref.target("c"), { addKeywords: ["cantBlock"] })]),
-          ),
-          ...fx.mayPay(
-            "{1}",
-            "Pay {1} for Explosive (2 damage to target player)?",
-            fx.reflexive([target.player("p")], [fx.damage(2, ref.target("p"))]),
-          ),
-          ...fx.mayPay(
-            "{1}",
-            "Pay {1} for Boomerang (discard a card, then draw a card)?",
-            fx.reflexive([], [fx.discard(1), fx.draw(1)]),
-          ),
-        ],
+        [fx.payX("Pay {1} up to three times?", "x", 3), ...[1, 2, 3].flatMap((k) => upToModes(k, TRICK_ARROWS))],
         { label: "Trick Arrows" },
       ),
     ],

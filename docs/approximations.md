@@ -85,12 +85,10 @@ In the order they were added, set by set.
   - `auto choice` Forage: automatic choice, three cards from the graveyard (lands first) if there are at least three, otherwise a Food (a token preferably);
   - `timing` The Infamous Cruelclaw: the card is discarded before casting the spell (and not as a replacement cost during casting);
   - `auto choice` Portent of Calamity: the exiled cards are chosen automatically (one per type);
-  - `rule` Heirloom Epic: creatures cannot help pay;
   - `rule` Rottenmouth Viper: at most as many permanents are sacrificed as the generic cost to pay (one more sacrifice would reduce nothing, but would count for "whenever you sacrifice");
   - `rule` Ral (emblem): the copy is counted at resolution (a spell cast in response to the trigger counts).
 - **The Lost Caverns of Ixalan (`docs/extensions/lci.md`):**
   - `rule` Cavern mana (Bat Colony) and "using mana produced by [source]" (Tecutlan, The Myriad Pools): only the mana committed by the automatic payment;
-  - `timing` Abuelo's Awakening: the card enters as a flying Spirit creature, but its base P/T only becomes 1/1 right after it enters;
   - `rule` The Myriad Pools: the permanent becomes a copy of the spell on the stack;
   - `timing` Thousand Moons Infantry: untaps at the beginning of each opponent's upkeep (and not during their untap step);
   - `rule` Locus of Enlightenment: the gained abilities are not limited to one activation per turn;
@@ -103,7 +101,7 @@ In the order they were added, set by set.
 - **Standard meta (plan P4, `docs/extensions/meta.md`):**
   - `rule` Teamwork: the power of the tapped creatures is counted as for crew (a pilot counts 2 more);
   - `auto choice` Collect evidence "X, X being the total mana value of the targeted permanents" (Urgent Necropsy): the exiled cards are chosen by the engine (the cheapest that suffices, otherwise the most expensive); elsewhere, the player chooses them;
-  - `auto choice` Kíli the Resourceful: the first equip ability of the turn costs {0} automatically; only the generic part is removed: colored symbols ({R} of Cori-Steel Cutter, {U} of The Key to the Vault) and any other cost (life of Dark Knight's Greatsword, sacrifice of Shredder's Armor or Dissection Tools, discard of Bloodthorn Flail) stay due;
+  - `auto choice` Kíli the Resourceful: the {0} is always used for the first equip ability of the turn (declining it, to pay a cost on purpose, is never offered);
   - `rule` Interdimensional Web Watch: the two mana are usable for any spell cast from anywhere but the hand (and not only from exile).
 - **Lorwyn Eclipsed (`docs/extensions/ecl.md`):**
   - `rule` Rhys, the Evermore: removes all −1/−1 counters from the target, and only those (neither the number nor the other kinds of counters can be chosen);
@@ -158,7 +156,6 @@ In the order they were added, set by set.
 - **Marvel Super Heroes (`docs/extensions/msh.md`):**
   - `rule` Raft Security Officer: "costs {1} less if it targets a creature with power 3 or less" is two abilities ({1} with such a target, {2} otherwise); if the target's power exceeds 3 before resolution, the {1} version loses its target;
   - `rule` Nick Fury, Agent of S.H.I.E.L.D.: a double-faced card put onto the battlefield cannot be transformed;
-  - `timing` Hawkeye, Master Marksman: "pay {1} up to three times, then choose that many modes" is three successive offers (pay {1} for each mode), each with its reflexive ability;
   - `rule` Bullseye, Death Dealer: "sacrifice an artifact or discard a nonland card" is two abilities;
   - `rule` Cloak and Dagger, Entwined: at resolution, the targeted creature is only rechecked as a creature of an opponent (passed under the control of another opponent, it remains a legal target);
   - `rule` The Kingpin of Crime: "deal damage equal to their toughness" only affects the creatures present at resolution;
@@ -237,7 +234,6 @@ In the order they were added, set by set.
   - `rule` Cut a Deal: you draw a card per opponent, even if their draw did not happen (empty library, replaced draw);
   - `rule` Harold and Bob: the chosen Forest gains its ability forever, and the card stays in the graveyard (it does not become an Aura);
   - `rule` Winding Constrictor: the clause "if you would get counters" is not handled;
-  - `rule` Nuka-Nuke Launcher: intimidate is read as "can't be blocked except by artifact creatures", and the rad counters hit each opponent until your next turn;
   - `rule` Young Deathclaws: the granted scavenge is an ability of Young Deathclaws that costs {4} (and not the exiled card's mana cost);
   - `rule` Mariposa Military Base: it always enters untapped, without rad counters.
   - `auto choice` Scorched Ruins: the two untapped lands sacrificed on entering are chosen by the engine (the first ones on the battlefield), without asking the player;

@@ -320,6 +320,26 @@ describe("The Hobbit", () => {
       expect(tappedPlains(s)).toBe(2);
     });
 
+    it('storied: the whole equip cost is replaced, not only its mana ("pay {0} rather than", PLAN-L L5)', () => {
+      let s = scenario({
+        p1: {
+          battlefield: ["Kíli the Resourceful", "Bloodthorn Flail", "Fishing Pole", "Bear Cub", "Plains"],
+          hand: ["Opt"],
+        },
+      });
+      s = act(s, "p1", { type: "pass" });
+      s = act(s, "p2", { type: "pass" });
+      s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number > 3);
+      expect(s.players.p1?.designations).toContain("enduringStory");
+      const hand = s.players.p1?.hand.length ?? 0;
+      const flail = idOf(s, "p1", "battlefield", "Bloodthorn Flail");
+      s = settle(activate(s, "p1", flail, "Equip — discard", { targets: { t: [idOf(s, "p1", "battlefield", "Bear Cub")] } }));
+      expect(s.objects[flail]?.attachedTo).toBe(idOf(s, "p1", "battlefield", "Bear Cub"));
+      // No card discarded.
+      expect(s.players.p1?.hand.length).toBe(hand);
+      expect(idsOf(s, "p1", "graveyard", "Opt")).toHaveLength(0);
+    });
+
     it("without storied, Equip is paid normally", () => {
       const s = scenario({ p1: { battlefield: ["Kíli the Resourceful", "Fishing Pole", "Bear Cub"] } });
       expect(s.players.p1?.designations ?? []).not.toContain("enduringStory");
