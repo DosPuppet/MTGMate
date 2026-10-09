@@ -135,12 +135,10 @@ In the order they were added, set by set.
   - `timing` Lavaleaper, Shimmerwilds Growth: the extra mana (triggered mana ability, 605.1b) is added with the land's mana, as a replacement; the payment solver counts that of the same type, not that of another color (Shimmerwilds Growth).
 - **Wilds of Eldraine (`docs/extensions/woe.md`):**
   - `timing` Expel the Interlopers: the number from 0 to 10 is chosen at casting (one mode per number), and not at resolution;
-  - `rule` Virtue of Loyalty: all your creatures are untapped, not only those that received a counter;
   - `rule` Brave the Wilds: the target "land you control" is offered even without Bargain, with no effect then;
   - `timing` Feral Encounter: "at the beginning of the next combat phase this turn" goes through a turn emblem;
   - `rule` Will, Scion of Peace, Rowan, Scion of War: the "this turn" reduction is granted to the creature and ends if it leaves the battlefield; X is read again at each spell;
   - `rule` The Irencrag: "loses all other abilities": its mana ability and its trigger are inactive once it is an Equipment, but remain listed;
-  - `rule` Three Bowls of Porridge: "a mode that hasn't been chosen": three abilities, each activatable only once;
   - `timing` Likeness Looter: the mana value X of the targeted card is checked at resolution (nothing happens if it differs), and not at targeting;
   - `auto choice` Yenna, Redtooth Regent: the copy of an Aura attaches to a host chosen by the engine.
 - **Secrets of Strixhaven (`docs/extensions/sos.md`):**
@@ -276,7 +274,7 @@ In the order they were added, set by set.
   - `rule` Harold and Bob: the chosen Forest gains its ability forever, and the card stays in the graveyard (it does not become an Aura);
   - `rule` Lumbering Megasloth: only the counters on permanents count (not those on players); Winding Constrictor: the clause "if you would get counters" is not handled;
   - `rule` Nuka-Nuke Launcher: intimidate is read as "can't be blocked except by artifact creatures", and the rad counters hit each opponent until your next turn;
-  - `rule` Young Deathclaws: recover costs {4} (and not the card's mana cost) and it is an ability of Young Deathclaws;
+  - `rule` Young Deathclaws: the granted scavenge is an ability of Young Deathclaws that costs {4} (and not the exiled card's mana cost);
   - `rule` Mariposa Military Base: it always enters untapped, without rad counters.
   - `auto choice` Scorched Ruins: the two untapped lands sacrificed on entering are chosen by the engine (the first ones on the battlefield), without asking the player;
   - `timing` The Mycosynth Gardens: the mana value X of the targeted artifact is checked at resolution (nothing happens if it differs), and not at targeting, like Likeness Looter.
