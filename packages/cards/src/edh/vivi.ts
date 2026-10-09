@@ -144,6 +144,8 @@ export const EDH_VIVI: Record<string, CardScript> = {
           anyZone: true,
           prompt: "Search your library for three cards",
         }),
+        // "… and reveal them" (to all players).
+        fx.reveal(ref.stored("i")),
         fx.chooseAmong(ref.stored("i"), ref.target("o"), "k", {
           anyZone: true,
           prompt: "Choose the card that goes to its owner's hand",

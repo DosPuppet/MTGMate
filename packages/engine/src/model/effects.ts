@@ -242,7 +242,8 @@ export type Effect =
    * The controller looks at the designated cards (Gitaxian Probe: a hand; Mishra's Bauble: a library's top card);
    * `random`: that many of them, at random (Urza's Bauble).
    */
-  | { op: "look"; what: Ref; random?: number }
+  /** `reveal`: shown to all players ("reveal the top card of your library", "they reveal their hand"). */
+  | { op: "look"; what: Ref; random?: number; reveal?: boolean }
   /** Soulbond (702.95): pairs the two designated creatures, if both are unpaired creatures the controller controls. */
   | { op: "pair"; what: Ref; with: Ref }
   /** Removes the designated creatures from combat (506.4: Reconnaissance). */
@@ -299,6 +300,9 @@ export type Effect =
        * the library's owner (`owner`: "each player looks at … and may reveal", Explore the Vastlands).
        */
       chooser?: "owner";
+      /** "You may reveal [a card] from among them and put it into your hand": the chosen cards are shown to all players
+       * (read from the text, `scryfall.ts`). */
+      reveal?: boolean;
     }
   /** Search one's library for up to `count` cards matching the filter, then shuffle. */
   | {
@@ -315,6 +319,8 @@ export type Effect =
       manaValue?: Amount;
       /** Mana value at most this amount (Grim Servant: your devotion to black). */
       maxManaValue?: Amount;
+      /** "… reveal it": the found cards are shown to all players (read from the text, `scryfall.ts`). */
+      reveal?: boolean;
     }
   | { op: "shuffle"; who: Ref }
   /** Exchanges control of two permanents (Trade the Helm). */

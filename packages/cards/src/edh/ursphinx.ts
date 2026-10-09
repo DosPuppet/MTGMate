@@ -254,6 +254,8 @@ export const EDH_UR_SPHINX: Record<string, CardScript> = {
       triggered(
         when.attacksSelf,
         [
+          // "Reveal the top card of your library."
+          fx.reveal(ref.libraryTop(ref.you)),
           ...fx.when(
             cond.refMatches(ref.libraryTop(ref.you), { compare: [cmp.parity("odd")] }),
             fx.castNow(ref.libraryTop(ref.you), { free: true, storeCast: "cast" }),

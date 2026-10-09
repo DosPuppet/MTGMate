@@ -1059,7 +1059,12 @@ export const HANDLERS: OpHandlers = {
       while (left.length && ids.length < e.random) ids.push(left.splice(Math.floor(random(s) * left.length), 1)[0] as string);
     }
     if (ids.length)
-      emit({ type: "reveal", player: ctx.controller, defIds: ids.map((id) => s.objects[id]?.defId ?? ""), look: true });
+      emit({
+        type: "reveal",
+        player: ctx.controller,
+        defIds: ids.map((id) => s.objects[id]?.defId ?? ""),
+        ...(e.reveal ? {} : { look: true }),
+      });
     return;
   },
   pair(s, _r, e, ctx) {
@@ -1375,6 +1380,9 @@ export const HANDLERS: OpHandlers = {
     }
     const arrival = arrivalChoices(s, r, ctx, picked, e.to, ownerOr(s, e.to, ctx.controller), key, !!e.random);
     if (!(arrival instanceof Map)) return arrival;
+    // "You may reveal it and put it into your hand": the chosen cards are shown to all players.
+    if (e.reveal && picked.length)
+      emit({ type: "reveal", player: whose, defIds: picked.map((id) => s.objects[id]?.defId ?? "") });
     store(r, e.store, picked.length);
     const taken = picked
       .map((id) => moveWithSpec(s, ctx.controller, id, evalMoveSpec(s, ctx, e.to), arrival.get(id)))
@@ -1443,6 +1451,11 @@ export const HANDLERS: OpHandlers = {
         picked = answer.map(String);
         // "with different names": a single copy of each name.
         if (e.distinctNames) picked = firstOfEachName(picked, (id) => (s.objects[id] ? chars(s, id).name : id));
+      }
+      // 701.23: "… reveal it": the found cards are shown to all players.
+      if (e.reveal && picked.length && !r.vars[key(`revealed-${p}`)]) {
+        r.vars[key(`revealed-${p}`)] = [1];
+        emit({ type: "reveal", player: p, defIds: picked.map((id) => s.objects[id]?.defId ?? "") });
       }
       const arrival = arrivalChoices(s, r, ctx, picked, e.to, ownerOr(s, e.to, p), (x) => key(`${p}-${x}`));
       if (!(arrival instanceof Map)) return arrival;

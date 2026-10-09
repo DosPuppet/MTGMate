@@ -1521,6 +1521,8 @@ export const fx = {
   tap: (what: Ref): Effect => ({ op: "tap", what }),
   /** "Look at [these cards]" (only the controller sees them); `random`: that many at random ("a card at random"). */
   look: (what: Ref, random?: number): Effect => ({ op: "look", what, ...(random !== undefined ? { random } : {}) }),
+  /** "Reveal [these cards]": shown to all players. */
+  reveal: (what: Ref): Effect => ({ op: "look", what, reveal: true }),
   /** Soulbond (702.95): pairs the two creatures. */
   pair: (what: Ref, withRef: Ref): Effect => ({ op: "pair", what, with: withRef }),
   /** "Remove [the creature] from combat" (506.4). */

@@ -1206,7 +1206,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
       : script?.spell;
   // Station: a threshold whose abilities (other than keywords) are not scripted makes the card unhandled.
   if (stationIncomplete) implemented = false;
-  return {
+  const def: CardDef = {
     id: slug(raw.name),
     name: raw.name,
     typeLine: raw.typeLine,
@@ -1426,4 +1426,24 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     rarity: raw.rarity,
     legalities: raw.legalities,
   };
+  const reveal = new Set<string>([
+    ...(SEARCH_REVEAL.test(raw.oracleText) ? ["search"] : []),
+    ...(LOOK_REVEAL.test(raw.oracleText) ? ["lookAtTop"] : []),
+  ]);
+  return reveal.size ? withReveal(def, reveal) : def;
+}
+
+/** "Search your library for …, reveal it" (701.23; typecycling's reminder text too). */
+const SEARCH_REVEAL = /\bsearch(?:es)?\b[^.]*?\breveals? (?:it|them|those cards|that card|the card|those|both)\b/i;
+/** "Look at the top N cards …. You may reveal a creature card from among them and put it into your hand." */
+const LOOK_REVEAL = /\blooks? at the top\b[\s\S]*?\breveals? (?:a|an|up to|it|that card|two|any number|one|those)\b/i;
+
+/** The card's searches or looks reveal the cards taken (`reveal`): copies, script objects may be shared between cards. */
+function withReveal<T>(x: T, ops: ReadonlySet<string>): T {
+  if (Array.isArray(x)) return x.map((v) => withReveal(v, ops)) as T;
+  if (!x || typeof x !== "object") return x;
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(x)) out[k] = withReveal(v, ops);
+  if (typeof out.op === "string" && ops.has(out.op)) out.reveal = true;
+  return out as T;
 }

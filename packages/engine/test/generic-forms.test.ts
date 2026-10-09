@@ -137,3 +137,26 @@ describe("PLAN-J J5 [rules 182]: small approximation lifts", () => {
     expect(s.stack.filter((i) => i.kind === "ability")).toHaveLength(0);
   });
 });
+
+describe("PLAN-J J6a: public reveals read from the text", () => {
+  it('Sylvan Tutor ("search … reveal it"): the found card is shown to the opponent too', () => {
+    const s = scenario({
+      p1: { battlefield: ["Forest"], hand: ["Sylvan Tutor"], library: ["Serra Angel", "Forest", "Forest"] },
+    });
+    let r = submit(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Sylvan Tutor") });
+    const events = [...r.events];
+    for (let i = 0; i < 20 && r.state.pending && (r.state.stack.length || r.state.pending.kind === "choice"); i++) {
+      const p = r.state.pending;
+      r =
+        p.kind === "choice" && p.request.type === "pick"
+          ? submit(r.state, p.player, {
+              type: "choose",
+              values: p.request.options.filter((o) => s.defs[s.objects[String(o)]?.defId ?? ""]?.name === "Serra Angel"),
+            })
+          : submit(r.state, p.player, { type: "pass" });
+      events.push(...r.events);
+    }
+    const shown = filterEvents(events, "p2").find((e) => e.type === "reveal" && !e.look);
+    expect(shown?.type === "reveal" && shown.defIds.map((d) => s.defs[d]?.name)).toEqual(["Serra Angel"]);
+  });
+});

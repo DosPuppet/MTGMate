@@ -31,7 +31,6 @@ Each entry carries its nature:
 - `rule` **"One or more ..." triggers (Ketramose, Dredger's Insight):** one trigger per batch of simultaneous events (an effect of a resolution, a combat damage step, a state-based actions pass); events outside a batch (costs paid while casting a spell or activating an ability) count as a single batch.
 - `rule` **Ability counters:** they apply after the other layer 6 effects.
 - `timing` **Costs paid before the mana:** a permanent exiled, returned or sacrificed for an additional or alternative cost leaves the battlefield before the mana is paid: its mana abilities and its mana replacements (Lavaleaper) no longer help pay for that spell (601.2g-h would allow committing mana earlier). For an activated ability, the mana abilities of the permanents sacrificed for the cost are used first.
-- `rule` **Search (701.23):** a card searched for "and revealed" is not revealed to the opponents (Strixhaven Skycoach, Brave the Wilds, Celestial Reunion, Archdruid's Charm, Flourishing Bloom-Kin, Enlightened Tutor; Herald's Horn does not reveal the card put into hand either).
 - `auto choice` **Phyrexian mana:** the available mana pays first; life is only paid for the symbols it does not cover.
 - `auto choice` **"The rest on the bottom of your library in any order":** in a random order (Rediscover the Way, Commune with Nature, Avengers Tower); "put back on top in any order": the order is not chosen (Rowan's Grim Search).
 - `rule` **Suspend (702.62):** haste is given to the next creature spell cast this turn, even if it is not the suspended card (also Taigam, Master Opportunist).
@@ -175,7 +174,7 @@ In the order they were added, set by set.
   - `rule` Nick Fury, Agent of S.H.I.E.L.D.: a double-faced card put onto the battlefield cannot be transformed;
   - `timing` Hawkeye, Master Marksman: "pay {1} up to three times, then choose that many modes" is three successive offers (pay {1} for each mode), each with its reflexive ability;
   - `rule` Bullseye, Death Dealer: "sacrifice an artifact or discard a nonland card" is two abilities;
-  - `rule` Cloak and Dagger, Entwined: the hand is only shown through its offered nonland cards; at resolution, the targeted creature is only rechecked as a creature of an opponent (passed under the control of another opponent, it remains a legal target);
+  - `rule` Cloak and Dagger, Entwined: at resolution, the targeted creature is only rechecked as a creature of an opponent (passed under the control of another opponent, it remains a legal target);
   - `rule` The Kingpin of Crime: "deal damage equal to their toughness" only affects the creatures present at resolution;
   - `timing` Vision Quest: the graveyard is offered before the library;
   - `rule` Cosmic Cube: the card chosen among the six goes through exile while it is being cast (visible to all), then goes to the bottom if you decline;
@@ -184,7 +183,6 @@ In the order they were added, set by set.
   - `timing` Worlds Within Worlds: each player chooses and puts their creatures in turn (APNAP order), and not simultaneously;
   - `rule` The Ruinous Wrecking Crew: "up to X modes" is written as combinations of modes, each under the condition X ≥ its number of modes.
 - **Marvel's Spider-Man (`docs/extensions/spm.md`):**
-  - `rule` Parker Luck: the top card is not explicitly revealed; each player loses their life then puts it into hand (same result);
   - `rule` The Death of Gwen Stacy: at chapter II, each player chooses then acts in turn (no APNAP choices followed by simultaneous actions);
   - `rule` Maximum Carnage: at chapter I, the attack requirements ("attacks each combat if able, and a player other than you if able") only affect the creatures present at resolution, not those that arrive afterwards;
   - `rule` Spinneret and Spiderling: the threshold of 4 damage is read per damage dealt; combat damage divided among several blockers (2 + 2) does not trigger it;
@@ -245,7 +243,6 @@ In the order they were added, set by set.
   - `auto choice` Cryptolith Fragment: its mana ability is activated by hand (the automatic payment does not use it);
   - `rule` Wheel of Misfortune: the numbers are chosen one after the other (in APNAP order, without seeing those of the others), from 0 to 20;
   - `rule` Creeping Bloodsucker: the life gained is computed (number of opponents), not read from the actual damage (different only if it is replaced);
-  - `rule` Keen Duelist: the top cards are not explicitly revealed.
   - `rule` Incubate (701.53): the transformation is a permanent modification (Phyrexian artifact creature 0/0), not a switch to the back face; the token keeps its name;
   - `rule` The Ur-Sphinx: player by player, it mills then you may cast one of its cards (and not all the mills first);
   - `rule` Vigor: "when it is put into a graveyard from anywhere, shuffle it into the library" is a replacement: it is shuffled without going through the graveyard (like the Eldrazi);
@@ -267,7 +264,6 @@ In the order they were added, set by set.
   - `rule` Helm of the Host: "that token gains haste" is written as an exception of the copy (707.9b): a copy of that token also has haste;
   - `rule` Cover of Darkness, Shizo, Death's Storehouse: fear (702.36) is a blocking rule ("can't be blocked except by artifact and/or black creatures"), not a keyword: no card can read that a creature "has fear".
   - `rule` Dazzling Sphinx: the exiled cards that weren't cast go on the bottom in the order they were exiled (not in a random order);
-  - `rule` Yennett, Cryptic Sovereign: the top card is not shown to the other players when it isn't cast (it is drawn);
   - `timing` Tivit, Seller of Secrets: each vote takes effect as soon as it is cast (same result: nothing reads the votes); "you may vote an additional time" only applies to Tivit's own votes (no other vote in the catalog);
   - `timing` Breach the Multiverse: the chosen cards enter one graveyard after the other (not simultaneously);
   - `rule` Sphinx Ambassador: the search of the opponent's library is a choice among its cards (no "search" event: "whenever a player searches" doesn't trigger); the named card is remembered by the Sphinx;
@@ -275,7 +271,6 @@ In the order they were added, set by set.
   - `rule` Desperate Ritual: splice onto Arcane is not done (no other Arcane spell in the deck; two in the catalog: We Say Thee Nay!, Hex Magic);
   - `rule` Jeweled Amulet: the type of the mana spent is not noted: the stored mana is one mana of any type;
   - `rule` Tandem Lookout (soulbond, 702.95e): a pair breaks when state-based actions are checked, not at the very moment one of the creatures leaves, changes controller or stops being a creature;
-  - `rule` Intuition: the three cards are shown to the choosing opponent only (not to the other players);
   - `timing` Final Fortune, Last Chance, Warrior's Oath: you lose at the end step of your next turn (the extra turn, unless another one is inserted before it).
   - `rule` Biotransference: only your creatures on the battlefield and your creature spells are artifacts (not your creature cards in the other zones);
   - `auto choice` Flare of Malice: the creature sacrificed instead of paying is chosen by the engine (the lowest mana value);

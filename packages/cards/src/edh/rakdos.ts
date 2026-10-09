@@ -252,6 +252,8 @@ export const EDH_RAKDOS: Record<string, CardScript> = {
       triggered(
         when.yourUpkeep,
         [
+          fx.reveal(ref.libraryTop(ref.you)),
+          fx.reveal(ref.libraryTop(ref.target())),
           fx.loseLife(amount.manaValueOf(ref.libraryTop(ref.target())), ref.you),
           fx.loseLife(amount.manaValueOf(ref.libraryTop(ref.you)), ref.target()),
           fx.toHand(ref.libraryTop(ref.you)),

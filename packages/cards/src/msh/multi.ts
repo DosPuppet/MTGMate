@@ -234,7 +234,9 @@ export const MULTI: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         [
-          // A nonland card from their hand, otherwise the chosen creature, until Cloak and Dagger leaves.
+          // "That player reveals their hand"; a nonland card from it, otherwise the chosen creature, until Cloak and Dagger
+          // leaves.
+          fx.reveal(ref.handOf(ref.target("p"))),
           fx.exileFromHandLinked(ref.target("p"), NONLAND_CARD, true),
           ...fx.when(
             cond.not(cond.amountAtLeast(amount.refCount(ref.exiledWith), 1)),

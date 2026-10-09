@@ -109,7 +109,9 @@ export const BLACK: Record<string, CardScript> = {
       triggered(
         when.yourEndStep,
         [
-          // Each loses life equal to the mana value of the card revealed by the other, then puts it into their hand.
+          // Each reveals their top card, loses life equal to the mana value of the other's, then puts it into their hand.
+          fx.reveal(ref.libraryTop(ref.target("a"))),
+          fx.reveal(ref.libraryTop(ref.target("b"))),
           fx.loseLife(amount.manaValueOf(ref.libraryTop(ref.target("b"))), ref.target("a")),
           fx.loseLife(amount.manaValueOf(ref.libraryTop(ref.target("a"))), ref.target("b")),
           fx.toHand(ref.libraryTop(ref.target("a"))),

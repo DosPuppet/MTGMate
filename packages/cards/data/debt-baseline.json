@@ -203,7 +203,7 @@
     "CastLimit": 9,
     "NextSpell": 9,
     "Effect": 147,
-    "Effect (fields)": 639,
+    "Effect (fields)": 642,
     "TriggerSpec": 40,
     "TriggerSpec (fields)": 142,
     "Condition": 47,
@@ -303,6 +303,7 @@
     "PLAN-J J3: generic action trigger { on: \"action\", action, whose, self, n } matching the engine's events (search, playerLost, discover, forage, gift, bend, caseSolved, manifestDread, attackTriggered, crime, collectEvidence, scry, exhaust, expend, saddled, plotted, cycled, transformed): 18 TriggerSpec variants into 1. Single-card values 111 → 121: the ten single-card variants become ten values of ActionEvent written by one card each: Single-card values 111 → 121, TriggerSpec 58 → 41, TriggerSpec (fields) 158 → 142",
     "PLAN-J J4a [rules 179]: turn-log damage entries with the damaged and source objects (TurnLogQuery self: Tangled Colony's lkiDamage, Steel Hellkite's op and GameObject.combatDamagedPlayers removed); untaps in the turn log (untappedInUntapStep amount and turn stat removed); becomeCopyKeepAbilities, noncombatBonusThisTurn, millUntil and putFaceDown expressed by becomeCopy, fx.thisTurn, revealUntilN rest and moveTo as; activateTargeting folded into activateAbility targeting; TurnLogQuery 26 → 28 (self, untapStep: they replace an Amount variant, an op, a GameObject field and a turn stat): GameObject 50 → 49, TurnLogQuery 26 → 28, Effect 152 → 147, Effect (fields) 651 → 639, TriggerSpec 41 → 40, Amount 34 → 32, Amount (fields) 79 → 77",
     "PLAN-J J4b [rules 180]: \"X\" costs written in the cost keys (sacrifice, tapOthers, exileFromGraveyard count \"X\"; removeCounters n \"X\"; discard \"X\"; payLife { kind: \"x\" }; read by xCosts and fixedCost) instead of six single-card keys; Twists and Turns as an explore replacement; Warped Space as castPermission freeFrom \"exile\". Single-card values 121 → 125: four values (n \"X\", discard \"X\", event \"explore\", freeFrom \"exile\") replace six keys and two player statics: Single-card values 121 → 125, CostDef 33 → 27",
-    "PLAN-J J5 [rules 182]: approximation lifts; CardDef.faceUpCounters (\"as it is turned face up\", Bubble Smuggler and Crowd-Control Warden, replacing two triggered approximations) CardDef 90 → 91; AdditionalCost.payLife (Deep Analysis's flashback life) AdditionalCost 11 → 12; tap cause \"mana\" (Forbidden Orchard) makes cause shared: Single-card values 125 → 126: Single-card values 125 → 126, CardDef 90 → 91, AdditionalCost 11 → 12"
+    "PLAN-J J5 [rules 182]: approximation lifts; CardDef.faceUpCounters (\"as it is turned face up\", Bubble Smuggler and Crowd-Control Warden, replacing two triggered approximations) CardDef 90 → 91; AdditionalCost.payLife (Deep Analysis's flashback life) AdditionalCost 11 → 12; tap cause \"mana\" (Forbidden Orchard) makes cause shared: Single-card values 125 → 126: Single-card values 125 → 126, CardDef 90 → 91, AdditionalCost 11 → 12",
+    "PLAN-J J6a: public reveals — search.reveal and lookAtTop.reveal deduced from the Oracle text (\"search … reveal it\", 143 cards; \"look at the top … reveal\", 45 cards), look.reveal (fx.reveal: Parker Luck, Keen Duelist, Yennett, Cloak and Dagger, Intuition): Effect (fields) 639 → 642"
   ]
 }
