@@ -34,6 +34,8 @@ The AI plays against the human in the browser (Web Worker): the level is chosen 
 - **Chosen costs and enters choices** (C8, C9): the engine's suggestion, which already ranks the objects (wither the creature that survives, sacrifice the least valuable...).
 - **Mulligan** (`heuristic.ts`, "normal" profile): 2 to 5 lands out of 7; curve: with two lands, a spell of value 2 or less, with more, a spell playable the following turn (C17); at least one spell whose colored symbols are all produced by the lands in hand, basic land types included (305.6; before C17, basic lands, which do not print their ability, skipped this check).
 - **Attacks in multiplayer** (`attackTarget`, C17): the player the attack can kill, otherwise the most threatening (power, planeswalkers, hand), and no longer always the one with the least life.
+- **Legal declarations** (PLAN-L L1): every level drops the taxed attacks it cannot pay, the last ones first (`payableAttacks`, 508.1h), and the blocks below an attacker's minimum (menace, "three or more"; `withRequiredBlocks`). These were the decisions refused in Commander (Propaganda, menace).
+- **Holding a counterspell** (PLAN-L L1, Medium and Expert): on its own main phase, an option after which none of the counterspells in hand could still be paid loses 2.5 (about one opposing spell), as long as an opponent has cards in hand.
 
 ## Evaluation (`evaluate.ts`)
 
@@ -156,15 +158,24 @@ No significant difference, and no regression: these choices are rare in a game (
 
 `npm run arena -- … --players 4` plays four-player games (seats A, B, A, B, shifted from one game to the next, random decks).
 
+PLAN-L L1 (2026-10-09):
+
+| Change | Games | A wins |
+|---|---|---|
+| `medium-fair` (decides on `forAgent`) vs `medium`, mix | 600 | 50.5% ± 4.0 |
+| Same, Commander precons, four players | 200 | 46.2% ± 6.9 |
+| Holding a counterspell vs without, meta | 600 | 50.3% ± 4.0 |
+| Attackers weighed against the player they attack (multiplayer) vs before, four players | 1,198 | 47.8% ± 2.8, discarded |
+
 Attempts without measurable gain, discarded:
 - ISMCTS settings (exploration, reward scale, 4 or 8 options, a one-turn-longer horizon);
 - ISMCTS on attacks (53%): the simulations' opponent blocks naively, which makes the attacks too aggressive.
 
 ## Pitfalls
 
-- **Multiplayer, large boards:** a Medium-level priority decision takes 1.5 to 4 s when the battlefield has 50 to 90 permanents (long four-player games, measured in the tournament on 2026-10-03); this was already the case before C17. The Medium level has no time budget: to be bounded if the interface suffers. Bound set on 2026-10-06 for choices (The Ur-Dragon deck, trigger loops): with more than 12 objects on the stack or more than 150 permanents, choices are no longer simulated (engine suggestion, order by value); a trigger target used to take up to 242 s with 92 objects on the stack.
+- **Multiplayer, large boards:** a Medium-level priority decision took 1.5 to 4 s when the battlefield had 50 to 90 permanents (long four-player games, measured in the tournament on 2026-10-03). On 2026-10-09 the bench's Commander line (four precons, 12 games) measured 5.7 ms on average on boards of 50 to 62 permanents, 308 ms at worst. The Medium level still has no time budget. Bound set on 2026-10-06 for choices (The Ur-Dragon deck, trigger loops): with more than 12 objects on the stack or more than 150 permanents, choices are no longer simulated (engine suggestion, order by value); a trigger target used to take up to 242 s with 92 objects on the stack.
 
-- **Hidden information.** The AI code must never read the opposing hand, the list of its deck or the order of the libraries. It goes through `determinize` (ISMCTS), which draws only from what has been seen. One-step simulations (`rollout`, `simulate`) do not draw. `ai/test/ismcts.test.ts` checks that another distribution, or other hidden cards, change neither the determinization nor the decision.
+- **Hidden information.** The AI code must never read the opposing hand, the list of its deck or the order of the libraries. It goes through `determinize` (ISMCTS), which draws only from what has been seen. One-step simulations (`rollout`, `simulate`) do draw, and resolve searches and reveals, on the state they are given: in the interface and on the server, the levels therefore decide on `forAgent(s, seat)` (option `fair`, PLAN-L L1), a determinization that keeps the cards the seat may look at (`mayLookAt`: its top card under Vizier of the Menagerie, opposing face-down creatures under Found Footage) and those its pending question shows. Without it, Medium cast Harmonize only when its top cards were Dragons. Tests, fuzz and tournament use the real state unless the level is suffixed `-fair` (`--a medium-fair`). `ai/test/ismcts.test.ts` checks both.
 - **`applyMutable` is not transactional.** An illegal decision leaves the state half-modified. In a simulation, go through `step` (`evaluate.ts`): "pass" is applied in place, the rest by `submit`, which works on a copy.
 - **`GameHost.run` and waits.** During an `await` of the loop (display pause), a human decision can be applied by `submitHuman`, whose `run()` returns control immediately (the loop is already running). After each wait, the loop must therefore restart from the current state, and never wait without reason: otherwise the AI stays blocked. `engine/test/host.test.ts` checks this.
 - **Budget.** In time in the interface (same latency on all machines), in iterations in tests, the tournament, the fuzz and the bench (reproducible).

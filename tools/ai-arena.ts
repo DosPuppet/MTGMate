@@ -10,6 +10,8 @@
  * slowest decisions and the command that replays their game.
  *
  * AIs: random, beginner, medium, expert; "expert:200" gives this AI a budget of its own ("expert:0": no ISMCTS).
+ * "-fair" (medium-fair, expert-fair…): the AI decides on the state as its seat may know it (`forAgent`), as in the
+ * interface and on the server.
  * --players 4: four-player games, seats A, B, A, B rotating from one game to the next; counts the wins of A and of B.
  * --first N: starts at game N (with --games 1: replays the game a tournament reports as failing).
  * The games go in pairs: same seed and same decks, seats and decks swapped (the advantage of the first player and of
@@ -72,13 +74,17 @@ interface GameDeck {
 
 /** "expert:200": level and own budget (ISMCTS iterations; 0 = no ISMCTS). */
 function agent(spec: string, seed: number): Agent {
-  const [name, own] = spec.split(":");
+  const [full, own] = spec.split(":");
+  // "-fair": decisions on the state as the seat may know it (forAgent), as in the interface and on the server.
+  const fair = !!full?.endsWith("-fair");
+  const name = fair ? full?.slice(0, -"-fair".length) : full;
   if (name === "random") return randomAgent(seed);
   if (name === "beginner" || name === "medium" || name === "expert")
     return aiAgent(name as AiLevel, {
       seed,
       budget: { iterations: own === undefined ? budget : Number(own) },
       players,
+      fair,
     });
   throw new Error(`Unknown AI: ${spec}`);
 }

@@ -46,7 +46,7 @@ function aiAgents(seed: number, opponents: number, level: Parameters<typeof aiAg
   return Object.fromEntries(
     Array.from({ length: opponents }, (_, i) => [
       `p${i + 2}`,
-      aiAgent(level ?? "medium", { seed: seed + i + 1, budget: AI_BUDGET, players: opponents + 1 }),
+      aiAgent(level ?? "medium", { seed: seed + i + 1, budget: AI_BUDGET, players: opponents + 1, fair: true }),
     ]),
   );
 }

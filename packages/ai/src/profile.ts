@@ -11,6 +11,8 @@ export interface Profile {
   forgetfulness: number;
   /** Responds to opposing spells, plays combat tricks, plays at the end of the opponent's turn. */
   responds: boolean;
+  /** On its own main phase, keeps the mana for a counterspell in hand (PLAN-L L1). */
+  holdsCounters: boolean;
   /** Attacks: naive, by rules, or by simulation of the opposing blocks. */
   attack: "naive" | "rules" | "search";
   /** Blocks: naive, greedy by simulation, or by search (double blocks, improvements). */
@@ -30,6 +32,7 @@ export const MEDIUM_PROFILE: Profile = {
   sloppiness: 0,
   forgetfulness: 0,
   responds: true,
+  holdsCounters: true,
   attack: "rules",
   block: "greedy",
   exposure: false,

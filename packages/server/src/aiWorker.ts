@@ -43,7 +43,7 @@ parentPort?.on("message", (m: ToAiWorker) => {
   if (m.defs) Object.assign(defs, m.defs);
   try {
     const state = { ...m.state, defs } as GameState;
-    const decision = aiAgent(m.level, { seed: m.seed, budget: m.budget, players: m.players })(state, m.seat);
+    const decision = aiAgent(m.level, { seed: m.seed, budget: m.budget, players: m.players, fair: true })(state, m.seat);
     parentPort?.postMessage({ id: m.id, decision } satisfies FromAiWorker);
   } catch (e) {
     parentPort?.postMessage({ id: m.id, error: e instanceof Error ? e.message : String(e) } satisfies FromAiWorker);

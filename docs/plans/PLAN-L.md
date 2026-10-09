@@ -100,5 +100,6 @@ History, backlog, summary.
 
 | Lot | State | Commit | Rules |
 |---|---|---|---|
-| L0 | | | |
-| L1 | | | |
+| L0 | done | 0ea6e9c | — |
+| L1a | done: attack taxes and minimum blockers, arena refusals, Commander bench | 15c6d4a | — |
+| L1b | done: `forAgent` (`fair`), holding a counterspell; attackers weighed against the attacked player measured worse (47.8 % ± 2.8, 1,198 games) and dropped | | — |

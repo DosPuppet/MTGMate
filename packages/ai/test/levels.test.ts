@@ -3,7 +3,7 @@
  */
 import { type GameState, submit } from "@mtgx/engine";
 import { describe, expect, it } from "vitest";
-import { act, customCard, idOf, passAccepting, passUntil, scenario } from "../../engine/test/helpers";
+import { act, customCard, idOf, nameOf, passAccepting, passUntil, scenario } from "../../engine/test/helpers";
 import { aiAgent } from "../src";
 
 const expert = () => aiAgent("expert", { seed: 1, budget: { iterations: 40 }, players: 2 });
@@ -137,6 +137,20 @@ describe("AI choices (PLAN-C, lot C17)", () => {
     const d = medium()(s, "p1");
     const values = d.type === "choose" ? (d.values as number[]) : [];
     expect(values[req?.among.indexOf(hawk) ?? -1]).toBe(3);
+  });
+
+  it("keeps the mana for a counterspell on its own turn while the opponent has cards (PLAN-L L1)", () => {
+    const at = (oppHand: string[]) =>
+      scenario({
+        p1: { battlefield: ["Island", "Island", "Forest"], hand: ["Counterspell", "Bear Cub"] },
+        p2: { battlefield: ["Island"], hand: oppHand },
+      });
+    const held = at(["Island", "Island"]);
+    expect(medium()(held, "p1").type).toBe("pass");
+    // Nothing to fear: the creature is cast.
+    const free = at([]);
+    const d = medium()(free, "p1");
+    expect(d.type === "cast" && nameOf(free, d.card)).toBe("Bear Cub");
   });
 
   it("mulligan: returns a hand of two lands with no spell of value 2 or less", () => {

@@ -40,7 +40,7 @@ export {
   replayStates,
 } from "./record";
 export { createScenario, type ScenarioOptions, type ScenarioPermanent, type ScenarioPlayer } from "./scenario";
-export { isPermanentCard, modesOf, RulesError } from "./stack";
+export { isPermanentCard, modesOf, RulesError, spellCost } from "./stack";
 export {
   alivePlayers,
   apnapOrder,
@@ -60,7 +60,7 @@ export {
   opponentsOf,
   registerDef,
 } from "./state";
-export { untapStepRule } from "./statics";
+export { mayLookAt, untapStepRule } from "./statics";
 export { isLegalTarget, legalTargets } from "./targets";
 export { msg, type ParsedText, parseText, plainText, renderText, type TextArg, type TextReader } from "./text";
 export {

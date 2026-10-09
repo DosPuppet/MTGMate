@@ -15,6 +15,7 @@ import {
   type Decision,
   fallbackDecision,
   type GameState,
+  mayLookAt,
   opponentsOf,
   type PlayerId,
 } from "@mtgx/engine";
@@ -86,7 +87,7 @@ function seenCards(s: GameState, p: PlayerId, me: PlayerId): { spells: string[];
  * in the proportion of an ordinary deck. The AI therefore takes advantage of neither their hand nor their decklist. Its
  * own library is shuffled. The engine's randomness is removed.
  */
-export function determinize(s: GameState, me: PlayerId, rand: () => number): GameState {
+export function determinize(s: GameState, me: PlayerId, rand: () => number, keep: ReadonlySet<string> = new Set()): GameState {
   const d = cloneState(s);
   const pick = <T>(items: T[]) => items[Math.floor(rand() * items.length)] as T;
   for (const p of opponentsOf(d, me)) {
@@ -96,17 +97,18 @@ export function determinize(s: GameState, me: PlayerId, rand: () => number): Gam
     // Their face-down permanents (disguise, cloak, manifest): the hidden card is drawn too.
     for (const id of d.battlefield) {
       const o = d.objects[id];
-      if (o?.faceDown && o.controller === p && spells.length) o.faceDown = { ...o.faceDown, card: pick(spells) };
+      if (o?.faceDown && o.controller === p && spells.length && !keep.has(id)) o.faceDown = { ...o.faceDown, card: pick(spells) };
     }
     // Their cards exiled face down that `me` cannot look at (omen, Hideaway…).
     for (const id of d.exile) {
       const o = d.objects[id];
-      if (o?.owner === p && o.exiledFaceDown && !o.exiledFaceDown.includes(me) && spells.length) o.defId = pick(spells);
+      if (o?.owner === p && o.exiledFaceDown && !o.exiledFaceDown.includes(me) && spells.length && !keep.has(id))
+        o.defId = pick(spells);
     }
     for (const id of [...pl.hand, ...pl.library]) {
       const o = d.objects[id];
-      // A commander is public (Commander): it stays what it is, even in a hand.
-      if (!o || commanderOf(d, o)) continue;
+      // A commander is public (Commander): it stays what it is, even in a hand. So does a card shown to `me` now.
+      if (!o || commanderOf(d, o) || keep.has(id)) continue;
       const land = spells.length === 0 || rand() < LAND_SHARE;
       const def = land && lands.length ? pick(lands) : spells.length ? pick(spells) : undefined;
       if (def) {
@@ -118,18 +120,46 @@ export function determinize(s: GameState, me: PlayerId, rand: () => number): Gam
   }
   const mine = d.players[me];
   if (mine) {
-    const canonical = [...mine.library].sort((a, b) => {
+    // A top card `me` may look at (Vizier of the Menagerie) stays on top.
+    const top = mine.library[0] !== undefined && keep.has(mine.library[0]) ? mine.library.slice(0, 1) : [];
+    const canonical = mine.library.slice(top.length).sort((a, b) => {
       const da = d.objects[a]?.defId ?? "";
       const db = d.objects[b]?.defId ?? "";
       return da < db ? -1 : da > db ? 1 : 0;
     });
     shuffleInPlace(canonical, rand);
-    mine.library = canonical;
+    mine.library = [...top, ...canonical];
   }
   // The engine's randomness (coin flips…) must not be known in advance either.
   d.rng = Math.floor(rand() * 2 ** 31);
   d.version += 1;
   return d;
+}
+
+/**
+ * The state as the AI of seat `me` may know it (PLAN-E E14, PLAN-L L1): a determinization (`determinize`) that keeps
+ * the cards shown to `me` by its pending question (a look at an opponent's hand, revealed cards to choose from) and
+ * the ones it may look at any time (`mayLookAt`). The
+ * object ids are kept, so a decision taken on it is valid on the real state. Earlier reveals are not tracked: they are
+ * redrawn like the rest.
+ */
+export function forAgent(s: GameState, me: PlayerId, rand: () => number): GameState {
+  // What `me` may look at any time: the top of its library (Vizier of the Menagerie), opposing face-down creatures
+  // (Found Footage).
+  const keep = new Set<string>(
+    [s.players[me]?.library[0], ...s.battlefield].filter((id): id is string => !!id && mayLookAt(s, me, id)),
+  );
+  const p = s.pending;
+  if (p?.kind === "choice" && p.player === me) {
+    const walk = (x: unknown): void => {
+      if (typeof x === "string") {
+        if (s.objects[x]) keep.add(x);
+      } else if (Array.isArray(x)) for (const y of x) walk(y);
+      else if (x && typeof x === "object") for (const y of Object.values(x)) walk(y);
+    };
+    walk(p.request);
+  }
+  return determinize(s, me, rand, keep);
 }
 
 const policy = fastPolicy();

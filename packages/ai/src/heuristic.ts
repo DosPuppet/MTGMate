@@ -11,6 +11,7 @@ import {
   attackCandidates,
   attackTaxFor,
   blockCandidates,
+  type CardDef,
   chars,
   commanderOf,
   creaturesControlledBy,
@@ -28,6 +29,7 @@ import {
   repairAttacks,
   repairBlocks,
   solvePayment,
+  spellCost,
 } from "@mtgx/engine";
 import { heuristicChoice, keepValue } from "./choices";
 import { searchAttackers, searchBlocks } from "./combat";
@@ -290,6 +292,11 @@ export function priorityOptions(
 
   const until = combatWindow ? afterCombat(s.turn.number) : stackEmpty;
   const opts = { exposure: pr.exposure };
+  // Hold a counterspell: on its own main phase, an option after which none of the counterspells in hand can be cast
+  // any more loses what such a counterspell is worth, as long as an opponent has cards in hand.
+  const counters = mainPhase && pr.holdsCounters ? heldCounters(s, me) : [];
+  const holdPenalty = (next: GameState) =>
+    counters.length > 0 && !counters.some((d) => solvePayment(next, me, spellCost(next, me, d, {})) !== null) ? HOLD_COUNTER : 0;
   const pass: Decision = { type: "pass" };
   const afterPass = trySubmit(s, me, pass);
   const baseline = afterPass ? evaluate(rollout(afterPass, until, 60, true), me, opts) : evaluate(s, me, opts);
@@ -315,10 +322,30 @@ export function priorityOptions(
     for (const d of enumerateDecisions(a, 40, rank)) {
       const next = trySubmit(s, me, d);
       if (!next) continue;
-      options.push({ decision: d, score: evaluate(rollout(next, until, 60, true), me, opts) });
+      const after = rollout(next, until, 60, true);
+      options.push({ decision: d, score: evaluate(after, me, opts) - holdPenalty(after) });
     }
   }
   return { baseline, options };
+}
+
+/** What a counterspell kept ready is worth: about one of the opponent's spells (a card in hand is worth 0.7 to 1.5). */
+const HOLD_COUNTER = 2.5;
+
+/**
+ * Counterspells in hand (an instant, or a card with flash, whose effects counter a spell) that `me` could cast now
+ * with its mana, if an opponent has cards in hand.
+ */
+function heldCounters(s: GameState, me: PlayerId): CardDef[] {
+  if (!opponentsOf(s, me).some((p) => (s.players[p]?.hand.length ?? 0) > 0)) return [];
+  const out: CardDef[] = [];
+  for (const id of s.players[me]?.hand ?? []) {
+    const d = s.defs[s.objects[id]?.defId ?? ""];
+    if (!d?.spell || !(d.types.includes("Instant") || d.keywords.includes("flash"))) continue;
+    if (!JSON.stringify(d.spell.modes).includes('"op":"counter"')) continue;
+    if (solvePayment(s, me, spellCost(s, me, d, {})) !== null) out.push(d);
+  }
+  return out;
 }
 
 export function choosePriority(s: GameState, me: PlayerId, pr: Profile): Decision {

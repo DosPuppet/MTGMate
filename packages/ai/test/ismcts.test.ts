@@ -6,7 +6,7 @@ import { cloneState, createObject, type GameState, registerDef } from "@mtgx/eng
 import { describe, expect, it } from "vitest";
 import { scenario } from "../../engine/test/helpers";
 import { aiAgent, mulberry32 } from "../src";
-import { determinize, ismctsPriority } from "../src/ismcts";
+import { determinize, forAgent, ismctsPriority } from "../src/ismcts";
 import { MEDIUM_PROFILE } from "../src/profile";
 
 /** An early-game position with several options: creature, damage spell, or wait. */
@@ -56,6 +56,49 @@ describe("ISMCTS", () => {
     const a = ismctsPriority(s, "p1", PROFILE, { rand: mulberry32(3), iterations: 60 });
     const b = ismctsPriority(t, "p1", PROFILE, { rand: mulberry32(3), iterations: 60 });
     expect(JSON.stringify(b)).toBe(JSON.stringify(a));
+  });
+
+  it("fair medium and beginner levels don't read hidden information either (forAgent, PLAN-L L1)", () => {
+    // Without `fair`, medium casts Harmonize only when it sees the Dragons on top of its library.
+    const at = (top: string[]) =>
+      scenario({
+        p1: { battlefield: Array(8).fill("Forest"), hand: ["Harmonize"], library: [...top, ...Array(8).fill("Forest")] },
+        p2: { battlefield: ["Swab Goblin"] },
+      });
+    const dragons = at(["Shivan Dragon", "Shivan Dragon", "Gigantosaurus"]);
+    const forests = at(["Forest", "Forest", "Forest"]);
+    const name = (s: GameState, d: ReturnType<ReturnType<typeof aiAgent>>) =>
+      d.type === "cast" ? s.defs[s.objects[d.card]?.defId ?? ""]?.name : d.type;
+    expect(name(dragons, aiAgent("medium", { seed: 1 })(dragons, "p1"))).toBe("Harmonize");
+    expect(name(forests, aiAgent("medium", { seed: 1 })(forests, "p1"))).toBe("pass");
+    for (const level of ["medium", "beginner"] as const)
+      for (let seed = 1; seed <= 4; seed++) {
+        const a = aiAgent(level, { seed, fair: true });
+        const b = aiAgent(level, { seed, fair: true });
+        expect(name(dragons, a(dragons, "p1"))).toBe(name(forests, b(forests, "p1")));
+      }
+  });
+
+  it("forAgent keeps the cards the pending question shows", () => {
+    const s = position();
+    const hand = [...(s.players.p2?.hand ?? [])];
+    const shown = hand.slice(0, 2);
+    s.pending = {
+      kind: "choice",
+      player: "p1",
+      request: { type: "pick", intent: "discard", prompt: "", options: shown, min: 1, max: 1, suggested: [shown[0] as string] },
+    } as GameState["pending"];
+    const name = (x: GameState, id: string) => x.defs[x.objects[id]?.defId ?? ""]?.name;
+    for (let seed = 1; seed <= 10; seed++) {
+      const d = forAgent(s, "p1", mulberry32(seed));
+      for (const id of shown) expect(name(d, id)).toBe(name(s, id));
+    }
+    // Without the question, the same cards are redrawn.
+    s.pending = null;
+    const redrawn = Array.from({ length: 10 }, (_, seed) => forAgent(s, "p1", mulberry32(seed + 1))).some((d) =>
+      shown.some((id) => name(d, id) !== name(s, id)),
+    );
+    expect(redrawn).toBe(true);
   });
 
   it("finds the lethal spell", () => {
