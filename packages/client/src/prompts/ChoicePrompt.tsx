@@ -10,6 +10,7 @@ import { useLocalize, useLocalizedView, useT } from "../localize";
 import { useGame } from "../store";
 import { boardPick, choiceSource, type PickRequest, pickValid, shortPrompt, shownOptions, togglePick } from "./boardChoice";
 import { NameSearch } from "./NameSearch";
+import { arrangedTopOrder, clearTopOrder, isScryOrSurveil, ScryArrange } from "./ScryArrange";
 import { ZoneTabbed } from "./ZoneTabs";
 
 type ChoiceView = Extract<NonNullable<GameView["pending"]>, { kind: "choice" }>;
@@ -125,9 +126,18 @@ function ChoiceModal({ view }: { view: GameView }) {
     setValues(req?.suggested ?? []);
     setQuery("");
   }, [req]);
-  if (!req) return null;
+  // Scry: the order of the cards left on top was arranged with the first question (ScryArrange).
+  const arranged = req?.type === "order" && req.intent === "scryOrder" ? arrangedTopOrder(req.items) : null;
+  useEffect(() => {
+    if (!arranged) return;
+    clearTopOrder();
+    decide({ type: "choose", values: arranged });
+  }, [arranged, decide]);
+  if (!req || arranged) return null;
   const objects = p.objects ?? [];
   const send = (v: ChoiceValue[]) => decide({ type: "choose", values: v });
+  if (req.type === "pick" && isScryOrSurveil(req))
+    return <ScryArrange req={req} view={view} objects={objects} onConfirm={send} />;
 
   let body: React.ReactNode = null;
   let valid = true;
