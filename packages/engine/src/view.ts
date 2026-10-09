@@ -602,9 +602,14 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
 
   const stack: StackItemView[] = s.stack.map((item) => {
     const d = s.defs[item.sourceDefId] as CardDef;
-    const src = item.kind === "spell" ? s.objects[item.sourceId] : undefined;
+    // The spell, or the source of the ability (on the battlefield, otherwise its last known information): the art of
+    // its printing (reprint, custom art); a token of a player whose deck uses custom art, its own.
+    const src = s.objects[item.sourceId] ?? (item.kind === "ability" ? s.lki[item.sourceId] : undefined);
+    const owner = src && "owner" in src ? src.owner : undefined;
+    const tokenArt = item.kind === "ability" && src?.isToken && owner ? customArtOwners(s).get(owner) : undefined;
     return {
-      ...(src ? printedFace(s, src.uid, src.defId, d) : cardFace(d)),
+      ...(src?.uid ? printedFace(s, src.uid, src.defId, d) : cardFace(d)),
+      ...(tokenArt ? { customArt: tokenArt } : {}),
       id: item.id,
       uid: s.objects[item.sourceId]?.uid ?? item.id,
       kind: item.kind,

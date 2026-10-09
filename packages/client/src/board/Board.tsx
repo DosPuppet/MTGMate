@@ -235,7 +235,9 @@ function CommanderChips({ player }: { player: PlayerView }) {
       {player.commanders?.map((c) => {
         const zone = COMMANDER_ZONE[c.zone];
         const where = zone === undefined ? undefined : loc(zone);
-        const face = faces[c.defId];
+        // The commander's card in the art of its owner's deck (custom art).
+        const base = faces[c.defId];
+        const face = base && player.customArt ? { ...base, customArt: player.customArt } : base;
         const title = where ? t("Commander ({zone})", { zone: where }) : t("Commander (command zone)");
         return (
           <span

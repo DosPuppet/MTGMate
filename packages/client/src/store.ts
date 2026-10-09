@@ -503,8 +503,10 @@ function playEffects(view: GameView, events: GameEvent[], faces: Record<string, 
             : t("{player}'s turn", { player: literal(view.players[e.player]?.name ?? t("the opponent")) }),
       };
     } else if ((e.type === "cast" || e.type === "activate" || e.type === "trigger") && e.player !== view.viewer) {
-      // The spell on the stack shows the art chosen by the opponent's deck (printing of a reprint).
-      const onStack = e.type === "cast" ? view.stack.find((i) => i.defId === e.defId && i.controller === e.player) : undefined;
+      // The spell or the ability on the stack shows the art chosen by the opponent's deck (printing of a reprint,
+      // custom art).
+      const kind = e.type === "cast" ? "spell" : "ability";
+      const onStack = view.stack.find((i) => i.defId === e.defId && i.controller === e.player && i.kind === kind);
       const face = onStack ?? faces[e.defId];
       if (face) spotlight = { id: ++fxId, face, who: view.players[e.player]?.name ?? t("The opponent") };
     }
