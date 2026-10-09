@@ -322,3 +322,409 @@ describe("Commander (EDH): mana base", () => {
     });
   });
 });
+
+describe("Commander (EDH): mana base, rare lands (PLAN-L, L11)", () => {
+  /** Plays the land from p1's hand (a fresh scenario each time) and tells whether it entered tapped. */
+  const entersTapped = (name: string, opts: Parameters<typeof scenario>[0] = {}) => {
+    const p1 = opts.p1 ?? {};
+    let s = scenario({ ...opts, p1: { ...p1, hand: [name, ...(p1.hand ?? [])] } });
+    s = playLand(s, name);
+    return { tapped: tapped(s, name), produced: produced(s, "p1", name), s };
+  };
+
+  describe("pain lands", () => {
+    it("Battlefield Forge, Brushland, Shivan Reef, Sulfurous Springs: {C} at no cost, one of two colors for 1 damage", () => {
+      const cases = [
+        ["Battlefield Forge", "R", ["C", "R", "W"]],
+        ["Brushland", "G", ["C", "G", "W"]],
+        ["Shivan Reef", "U", ["C", "R", "U"]],
+        ["Sulfurous Springs", "B", ["B", "C", "R"]],
+      ] as const;
+      for (const [land, color, mana] of cases) {
+        let s = scenario({ p1: { battlefield: [land] } });
+        expect(produced(s, "p1", land)).toEqual(mana);
+        s = tapMana(s, land, 0);
+        expect([pool(s)?.C, s.players.p1?.life]).toEqual([1, 20]);
+        let t = scenario({ p1: { battlefield: [land] } });
+        t = tapMana(t, land, 1, color);
+        expect([pool(t)?.[color], t.players.p1?.life]).toEqual([1, 19]);
+        expect(entersTapped(land).tapped).toBe(false);
+      }
+    });
+
+    it("Grand Coliseum: enters tapped; {C}, or any color for 1 damage", () => {
+      expect(entersTapped("Grand Coliseum").tapped).toBe(true);
+      let s = scenario({ p1: { battlefield: ["Grand Coliseum"] } });
+      expect(produced(s, "p1", "Grand Coliseum")).toEqual(["B", "C", "G", "R", "U", "W"]);
+      s = tapMana(s, "Grand Coliseum", 0);
+      expect([pool(s)?.C, s.players.p1?.life]).toEqual([1, 20]);
+      let t = scenario({ p1: { battlefield: ["Grand Coliseum"] } });
+      t = tapMana(t, "Grand Coliseum", 1, "G");
+      expect([pool(t)?.G, t.players.p1?.life]).toEqual([1, 19]);
+    });
+  });
+
+  describe("check lands", () => {
+    it("Clifftop Retreat, Hinterland Harbor, Rootbound Crag, Sulfur Falls, Sunpetal Grove, Woodland Cemetery", () => {
+      const cases = [
+        ["Clifftop Retreat", "Mountain", "Plains", ["R", "W"]],
+        ["Hinterland Harbor", "Forest", "Island", ["G", "U"]],
+        ["Rootbound Crag", "Mountain", "Forest", ["G", "R"]],
+        ["Sulfur Falls", "Island", "Mountain", ["R", "U"]],
+        ["Sunpetal Grove", "Forest", "Plains", ["G", "W"]],
+        ["Woodland Cemetery", "Swamp", "Forest", ["B", "G"]],
+      ] as const;
+      for (const [land, a, b, mana] of cases) {
+        // Tapped with neither type (a Wastes-like control: the other basic types); untapped with either one.
+        const other = ["Plains", "Island", "Swamp", "Mountain", "Forest"].find((x) => x !== a && x !== b) as string;
+        expect(entersTapped(land, { p1: { battlefield: [other] } }).tapped).toBe(true);
+        expect(entersTapped(land, { p1: { battlefield: [a] } }).tapped).toBe(false);
+        const withB = entersTapped(land, { p1: { battlefield: [b] } });
+        expect(withB.tapped).toBe(false);
+        expect(withB.produced).toEqual(mana);
+      }
+    });
+  });
+
+  describe('"two or more basic lands" (battle lands)', () => {
+    it("Canopy Vista, Cinder Glade, Radiant Summit, Scorched Geyser, Smoldering Marsh, Sodden Verdure, Vernal Fen", () => {
+      const cases = [
+        ["Canopy Vista", ["Forest", "Plains"], ["G", "W"]],
+        ["Cinder Glade", ["Mountain", "Forest"], ["G", "R"]],
+        ["Radiant Summit", ["Mountain", "Plains"], ["R", "W"]],
+        ["Scorched Geyser", ["Island", "Mountain"], ["R", "U"]],
+        ["Smoldering Marsh", ["Swamp", "Mountain"], ["B", "R"]],
+        ["Sodden Verdure", ["Forest", "Island"], ["G", "U"]],
+        ["Vernal Fen", ["Swamp", "Forest"], ["B", "G"]],
+      ] as const;
+      for (const [land, types, mana] of cases) {
+        expect(entersTapped(land, { p1: { battlefield: ["Plains"] } }).tapped).toBe(true);
+        const two = entersTapped(land, { p1: { battlefield: ["Plains", "Island"] } });
+        expect(two.tapped).toBe(false);
+        expect(two.produced).toEqual(mana);
+        expect(chars(two.s, idOf(two.s, "p1", "battlefield", land)).subtypes).toEqual(types);
+      }
+      // Two nonbasic lands with basic land types are not basic lands.
+      expect(entersTapped("Cinder Glade", { p1: { battlefield: ["Bayou", "Taiga"] } }).tapped).toBe(true);
+    });
+  });
+
+  describe("original dual lands", () => {
+    it("Bayou, Plateau, Scrubland, Taiga, Tropical Island, Underground Sea, Volcanic Island: two basic types, untapped", () => {
+      const cases = [
+        ["Bayou", ["Swamp", "Forest"], ["B", "G"]],
+        ["Plateau", ["Mountain", "Plains"], ["R", "W"]],
+        ["Scrubland", ["Plains", "Swamp"], ["B", "W"]],
+        ["Taiga", ["Mountain", "Forest"], ["G", "R"]],
+        ["Tropical Island", ["Forest", "Island"], ["G", "U"]],
+        ["Underground Sea", ["Island", "Swamp"], ["B", "U"]],
+        ["Volcanic Island", ["Island", "Mountain"], ["R", "U"]],
+      ] as const;
+      for (const [land, types, mana] of cases) {
+        const r = entersTapped(land);
+        expect(r.tapped).toBe(false);
+        expect(r.produced).toEqual(mana);
+        const c = chars(r.s, idOf(r.s, "p1", "battlefield", land));
+        expect(c.subtypes).toEqual(types);
+        expect(c.supertypes ?? []).not.toContain("Basic");
+      }
+    });
+  });
+
+  describe("Triomes and cycling dual lands", () => {
+    it("Indatha Triome, Jetmir's Garden, Ketria Triome, Ziatora's Proving Ground: tapped, three types, cycling {3}", () => {
+      const cases = [
+        ["Indatha Triome", ["Plains", "Swamp", "Forest"], ["B", "G", "W"]],
+        ["Jetmir's Garden", ["Mountain", "Forest", "Plains"], ["G", "R", "W"]],
+        ["Ketria Triome", ["Forest", "Island", "Mountain"], ["G", "R", "U"]],
+        ["Ziatora's Proving Ground", ["Swamp", "Mountain", "Forest"], ["B", "G", "R"]],
+      ] as const;
+      for (const [land, types, mana] of cases) {
+        const r = entersTapped(land, { p1: { battlefield: lands("Plains", 2) } });
+        expect(r.tapped).toBe(true);
+        expect(r.produced).toEqual(mana);
+        expect(chars(r.s, idOf(r.s, "p1", "battlefield", land)).subtypes).toEqual(types);
+        // Cycling {3}: not with two lands, yes with three.
+        const two = scenario({ p1: { battlefield: lands("Island", 2), hand: [land] } });
+        expect(canActivate(two, "p1", idOf(two, "p1", "hand", land))).toBe(false);
+        let c = scenario({ p1: { battlefield: lands("Island", 3), hand: [land], library: ["Plains"] } });
+        const card = idOf(c, "p1", "hand", land);
+        c = settle(act(c, "p1", { type: "activate", source: card, ability: activation(c, card) as number }));
+        expect(idsOf(c, "p1", "graveyard", land)).toHaveLength(1);
+        expect(idsOf(c, "p1", "hand", "Plains")).toHaveLength(1);
+      }
+    });
+
+    it("Fetid Pools, Rain-Slicked Copse: tapped, two basic types, cycling {2}", () => {
+      for (const [land, types, mana] of [
+        ["Fetid Pools", ["Island", "Swamp"], ["B", "U"]],
+        ["Rain-Slicked Copse", ["Forest", "Island"], ["G", "U"]],
+      ] as const) {
+        const r = entersTapped(land, { p1: { battlefield: lands("Plains", 2) } });
+        expect(r.tapped).toBe(true);
+        expect(r.produced).toEqual(mana);
+        expect(chars(r.s, idOf(r.s, "p1", "battlefield", land)).subtypes).toEqual(types);
+        let c = scenario({ p1: { battlefield: lands("Island", 2), hand: [land], library: ["Plains"] } });
+        const card = idOf(c, "p1", "hand", land);
+        c = settle(act(c, "p1", { type: "activate", source: card, ability: activation(c, card) as number }));
+        expect(idsOf(c, "p1", "graveyard", land)).toHaveLength(1);
+        expect(idsOf(c, "p1", "hand", "Plains")).toHaveLength(1);
+      }
+    });
+  });
+
+  describe("fast lands, reveal lands", () => {
+    it("Blackcleave Cliffs: untapped with two or fewer other lands, tapped with three", () => {
+      const two = entersTapped("Blackcleave Cliffs", { p1: { battlefield: lands("Swamp", 2) } });
+      expect(two.tapped).toBe(false);
+      expect(two.produced).toEqual(["B", "R"]);
+      expect(entersTapped("Blackcleave Cliffs").tapped).toBe(false);
+      expect(entersTapped("Blackcleave Cliffs", { p1: { battlefield: lands("Swamp", 3) } }).tapped).toBe(true);
+    });
+
+    it("Foreboding Ruins, Fortified Village, Port Town, Vineglimmer Snarl: untapped if a card of either type is in hand", () => {
+      const cases = [
+        ["Foreboding Ruins", "Swamp", "Mountain", ["B", "R"]],
+        ["Fortified Village", "Forest", "Plains", ["G", "W"]],
+        ["Port Town", "Plains", "Island", ["U", "W"]],
+        ["Vineglimmer Snarl", "Forest", "Island", ["G", "U"]],
+      ] as const;
+      for (const [land, a, b, mana] of cases) {
+        const other = ["Plains", "Island", "Swamp", "Mountain", "Forest"].find((x) => x !== a && x !== b) as string;
+        // A card of the right type on the battlefield does not count: only the hand.
+        expect(entersTapped(land, { p1: { battlefield: [a], hand: [other] } }).tapped).toBe(true);
+        expect(entersTapped(land, { p1: { hand: [a] } }).tapped).toBe(false);
+        const r = entersTapped(land, { p1: { hand: [b] } });
+        expect(r.tapped).toBe(false);
+        expect(r.produced).toEqual(mana);
+        // The revealed card stays in hand.
+        expect(idsOf(r.s, "p1", "hand", b)).toHaveLength(1);
+      }
+      // A nonbasic card with the type counts (Smoldering Marsh is a Swamp Mountain).
+      expect(entersTapped("Foreboding Ruins", { p1: { hand: ["Smoldering Marsh"] } }).tapped).toBe(false);
+    });
+  });
+
+  describe('"two or more opponents", "opponents control eight or more lands"', () => {
+    it("Morphic Pool, Rejuvenating Springs, Sea of Clouds, Spire Garden, Undergrowth Stadium: tapped in a duel only", () => {
+      const cases = [
+        ["Morphic Pool", ["B", "U"]],
+        ["Rejuvenating Springs", ["G", "U"]],
+        ["Sea of Clouds", ["U", "W"]],
+        ["Spire Garden", ["G", "R"]],
+        ["Undergrowth Stadium", ["B", "G"]],
+      ] as const;
+      for (const [land, mana] of cases) {
+        expect(entersTapped(land).tapped).toBe(true);
+        const multi = entersTapped(land, { players: 3 });
+        expect(multi.tapped).toBe(false);
+        expect(multi.produced).toEqual(mana);
+      }
+    });
+
+    it("Turbulent Crater, Turbulent Shore, Turbulent Wetlands: untapped once the opponents together control eight lands", () => {
+      const cases = [
+        ["Turbulent Crater", ["Swamp", "Mountain"], ["B", "R"]],
+        ["Turbulent Shore", ["Plains", "Island"], ["U", "W"]],
+        ["Turbulent Wetlands", ["Island", "Swamp"], ["B", "U"]],
+      ] as const;
+      for (const [land, types, mana] of cases) {
+        // Seven lands for the opponent, and the lands of the player do not count.
+        expect(
+          entersTapped(land, { p1: { battlefield: lands("Plains", 5) }, p2: { battlefield: lands("Island", 7) } }).tapped,
+        ).toBe(true);
+        const r = entersTapped(land, { p2: { battlefield: lands("Island", 8) } });
+        expect(r.tapped).toBe(false);
+        expect(r.produced).toEqual(mana);
+        expect(chars(r.s, idOf(r.s, "p1", "battlefield", land)).subtypes).toEqual(types);
+        // Four and four among two opponents.
+        const multi = entersTapped(land, {
+          players: 3,
+          p2: { battlefield: lands("Island", 4) },
+          p3: { battlefield: lands("Forest", 4) },
+        });
+        expect(multi.tapped).toBe(false);
+      }
+    });
+  });
+
+  describe("filter lands and two-mana lands", () => {
+    it("Fetid Heath, Flooded Grove, Mystic Gate: {C}; {A/B}, {T}: two mana among the two colors", () => {
+      const cases = [
+        ["Fetid Heath", "Plains", ["W", "B"], [2, 0], "W"],
+        ["Flooded Grove", "Forest", ["G", "U"], [0, 2], "U"],
+        ["Mystic Gate", "Island", ["W", "U"], [1, 1], "W"],
+      ] as const;
+      for (const [land, basic, among, split, check] of cases) {
+        expect(produced(scenario({ p1: { battlefield: [land] } }), "p1", land)).toEqual(["C"]);
+        // The hybrid cost cannot be paid by the land itself.
+        const alone = scenario({ p1: { battlefield: [land] } });
+        expect(canActivate(alone, "p1", idOf(alone, "p1", "battlefield", land))).toBe(false);
+        let s = scenario({ p1: { battlefield: [land, basic] } });
+        const id = idOf(s, "p1", "battlefield", land);
+        s = act(s, "p1", { type: "activate", source: id, ability: activation(s, id) as number });
+        expect(s.pending).toMatchObject({ kind: "choice", request: { type: "divide", among, total: 2 } });
+        s = act(s, "p1", { type: "choose", values: [...split] });
+        expect([pool(s)?.[among[0]] ?? 0, pool(s)?.[among[1]] ?? 0]).toEqual(split);
+        expect(pool(s)?.[check]).toBeGreaterThan(0);
+        expect([tapped(s, land), tapped(s, basic)]).toEqual([true, true]);
+      }
+    });
+
+    it("Darkwater Catacombs, Overflowing Basin, Skycloud Expanse, Sungrass Prairie, Viridescent Bog: {1}, {T}: two colors", () => {
+      const cases = [
+        ["Darkwater Catacombs", "U", "B"],
+        ["Overflowing Basin", "G", "U"],
+        ["Skycloud Expanse", "W", "U"],
+        ["Sungrass Prairie", "G", "W"],
+        ["Viridescent Bog", "B", "G"],
+      ] as const;
+      for (const [land, a, b] of cases) {
+        expect(entersTapped(land).tapped).toBe(false);
+        const alone = scenario({ p1: { battlefield: [land] } });
+        expect(canActivate(alone, "p1", idOf(alone, "p1", "battlefield", land))).toBe(false);
+        let s = scenario({ p1: { battlefield: [land, "Wastes"] } });
+        const id = idOf(s, "p1", "battlefield", land);
+        s = act(s, "p1", { type: "activate", source: id, ability: activation(s, id) as number });
+        expect([pool(s)?.[a], pool(s)?.[b], pool(s)?.C ?? 0]).toEqual([1, 1, 0]);
+        expect([tapped(s, land), tapped(s, "Wastes")]).toEqual([true, true]);
+      }
+    });
+  });
+
+  describe("fetch lands", () => {
+    it("Windswept Heath, Wooded Foothills: 1 life, sacrifice, a card of either type (nonbasic included), untapped", () => {
+      for (const [land, library, wanted] of [
+        ["Windswept Heath", ["Forest", "Island", "Plains", "Scrubland"], ["Forest", "Plains", "Scrubland"]],
+        ["Wooded Foothills", ["Bayou", "Island", "Mountain", "Volcanic Island"], ["Bayou", "Mountain", "Volcanic Island"]],
+      ] as const) {
+        let s = scenario({ p1: { battlefield: [land], library: [...library] } });
+        const id = idOf(s, "p1", "battlefield", land);
+        s = act(s, "p1", { type: "activate", source: id, ability: activation(s, id) as number });
+        let offered: string[] = [];
+        const pick = wanted[wanted.length - 1] as string;
+        s = settle(s, (req) => {
+          if (req.type !== "pick") return undefined;
+          offered = req.options.map((x) => nameOf(s, x) as string).sort();
+          return req.options.filter((x) => nameOf(s, x) === pick);
+        });
+        expect(offered).toEqual([...wanted]);
+        expect(s.players.p1?.life).toBe(19);
+        expect(idsOf(s, "p1", "graveyard", land)).toHaveLength(1);
+        expect(idsOf(s, "p1", "battlefield", pick)).toHaveLength(1);
+        expect(tapped(s, pick)).toBe(false);
+      }
+    });
+  });
+
+  describe("utility lands", () => {
+    it("Boseiju, Who Endures: {G}; channel destroys a nonbasic land of an opponent, who may search for a land with a basic type", () => {
+      expect(produced(scenario({ p1: { battlefield: ["Boseiju, Who Endures"] } }), "p1", "Boseiju, Who Endures")).toEqual(["G"]);
+      // {1}{G}: one Forest is not enough, unless a legendary creature reduces it to {G}.
+      const one = scenario({ p1: { battlefield: ["Forest"], hand: ["Boseiju, Who Endures"] }, p2: { battlefield: ["Taiga"] } });
+      expect(canActivate(one, "p1", idOf(one, "p1", "hand", "Boseiju, Who Endures"))).toBe(false);
+      const legend = scenario({
+        p1: { battlefield: ["Forest", "Edgar Markov"], hand: ["Boseiju, Who Endures"] },
+        p2: { battlefield: ["Taiga"] },
+      });
+      expect(canActivate(legend, "p1", idOf(legend, "p1", "hand", "Boseiju, Who Endures"))).toBe(true);
+      let s = scenario({
+        p1: { battlefield: ["Forest", "Forest", "Bayou"], hand: ["Boseiju, Who Endures"] },
+        p2: { battlefield: ["Taiga", "Mountain"], library: ["Plains", "Scrubland", "Wastes"] },
+      });
+      const bos = idOf(s, "p1", "hand", "Boseiju, Who Endures");
+      const ability = activation(s, bos) as number;
+      // Neither a basic land, nor its own land.
+      for (const bad of [idOf(s, "p2", "battlefield", "Mountain"), idOf(s, "p1", "battlefield", "Bayou")])
+        expect(() => act(s, "p1", { type: "activate", source: bos, ability, targets: { t: [bad] } })).toThrow();
+      s = act(s, "p1", { type: "activate", source: bos, ability, targets: { t: [idOf(s, "p2", "battlefield", "Taiga")] } });
+      let offered: string[] = [];
+      s = settle(s, (req, player) => {
+        if (req.type !== "pick" || player !== "p2") return undefined;
+        offered = req.options.map((x) => nameOf(s, x) as string).sort();
+        return req.options.filter((x) => nameOf(s, x) === "Scrubland");
+      });
+      expect(idsOf(s, "p1", "graveyard", "Boseiju, Who Endures")).toHaveLength(1);
+      expect(idsOf(s, "p2", "graveyard", "Taiga")).toHaveLength(1);
+      expect(offered).toEqual(["Plains", "Scrubland"]);
+      expect(idsOf(s, "p2", "battlefield", "Scrubland")).toHaveLength(1);
+    });
+
+    it("Gavony Township: {C}; {2}{G}{W}, {T}: a +1/+1 counter on each creature you control", () => {
+      let s = scenario({
+        p1: { battlefield: ["Gavony Township", "Forest", "Plains", "Wastes", "Wastes", "Savannah Lions", "Bear Cub"] },
+        p2: { battlefield: ["Bear Cub"] },
+      });
+      expect(produced(s, "p1", "Gavony Township")).toEqual(["C"]);
+      const g = idOf(s, "p1", "battlefield", "Gavony Township");
+      s = settle(act(s, "p1", { type: "activate", source: g, ability: activation(s, g) as number }));
+      for (const c of [...idsOf(s, "p1", "battlefield", "Savannah Lions"), ...idsOf(s, "p1", "battlefield", "Bear Cub")])
+        expect(s.objects[c]?.counters["+1/+1"]).toBe(1);
+      expect(s.objects[idOf(s, "p2", "battlefield", "Bear Cub")]?.counters["+1/+1"] ?? 0).toBe(0);
+      expect(tapped(s, "Gavony Township")).toBe(true);
+    });
+
+    it("Kher Keep: {C}; {1}{R}, {T}: a 0/1 red Kobold token named Kobolds of Kher Keep", () => {
+      let s = scenario({ p1: { battlefield: ["Kher Keep", "Mountain", "Wastes"] } });
+      expect(produced(s, "p1", "Kher Keep")).toEqual(["C"]);
+      const k = idOf(s, "p1", "battlefield", "Kher Keep");
+      s = settle(act(s, "p1", { type: "activate", source: k, ability: activation(s, k) as number }));
+      const [kobold] = tokens(s, "Kobolds of Kher Keep");
+      expect(kobold).toBeDefined();
+      const c = chars(s, kobold as string);
+      expect([c.power, c.toughness, c.colors, c.subtypes]).toEqual([0, 1, ["R"], ["Kobold"]]);
+      expect(c.types).toContain("Creature");
+    });
+
+    it("Big Apple, 3 a.m.: enters tapped with a chosen color; {5}, {T}: a 1/1 black Rat for each opponent", () => {
+      let s = scenario({ p1: { hand: ["Big Apple, 3 a.m."] } });
+      s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Big Apple, 3 a.m."), chosen: "U" });
+      expect(tapped(s, "Big Apple, 3 a.m.")).toBe(true);
+      expect(produced(s, "p1", "Big Apple, 3 a.m.")).toEqual(["U"]);
+      let r = scenario({ players: 3, p1: { battlefield: ["Big Apple, 3 a.m.", ...lands("Wastes", 5)] } });
+      const apple = idOf(r, "p1", "battlefield", "Big Apple, 3 a.m.");
+      r = settle(act(r, "p1", { type: "activate", source: apple, ability: activation(r, apple) as number }));
+      const rats = tokens(r, "Rat");
+      expect(rats).toHaveLength(2);
+      const c = chars(r, rats[0] as string);
+      expect([c.power, c.toughness, c.colors]).toEqual([1, 1, ["B"]]);
+    });
+
+    it("Hidden Hideout: enters tapped; the commander's colors; {2}, {T}: lifelink for a creature of yours with a counter", () => {
+      const r = entersTapped("Hidden Hideout", { p1: { command: ["Edgar Markov"] } });
+      expect(r.tapped).toBe(true);
+      expect(r.produced).toEqual(["B", "R", "W"]);
+      let s = scenario({
+        p1: {
+          battlefield: ["Hidden Hideout", "Wastes", "Wastes", { name: "Savannah Lions", counters: { "+1/+1": 1 } }, "Bear Cub"],
+        },
+        p2: { battlefield: [{ name: "Bear Cub", counters: { "+1/+1": 1 } }] },
+      });
+      const h = idOf(s, "p1", "battlefield", "Hidden Hideout");
+      const ability = activation(s, h) as number;
+      // Neither a creature without a counter, nor an opponent's creature.
+      for (const bad of [idOf(s, "p1", "battlefield", "Bear Cub"), idOf(s, "p2", "battlefield", "Bear Cub")])
+        expect(() => act(s, "p1", { type: "activate", source: h, ability, targets: { t: [bad] } })).toThrow();
+      const lions = idOf(s, "p1", "battlefield", "Savannah Lions");
+      s = settle(act(s, "p1", { type: "activate", source: h, ability, targets: { t: [lions] } }));
+      expect(chars(s, lions).keywords).toContain("lifelink");
+      s = advanceUntil(s, (x) => x.turn.active === "p2");
+      expect(chars(s, lions).keywords).not.toContain("lifelink");
+    });
+
+    it("Mariposa Military Base: {C}; {5}, {T}: draw a card, {1} less for each rad counter", () => {
+      let s = scenario({ p1: { battlefield: ["Mariposa Military Base", "Wastes", "Wastes"], library: ["Plains"] } });
+      expect(produced(s, "p1", "Mariposa Military Base")).toEqual(["C"]);
+      const base = idOf(s, "p1", "battlefield", "Mariposa Military Base");
+      const p1 = s.players.p1;
+      if (p1) p1.counters = { ...p1.counters, rad: 2 };
+      // {5} minus 2: two Wastes are not enough.
+      expect(canActivate(s, "p1", base)).toBe(false);
+      if (p1) p1.counters = { ...p1.counters, rad: 3 };
+      expect(canActivate(s, "p1", base)).toBe(true);
+      s = settle(act(s, "p1", { type: "activate", source: base, ability: activation(s, base) as number }));
+      expect(idsOf(s, "p1", "hand", "Plains")).toHaveLength(1);
+      expect(tapped(s, "Mariposa Military Base")).toBe(true);
+    });
+  });
+});

@@ -366,4 +366,268 @@ describe("Stellar Sights", () => {
       expect(idsOf(t, "p1", "hand", "Gemstone Caverns")).toHaveLength(1);
     });
   });
+  describe("L11: utility lands", () => {
+    const float = (s: S, ...names: string[]) => {
+      let cur = s;
+      for (const n of names) {
+        const id = cur.battlefield.find((x) => nameOf(cur, x) === n && !cur.objects[x]?.tapped) as string;
+        cur = act(cur, "p1", { type: "tapForMana", source: id, ability: 0 });
+      }
+      return cur;
+    };
+    const libraryCard = (s: S, name: string) => s.players.p1?.library.find((id) => nameOf(s, id) === name) as string;
+
+    it("Deserted Temple: {C}; {1}, {T}: untap target land", () => {
+      let s = scenario({ p1: { battlefield: ["Deserted Temple", "Plains", { name: "Forest", tapped: true }] } });
+      const temple = idOf(s, "p1", "battlefield", "Deserted Temple");
+      expect(manaAbilitiesOf(s, temple)[0]?.produce).toEqual(["C"]);
+      const forest = idOf(s, "p1", "battlefield", "Forest");
+      s = settle(act(float(s, "Plains"), "p1", { type: "activate", source: temple, ability: 1, targets: { t: [forest] } }));
+      expect([s.objects[forest]?.tapped, s.objects[temple]?.tapped]).toEqual([false, true]);
+    });
+
+    it("Inventors' Fair: 1 life at your upkeep with three artifacts; tutor activated only with three artifacts", () => {
+      const upkeep = (artifacts: number) => {
+        const s = scenario({
+          active: "p2",
+          step: "end",
+          p1: { battlefield: ["Inventors' Fair", ...Array(artifacts).fill("Sol Ring")] },
+        });
+        return advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "draw").players.p1?.life;
+      };
+      expect([upkeep(3), upkeep(2)]).toEqual([21, 20]);
+      const base = (artifacts: number) =>
+        scenario({
+          p1: {
+            battlefield: ["Inventors' Fair", ...lands("Plains", 4), ...Array(artifacts).fill("Sol Ring")],
+            library: ["Forest", "Mana Crypt", "Forest"],
+          },
+        });
+      const two = base(2);
+      const fair2 = idOf(two, "p1", "battlefield", "Inventors' Fair");
+      expect(legalActions(two, "p1").some((a) => a.type === "activate" && a.source === fair2 && a.ability === 2)).toBe(false);
+      let s = base(3);
+      const crypt = libraryCard(s, "Mana Crypt");
+      s = float(s, "Plains", "Plains", "Plains", "Plains");
+      s = settle(
+        act(s, "p1", { type: "activate", source: idOf(s, "p1", "battlefield", "Inventors' Fair"), ability: 2 }),
+        (req) => (req.type === "pick" && req.options.includes(crypt) ? [crypt] : undefined),
+      );
+      expect(s.players.p1?.hand.map((id) => nameOf(s, id))).toEqual(["Mana Crypt"]);
+      expect(idsOf(s, "p1", "graveyard", "Inventors' Fair")).toHaveLength(1);
+    });
+
+    it("Mirrorpool: enters tapped; copies your instant, or creates a token copy of your creature (sacrificed)", () => {
+      let s = scenario({ p1: { hand: ["Mirrorpool"] } });
+      s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Mirrorpool") });
+      expect(s.objects[idOf(s, "p1", "battlefield", "Mirrorpool")]?.tapped).toBe(true);
+      s = scenario({ p1: { battlefield: ["Mirrorpool", "Ancient Tomb", ...lands("Mountain", 2)], hand: ["Shock"] } });
+      s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Shock"), targets: { t: ["p2"] } });
+      const shock = s.stack[0]?.id as string;
+      s = float(s, "Ancient Tomb", "Mountain");
+      s = settle(
+        act(s, "p1", {
+          type: "activate",
+          source: idOf(s, "p1", "battlefield", "Mirrorpool"),
+          ability: 2,
+          targets: { t: [shock] },
+        }),
+      );
+      expect(s.players.p2?.life).toBe(16);
+      expect(idsOf(s, "p1", "graveyard", "Mirrorpool")).toHaveLength(1);
+      s = scenario({ p1: { battlefield: ["Mirrorpool", "Ancient Tomb", ...lands("Mountain", 3), "Bear Cub"] } });
+      const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+      s = float(s, "Ancient Tomb", "Mountain", "Mountain", "Mountain");
+      s = settle(
+        act(s, "p1", { type: "activate", source: idOf(s, "p1", "battlefield", "Mirrorpool"), ability: 3, targets: { t: [cub] } }),
+      );
+      const cubs = idsOf(s, "p1", "battlefield", "Bear Cub");
+      expect(cubs).toHaveLength(2);
+      expect(cubs.filter((id) => s.objects[id]?.isToken)).toHaveLength(1);
+      expect(idsOf(s, "p1", "graveyard", "Mirrorpool")).toHaveLength(1);
+    });
+
+    it("Petrified Field: {T}, sacrifice it: a land card from your graveyard returns to your hand", () => {
+      let s = scenario({ p1: { battlefield: ["Petrified Field"], graveyard: ["Forest", "Bear Cub"] } });
+      const field = idOf(s, "p1", "battlefield", "Petrified Field");
+      expect(manaAbilitiesOf(s, field)[0]?.produce).toEqual(["C"]);
+      const opt = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === field);
+      expect(opt?.type === "activate" && opt.targets[0]?.legal).toEqual([idOf(s, "p1", "graveyard", "Forest")]);
+      s = settle(
+        act(s, "p1", { type: "activate", source: field, ability: 1, targets: { t: [idOf(s, "p1", "graveyard", "Forest")] } }),
+      );
+      expect(s.players.p1?.hand.map((id) => nameOf(s, id))).toEqual(["Forest"]);
+      expect(idsOf(s, "p1", "graveyard", "Petrified Field")).toHaveLength(1);
+    });
+
+    it("Blinkmoth Nexus: a 1/1 flying Blinkmoth artifact creature until end of turn, still a land; {1}, {T}: a Blinkmoth gets +1/+1", () => {
+      let s = scenario({ p1: { battlefield: ["Blinkmoth Nexus", "Blinkmoth Nexus", ...lands("Plains", 2)] } });
+      const [a, b] = idsOf(s, "p1", "battlefield", "Blinkmoth Nexus") as [string, string];
+      expect(manaAbilitiesOf(s, a)[0]?.produce).toEqual(["C"]);
+      s = settle(act(float(s, "Plains"), "p1", { type: "activate", source: a, ability: 1 }));
+      const c = chars(s, a);
+      expect([c.power, c.toughness, [...c.types].sort(), c.subtypes, c.keywords]).toEqual([
+        1,
+        1,
+        ["Artifact", "Creature", "Land"],
+        ["Blinkmoth"],
+        ["flying"],
+      ]);
+      // The other Nexus is not a creature: not a legal target of the pump.
+      const pump = legalActions(s, "p1").find((x) => x.type === "activate" && x.source === b && x.ability === 2);
+      expect(pump?.type === "activate" && pump.targets[0]?.legal).toEqual([a]);
+      s = settle(act(float(s, "Plains"), "p1", { type: "activate", source: b, ability: 2, targets: { t: [a] } }));
+      expect([chars(s, a).power, chars(s, a).toughness]).toEqual([2, 2]);
+      s = advanceUntil(s, (x) => x.turn.active === "p2");
+      expect([chars(s, a).types, chars(s, a).subtypes, chars(s, a).keywords]).toEqual([["Land"], [], []]);
+    });
+
+    it("Bonders' Enclave: {3}, {T}: draw, only if you control a creature with power 4 or greater", () => {
+      const run = (creature: string) => scenario({ p1: { battlefield: ["Bonders' Enclave", ...lands("Plains", 3), creature] } });
+      const small = run("Bear Cub");
+      const e1 = idOf(small, "p1", "battlefield", "Bonders' Enclave");
+      expect(legalActions(small, "p1").some((a) => a.type === "activate" && a.source === e1 && a.ability === 1)).toBe(false);
+      let s = run("Shivan Dragon");
+      s = float(s, "Plains", "Plains", "Plains");
+      s = settle(act(s, "p1", { type: "activate", source: idOf(s, "p1", "battlefield", "Bonders' Enclave"), ability: 1 }));
+      expect(s.players.p1?.hand).toHaveLength(1);
+    });
+
+    it("Cascading Cataracts: indestructible; {5}, {T}: five mana in any combination of colors", () => {
+      let s = scenario({ p1: { battlefield: ["Cascading Cataracts", ...lands("Plains", 5)] } });
+      const cat = idOf(s, "p1", "battlefield", "Cascading Cataracts");
+      expect(destroy(s, cat)).toBe(false);
+      s = float(s, "Plains", "Plains", "Plains", "Plains", "Plains");
+      s = act(s, "p1", { type: "activate", source: cat, ability: 1 });
+      // A mana ability: no stack, the colors are chosen at once.
+      expect(s.stack).toHaveLength(0);
+      s = act(s, "p1", { type: "choose", values: [2, 1, 0, 1, 1] });
+      expect(s.players.p1?.manaPool).toMatchObject({ W: 2, U: 1, B: 0, R: 1, G: 1, C: 0 });
+    });
+
+    it("Crystal Quarry: {C}; {5}, {T}: add {W}{U}{B}{R}{G}", () => {
+      let s = scenario({ p1: { battlefield: ["Crystal Quarry", ...lands("Plains", 5)] } });
+      const q = idOf(s, "p1", "battlefield", "Crystal Quarry");
+      expect(manaAbilitiesOf(s, q)[0]?.produce).toEqual(["C"]);
+      s = float(s, "Plains", "Plains", "Plains", "Plains", "Plains");
+      s = act(s, "p1", { type: "activate", source: q, ability: 1 });
+      expect(s.players.p1?.manaPool).toMatchObject({ W: 1, U: 1, B: 1, R: 1, G: 1 });
+    });
+
+    it("High Market: {T}, sacrifice a creature: you gain 1 life", () => {
+      let s = scenario({ p1: { battlefield: ["High Market", "Bear Cub"] } });
+      const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+      s = settle(
+        act(s, "p1", { type: "activate", source: idOf(s, "p1", "battlefield", "High Market"), ability: 1, sacrifice: [cub] }),
+      );
+      expect([s.players.p1?.life, idsOf(s, "p1", "graveyard", "Bear Cub").length]).toEqual([21, 1]);
+    });
+
+    it("Scavenger Grounds: {2}, {T}, sacrifice a Desert (itself included): exile all graveyards", () => {
+      let s = scenario({
+        p1: { battlefield: ["Scavenger Grounds", ...lands("Plains", 2)], graveyard: ["Bear Cub"] },
+        p2: { graveyard: ["Forest", "Shock"] },
+      });
+      const grounds = idOf(s, "p1", "battlefield", "Scavenger Grounds");
+      s = float(s, "Plains", "Plains");
+      s = settle(act(s, "p1", { type: "activate", source: grounds, ability: 1, sacrifice: [grounds] }));
+      expect([s.players.p1?.graveyard.length, s.players.p2?.graveyard.length]).toEqual([0, 0]);
+      expect(s.exile.map((id) => nameOf(s, id)).sort()).toEqual(["Bear Cub", "Forest", "Scavenger Grounds", "Shock"]);
+    });
+
+    it("Terrain Generator: {2}, {T}: you may put a basic land card from your hand onto the battlefield tapped", () => {
+      let s = scenario({
+        p1: { battlefield: ["Terrain Generator", ...lands("Plains", 2)], hand: ["Forest", "Mana Confluence"] },
+      });
+      const gen = idOf(s, "p1", "battlefield", "Terrain Generator");
+      const forest = idOf(s, "p1", "hand", "Forest");
+      s = float(s, "Plains", "Plains");
+      let offered: string[] = [];
+      s = settle(act(s, "p1", { type: "activate", source: gen, ability: 1 }), (req) => {
+        if (req.type !== "pick") return undefined;
+        offered = req.options;
+        return [forest];
+      });
+      // The nonbasic land is not offered.
+      expect(offered).toEqual([forest]);
+      const put = idsOf(s, "p1", "battlefield", "Forest");
+      expect(put).toHaveLength(1);
+      expect(s.objects[put[0] as string]?.tapped).toBe(true);
+      expect(s.players.p1?.hand.map((id) => nameOf(s, id))).toEqual(["Mana Confluence"]);
+    });
+  });
+
+  describe("L11: creature lands", () => {
+    const CASES: [string, string[], [number, number], string[], string][] = [
+      ["Creeping Tar Pit", ["Island", "Swamp", "Swamp"], [3, 2], ["B", "U"], "unblockable"],
+      ["Hissing Quagmire", ["Swamp", "Forest", "Forest"], [2, 2], ["B", "G"], "deathtouch"],
+      ["Lavaclaw Reaches", ["Swamp", "Mountain", "Mountain"], [2, 2], ["B", "R"], ""],
+      ["Lumbering Falls", ["Forest", "Island", "Island", "Island"], [3, 3], ["G", "U"], "hexproof"],
+      ["Needle Spires", ["Mountain", "Plains", "Plains", "Plains"], [2, 1], ["R", "W"], "doubleStrike"],
+      ["Raging Ravine", ["Mountain", "Forest", "Forest", "Forest"], [3, 3], ["G", "R"], ""],
+      ["Shambling Vent", ["Plains", "Swamp", "Swamp"], [2, 3], ["B", "W"], "lifelink"],
+      ["Stirring Wildwood", ["Forest", "Plains", "Plains"], [3, 4], ["G", "W"], "reach"],
+    ];
+    const animate = (name: string, basics: string[], extra: string[] = [], theirs: string[] = []) => {
+      let s = scenario({ p1: { battlefield: [name, ...basics, ...extra] }, p2: { battlefield: theirs } });
+      const land = idOf(s, "p1", "battlefield", name);
+      for (const b of basics) {
+        const id = s.battlefield.find((x) => nameOf(s, x) === b && !s.objects[x]?.tapped) as string;
+        s = act(s, "p1", { type: "tapForMana", source: id, ability: 0 });
+      }
+      return { s: settle(act(s, "p1", { type: "activate", source: land, ability: 2 })), land };
+    };
+
+    it("enter tapped; tap for one of their two colors", () => {
+      for (const [name, , , colors] of CASES) {
+        let s = scenario({ p1: { hand: [name] } });
+        s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", name) });
+        const land = idOf(s, "p1", "battlefield", name);
+        expect(s.objects[land]?.tapped, name).toBe(true);
+        expect([...(manaAbilitiesOf(s, land)[0]?.produce ?? [])].sort(), name).toEqual(colors);
+      }
+    });
+
+    it("become an Elemental creature of their colors with their P/T and keyword until end of turn, still a land", () => {
+      for (const [name, basics, [power, toughness], colors, keyword] of CASES) {
+        let { s, land } = animate(name, basics);
+        const c = chars(s, land);
+        expect([c.power, c.toughness, [...c.types].sort(), c.subtypes, [...c.colors].sort()], name).toEqual([
+          power,
+          toughness,
+          ["Creature", "Land"],
+          ["Elemental"],
+          colors,
+        ]);
+        if (keyword) expect(c.keywords, name).toContain(keyword);
+        s = advanceUntil(s, (x) => x.turn.active === "p2");
+        expect(chars(s, land).types, name).toEqual(["Land"]);
+        expect(chars(s, land).colors, name).toEqual([]);
+      }
+    });
+
+    it("Creeping Tar Pit can't be blocked", () => {
+      let { s, land } = animate("Creeping Tar Pit", ["Island", "Swamp", "Swamp"], [], ["Bear Cub"]);
+      s = attack(s, [land]);
+      s = advanceUntil(s, (x) => x.pending?.kind === "declareBlockers");
+      const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+      expect(() => act(s, "p2", { type: "declareBlockers", blocks: [{ blocker: bear, attacker: land }] })).toThrow();
+      s = advanceUntil(s, (x) => x.turn.step === "main2");
+      expect(s.players.p2?.life).toBe(17);
+    });
+
+    it("Lavaclaw Reaches: the creature has {X}: +X/+0 until end of turn", () => {
+      let { s, land } = animate("Lavaclaw Reaches", ["Swamp", "Mountain", "Mountain"], lands("Mountain", 2));
+      const pump = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === land && a.label === "+X/+0");
+      s = settle(act(s, "p1", { type: "activate", source: land, ability: pump?.type === "activate" ? pump.ability : -1, x: 2 }));
+      expect([chars(s, land).power, chars(s, land).toughness]).toEqual([4, 2]);
+    });
+
+    it("Raging Ravine: whenever it attacks, a +1/+1 counter on it", () => {
+      let { s, land } = animate("Raging Ravine", ["Mountain", "Forest", "Forest", "Forest"]);
+      s = settle(attack(s, [land]));
+      expect(s.objects[land]?.counters["+1/+1"]).toBe(1);
+      expect(chars(s, land).power).toBe(4);
+    });
+  });
 });

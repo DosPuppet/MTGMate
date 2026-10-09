@@ -532,8 +532,14 @@ export const RECORD_VERSION = 1;
  *   attacking are divided among the defenders (508.4)
  * - 192: PLAN-L L7: Phyrexian mana paid with life or mana as the player chooses (`phyrexianLife`, 107.4f); the color
  *   of the hybrid mana can be chosen for any hybrid spell
+ * - 193: PLAN-L L11: "exile target spell" exiles spells (Mindbreak Trap); Endless Detour also moves a card from a
+ *   graveyard; flashback with a mana cost read from the Oracle text (Siphon Insight, Faithless Looting, Lingering Souls,
+ *   Strike It Rich had none); a creature with a mana ability can be tapped for convoke (702.51a); Akroma, Angel of Fury
+ *   and Emrakul, the Promised End have their protections; Swift Demise destroys the creatures that were dealt damage;
+ *   Shelinda's "otherwise" reads its condition once (`fx.ifElse`); Summoner's Sending reads the exiled card's mana
+ *   value; Yuna's mana rider sees the spell it was spent on
  */
-export const RULES_VERSION = 192;
+export const RULES_VERSION = 193;
 
 /** One checkpoint every N decisions (plus the last one of the game). */
 export const CHECKPOINT_EVERY = 25;

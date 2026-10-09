@@ -15,6 +15,7 @@ import {
   manaAbility,
   playerStatic,
   protection,
+  protectionAbility,
   ref,
   SOLDIER,
   SPIRIT,
@@ -253,7 +254,10 @@ export const EDH_MULTIVERSE: Record<string, CardScript> = {
   // --- Creatures -----------------------------------------------------------------------------------------------------
   "Akroma, Angel of Fury": {
     cantBeCountered: true,
-    abilities: [activated({ mana: "{R}", effects: [fx.pump(ref.self, 1, 0)], label: "+1/+0" })],
+    abilities: [
+      protectionAbility(protection.from({ colors: ["W", "U"] }, "Protection from white and from blue")),
+      activated({ mana: "{R}", effects: [fx.pump(ref.self, 1, 0)], label: "+1/+0" }),
+    ],
   },
   "Archfiend of Despair": {
     abilities: [

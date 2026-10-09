@@ -1035,6 +1035,8 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
   const waterbendX = !!waterbendCost && !waterbendCost[1] && waterbendCost[2] === "X";
   const waterbendN = waterbendCost && !waterbendCost[1] && !waterbendX ? Number(waterbendCost[2]) : undefined;
   const harmonize = /^Harmonize ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
+  // Flashback with a mana cost only (702.34a): "Flashback {1}{U}{B}"; the other costs (life, sacrifice…) are scripted.
+  const flashbackMana = /^Flashback ((?:\{[^}]+\})+)(?= \(|$)/m.exec(raw.oracleText)?.[1];
   const isSpell = types.includes("Instant") || types.includes("Sorcery");
   const bloomburrowAbilities: CardDef["abilities"] = [];
   if (evoke) {
@@ -1373,7 +1375,13 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
                   ? { life: Number(lifeOrPay[1]) }
                   : undefined),
     // Harmonize (702.180): cast from the graveyard like flashback, for its harmonize cost.
-    flashback: script?.flashback ? parseManaCost(script.flashback) : harmonize ? parseManaCost(harmonize) : undefined,
+    flashback: script?.flashback
+      ? parseManaCost(script.flashback)
+      : harmonize
+        ? parseManaCost(harmonize)
+        : flashbackMana
+          ? parseManaCost(flashbackMana)
+          : undefined,
     harmonize: harmonize ? true : undefined,
     flashbackCost: script?.flashbackCost,
     disguise: parseDisguise(raw.oracleText),

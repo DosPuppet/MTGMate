@@ -745,7 +745,8 @@ export const HANDLERS: OpHandlers = {
       // Swat Away: a targeted spell also goes into its owner's library.
       const spell = s.stack.find((x) => x.id === id && x.kind === "spell");
       const o = s.objects[spell ? spell.sourceId : id];
-      if (!o || (!spell && o.zone !== "battlefield")) continue;
+      // Endless Detour: also a card in a graveyard.
+      if (!o || (!spell && o.zone !== "battlefield" && o.zone !== "graveyard")) continue;
       const answer = r.vars[key(`tb-${id}`)];
       if (!answer) {
         return {
@@ -813,7 +814,11 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   exile(s, _r, e, ctx) {
-    for (const id of resolveRef(s, ctx, e.what)) if (onBattlefield(s, id)) moveAndLog(s, id, "exile");
+    for (const id of resolveRef(s, ctx, e.what)) {
+      if (onBattlefield(s, id)) moveAndLog(s, id, "exile");
+      // "Exile target spell" (Mindbreak Trap): it leaves the stack without resolving.
+      else if (s.stack.some((x) => x.id === id && x.kind === "spell")) exileSpell(s, id);
+    }
     return;
   },
   mill(s, r, e, ctx) {

@@ -404,6 +404,8 @@ export function manaSources(
   for (const id of s.battlefield) {
     const o = obj(s, id);
     if (o.controller !== player || exclude.has(id)) continue;
+    // A creature chosen by the player for convoke is tapped for convoke, not for its mana.
+    if (purpose?.convoke && purpose.only?.convoke?.includes(id)) continue;
     manaAbilitiesOf(s, id).forEach((ab, i) => {
       if (!canActivateMana(s, id, ab)) return;
       // Restricted mana: usable by the solver only for an allowed payment.
@@ -429,12 +431,12 @@ export function manaSources(
       });
     });
   }
-  // Convoke: each untapped creature without a mana ability pays {1} or one mana of its color (used last).
+  // Convoke (702.51a): each untapped creature pays {1} or one mana of its color (used last); a creature with a mana
+  // ability shares its key with that ability (one or the other), and one chosen for convoke is only tapped for it.
   if (purpose?.convoke) {
     for (const id of s.battlefield) {
       const o = obj(s, id);
       if (o.controller !== player || exclude.has(id) || o.tapped || !isCreature(s, id)) continue;
-      if (manaAbilitiesOf(s, id).length) continue;
       if (purpose.only?.convoke && !purpose.only.convoke.includes(id)) continue;
       const colors = chars(s, id).colors;
       out.push({

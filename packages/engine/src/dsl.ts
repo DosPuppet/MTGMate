@@ -912,6 +912,16 @@ export const fx = {
     const flat = effects.flat();
     return [{ op: "if", cond: c, skip: flat.length }, ...flat];
   },
+  /**
+   * "If [condition], …. Otherwise, …": the condition is read once, before the first branch (which may change it:
+   * Shelinda's counter); after the first branch, a jump over the second.
+   */
+  ifElse: (c: Condition, then: Effects, otherwise: Effects): Effect[] => {
+    const yes = then.flat();
+    const no = otherwise.flat();
+    const never: Condition = { kind: "amountAtLeast", amount: 0, n: 1 };
+    return [{ op: "if", cond: c, skip: yes.length + 1 }, ...yes, { op: "if", cond: never, skip: no.length }, ...no];
+  },
   /** "You may pay {X}. If you do, …" */
   mayPay: (cost: string, prompt: string, ...effects: Effects): Effect[] => {
     const flat = effects.flat();

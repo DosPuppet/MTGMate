@@ -237,16 +237,11 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.enters({ ...CREATURE_YOU, other: true }),
-        [
-          ...fx.when(
-            cond.amountGreater(amount.powerOf(ref.self), amount.powerOf(ref.eventObject)),
-            fx.addCounters(ref.eventObject, 1),
-          ),
-          ...fx.when(
-            cond.not(cond.amountGreater(amount.powerOf(ref.self), amount.powerOf(ref.eventObject))),
-            fx.addCounters(ref.self, 1),
-          ),
-        ],
+        fx.ifElse(
+          cond.amountGreater(amount.powerOf(ref.self), amount.powerOf(ref.eventObject)),
+          [fx.addCounters(ref.eventObject, 1)],
+          [fx.addCounters(ref.self, 1)],
+        ),
         { label: "A counter on the new creature if it is weaker, otherwise on Shelinda" },
       ),
     ],
@@ -654,9 +649,10 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
         when.yourEndStep,
         fx.may(
           "Exile a creature card from a graveyard for a 1/1 Spirit?",
-          fx.exileCard(ref.target()),
+          // The mana value is read as the card is exiled (it is no longer the target afterwards).
+          fx.exileCard(ref.target(), { name: "big", filter: { minManaValue: 4 } }),
           fx.createTokens(SPIRIT, 1, undefined, "s"),
-          ...fx.when(cond.amountAtLeast(amount.manaValueOf(ref.target()), 4), fx.addCounters(ref.stored("s"), 1)),
+          ...fx.when(cond.amountAtLeast(amount.v("big"), 1), fx.addCounters(ref.stored("s"), 1)),
         ),
         {
           targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "any", "creature card in a graveyard")],

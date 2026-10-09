@@ -697,7 +697,7 @@ export const EDH_TURTLES: Record<string, CardScript> = {
   "Swift Demise": {
     spell: spell(
       [target.creature()],
-      [fx.damage(1, ref.target()), fx.destroyAll({ types: ["Creature"], controller: "opponent", dealtDamageThisTurn: true })],
+      [fx.damage(1, ref.target()), fx.destroyAll({ types: ["Creature"], controller: "opponent", damaged: true })],
     ),
   },
   "Vanquish the Horde": {

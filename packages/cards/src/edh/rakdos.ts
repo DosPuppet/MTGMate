@@ -623,6 +623,7 @@ export const EDH_RAKDOS: Record<string, CardScript> = {
   "Emrakul, the Promised End": {
     costReduction: { generic: amount.cardTypesInGraveyard },
     abilities: [
+      protectionAbility(protection.from({ types: ["Instant"] }, "Protection from instants")),
       triggered(CAST_SELF, [fx.controlNextTurn(ref.target(), false, true)], {
         targets: [target.player("t", "opponent")],
         label: "You control target opponent's next turn; then that player takes an extra turn",

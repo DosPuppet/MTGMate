@@ -2453,7 +2453,9 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
       const filter = withX(s, src ? withChosen(rider.spell, src) : rider.spell, staticContext(s, player, id));
       if (!matchesView(view, filter, player, id)) return [];
       const defId = s.objects[id]?.defId ?? s.lki[id]?.defId;
-      if (rider.effects && defId) pushInline(s, player, id, defId, { targets: [], effects: rider.effects });
+      // The spell this mana was spent on is the event's object (Yuna: "that creature enters with…").
+      if (rider.effects && defId)
+        pushInline(s, player, id, defId, { targets: [], effects: rider.effects }, { objectId: item.id, player });
       return rider.effect ? [rider.effect] : [];
     });
     if (riders.length) item.riders = riders;
@@ -3371,7 +3373,7 @@ function manaHelperPicks(
     add(
       "convoke",
       msg("Convoke: the creatures to tap (each pays {1} or one mana of its color)"),
-      s.battlefield.filter((id) => untapped(id) && isCreature(s, id) && manaAbilitiesOf(s, id).length === 0),
+      s.battlefield.filter((id) => untapped(id) && isCreature(s, id)),
     );
   if (kinds.improvise)
     add(

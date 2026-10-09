@@ -1,8 +1,10 @@
 /** Enchanting Tales (WOT): rules tests for the cards (PLAN-G). */
+import { card } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
 import { dealDamage, destroy, drawCards, gainLife } from "../src/actions";
 import { fx, ref, spell, staticAbility, target } from "../src/dsl";
 import { announceDiscard, moveDiscarded } from "../src/effects";
+import { createGame } from "../src/game";
 import { legalActions } from "../src/legal";
 import { manaAbilitiesOf } from "../src/mana";
 import { changeCounters, chars } from "../src/state";
@@ -19,8 +21,11 @@ import {
   idsOf,
   lands,
   namesIn,
+  picking,
+  pickNamed,
   scenario,
   settle,
+  throughCombat,
 } from "./helpers";
 
 describe("Enchanting Tales", () => {
@@ -546,5 +551,305 @@ describe("Intruder Alarm (PLAN-H, H8b)", () => {
     expect([s.objects[cub]?.tapped, s.objects[forest]?.tapped]).toEqual([true, false]);
     s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Llanowar Elves") }));
     expect(s.objects[cub]?.tapped).toBe(false);
+  });
+});
+
+describe("Enchanting Tales (PLAN-L, L11)", () => {
+  type S = ReturnType<typeof scenario>;
+  const castIt = (s: S, name: string, extra: object = {}, player = "p1") =>
+    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), ...extra });
+  const on = (s: S, p: string, name: string) => idOf(s, p, "battlefield", name);
+  const abilityOf = (s: S, source: string, n = 0) =>
+    legalActions(s, "p1").filter((a) => a.type === "activate" && a.source === source)[n];
+  const activate = (s: S, source: string, n = 0, extra: object = {}) => {
+    const ab = abilityOf(s, source, n);
+    return act(s, "p1", { type: "activate", source, ability: ab?.type === "activate" ? ab.ability : n, ...extra });
+  };
+  const yes = (req: { intent?: string; type: string }) => (req.intent === "may" || req.type === "yesNo" ? [1] : undefined);
+  const toMyMain = (s: S) => advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1");
+
+  it("Defense of the Heart: at your upkeep, if an opponent controls three creatures, sacrifice it and put up to two creatures from your library onto the battlefield", () => {
+    const setup = (cubs: number) =>
+      scenario({
+        active: "p2",
+        step: "end",
+        p1: { battlefield: ["Defense of the Heart"], library: ["Forest", "Shivan Dragon", "Serra Angel", "Forest"] },
+        p2: { battlefield: lands("Bear Cub", cubs) },
+      });
+    let s = setup(3);
+    s = settle(
+      advanceUntil(s, (x) => x.turn.active === "p1" && x.stack.length > 0),
+      (req, _p, cur) =>
+        req.type === "pick" ? req.options.filter((id) => chars(cur, id).types.includes("Creature")).slice(0, 2) : undefined,
+    );
+    expect(idsOf(s, "p1", "graveyard", "Defense of the Heart")).toHaveLength(1);
+    expect(idsOf(s, "p1", "battlefield", "Shivan Dragon")).toHaveLength(1);
+    expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
+    const t = toMyMain(setup(2));
+    expect(idsOf(t, "p1", "battlefield", "Defense of the Heart")).toHaveLength(1);
+  });
+
+  it("Greater Auramancy: other enchantments you control and your enchanted creatures have shroud", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["Greater Auramancy", "Ghostly Prison", "Bear Cub", "Llanowar Elves", "Mountain"],
+        hand: ["Dragon Mantle"],
+      },
+      p2: { battlefield: ["Ghostly Prison"] },
+    });
+    const kw = (id: string) => chars(s, id).keywords.includes("shroud");
+    const cub = on(s, "p1", "Bear Cub");
+    expect([kw(on(s, "p1", "Ghostly Prison")), kw(on(s, "p1", "Greater Auramancy")), kw(on(s, "p2", "Ghostly Prison"))]).toEqual([
+      true,
+      false,
+      false,
+    ]);
+    expect(kw(cub)).toBe(false);
+    s = settle(castIt(s, "Dragon Mantle", { targets: { [enchantSpec(s, "Dragon Mantle")]: [cub] } }));
+    expect([kw(cub), kw(on(s, "p1", "Llanowar Elves"))]).toEqual([true, false]);
+  });
+
+  it("Kindred Discovery: a creature of the chosen type you control enters or attacks, draw a card", () => {
+    let s = scenario({
+      p1: {
+        battlefield: [...lands("Island", 5), ...lands("Forest", 3)],
+        hand: ["Kindred Discovery", "Bear Cub", "Llanowar Elves"],
+      },
+    });
+    s = settle(castIt(s, "Kindred Discovery"), (req, p, cur) => picking(["Bear"])(req, p, cur));
+    s = settle(castIt(s, "Llanowar Elves"));
+    expect(s.players.p1?.hand).toHaveLength(1);
+    s = settle(castIt(s, "Bear Cub"));
+    expect(s.players.p1?.hand).toHaveLength(1);
+    expect(idsOf(s, "p1", "hand", "Forest")).toHaveLength(1);
+    const cub = on(s, "p1", "Bear Cub");
+    (s.objects[cub] as { controlledSince: number }).controlledSince = 0;
+    s = settle(attack(s, [cub]));
+    expect(s.players.p1?.hand).toHaveLength(2);
+  });
+
+  it("Rhystic Study: an opponent casts a spell, you may draw unless they pay {1}", () => {
+    let s = scenario({
+      active: "p2",
+      p1: { battlefield: ["Rhystic Study"] },
+      p2: { battlefield: ["Mountain"], hand: ["Shock"] },
+    });
+    s = settle(castIt(s, "Shock", { targets: { t: ["p1"] } }, "p2"), yes);
+    expect(s.players.p1?.hand).toHaveLength(1);
+    // With {1} left, they pay (suggested answer): no draw.
+    let t = scenario({
+      active: "p2",
+      p1: { battlefield: ["Rhystic Study"] },
+      p2: { battlefield: lands("Mountain", 2), hand: ["Shock"] },
+    });
+    t = settle(castIt(t, "Shock", { targets: { t: ["p1"] } }, "p2"), yes);
+    expect(t.players.p1?.hand).toHaveLength(0);
+    expect(idsOf(t, "p2", "battlefield", "Mountain").every((id) => t.objects[id]?.tapped)).toBe(true);
+    // Your own spells don't trigger it.
+    let u = scenario({ p1: { battlefield: ["Rhystic Study", "Mountain"], hand: ["Shock"] } });
+    u = settle(castIt(u, "Shock", { targets: { t: ["p2"] } }), yes);
+    expect(u.players.p1?.hand).toHaveLength(0);
+  });
+
+  it("Aggravated Assault: as a sorcery, untap your creatures; an additional combat and main phase after this one", () => {
+    let s = scenario({ p1: { battlefield: ["Aggravated Assault", "Bear Cub", ...lands("Mountain", 5)] } });
+    const cub = on(s, "p1", "Bear Cub");
+    const assault = on(s, "p1", "Aggravated Assault");
+    s = throughCombat(attack(s, [cub]));
+    expect([s.players.p2?.life, s.objects[cub]?.tapped]).toEqual([18, true]);
+    s = settle(activate(s, assault));
+    expect(s.objects[cub]?.tapped).toBe(false);
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: cub, defender: "p2" }] });
+    s = advanceUntil(s, (x) => x.turn.step === "main2" && x.stack.length === 0);
+    expect(s.players.p2?.life).toBe(16);
+    expect(s.turn.active).toBe("p1");
+    // Not during combat (sorcery speed).
+    let t = scenario({ p1: { battlefield: ["Aggravated Assault", "Bear Cub", ...lands("Mountain", 5)] } });
+    t = attack(t, [on(t, "p1", "Bear Cub")]);
+    expect(t.pending?.kind === "priority" && t.pending.player).toBe("p1");
+    expect(abilityOf(t, on(t, "p1", "Aggravated Assault"))).toBeUndefined();
+  });
+
+  it("Dawn of Hope: you gain life, you may pay {2} to draw; {3}{W}: a 1/1 Soldier with lifelink", () => {
+    let s = scenario({ p1: { battlefield: ["Dawn of Hope", ...lands("Plains", 4)], library: lands("Island", 3) } });
+    gainLife(s, "p1", 2);
+    s = settle(s, yes);
+    expect(s.players.p1?.hand).toHaveLength(1);
+    expect(idsOf(s, "p1", "battlefield", "Plains").filter((id) => s.objects[id]?.tapped)).toHaveLength(2);
+    let t = scenario({ p1: { battlefield: ["Dawn of Hope", ...lands("Plains", 4)] } });
+    t = settle(activate(t, on(t, "p1", "Dawn of Hope")));
+    const soldier = idOf(t, "p1", "battlefield", "Soldier");
+    expect([chars(t, soldier).power, chars(t, soldier).toughness, chars(t, soldier).keywords]).toEqual([1, 1, ["lifelink"]]);
+  });
+
+  it("Leyline of Abundance: a creature tapped for mana adds an additional {G} (not a land); {6}{G}{G}: a +1/+1 counter on each of your creatures", () => {
+    let s = scenario({ p1: { battlefield: ["Leyline of Abundance", "Llanowar Elves", "Forest"] } });
+    s = act(s, "p1", { type: "tapForMana", source: on(s, "p1", "Llanowar Elves"), ability: 0 });
+    expect(s.players.p1?.manaPool.G).toBe(2);
+    s = act(s, "p1", { type: "tapForMana", source: on(s, "p1", "Forest"), ability: 0 });
+    expect(s.players.p1?.manaPool.G).toBe(3);
+    let t = scenario({
+      p1: { battlefield: ["Leyline of Abundance", "Bear Cub", ...lands("Forest", 8)] },
+      p2: { battlefield: ["Llanowar Elves"] },
+    });
+    t = settle(activate(t, on(t, "p1", "Leyline of Abundance")));
+    expect(t.objects[on(t, "p1", "Bear Cub")]?.counters["+1/+1"]).toBe(1);
+    expect(t.objects[on(t, "p2", "Llanowar Elves")]?.counters["+1/+1"] ?? 0).toBe(0);
+  });
+
+  it("Leyline of Lightning: you cast a spell, you may pay {1} for 1 damage to a player or planeswalker", () => {
+    let s = scenario({ p1: { battlefield: ["Leyline of Lightning", ...lands("Mountain", 2)], hand: ["Shock"] } });
+    s = settle(castIt(s, "Shock", { targets: { t: ["p2"] } }), (req, p, cur) => yes(req) ?? picking(["p2"])(req, p, cur));
+    expect(s.players.p2?.life).toBe(17);
+    expect(idsOf(s, "p1", "battlefield", "Mountain").every((id) => s.objects[id]?.tapped)).toBe(true);
+  });
+
+  it("Leyline of Sanctity: you have hexproof; from the opening hand, the game may begin with it on the battlefield", () => {
+    const s = scenario({
+      active: "p2",
+      p1: { battlefield: ["Leyline of Sanctity"] },
+      p2: { battlefield: ["Mountain"], hand: ["Shock"] },
+    });
+    expect(() => castIt(s, "Shock", { targets: { t: ["p1"] } }, "p2")).toThrow();
+    expect(() => castIt(s, "Shock", { targets: { t: ["p2"] } }, "p2")).not.toThrow();
+    // Not against your own spells.
+    const own = scenario({ p1: { battlefield: ["Leyline of Sanctity", "Mountain"], hand: ["Shock"] } });
+    expect(() => castIt(own, "Shock", { targets: { t: ["p1"] } })).not.toThrow();
+    const deck = (extra: string) => [extra, ...Array(59).fill("Forest")].map((n) => card(n));
+    let g!: S;
+    for (let seed = 1; seed < 200; seed++) {
+      g = createGame({
+        seed,
+        startingPlayer: "p1",
+        players: [
+          { id: "p1", name: "A", deck: deck("Leyline of Sanctity") },
+          { id: "p2", name: "B", deck: deck("Forest") },
+        ],
+      }).state;
+      if (idsOf(g, "p1", "hand", "Leyline of Sanctity").length) break;
+    }
+    for (let i = 0; i < 4 && g.pending?.kind === "mulligan"; i++) g = act(g, g.pending.player, { type: "keep" });
+    expect(g.pending?.kind === "choice" && g.pending.request.intent).toBe("leyline");
+    g = act(g, "p1", { type: "choose", values: idsOf(g, "p1", "hand", "Leyline of Sanctity") });
+    expect(idsOf(g, "p1", "battlefield", "Leyline of Sanctity")).toHaveLength(1);
+  });
+
+  it("Nature's Will: your creatures deal combat damage to a player, tap their lands and untap yours", () => {
+    let s = scenario({
+      p1: { battlefield: ["Nature's Will", "Bear Cub", { name: "Forest", tapped: true }, { name: "Forest", tapped: true }] },
+      p2: { battlefield: lands("Island", 2) },
+    });
+    s = throughCombat(attack(s, [on(s, "p1", "Bear Cub")]));
+    expect(s.players.p2?.life).toBe(18);
+    expect(idsOf(s, "p2", "battlefield", "Island").every((id) => s.objects[id]?.tapped)).toBe(true);
+    expect(idsOf(s, "p1", "battlefield", "Forest").some((id) => s.objects[id]?.tapped)).toBe(false);
+  });
+
+  it("Oversold Cemetery: at your upkeep, with four creature cards in your graveyard, you may return one to hand", () => {
+    const setup = (n: number) =>
+      scenario({
+        active: "p2",
+        step: "end",
+        p1: { battlefield: ["Oversold Cemetery"], graveyard: ["Shivan Dragon", ...lands("Bear Cub", n - 1), "Shock"] },
+      });
+    let s = setup(4);
+    s = advanceUntil(s, (x) => x.turn.active === "p1" && x.stack.length > 0);
+    s = toMyMain(
+      settle(s, (req, _p, cur) => yes(req) ?? (req.type === "pick" ? pickNamed(cur, req, "Shivan Dragon") : undefined)),
+    );
+    expect(idsOf(s, "p1", "hand", "Shivan Dragon")).toHaveLength(1);
+    const t = toMyMain(setup(3));
+    expect(idsOf(t, "p1", "graveyard", "Shivan Dragon")).toHaveLength(1);
+  });
+
+  it("Waste Not: an opponent discards a creature, a 2/2 Zombie; a land, {B}{B}; another card, draw", () => {
+    let s = scenario({
+      p1: { battlefield: ["Waste Not"], library: lands("Island", 3) },
+      p2: { hand: ["Bear Cub", "Forest", "Shock"] },
+    });
+    const discard = (name: string) => {
+      announceDiscard(s, "p2", moveDiscarded(s, "p2", idOf(s, "p2", "hand", name), true));
+      s = settle(s);
+    };
+    discard("Bear Cub");
+    const zombie = idOf(s, "p1", "battlefield", "Zombie");
+    expect([chars(s, zombie).power, chars(s, zombie).toughness]).toEqual([2, 2]);
+    discard("Forest");
+    expect(s.players.p1?.manaPool.B).toBe(2);
+    discard("Shock");
+    expect(s.players.p1?.hand).toHaveLength(1);
+    // Your own discards: nothing.
+    let t = scenario({ p1: { battlefield: ["Waste Not"], hand: ["Bear Cub"] } });
+    announceDiscard(t, "p1", moveDiscarded(t, "p1", idOf(t, "p1", "hand", "Bear Cub"), true));
+    t = settle(t);
+    expect(idsOf(t, "p1", "battlefield", "Zombie")).toHaveLength(0);
+  });
+
+  it("Compulsion: {1}{U}, discard a card: draw; {1}{U}, sacrifice it: draw", () => {
+    let s = scenario({
+      p1: { battlefield: ["Compulsion", ...lands("Island", 4)], hand: ["Shock"], library: lands("Forest", 3) },
+    });
+    const comp = on(s, "p1", "Compulsion");
+    s = settle(activate(s, comp, 0, { discard: [idOf(s, "p1", "hand", "Shock")] }));
+    expect(idsOf(s, "p1", "graveyard", "Shock")).toHaveLength(1);
+    expect(namesIn(s, s.players.p1?.hand)).toEqual(["Forest"]);
+    const sac = legalActions(s, "p1").filter((a) => a.type === "activate" && a.source === comp)[1];
+    s = settle(act(s, "p1", { type: "activate", source: comp, ability: sac?.type === "activate" ? sac.ability : 1 }));
+    expect(idsOf(s, "p1", "graveyard", "Compulsion")).toHaveLength(1);
+    expect(s.players.p1?.hand).toHaveLength(2);
+  });
+
+  it('Dragon Mantle: on entering, draw; the enchanted creature has "{R}: +1/+0"', () => {
+    let s = scenario({
+      p1: { battlefield: ["Bear Cub", ...lands("Mountain", 2)], hand: ["Dragon Mantle"], library: lands("Island", 2) },
+    });
+    const cub = on(s, "p1", "Bear Cub");
+    s = settle(castIt(s, "Dragon Mantle", { targets: { [enchantSpec(s, "Dragon Mantle")]: [cub] } }));
+    expect(s.players.p1?.hand).toHaveLength(1);
+    s = settle(activate(s, cub));
+    expect([chars(s, cub).power, chars(s, cub).toughness]).toEqual([3, 2]);
+  });
+
+  it("Knightly Valor: on entering, a 2/2 Knight with vigilance; the enchanted creature gets +2/+2 and vigilance", () => {
+    let s = scenario({ p1: { battlefield: ["Bear Cub", ...lands("Plains", 5)], hand: ["Knightly Valor"] } });
+    const cub = on(s, "p1", "Bear Cub");
+    s = settle(castIt(s, "Knightly Valor", { targets: { [enchantSpec(s, "Knightly Valor")]: [cub] } }));
+    expect([chars(s, cub).power, chars(s, cub).toughness, chars(s, cub).keywords.includes("vigilance")]).toEqual([4, 4, true]);
+    const knight = idOf(s, "p1", "battlefield", "Knight");
+    expect([chars(s, knight).power, chars(s, knight).toughness, chars(s, knight).keywords]).toEqual([2, 2, ["vigilance"]]);
+  });
+
+  it("Season of Growth: a creature you control enters, scry 1; you cast a spell that targets a creature you control, draw", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["Season of Growth", ...lands("Forest", 2), ...lands("Mountain", 2)],
+        hand: ["Bear Cub", "Shock", "Shock"],
+        library: ["Shivan Dragon", "Island", "Island"],
+      },
+      p2: { battlefield: ["Serra Angel"] },
+    });
+    const scried: (string | undefined)[][] = [];
+    s = settle(castIt(s, "Bear Cub"), (req, _p, cur) => {
+      if (req.type !== "pick" || req.intent !== "scryBottom") return undefined;
+      scried.push(namesIn(cur, req.options));
+      return req.options;
+    });
+    expect(scried).toEqual([["Shivan Dragon"]]);
+    s = settle(castIt(s, "Shock", { targets: { t: [on(s, "p2", "Serra Angel")] } }));
+    expect(s.players.p1?.hand).toHaveLength(1);
+    s = settle(castIt(s, "Shock", { targets: { t: [on(s, "p1", "Bear Cub")] } }));
+    expect(namesIn(s, s.players.p1?.hand)).toEqual(["Island"]);
+  });
+
+  it("Stab Wound: the enchanted creature gets -2/-2; at the upkeep of its controller, they lose 2 life", () => {
+    let s = scenario({ p1: { battlefield: lands("Swamp", 3), hand: ["Stab Wound"] }, p2: { battlefield: ["Serra Angel"] } });
+    const angel = on(s, "p2", "Serra Angel");
+    s = settle(castIt(s, "Stab Wound", { targets: { [enchantSpec(s, "Stab Wound")]: [angel] } }));
+    expect([chars(s, angel).power, chars(s, angel).toughness]).toEqual([2, 2]);
+    s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
+    expect([s.players.p1?.life, s.players.p2?.life]).toEqual([20, 18]);
+    s = toMyMain(s);
+    expect([s.players.p1?.life, s.players.p2?.life]).toEqual([20, 18]);
   });
 });

@@ -488,4 +488,16 @@ describe("Vivi Ornitier, Storm (EDH)", () => {
       expect(chars(s, bear).keywords).toContain("firstStrike");
     });
   });
+
+  it("flashback read from the Oracle text (PLAN-L L11): Faithless Looting, Strike It Rich, Lingering Souls", () => {
+    const s = scenario({
+      p1: { battlefield: lands("Mountain", 3), graveyard: ["Faithless Looting", "Strike It Rich", "Lingering Souls"] },
+    });
+    const cost = (name: string) => s.defs[s.objects[idOf(s, "p1", "graveyard", name)]?.defId ?? ""]?.flashback;
+    expect(cost("Faithless Looting")).toMatchObject({ generic: 2, colored: { R: 1 } });
+    expect(cost("Strike It Rich")).toMatchObject({ generic: 2, colored: { R: 1 } });
+    expect(cost("Lingering Souls")).toMatchObject({ generic: 1, colored: { B: 1 } });
+    const looting = idOf(s, "p1", "graveyard", "Faithless Looting");
+    expect(legalActions(s, "p1").some((a) => a.type === "cast" && a.card === looting)).toBe(true);
+  });
 });

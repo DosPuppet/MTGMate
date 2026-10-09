@@ -613,3 +613,415 @@ describe("Reprints, PLAN-A A4a", () => {
     expect(s.objects[angel]?.damage).toBe(1);
   });
 });
+
+describe("Breaking News (PLAN-L, L11)", () => {
+  const castIt = (s: S, name: string, extra: object = {}, player = "p1") =>
+    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), ...extra });
+  const top = (s: S) => s.stack[s.stack.length - 1]?.id as string;
+  const on = (s: S, p: string, name: string) => idOf(s, p, "battlefield", name);
+  /** p2 (active) casts its spell then passes: p1 gets priority with it on the stack. */
+  const p2Casts = (s: S, name: string, extra: object = {}) => act(castIt(s, name, extra, "p2"), "p2", { type: "pass" });
+  const mayYes = (req: { intent?: string; type: string }) => (req.intent === "may" || req.type === "yesNo" ? [1] : undefined);
+
+  it("Anguished Unmaking: exiles a nonland permanent; you lose 3 life", () => {
+    let s = scenario({
+      p1: { battlefield: ["Plains", "Swamp", "Swamp"], hand: ["Anguished Unmaking"] },
+      p2: { battlefield: ["Shivan Dragon", "Forest"] },
+    });
+    expect(() => castIt(s, "Anguished Unmaking", { targets: { t: [on(s, "p2", "Forest")] } })).toThrow();
+    s = settle(castIt(s, "Anguished Unmaking", { targets: { t: [on(s, "p2", "Shivan Dragon")] } }));
+    expect(exiled(s, "Shivan Dragon")).toHaveLength(1);
+    expect(s.players.p1?.life).toBe(17);
+  });
+
+  it("Contagion Engine: enters, a -1/-1 counter on each creature of the target player; {4}, {T}: proliferate twice", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Forest", 6), "Bear Cub"], hand: ["Contagion Engine"] },
+      p2: { battlefield: ["Llanowar Elves", "Serra Angel"] },
+    });
+    s = settle(castIt(s, "Contagion Engine"), (req) => (req.type === "pick" && req.options.includes("p2") ? ["p2"] : undefined));
+    expect(idsOf(s, "p2", "graveyard", "Llanowar Elves")).toHaveLength(1);
+    expect(s.objects[on(s, "p2", "Serra Angel")]?.counters["-1/-1"]).toBe(1);
+    expect(s.objects[on(s, "p1", "Bear Cub")]?.counters["-1/-1"] ?? 0).toBe(0);
+
+    let t = scenario({
+      p1: { battlefield: ["Contagion Engine", ...lands("Forest", 4)] },
+      p2: { battlefield: [{ name: "Serra Angel", counters: { "-1/-1": 1 } }] },
+    });
+    const engine = on(t, "p1", "Contagion Engine");
+    const ab = legalActions(t, "p1").find((a) => a.type === "activate" && a.source === engine);
+    t = settle(act(t, "p1", { type: "activate", source: engine, ability: ab?.type === "activate" ? ab.ability : 0 }), (req) =>
+      req.type === "pick" && req.intent === "proliferate" ? req.options : undefined,
+    );
+    expect(t.objects[on(t, "p2", "Serra Angel")]?.counters["-1/-1"]).toBe(3);
+    expect(t.objects[engine]?.tapped).toBe(true);
+  });
+
+  it("Overwhelming Forces: destroys all creatures of the target opponent; draw a card for each", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Swamp", 8), "Bear Cub"], hand: ["Overwhelming Forces"], library: lands("Island", 5) },
+      p2: { battlefield: ["Bear Cub", "Llanowar Elves", "Serra Angel", "Forest"] },
+    });
+    s = settle(castIt(s, "Overwhelming Forces", { targets: { t: ["p2"] } }));
+    expect(s.players.p2?.graveyard).toHaveLength(3);
+    expect(idsOf(s, "p2", "battlefield", "Forest")).toHaveLength(1);
+    expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
+    expect(s.players.p1?.hand).toHaveLength(3);
+  });
+
+  it("Abrupt Decay and Void Rend: can't be countered; nonland permanent (mana value 3 or less for Abrupt Decay)", () => {
+    const setup = (spell: string, mana: string[]) =>
+      scenario({
+        p1: { battlefield: mana, hand: [spell] },
+        p2: { battlefield: ["Ghostly Prison", "Shivan Dragon", ...lands("Island", 3)], hand: ["Archmage's Charm"] },
+      });
+    let s = setup("Abrupt Decay", ["Swamp", "Forest"]);
+    expect(() => castIt(s, "Abrupt Decay", { targets: { t: [on(s, "p2", "Shivan Dragon")] } })).toThrow();
+    s = act(castIt(s, "Abrupt Decay", { targets: { t: [on(s, "p2", "Ghostly Prison")] } }), "p1", { type: "pass" });
+    s = settle(castIt(s, "Archmage's Charm", { mode: 0, targets: { s: [s.stack[0]?.id as string] } }, "p2"));
+    expect(idsOf(s, "p2", "graveyard", "Ghostly Prison")).toHaveLength(1);
+
+    let t = setup("Void Rend", ["Plains", "Island", "Swamp"]);
+    t = act(castIt(t, "Void Rend", { targets: { t: [on(t, "p2", "Shivan Dragon")] } }), "p1", { type: "pass" });
+    t = settle(castIt(t, "Archmage's Charm", { mode: 0, targets: { s: [t.stack[0]?.id as string] } }, "p2"));
+    expect(idsOf(t, "p2", "graveyard", "Shivan Dragon")).toHaveLength(1);
+  });
+
+  it("Archmage's Charm: counter a spell; a player draws two; control of a nonland permanent with mana value 1 or less", () => {
+    let s = scenario({
+      active: "p2",
+      p1: { battlefield: lands("Island", 3), hand: ["Archmage's Charm"] },
+      p2: { battlefield: ["Mountain"], hand: ["Shock"] },
+    });
+    s = p2Casts(s, "Shock", { targets: { t: ["p1"] } });
+    s = settle(castIt(s, "Archmage's Charm", { mode: 0, targets: { s: [top(s)] } }));
+    expect([s.players.p1?.life, idsOf(s, "p2", "graveyard", "Shock").length]).toEqual([20, 1]);
+
+    let t = scenario({ p1: { battlefield: lands("Island", 3), hand: ["Archmage's Charm"], library: lands("Island", 3) } });
+    t = settle(castIt(t, "Archmage's Charm", { mode: 1, targets: { p: ["p1"] } }));
+    expect(t.players.p1?.hand).toHaveLength(2);
+
+    let u = scenario({
+      p1: { battlefield: lands("Island", 3), hand: ["Archmage's Charm"] },
+      p2: { battlefield: ["Llanowar Elves", "Bear Cub"] },
+    });
+    expect(() => castIt(u, "Archmage's Charm", { mode: 2, targets: { n: [on(u, "p2", "Bear Cub")] } })).toThrow();
+    const elves = on(u, "p2", "Llanowar Elves");
+    u = settle(castIt(u, "Archmage's Charm", { mode: 2, targets: { n: [elves] } }));
+    expect(u.objects[elves]?.controller).toBe("p1");
+  });
+
+  it("Bedevil: destroys an artifact, a creature or a planeswalker (not a land)", () => {
+    let s = scenario({
+      p1: { battlefield: ["Swamp", "Swamp", "Mountain"], hand: ["Bedevil"] },
+      p2: { battlefield: ["Mana Crypt", "Forest"] },
+    });
+    expect(() => castIt(s, "Bedevil", { targets: { t: [on(s, "p2", "Forest")] } })).toThrow();
+    s = settle(castIt(s, "Bedevil", { targets: { t: [on(s, "p2", "Mana Crypt")] } }));
+    expect(idsOf(s, "p2", "graveyard", "Mana Crypt")).toHaveLength(1);
+  });
+
+  it("Cruel Ultimatum: the opponent sacrifices a creature of their choice, discards three, loses 5; you return a creature card, draw three, gain 5", () => {
+    let s = scenario({
+      p1: {
+        battlefield: [...lands("Island", 2), ...lands("Swamp", 3), ...lands("Mountain", 2)],
+        hand: ["Cruel Ultimatum"],
+        graveyard: ["Shivan Dragon"],
+        library: lands("Island", 5),
+      },
+      p2: { battlefield: ["Bear Cub", "Llanowar Elves"], hand: ["Shock", "Shock", "Forest", "Opt"] },
+    });
+    const elves = on(s, "p2", "Llanowar Elves");
+    const sacrificer: string[] = [];
+    s = settle(castIt(s, "Cruel Ultimatum", { targets: { t: ["p2"] } }), (req, p) => {
+      if (req.type === "pick" && req.options.includes(elves)) {
+        sacrificer.push(p);
+        return [elves];
+      }
+      return undefined;
+    });
+    expect(sacrificer).toEqual(["p2"]);
+    expect(idsOf(s, "p2", "graveyard", "Llanowar Elves")).toHaveLength(1);
+    expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
+    expect(s.players.p2?.hand).toHaveLength(1);
+    expect(s.players.p2?.life).toBe(15);
+    expect(idsOf(s, "p1", "hand", "Shivan Dragon")).toHaveLength(1);
+    expect(s.players.p1?.hand).toHaveLength(4);
+    expect(s.players.p1?.life).toBe(25);
+  });
+
+  it("Electrodominance: X damage to any target; you may cast a spell with mana value X or less from your hand for free", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Mountain", 4), hand: ["Electrodominance", "Bear Cub", "Shivan Dragon"] },
+    });
+    s = untilCastNow(castIt(s, "Electrodominance", { x: 2, targets: { t: ["p2"] } }));
+    expect(s.players.p2?.life).toBe(18);
+    const offered = castNowOf(s)?.cards ?? [];
+    expect(offered.some((id) => nameOf(s, id) === "Shivan Dragon")).toBe(false);
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Bear Cub"), free: true }));
+    expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
+    expect(idsOf(s, "p1", "hand", "Shivan Dragon")).toHaveLength(1);
+  });
+
+  it("Pest Infestation: destroys up to X artifacts and/or enchantments; twice X Pests that give 1 life when they die", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Forest", 5), hand: ["Pest Infestation"] },
+      p2: { battlefield: ["Mana Crypt", "Ghostly Prison"] },
+    });
+    s = settle(
+      castIt(s, "Pest Infestation", { x: 2, targets: { t: [on(s, "p2", "Mana Crypt"), on(s, "p2", "Ghostly Prison")] } }),
+    );
+    expect(s.players.p2?.graveyard).toHaveLength(2);
+    const pests = idsOf(s, "p1", "battlefield", "Pest");
+    expect(pests).toHaveLength(4);
+    expect([chars(s, pests[0] as string).power, chars(s, pests[0] as string).colors]).toEqual([1, ["B", "G"]]);
+    destroy(s, pests[0] as string);
+    s = settle(s);
+    expect(s.players.p1?.life).toBe(21);
+  });
+
+  it("Clear Shot: your creature gets +1/+1, then deals damage equal to its power to a creature you don't control", () => {
+    let s = scenario({
+      p1: { battlefield: ["Llanowar Elves", ...lands("Forest", 3)], hand: ["Clear Shot"] },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    const elves = on(s, "p1", "Llanowar Elves");
+    s = settle(castIt(s, "Clear Shot", { targets: { a: [elves], b: [on(s, "p2", "Bear Cub")] } }));
+    expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+    expect([chars(s, elves).power, s.objects[elves]?.damage]).toEqual([2, 0]);
+  });
+
+  it("Savage Smash: your creature gets +2/+2, then fights a creature you don't control", () => {
+    let s = scenario({
+      p1: { battlefield: ["Llanowar Elves", "Mountain", "Forest", "Forest"], hand: ["Savage Smash"] },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    const elves = on(s, "p1", "Llanowar Elves");
+    s = settle(castIt(s, "Savage Smash", { targets: { a: [elves], b: [on(s, "p2", "Bear Cub")] } }));
+    expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+    expect([chars(s, elves).power, s.objects[elves]?.damage]).toEqual([3, 2]);
+  });
+
+  it("Decisive Denial: your creature fights an opposing one; or counter a noncreature spell unless {3} is paid", () => {
+    let s = scenario({
+      p1: { battlefield: ["Bear Cub", "Forest", "Island"], hand: ["Decisive Denial"] },
+      p2: { battlefield: ["Llanowar Elves"] },
+    });
+    const cub = on(s, "p1", "Bear Cub");
+    s = settle(castIt(s, "Decisive Denial", { mode: 0, targets: { a: [cub], b: [on(s, "p2", "Llanowar Elves")] } }));
+    expect([idsOf(s, "p2", "graveyard", "Llanowar Elves").length, s.objects[cub]?.damage]).toEqual([1, 1]);
+
+    let t = scenario({
+      active: "p2",
+      p1: { battlefield: ["Forest", "Island"], hand: ["Decisive Denial"] },
+      p2: { battlefield: ["Mountain", ...lands("Forest", 2)], hand: ["Shock", "Bear Cub"] },
+    });
+    t = p2Casts(t, "Shock", { targets: { t: ["p1"] } });
+    t = settle(castIt(t, "Decisive Denial", { mode: 1, targets: { s: [top(t)] } }));
+    // Two Forests: p2 can't pay {3}.
+    expect([t.players.p1?.life, idsOf(t, "p2", "graveyard", "Shock").length]).toEqual([20, 1]);
+    t = p2Casts(t, "Bear Cub");
+    expect(() => castIt(t, "Decisive Denial", { mode: 1, targets: { s: [top(t)] } })).toThrow();
+  });
+
+  it("Essence Capture: counters a creature spell; a +1/+1 counter on up to one of your creatures", () => {
+    let s = scenario({
+      active: "p2",
+      p1: { battlefield: ["Llanowar Elves", "Island", "Island"], hand: ["Essence Capture"] },
+      p2: { battlefield: [...lands("Forest", 2), "Mountain"], hand: ["Bear Cub", "Shock"] },
+    });
+    const elves = on(s, "p1", "Llanowar Elves");
+    s = p2Casts(s, "Bear Cub");
+    s = settle(castIt(s, "Essence Capture", { targets: { s: [top(s)], c: [elves] } }));
+    expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+    expect(s.objects[elves]?.counters["+1/+1"]).toBe(1);
+    const t = p2Casts(
+      scenario({
+        active: "p2",
+        p1: { battlefield: lands("Island", 2), hand: ["Essence Capture"] },
+        p2: { battlefield: ["Mountain"], hand: ["Shock"] },
+      }),
+      "Shock",
+      { targets: { t: ["p1"] } },
+    );
+    expect(() => castIt(t, "Essence Capture", { targets: { s: [top(t)] } })).toThrow();
+  });
+
+  it("Heartless Pillage: the opponent discards two cards; raid: a Treasure", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Swamp", 3)], hand: ["Heartless Pillage"] },
+      p2: { hand: ["Shock", "Forest", "Opt"] },
+    });
+    s = settle(castIt(s, "Heartless Pillage", { targets: { t: ["p2"] } }));
+    expect(s.players.p2?.hand).toHaveLength(1);
+    expect(idsOf(s, "p1", "battlefield", "Treasure")).toHaveLength(0);
+
+    let t = scenario({
+      p1: { battlefield: [...lands("Swamp", 3), "Bear Cub"], hand: ["Heartless Pillage"] },
+      p2: { hand: ["Shock", "Forest", "Opt"] },
+    });
+    t = throughCombat(attack(t, [on(t, "p1", "Bear Cub")]));
+    t = settle(castIt(t, "Heartless Pillage", { targets: { t: ["p2"] } }));
+    expect(idsOf(t, "p1", "battlefield", "Treasure")).toHaveLength(1);
+  });
+
+  it("Hindering Light: counters a spell that targets a permanent you control; draw a card", () => {
+    let s = scenario({
+      active: "p2",
+      p1: { battlefield: ["Bear Cub", "Plains", "Island"], hand: ["Hindering Light"], library: lands("Island", 2) },
+      p2: { battlefield: ["Mountain", "Mountain", "Bear Cub"], hand: ["Shock", "Shock"] },
+    });
+    const ownCub = on(s, "p2", "Bear Cub");
+    s = p2Casts(s, "Shock", { targets: { t: [ownCub] } });
+    // A spell that targets only the opponent's creature: not a legal target.
+    expect(() => castIt(s, "Hindering Light", { targets: { t: [top(s)] } })).toThrow();
+    s = settle(s);
+    s = p2Casts(s, "Shock", { targets: { t: [on(s, "p1", "Bear Cub")] } });
+    s = settle(castIt(s, "Hindering Light", { targets: { t: [top(s)] } }));
+    expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
+    expect(s.players.p1?.hand).toHaveLength(1);
+  });
+
+  it("Humiliate: you choose a nonland card from the opponent's hand to discard; a +1/+1 counter on your creature", () => {
+    let s = scenario({
+      p1: { battlefield: ["Plains", "Swamp", "Bear Cub"], hand: ["Humiliate"] },
+      p2: { hand: ["Forest", "Shivan Dragon", "Shock"] },
+    });
+    const chooser: string[] = [];
+    s = settle(castIt(s, "Humiliate", { targets: { t: ["p2"] } }), (req, p, cur) => {
+      if (req.type === "pick" && req.options.some((id) => nameOf(cur, id) === "Shock")) {
+        chooser.push(p);
+        expect(req.options.some((id) => nameOf(cur, id) === "Forest")).toBe(false);
+        return pickNamed(cur, req, "Shock");
+      }
+      return undefined;
+    });
+    expect(chooser).toEqual(["p1"]);
+    expect(idsOf(s, "p2", "graveyard", "Shock")).toHaveLength(1);
+    expect(s.objects[on(s, "p1", "Bear Cub")]?.counters["+1/+1"]).toBe(1);
+  });
+
+  it("Hypothesizzle: draw two; discarding a nonland card, 4 damage to a creature", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Island", 4), "Mountain"], hand: ["Hypothesizzle"], library: ["Shock", "Forest", "Island"] },
+      p2: { battlefield: ["Serra Angel"] },
+    });
+    const angel = on(s, "p2", "Serra Angel");
+    s = settle(castIt(s, "Hypothesizzle"), (req, _p, cur) => {
+      if (req.type !== "pick") return mayYes(req);
+      if (req.options.includes(angel)) return [angel];
+      return pickNamed(cur, req, "Shock");
+    });
+    expect(idsOf(s, "p1", "graveyard", "Shock")).toHaveLength(1);
+    expect(idsOf(s, "p1", "hand", "Forest")).toHaveLength(1);
+    expect(idsOf(s, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
+  });
+
+  it("Imp's Mischief: changes the target of a spell with a single target; you lose life equal to its mana value", () => {
+    let s = scenario({
+      active: "p2",
+      p1: { battlefield: ["Swamp", "Swamp"], hand: ["Imp's Mischief"] },
+      p2: { battlefield: ["Mountain"], hand: ["Shock"] },
+    });
+    s = p2Casts(s, "Shock", { targets: { t: ["p1"] } });
+    s = settle(castIt(s, "Imp's Mischief", { targets: { t: [top(s)] } }), (req) =>
+      req.type === "pick" && req.intent === "changeTarget" && req.options.includes("p2") ? ["p2"] : undefined,
+    );
+    expect([s.players.p1?.life, s.players.p2?.life]).toEqual([19, 18]);
+  });
+
+  it("Repulse: returns a creature to its owner's hand; draw a card", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Island", 3), hand: ["Repulse"], library: lands("Island", 2) },
+      p2: { battlefield: ["Shivan Dragon"] },
+    });
+    s = settle(castIt(s, "Repulse", { targets: { t: [on(s, "p2", "Shivan Dragon")] } }));
+    expect(idsOf(s, "p2", "hand", "Shivan Dragon")).toHaveLength(1);
+    expect(s.players.p1?.hand).toHaveLength(1);
+  });
+
+  it("Thornado: destroys a creature with flying; cycling {1}{G}", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Forest", 3), hand: ["Thornado"] },
+      p2: { battlefield: ["Serra Angel", "Bear Cub"] },
+    });
+    expect(() => castIt(s, "Thornado", { targets: { t: [on(s, "p2", "Bear Cub")] } })).toThrow();
+    s = settle(castIt(s, "Thornado", { targets: { t: [on(s, "p2", "Serra Angel")] } }));
+    expect(idsOf(s, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
+
+    let t = scenario({ p1: { battlefield: lands("Forest", 2), hand: ["Thornado"], library: ["Island"] } });
+    const card = idOf(t, "p1", "hand", "Thornado");
+    const cyc = legalActions(t, "p1").find((a) => a.type === "activate" && a.source === card);
+    t = settle(act(t, "p1", { type: "activate", source: card, ability: cyc?.type === "activate" ? cyc.ability : 0 }));
+    expect(idsOf(t, "p1", "graveyard", "Thornado")).toHaveLength(1);
+    expect(idsOf(t, "p1", "hand", "Island")).toHaveLength(1);
+  });
+
+  it("Tyrant's Scorn: destroy a creature with mana value 3 or less, or return a creature to its owner's hand", () => {
+    let s = scenario({
+      p1: { battlefield: ["Island", "Swamp"], hand: ["Tyrant's Scorn"] },
+      p2: { battlefield: ["Bear Cub", "Shivan Dragon"] },
+    });
+    expect(() => castIt(s, "Tyrant's Scorn", { mode: 0, targets: { d: [on(s, "p2", "Shivan Dragon")] } })).toThrow();
+    s = settle(castIt(s, "Tyrant's Scorn", { mode: 0, targets: { d: [on(s, "p2", "Bear Cub")] } }));
+    expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+    let t = scenario({
+      p1: { battlefield: ["Island", "Swamp"], hand: ["Tyrant's Scorn"] },
+      p2: { battlefield: ["Shivan Dragon"] },
+    });
+    t = settle(castIt(t, "Tyrant's Scorn", { mode: 1, targets: { b: [on(t, "p2", "Shivan Dragon")] } }));
+    expect(idsOf(t, "p2", "hand", "Shivan Dragon")).toHaveLength(1);
+  });
+
+  it("Vanishing Verse: exiles a monocolored permanent (not a multicolored or colorless one)", () => {
+    const gold = customCard({ name: "Test Gold Bear", colors: ["W", "B"], power: 2, toughness: 2 });
+    let s = scenario({
+      p1: { battlefield: ["Plains", "Swamp"], hand: ["Vanishing Verse"] },
+      p2: { battlefield: ["Bear Cub", gold, "Mana Crypt"] },
+    });
+    for (const n of ["Test Gold Bear", "Mana Crypt"])
+      expect(() => castIt(s, "Vanishing Verse", { targets: { t: [on(s, "p2", n)] } })).toThrow();
+    s = settle(castIt(s, "Vanishing Verse", { targets: { t: [on(s, "p2", "Bear Cub")] } }));
+    expect(exiled(s, "Bear Cub")).toHaveLength(1);
+  });
+});
+
+describe("Breaking News: gaps found by L11 (PLAN-L)", () => {
+  it("Mindbreak Trap: the target spells are exiled, they don't resolve", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Island", 4), hand: ["Mindbreak Trap"] },
+      p2: { battlefield: lands("Mountain", 2), hand: ["Shock", "Shock"] },
+      active: "p2",
+    });
+    const [a, b] = idsOf(s, "p2", "hand", "Shock") as [string, string];
+    s = act(s, "p2", { type: "cast", card: a, targets: { t: ["p1"] } });
+    s = act(s, "p2", { type: "cast", card: b, targets: { t: ["p1"] } });
+    s = act(s, "p2", { type: "pass" });
+    const spells = s.stack.map((x) => x.id);
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Mindbreak Trap"), targets: { t: spells } }));
+    expect(s.players.p1?.life).toBe(20);
+    expect(exiled(s, "Shock")).toHaveLength(2);
+  });
+
+  it("Endless Detour: a card in a graveyard goes on top of or on the bottom of its owner's library", () => {
+    let s = scenario({
+      p1: { battlefield: ["Forest", "Plains", "Island"], hand: ["Endless Detour"] },
+      p2: { graveyard: ["Shivan Dragon"] },
+    });
+    const dragon = idOf(s, "p2", "graveyard", "Shivan Dragon");
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Endless Detour"), targets: { t: [dragon] } }), (req) =>
+      req.intent === "topOrBottom" ? ["top"] : undefined,
+    );
+    expect(idsOf(s, "p2", "graveyard", "Shivan Dragon")).toHaveLength(0);
+    expect(nameOf(s, s.players.p2?.library[0] ?? "")).toBe("Shivan Dragon");
+  });
+
+  it("Siphon Insight: flashback {1}{U}{B}, read from the Oracle text", () => {
+    const s = scenario({ p1: { battlefield: ["Island", "Island", "Swamp"], graveyard: ["Siphon Insight"] } });
+    const card = idOf(s, "p1", "graveyard", "Siphon Insight");
+    expect(s.defs[s.objects[card]?.defId ?? ""]?.flashback).toMatchObject({ generic: 1, colored: { U: 1, B: 1 } });
+    expect(castOption(s, card)).toBeDefined();
+    const t = settle(act(s, "p1", { type: "cast", card, targets: { t: ["p2"] } }));
+    expect(exiled(t, "Siphon Insight")).toHaveLength(1);
+  });
+});
