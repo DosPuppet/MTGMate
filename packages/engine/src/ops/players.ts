@@ -88,7 +88,11 @@ export const HANDLERS: OpHandlers = {
           s,
           p,
           ability,
-          e.duration === "untilTheirNextTurn" ? nextTurnOf(s, p) - 1 : until,
+          e.duration === "untilTheirNextTurn"
+            ? nextTurnOf(s, p) - 1
+            : e.duration === "throughTheirNextTurn"
+              ? nextTurnOf(s, p)
+              : until,
           e.times !== undefined || !!e.once,
         );
     return;
@@ -428,6 +432,10 @@ export const HANDLERS: OpHandlers = {
           // Obeka: an additional beginning phase after this phase, with no untap or draw; Paradox Haze: after this step.
           if (e.after === "step") addStep("upkeep");
           else addPhases("upkeep");
+          break;
+        case "beginning":
+          // Sphinx of the Second Sun: an additional beginning phase after this phase (untap, upkeep, draw).
+          addPhases("untap");
           break;
         case "combat":
           // "After this main phase" (Full Throttle): nothing outside a main phase.

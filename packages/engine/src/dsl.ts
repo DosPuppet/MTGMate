@@ -741,6 +741,13 @@ export const fx = {
     who,
     duration: "untilTheirNextTurn",
   }),
+  /** Player effect until the end of the next turn of the affected player ("during that player's next turn": Azor). */
+  throughTheirNextTurn: (ability: Omit<PlayerStaticAbilityDef, "kind">, who: Ref): Effect => ({
+    op: "playerEffect",
+    ability,
+    who,
+    duration: "throughTheirNextTurn",
+  }),
   untilYourNextTurn: (ability: Omit<PlayerStaticAbilityDef, "kind">, who?: Ref): Effect => ({
     op: "playerEffect",
     ability,
@@ -1148,7 +1155,7 @@ export const fx = {
    */
   chooseForSelf: (
     kind: Extract<Effect, { op: "chooseOnEnter" }>["kind"],
-    opts: { options?: string[]; optionsFrom?: Ref; secret?: boolean } = {},
+    opts: { options?: string[]; optionsFrom?: Ref; secret?: boolean; who?: Ref } = {},
   ): Effect => ({ op: "chooseOnEnter", kind, ...opts }),
   /**
    * "You may have [this permanent] enter as a copy of [filter]" (707.9, in `asEnters`): see the `chooseCopy` effect
@@ -1235,7 +1242,7 @@ export const fx = {
   /** Cascade (702.85): `n` is the mana value of the spell with cascade. */
   cascade: (n: Amount, filter?: ObjectFilter): Effect => ({ op: "discover", n, cascade: true, ...(filter ? { filter } : {}) }),
   /** "[creature] connives" (701.50). */
-  connive: (what: Ref = ref.self): Effect => ({ op: "connive", what }),
+  connive: (what: Ref = ref.self, n?: Amount): Effect => ({ op: "connive", what, ...(n !== undefined ? { n } : {}) }),
   /** `orExileStore`: otherwise (instant or sorcery), the card is exiled and stored (Etrata). */
   turnFaceUp: (what: Ref, orExileStore?: string): Effect => ({
     op: "turnFaceUp",
@@ -1308,6 +1315,8 @@ export const fx = {
   /** "An additional combat phase after this main phase, followed by an additional main phase." */
   extraCombatAfterMain: { op: "extra", kind: "combatAfterMain" } as Effect,
   extraTurn: { op: "extra", kind: "turn" } as Effect,
+  /** "There is an additional beginning phase after this phase" (untap, upkeep, draw: Sphinx of the Second Sun). */
+  extraBeginningPhase: { op: "extra", kind: "beginning" } as Effect,
   tripleTriad: { op: "tripleTriad" } as Effect,
   unattach: (what: Ref, ifAttachedTo?: Ref): Effect => ({ op: "unattach", what, ifAttachedTo }),
   resolveToBattlefieldTransformed: { op: "spellFate", fate: "battlefieldTransformed" } as Effect,
@@ -1451,6 +1460,8 @@ export const fx = {
   extraLandThisTurn: { op: "playerEffect", ability: { extraLands: 1 } } as Effect,
   nextSpellUncounterable: { op: "playerEffect", ability: { nextSpell: { uncounterable: true } }, once: true } as Effect,
   tap: (what: Ref): Effect => ({ op: "tap", what }),
+  /** "Remove [the creature] from combat" (506.4). */
+  removeFromCombat: (what: Ref): Effect => ({ op: "removeFromCombat", what }),
   untap: (what: Ref): Effect => ({ op: "tap", what, untap: true }),
   counters: (what: Ref, kind: string, n: Amount = 1): Effect => ({ op: "addCounters", what, amount: n, kind }),
   damageAll: (n: Amount, filter?: ObjectFilter, players?: Ref, source?: Ref): Effect => ({
@@ -2524,6 +2535,8 @@ export const cond = {
   threshold: { kind: "amountAtLeast", amount: { kind: "cardsIn", zone: "graveyard" }, n: 7 } as Condition,
   yourTurn: { kind: "yourTurn" } as Condition,
   opponentsTurn: { kind: "opponentsTurn" } as Condition,
+  /** "During extra turns" (500.7). */
+  extraTurn: { kind: "extraTurn" } as Condition,
   opponentLostLife: turnAtLeast({ event: "lifeLoss", who: "opponent" }),
   /**
    * Your life total exceeds your starting life total by at least `by` (life − starting life ≥ `by`). Life is counted from

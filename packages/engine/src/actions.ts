@@ -746,9 +746,25 @@ export function createTokens(
   enters: EntersContext = {},
   /** The controller of Moonlit Meditation declined the copies ("you may"). */
   copyDeclined = false,
+  /** Sources of the "one of each" replacements already applied to these tokens (Academy Manufactor, 616.1). */
+  applied: ObjectId[] = [],
 ): ObjectId[] {
   const tokenReps = (v: LkiSnapshot) => tokenReplacements(s, controller, v);
   t = swappedToken(s, controller, t);
+  // Academy Manufactor: "instead create one of each" (a Clue, a Food and a Treasure), as many times; another
+  // Manufactor then applies to each of them.
+  const oneOfEach =
+    count > 0
+      ? tokenReps(tokenView(t, controller)).find(
+          (a) => !!a.r.instead?.oneOfEach?.length && !!a.sourceId && !applied.includes(a.sourceId),
+        )
+      : undefined;
+  if (oneOfEach?.sourceId && oneOfEach.r.instead?.oneOfEach) {
+    const done = [...applied, oneOfEach.sourceId];
+    return oneOfEach.r.instead.oneOfEach.flatMap((each) =>
+      createTokens(s, controller, each, count, extras, enters, copyDeclined, done),
+    );
+  }
   // Moonlit Meditation, Mirrormind Crown: the first time each turn, copies of the permanent the source is attached to,
   // instead. If declined, the first time has still passed.
   const copies = count > 0 ? tokenCopyReplacement(s, controller, t) : undefined;

@@ -47,10 +47,12 @@ export type Effect =
       who?: Ref;
       /**
        * Until the beginning of the controller's next turn (`untilYourNextTurn`), of each affected player
-       * (`untilTheirNextTurn`, Teferi's Reproach: "until that player's next turn") or for the rest of the game
-       * (`forever`: "they can't gain life for the rest of the game", Screaming Nemesis); absent: until end of turn.
+       * (`untilTheirNextTurn`, Teferi's Reproach: "until that player's next turn"), until the end of the next turn of
+       * each affected player (`throughTheirNextTurn`, Azor, the Lawbringer: "during that player's next turn", with a
+       * `during: "yourTurn"` restriction) or for the rest of the game (`forever`: "they can't gain life for the rest
+       * of the game", Screaming Nemesis); absent: until end of turn.
        */
-      duration?: "untilYourNextTurn" | "untilTheirNextTurn" | "forever";
+      duration?: "untilYourNextTurn" | "untilTheirNextTurn" | "throughTheirNextTurn" | "forever";
       times?: Amount;
       /** Single use, until end of turn ("the next spell you cast this turn"). */
       once?: boolean;
@@ -235,6 +237,8 @@ export type Effect =
   /** Doubles the +1/+1 counters (or, `all`, each kind of counter) on the designated permanents. */
   | { op: "doubleCounters"; what: Ref; all?: boolean }
   | { op: "tap"; what: Ref; untap?: boolean }
+  /** Removes the designated creatures from combat (506.4: Reconnaissance). */
+  | { op: "removeFromCombat"; what: Ref }
   /** Damage to each creature matching the filter (and possibly to players). */
   | { op: "damageAll"; amount: Amount; filter?: ObjectFilter; players?: Ref; source?: Ref }
   /** Blight N (ECL): each designated player puts N −1/−1 counters on a creature they control, of their choice; `store`: 1 if done. */
@@ -447,6 +451,8 @@ export type Effect =
       /** Name chosen among the designated cards (Koh, the Face Stealer: a card exiled with it). */
       optionsFrom?: Ref;
       secret?: boolean;
+      /** Another player makes the choice for the source (Sphinx Ambassador: "that player chooses a card name"). */
+      who?: Ref;
     }
   /**
    * Devour N (702.82, in `CardDef.asEnters`): sacrifice permanents as it enters; N +1/+1 counters per sacrificed
@@ -514,7 +520,8 @@ export type Effect =
    */
   | {
       op: "extra";
-      kind: "upkeep" | "combat" | "combatAfterMain" | "endStep" | "turn";
+      /** `beginning`: a whole beginning phase, untap, upkeep and draw (Sphinx of the Second Sun). */
+      kind: "upkeep" | "beginning" | "combat" | "combatAfterMain" | "endStep" | "turn";
       amount?: Amount;
       after?: "step" | "main";
     }
@@ -593,7 +600,8 @@ export type Effect =
    * Exiles from the top until a matching card (only that one is remembered); `untilTotalManaValue`: in the library of
    * each designated player (`who`), until a total mana value of N or more, all remembered (Dream Harvest).
    */
-  | { op: "exileUntil"; filter: ObjectFilter; store: string; who?: Ref; untilTotalManaValue?: number }
+  /** `storeAll`: remembers every exiled card (Dazzling Sphinx: "the exiled cards that weren't cast"). */
+  | { op: "exileUntil"; filter: ObjectFilter; store: string; who?: Ref; untilTotalManaValue?: number; storeAll?: string }
   /** Spikeshell Harrier: if their speed is greater than each other player's, it decreases by 1 (not below 1). */
   | { op: "reduceSpeed"; who: Ref }
   /** "Increase your speed by 1" (702.179, at most 4): inherent ability of speed (`rulesTrigger`). */
@@ -689,7 +697,8 @@ export type Effect =
   /** Sovereign Okinec Ahau: as many +1/+1 counters as the difference between its power and its base power. */
   | { op: "countersAboveBase"; filter: ObjectFilter }
   /** The designated creatures connive (701.50): their controller draws, discards; nonland: +1/+1 counter. */
-  | { op: "connive"; what: Ref }
+  /** `n`: "connives X" (701.50e: draw X, discard X, a +1/+1 counter per nonland card discarded). */
+  | { op: "connive"; what: Ref; n?: Amount }
   /** The source Mount becomes saddled until end of turn (702.171a). */
   /** The source (or the designated permanent) becomes saddled until end of turn. */
   | { op: "saddle"; what?: Ref }

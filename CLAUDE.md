@@ -6,7 +6,7 @@ This file tracks the project between sessions: current state, working rules, pit
 
 - MTG platform against the AI and online (2 to 4 players, BO3 in duels; Commander), home-grown rules engine in TypeScript, fluid MTG Arena-style interface.
 - **Scope: the Standard format.** Legal and banned sets: see the README; recheck at each rotation (Scryfall `legal:standard` / `banned:standard`).
-- **Commander (PLAN-E, done 2026-10-06):** format rules, 2 to 4 players, against the AI and online (AI seats included); eleven playable precons (Edgar Markov, Y'shtola, The Ur-Dragon, Rakdos, Lord of Riots, Multiverse Reforged, Turtle Power!, Counter Blitz, The Fantastic Four, Mutant Menace, The Vision, Dark Leo & Shredder); cards arrive deck by deck (pseudo-set `EDH`, `docs/commander/decks/`, recipe below).
+- **Commander (PLAN-E, done 2026-10-06):** format rules, 2 to 4 players, against the AI and online (AI seats included); twelve playable precons (Edgar Markov, Y'shtola, The Ur-Dragon, Rakdos, Lord of Riots, Multiverse Reforged, Turtle Power!, Counter Blitz, The Fantastic Four, Mutant Menace, The Vision, Dark Leo & Shredder, The Ur-Sphinx); cards arrive deck by deck (pseudo-set `EDH`, `docs/commander/decks/`, recipe below).
 - Out of scope: Limited, eternal formats, Alchemy.
 
 ## State (2026-10-02)

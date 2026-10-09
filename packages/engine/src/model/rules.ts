@@ -547,6 +547,8 @@ export type Condition =
   | { kind: "kicked" }
   | { kind: "yourTurn" }
   | { kind: "opponentsTurn" }
+  /** The current turn is an extra turn (500.7). */
+  | { kind: "extraTurn" }
   /** The source has at least N counters of this kind. */
   | { kind: "counterAtLeast"; counter: string; n: number }
   | { kind: "not"; cond: Condition }
@@ -747,7 +749,8 @@ export type Ref =
    */
   | {
       kind: "zone";
-      zone: "battlefield" | "graveyard" | "hand" | "exile" | "stack" | "command";
+      /** `library`: the cards of the library, in order (searched: Sphinx Ambassador; never shown outside a choice). */
+      zone: "battlefield" | "graveyard" | "hand" | "exile" | "stack" | "command" | "library";
       who: Ref;
       filter?: ObjectFilter;
       maxManaValue?: Amount;

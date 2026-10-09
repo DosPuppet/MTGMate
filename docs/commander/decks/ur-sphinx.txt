@@ -1,0 +1,103 @@
+// The Ur-Sphinx — Sphinx tribal, Esper control (white, blue, black). List "Stolen Futures" by LoneWolf87x
+// (Moxfield), updated on 2026-09-29, retrieved on 2026-10-09. Source: https://moxfield.com/decks/BLRHlYrizUideHX3IfET7g
+Commander
+1 The Ur-Sphinx
+
+Deck
+1 Academy Manufactor
+1 Ancient Tomb
+1 Arcane Signet
+1 Arid Mesa
+1 Azor, the Lawbringer
+1 Black Market Connections
+1 Bloodstained Mire
+1 Brainstorm
+1 Breach the Multiverse
+1 Cavern of Souls
+1 Chancellor of the Spires
+1 Chrome Mox
+1 Clever Concealment
+1 Command Beacon
+1 Command Tower
+1 Consecrated Sphinx
+1 Conspiracy Unraveler
+1 Cyclonic Rift
+1 Dazzling Sphinx
+1 Dream Trawler
+1 Eiganjo, Seat of the Empire
+1 Esper Sentinel
+1 Exotic Orchard
+1 Fellwar Stone
+1 Firdoch Core
+1 Flooded Strand
+1 Force of Negation
+1 Force of Will
+1 Godless Shrine
+1 Grand Abolisher
+1 Grim Monolith
+1 Hall of the Bandit Lord
+1 Hallowed Fountain
+1 Herald's Horn
+3 Island
+1 Kindred Discovery
+1 Lightning Greaves
+1 Magister Sphinx
+1 Mana Confluence
+1 Mana Drain
+1 Mana Vault
+1 Marsh Flats
+1 Master of Predicaments
+1 Medomai the Ageless
+1 Misty Rainforest
+1 Mnemonic Betrayal
+1 Morphic Pool
+1 Mox Diamond
+1 Mystic Remora
+1 Mystical Tutor
+1 Otawara, Soaring City
+1 Plains
+1 Plaza of Heroes
+1 Polluted Delta
+1 Raffine, Scheming Seer
+1 Raise the Palisade
+1 Reconnaissance
+1 Reflecting Pool
+1 Rhystic Study
+1 Roaming Throne
+1 Scalding Tarn
+1 Scholar of the Lost Trove
+1 Scrubland
+1 Sea of Clouds
+1 Sensei's Divining Top
+1 Sharuum the Hegemon
+1 Smothering Tithe
+1 Sol Ring
+1 Sphinx Ambassador
+1 Sphinx Summoner
+1 Sphinx of False Conclusions
+1 Sphinx of Forgotten Lore
+1 Sphinx of Uthuun
+1 Sphinx of the Final Word
+1 Sphinx of the Second Sun
+1 Strionic Resonator
+1 Swamp
+1 Swords to Plowshares
+1 Takenuma, Abandoned Mire
+1 Talisman of Dominance
+1 Talisman of Progress
+1 Teferi's Protection
+1 Tivit, Seller of Secrets
+1 Toxic Deluge
+1 Tundra
+1 Uldaros Theorix
+1 Underground Sea
+1 Unesh, Criosphinx Sovereign
+1 Urza's Incubator
+1 Urza's Saga
+1 Vampiric Tutor
+1 Vault of Champions
+1 Void Rend
+1 Watery Grave
+1 Windreader Sphinx
+1 Windswept Heath
+1 Yennett, Cryptic Sovereign

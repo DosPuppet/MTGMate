@@ -198,7 +198,15 @@ function hasSubtype(v: LkiSnapshot, t: string): boolean {
 
 /** Does the filter read a choice made by its source ("of the chosen type / color / name")? */
 export function hasChosen(f: ObjectFilter): boolean {
-  return !!(f.subtypeChosen || f.colorChosen || f.nameChosen || f.parityChosen || f.numberChosen || f.typeChosen);
+  return !!(
+    f.subtypeChosen ||
+    f.colorChosen ||
+    f.nameChosen ||
+    f.parityChosen ||
+    f.numberChosen ||
+    f.typeChosen ||
+    (f.not && hasChosen(f.not))
+  );
 }
 
 /** Replaces "of the chosen type / color" with the choice made by the source as it entered. */
@@ -218,8 +226,11 @@ export function withChosen(
     | undefined,
 ): ObjectFilter {
   if (!hasChosen(f)) return f;
+  // "Not of the chosen name / type" (Sphinx Ambassador): the choice is also read inside `not`.
+  const not = f.not && hasChosen(f.not) ? withChosen(f.not, source) : f.not;
   const out: ObjectFilter = {
     ...f,
+    not,
     typeChosen: undefined,
     subtypeChosen: undefined,
     colorChosen: undefined,

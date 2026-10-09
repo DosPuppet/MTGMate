@@ -73,5 +73,14 @@
   },
   "Resourceful Defense": {
     "text": "Chaque fois qu'un permanent que vous contrôlez quitte le champ de bataille, s'il avait des marqueurs sur lui, mettez ces marqueurs sur un permanent ciblé que vous contrôlez.\n{4}{W} : Déplacez n'importe quel nombre de marqueurs d'un permanent ciblé que vous contrôlez sur un autre permanent ciblé que vous contrôlez."
+  },
+  "Grim Monolith": {
+    "typeLine": "Artefact",
+    "text": "Le Monolithe sinistre ne se dégage pas pendant votre étape de dégagement.\n{T} : Ajoutez {C}{C}{C}.\n{4} : Dégagez le Monolithe sinistre."
+  },
+  "Scholar of the Lost Trove": {
+    "name": "Érudit du trésor perdu",
+    "typeLine": "Créature : sphinx",
+    "text": "Vol\nQuand l'Érudit du trésor perdu arrive sur le champ de bataille, vous pouvez lancer une carte d'éphémère, de rituel ou d'artefact ciblée de votre cimetière sans payer son coût de mana. Si un sort d'éphémère ou de rituel lancé de cette manière devait être mis dans votre cimetière, exilez-le à la place."
   }
 }

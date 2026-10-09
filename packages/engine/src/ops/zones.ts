@@ -1,6 +1,6 @@
 /** Engine effects: moves between zones (destroy, exile, sacrifice, search, mill, discard…). Each key is an `op` of `Effect` (see `runEffect`, effects.ts). */
 
-import { dealDamage, destroy, drawCards, sacrifice } from "../actions";
+import { dealDamage, destroy, drawCards, removeFromCombat, sacrifice } from "../actions";
 import { cardRef } from "../choices";
 import type { EffectContext, OpHandlers, OpResult } from "../effects";
 import {
@@ -1047,6 +1047,10 @@ export const HANDLERS: OpHandlers = {
     }
     return;
   },
+  removeFromCombat(s, _r, e, ctx) {
+    for (const id of resolveRef(s, ctx, e.what)) if (s.objects[id]?.zone === "battlefield") removeFromCombat(s, id);
+    return;
+  },
   tap(s, _r, e, ctx) {
     for (const id of resolveRef(s, ctx, e.what)) {
       const o = s.objects[id];
@@ -1691,6 +1695,7 @@ export const HANDLERS: OpHandlers = {
     // Krang & Shredder: "each opponent exiles…": each of them, the cards found gathered.
     const players = e.who ? resolveRef(s, ctx, e.who).filter((x) => isPlayer(s, x)) : [ctx.controller];
     const all: string[] = [];
+    const exiled: string[] = [];
     for (const whose of players) {
       const lib = s.players[whose]?.library ?? [];
       let found: string | null = null;
@@ -1698,11 +1703,13 @@ export const HANDLERS: OpHandlers = {
         const top = lib[0] as string;
         const match = matchesCard(s, ctx.controller, top, { ...e.filter, controller: undefined });
         const moved = moveWithSpec(s, ctx.controller, top, { to: "exile" });
+        if (moved) exiled.push(moved);
         if (match) found = moved;
       }
       if (found) all.push(found);
     }
     r.vars[`$ids:${e.store}`] = all;
+    if (e.storeAll) r.vars[`$ids:${e.storeAll}`] = exiled;
     return;
   },
   exileFromOwnHand(s, r, e, ctx, key) {
@@ -1830,11 +1837,19 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   connive(s, r, e, ctx, key) {
-    // 701.50a: draw, discard; if a nonland card is discarded, a +1/+1 counter on the creature.
+    // 701.50a: draw, discard; if a nonland card is discarded, a +1/+1 counter on the creature. 701.50e: "connives X",
+    // draw X, discard X, a counter per nonland card discarded (X is read once, before the first draw).
+    if (!r.vars[key("connive-n")]) r.vars[key("connive-n")] = [e.n === undefined ? 1 : Math.max(0, evalAmount(s, ctx, e.n))];
+    const n = Number(r.vars[key("connive-n")]?.[0] ?? 1);
     for (const id of resolveRef(s, ctx, e.what)) {
       const o = s.objects[id];
       const p = o?.controller;
       if (!o || !p || r.vars[key(`connive-${id}-done`)]) continue;
+      // 701.50e: a creature that connives 0 still connives (abilities that trigger on it), without drawing or discarding.
+      if (n === 0) {
+        r.vars[key(`connive-${id}-done`)] = [1];
+        continue;
+      }
       if (!r.vars[key(`connive-${id}-drew`)]) {
         // Leader, Super-Genius: "if a creature you control would connive, draw a card first".
         const first = quantityMods(s, "connive", (a) => recipientMatches(s, a, id)).mods.reduce(
@@ -1842,7 +1857,7 @@ export const HANDLERS: OpHandlers = {
           0,
         );
         if (first > 0) drawCards(s, p, first);
-        drawCards(s, p, 1);
+        drawCards(s, p, n);
         r.vars[key(`connive-${id}-drew`)] = [1];
       }
       const hand = s.players[p]?.hand ?? [];
@@ -1856,6 +1871,7 @@ export const HANDLERS: OpHandlers = {
           (a, b) =>
             manaValue(s.defs[s.objects[a]?.defId ?? ""]?.manaCost) - manaValue(s.defs[s.objects[b]?.defId ?? ""]?.manaCost),
         );
+        const count = Math.min(n, hand.length);
         return {
           ask: {
             player: p,
@@ -1863,23 +1879,26 @@ export const HANDLERS: OpHandlers = {
             request: {
               type: "pick",
               intent: "discard",
-              prompt: msg("Connive: choose the card to discard"),
+              prompt:
+                count === 1
+                  ? msg("Connive: choose the card to discard")
+                  : msg("Connive: choose the {n} cards to discard", { n: count }),
               options: [...hand],
-              min: 1,
-              max: 1,
-              suggested: cheapest.slice(0, 1),
+              min: count,
+              max: count,
+              suggested: cheapest.slice(0, count),
             },
           },
         };
       }
       r.vars[key(`connive-${id}-done`)] = [1];
-      const card = String(answer[0]);
-      if (!hand.includes(card)) continue;
-      const nonland = !s.defs[s.objects[card]?.defId ?? ""]?.types.includes("Land");
-      emit({ type: "discard", player: p, defIds: [s.objects[card]?.defId ?? ""] });
-      announceDiscard(s, p, moveDiscarded(s, p, card, true));
-      announceDiscardBatch(s, p, 1);
-      if (nonland && onBattlefield(s, id)) changeCounters(s, o, P1P1, 1);
+      const cards = [...new Set(answer.map(String))].filter((c) => hand.includes(c)).slice(0, n);
+      if (cards.length === 0) continue;
+      const nonland = cards.filter((c) => !s.defs[s.objects[c]?.defId ?? ""]?.types.includes("Land")).length;
+      emit({ type: "discard", player: p, defIds: cards.map((c) => s.objects[c]?.defId ?? "") });
+      for (const c of cards) announceDiscard(s, p, moveDiscarded(s, p, c, true));
+      announceDiscardBatch(s, p, cards.length);
+      if (nonland > 0 && onBattlefield(s, id)) changeCounters(s, o, P1P1, nonland);
     }
     return;
   },

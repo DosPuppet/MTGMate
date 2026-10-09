@@ -169,6 +169,8 @@ function zoneObjects(s: GameState, ctx: EffectContext, ref: Extract<Ref, { kind:
         const o = s.objects[id];
         return !!o && players.includes(o.owner) && !o.faceDown && !o.cardCopy && !o.preparedFor && card(id);
       });
+    case "library":
+      return players.flatMap((p) => s.players[p]?.library ?? []).filter(card);
     case "command":
       // The cards of the command zone (commanders), not emblems.
       return players.flatMap((p) => s.players[p]?.command ?? []).filter((id) => !s.objects[id]?.isToken && card(id));

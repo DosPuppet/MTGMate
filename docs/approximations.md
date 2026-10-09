@@ -282,3 +282,9 @@ In the order they were added, set by set.
   - `timing` The Mycosynth Gardens: the mana value X of the targeted artifact is checked at resolution (nothing happens if it differs), and not at targeting, like Likeness Looter.
   - `rule` Helm of the Host: "that token gains haste" is written as an exception of the copy (707.9b): a copy of that token also has haste;
   - `rule` Cover of Darkness, Shizo, Death's Storehouse: fear (702.36) is a blocking rule ("can't be blocked except by artifact and/or black creatures"), not a keyword: no card can read that a creature "has fear".
+  - `rule` Dazzling Sphinx: the exiled cards that weren't cast go on the bottom in the order they were exiled (not in a random order);
+  - `rule` Yennett, Cryptic Sovereign: the top card is not shown to the other players when it isn't cast (it is drawn);
+  - `timing` Tivit, Seller of Secrets: each vote takes effect as soon as it is cast (same result: nothing reads the votes); "you may vote an additional time" only applies to Tivit's own votes (no other vote in the catalog);
+  - `timing` Breach the Multiverse: the chosen cards enter one graveyard after the other (not simultaneously);
+  - `rule` Sphinx Ambassador: the search of the opponent's library is a choice among its cards (no "search" event: "whenever a player searches" doesn't trigger); the named card is remembered by the Sphinx;
+  - `rule` Sphinx of the Second Sun: only the second main phase of the turn is "postcombat" (not a main phase added after an additional combat).

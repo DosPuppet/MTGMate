@@ -867,6 +867,8 @@ export interface GameState {
     endSteps?: number;
     /** Number of resolutions per ability this turn (Venom Connoisseur). */
     resolutionCounts?: Record<string, number>;
+    /** An extra turn (500.7: Medomai the Ageless, "can't attack during extra turns"). */
+    extra?: boolean;
     startingPlayer: PlayerId;
   };
   flow: Flow;

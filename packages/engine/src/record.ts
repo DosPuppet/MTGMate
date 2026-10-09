@@ -469,8 +469,13 @@ export const RECORD_VERSION = 1;
  *   (509.1h, Throatseeker); "can't have or gain [keyword]", applied at the end of layer 6 (Archetype of Courage);
  *   "can't be blocked by creatures that player controls" (The Black Gate); fear; granted myriad (Legion Loyalty); a
  *   legendary land that refers to itself by name in "you may pay N life" (The Black Gate)
+ * - 175: The Ur-Sphinx deck (Commander): "connives X" (701.50e, Raffine); a player effect "during that player's next
+ *   turn" (Azor); an additional whole beginning phase (Sphinx of the Second Sun); extra turns known to the rules
+ *   (Medomai); removal from combat (Reconnaissance); "instead create one of each" tokens (Academy Manufactor);
+ *   opening-hand reveal with effects at the first upkeep (Chancellor of the Spires); "not of the chosen name" read
+ *   inside `not` (Sphinx Ambassador); another player chooses for the source; library zone reference
  */
-export const RULES_VERSION = 174;
+export const RULES_VERSION = 175;
 
 /** One checkpoint every N decisions (plus the last one of the game). */
 export const CHECKPOINT_EVERY = 25;

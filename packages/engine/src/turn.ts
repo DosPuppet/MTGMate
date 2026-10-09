@@ -65,7 +65,7 @@ import {
 } from "./statics";
 import { matchesObjectFilter, matchesView, protectedFrom, resolveFilter, sourceView } from "./targets";
 import { msg } from "./text";
-import { processTriggers, pushInline, releaseDelayedTriggers, rulesTrigger, simultaneously } from "./triggers";
+import { createDelayed, processTriggers, pushInline, releaseDelayedTriggers, rulesTrigger, simultaneously } from "./triggers";
 import { countTurnEvents, logTurnEvent } from "./turnlog";
 import type {
   CardDef,
@@ -278,13 +278,19 @@ function askLeylines(s: GameState): boolean {
     asked.push(p);
     const cards = (s.players[p]?.hand ?? []).filter((id) => leylineFor(s, p, id));
     if (cards.length === 0) continue;
+    const reveals = cards.some((id) => {
+      const l = leylineFor(s, p, id);
+      return typeof l === "object" && !!l.revealFirstUpkeep;
+    });
     ask(
       s,
       p,
       {
         type: "pick",
         intent: "leyline",
-        prompt: msg("Cards of your opening hand you may put onto the battlefield"),
+        prompt: reveals
+          ? msg("Cards of your opening hand you may put onto the battlefield or reveal")
+          : msg("Cards of your opening hand you may put onto the battlefield"),
         options: cards,
         min: 0,
         max: cards.length,
@@ -308,6 +314,15 @@ export function answerLeylines(s: GameState, player: PlayerId, cards: ObjectId[]
     const o = s.objects[id];
     const l = o?.zone === "hand" && o.owner === player ? leylineFor(s, player, id) : undefined;
     if (!l) continue;
+    // The Chancellors: revealed, the card stays in hand; its effects wait for the first upkeep (that of the first
+    // turn, which hasn't begun yet).
+    if (o && l !== true && l.revealFirstUpkeep) {
+      emit({ type: "reveal", player, defIds: [o.defId] });
+      createDelayed(s, player, id, o.defId, { targets: [], effects: l.revealFirstUpkeep, bound: {}, vars: {} }, "nextUpkeep");
+      const d = s.delayed[s.delayed.length - 1];
+      if (d) d.notBeforeTurn = s.turn.number;
+      continue;
+    }
     const placed = moveObject(s, id, "battlefield");
     if (l === true) continue;
     if (l.counter && placed && s.objects[placed]) changeCounters(s, obj(s, placed), l.counter, 1);
@@ -656,7 +671,12 @@ function endStep(s: GameState): void {
     let extra = s.extraTurns?.pop();
     // Trouble in Pairs: an opponent who would begin an extra turn skips it.
     while (extra && skips(s, extra, "extraTurns")) extra = s.extraTurns?.pop();
-    s.turn.active = extra && s.players[extra] && !s.players[extra]?.lost ? extra : nextPlayer(s, s.turn.active);
+    const extraTurn = !!extra && !!s.players[extra] && !s.players[extra]?.lost;
+    s.turn.active = extraTurn && extra ? extra : nextPlayer(s, s.turn.active);
+    // A static may depend on it (Medomai the Ageless: "can't attack during extra turns").
+    if (extraTurn !== !!s.turn.extra) bump(s);
+    if (extraTurn) s.turn.extra = true;
+    else delete s.turn.extra;
     // Ral Zarek: a player who must skip their turn skips it (one effect consumed per skipped turn).
     for (let guard = 0; guard < s.playerOrder.length && consumePlayerEffect(s, s.turn.active, "skips", "turn"); guard++)
       s.turn.active = nextPlayer(s, s.turn.active);

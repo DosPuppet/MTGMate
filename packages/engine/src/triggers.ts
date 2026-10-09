@@ -380,6 +380,8 @@ export function checkCondition(
       return s.turn.active === controller;
     case "opponentsTurn":
       return s.turn.active !== controller;
+    case "extraTurn":
+      return !!s.turn.extra;
     case "counterAtLeast": {
       // The source, or its last known information ("if it had a counter…" when dying).
       const counters = sourceId ? (s.objects[sourceId]?.counters ?? s.lki[sourceId]?.counters) : undefined;

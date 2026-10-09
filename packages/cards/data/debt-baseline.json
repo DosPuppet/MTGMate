@@ -82,7 +82,8 @@
     "revealFaceDown": "Hauntwoods Shrieker — operation specific to one card (R4.6)",
     "tripleTriad": "Triple Triad — operation specific to one card (R4.6)",
     "foretell": "foretell (702.143, special action read from the text): a single Standard card (Sozin's Comet) for now",
-    "chooseNumbers": "Wheel of Misfortune — each player secretly chooses a number (ref.numberChoosers, amount.numberChosen); family of simultaneous secret choices (votes, auctions) to attach when another card needs it"
+    "chooseNumbers": "Wheel of Misfortune — each player secretly chooses a number (ref.numberChoosers, amount.numberChosen); family of simultaneous secret choices (votes, auctions) to attach when another card needs it",
+    "removeFromCombat": "Reconnaissance — \"remove [the creature] from combat\" (506.4), a rules action shared by many cards (Maze of Ith family); generic op, a single card for now"
   },
   "variant": {
     "Amount.lkiDamage": "Tangled Colony — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists",
@@ -122,7 +123,8 @@
     "TriggerSpec.playerLoses": "Zenos yae Galvus // Shinryu, Transcendent Rival — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists",
     "TriggerSpec.saddled": "Stubborn Burrowfiend — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists",
     "TriggerSpec.search": "Wan Shi Tong, Librarian — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists",
-    "TriggerSpec.untaps": "Fishing Pole — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists"
+    "TriggerSpec.untaps": "Fishing Pole — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists",
+    "Condition.extraTurn": "Medomai the Ageless — \"during extra turns\" (500.7, TurnState.extra); generic condition for every \"extra turn\" text, a single card for now"
   },
   "singleCardKeys": {
     "absolute": "Loot, the Anomaly — property of a single card (audit of 2026-10-02, § 5.1): to attach to a family as soon as another card needs it",
@@ -194,7 +196,6 @@
     "onePerColorOf": "Sanar, Innovative First-Year — property of a single card, invisible to the guard until the audit of 2026-10-07 (key written without a value by the builders, or declared away from the start of a line): to attach to a family",
     "opponent": "Danitha, Spear of Agony — property of a single card, invisible to the guard until the audit of 2026-10-07 (key written without a value by the builders, or declared away from the start of a line): to attach to a family",
     "opponentDiscardToBattlefield": "Wilt-Leaf Liege — property of a single card, invisible to the guard until the audit of 2026-10-07 (key written without a value by the builders, or declared away from the start of a line): to attach to a family",
-    "opponentSeparates": "Fact or Fiction — property of a single card, invisible to the guard until the audit of 2026-10-07 (key written without a value by the builders, or declared away from the start of a line): to attach to a family",
     "opponentsGainLife": "Grove of the Burnwillows — property of a single card, invisible to the guard until the audit of 2026-10-07 (key written without a value by the builders, or declared away from the start of a line): to attach to a family",
     "opponentsMill": "The Mindskinner — property of a single card, invisible to the guard until the audit of 2026-10-07 (key written without a value by the builders, or declared away from the start of a line): to attach to a family",
     "optionsFrom": "Koh, the Face Stealer — property of a single card (audit of 2026-10-02, § 5.1): to attach to a family as soon as another card needs it",
@@ -238,12 +239,15 @@
     "which": "Wheel of Misfortune — property of a single card, invisible to the guard until the audit of 2026-10-07 (key written without a value by the builders, or declared away from the start of a line): to attach to a family",
     "whileCrafting": "Market Gnome — \"leaves the battlefield\" trigger limited to exile as craft material (702.167): field of the `leaves` family, counted since its declaration spans several lines (PLAN-S, S7)",
     "with": "Vanille, Cheerful l'Cie — property of a single card, invisible to the guard until the audit of 2026-10-07 (key written without a value by the builders, or declared away from the start of a line): to attach to a family",
-    "withWarp": "Blade of the Swarm — target \"card exiled with warp\" (a card that has warp); Close Encounter, which used it, reads `warped` (card exiled by warp, PLAN-A A3): to reuse for any card exiled \"with warp\""
+    "withWarp": "Blade of the Swarm — target \"card exiled with warp\" (a card that has warp); Close Encounter, which used it, reads `warped` (card exiled by warp, PLAN-A A3): to reuse for any card exiled \"with warp\"",
+    "oneOfEach": "Academy Manufactor — token replacement \"instead create one of each\" (EventReplacement.instead, family H); each such replacement applies once (616.1)",
+    "revealFirstUpkeep": "Chancellor of the Spires — opening-hand reveal (CardDef.leyline, 103.6): the Chancellor cycle (Annex, Dross, Forge, Tangle) uses the same form",
+    "storeAll": "Dazzling Sphinx — exileUntil remembers every exiled card (\"the exiled cards that weren't cast\"); to reuse for any \"exile until … put the rest\" text"
   },
   "turnFields": {},
   "engineCardLiterals": {},
   "ceilings": {
-    "Single-card values": 104,
+    "Single-card values": 106,
     "CardDef": 91,
     "GameObject": 49,
     "StackItem": 29,
@@ -266,12 +270,12 @@
     "AdditionalCost": 11,
     "CastLimit": 9,
     "NextSpell": 9,
-    "Effect": 149,
-    "Effect (fields)": 640,
+    "Effect": 150,
+    "Effect (fields)": 645,
     "TriggerSpec": 61,
     "TriggerSpec (fields)": 162,
-    "Condition": 53,
-    "Condition (fields)": 97,
+    "Condition": 54,
+    "Condition (fields)": 98,
     "Amount": 35,
     "Amount (fields)": 80,
     "Ref": 35,
@@ -357,6 +361,7 @@
     "Audit of 2026-10-07: closed-union values specific to one card (attached \"toHost\", spellFate \"rebound\"…), tracked by a ceiling (singleCardValues, debtSurface.ts): Single-card values — → 104",
     "The Vision deck (rules 172): lookAtTop.chooser \"owner\" (Explore the Vastlands: each player chooses in their own library): Effect (fields) 639 → 640; closed-union values written by a single card (DelayedTiming \"next\", 603.7c: Ugin, the Ineffable; AggregateProperty \"colorIdentity\": War Room; withActivatedAbility \"mana\": Moonsilver Key; lookAtTop.chooser \"owner\"; produceColorsZone \"graveyard\": The Grey Havens), partly offset by values that became shared: Single-card values 104 → 105",
     "Dark Leo & Shredder deck (rules 174): blocked filter (Throatseeker), LayerMods.forbidKeywords (Archetype of Courage), BlockRule.cantBeBlockedByPlayer (The Black Gate): ObjectFilter 71 → 72, LayerMods 30 → 31, BlockRule 13 → 14",
-    "PLAN-I: player-facing texts (labels, prompts) no longer counted as single-card values: Single-card values 105 → 104"
+    "PLAN-I: player-facing texts (labels, prompts) no longer counted as single-card values: Single-card values 105 → 104",
+    "Ur-Sphinx deck: connives X, during their next turn (castLimit), extra beginning phase, extra turn condition, removeFromCombat, one-of-each tokens, opening-hand reveal (Chancellors), exileUntil storeAll, library zone reference: Single-card values 104 → 106, Effect 149 → 150, Effect (fields) 640 → 645, Condition 53 → 54, Condition (fields) 97 → 98"
   ]
 }

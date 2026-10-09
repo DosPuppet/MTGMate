@@ -301,6 +301,12 @@ export const EDH_LANDS: Record<string, CardScript> = {
       }),
     ],
   },
+  "Hall of the Bandit Lord": {
+    abilities: [
+      entersWith({ tapped: true }),
+      manaAbility("C", 1, { payLife: 3, rider: { spell: { types: ["Creature"] }, effect: "haste" } }),
+    ],
+  },
   "Unclaimed Territory": {
     asEnters: [fx.chooseForSelf("creatureType")],
     abilities: [

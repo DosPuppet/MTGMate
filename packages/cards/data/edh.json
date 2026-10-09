@@ -32,6 +32,35 @@
   "colorIdentity": []
  },
  {
+  "name": "Academy Manufactor",
+  "number": "264",
+  "rarity": "rare",
+  "manaCost": "{3}",
+  "cmc": 3,
+  "typeLine": "Artifact Creature — Assembly-Worker",
+  "oracleText": "If you would create a Clue, Food, or Treasure token, instead create one of each.",
+  "power": "1",
+  "toughness": "3",
+  "colors": [],
+  "keywords": [
+   "Treasure",
+   "Food"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/2/f/2f5b4544-70d9-45ee-84a3-fa6253a53a82.jpg?1783910651",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/2/f/2f5b4544-70d9-45ee-84a3-fa6253a53a82.jpg?1783910651",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Fabricateur de l'académie",
+   "typeLine": "Créature-artefact — ouvrier spécialisé",
+   "text": "Si vous deviez créer un jeton Indice, Nourriture ou Trésor, à la place créez un jeton de chaque.",
+   "image": "https://cards.scryfall.io/normal/front/0/0/002368ba-f921-4d3a-8dbf-09b2ae0558f9.jpg?1782787565"
+  },
+  "origin": "BLC",
+  "colorIdentity": []
+ },
+ {
   "name": "Access Tunnel",
   "number": "337",
   "rarity": "uncommon",
@@ -990,6 +1019,40 @@
   "origin": "FRC",
   "colorIdentity": [
    "B"
+  ]
+ },
+ {
+  "name": "Azor, the Lawbringer",
+  "number": "154",
+  "rarity": "mythic",
+  "manaCost": "{2}{W}{W}{U}{U}",
+  "cmc": 6,
+  "typeLine": "Legendary Creature — Sphinx",
+  "oracleText": "Flying\nWhen Azor enters, each opponent can't cast instant or sorcery spells during that player's next turn.\nWhenever Azor attacks, you may pay {X}{W}{U}{U}. If you do, you gain X life and draw X cards.",
+  "power": "6",
+  "toughness": "6",
+  "colors": [
+   "U",
+   "W"
+  ],
+  "keywords": [
+   "Flying"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/3/0/30dc237e-b28a-4b65-9790-6b434828bf2e.jpg?1783935277",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/0/30dc237e-b28a-4b65-9790-6b434828bf2e.jpg?1783935277",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Azor, porteur de la Loi",
+   "typeLine": "Créature légendaire : sphinx",
+   "text": "Vol\nQuand Azor, porteur de la Loi arrive sur le champ de bataille, chaque adversaire ne peut pas lancer de sorts d'éphémère ou de rituel pendant son prochain tour.\nÀ chaque fois qu'Azor attaque, vous pouvez payer {X}{W}{U}{U}. Si vous faites ainsi, vous gagnez X points de vie et piochez X cartes.",
+   "image": "https://cards.scryfall.io/normal/front/4/a/4a1386a0-369e-418b-985c-e3ec1e4188cb.jpg?1782934811"
+  },
+  "origin": "RIX",
+  "colorIdentity": [
+   "U",
+   "W"
   ]
  },
  {
@@ -2125,6 +2188,36 @@
   ]
  },
  {
+  "name": "Breach the Multiverse",
+  "number": "94",
+  "rarity": "rare",
+  "manaCost": "{5}{B}{B}",
+  "cmc": 7,
+  "typeLine": "Sorcery",
+  "oracleText": "Each player mills ten cards. For each player, choose a creature or planeswalker card in that player's graveyard. Put those cards onto the battlefield under your control. Then each creature you control becomes a Phyrexian in addition to its other types.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Mill"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/d/a/daf51a76-7a57-4462-ae18-a19e817e49e5.jpg?1783917016",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/a/daf51a76-7a57-4462-ae18-a19e817e49e5.jpg?1783917016",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Déchirer le Multivers",
+   "typeLine": "Rituel",
+   "text": "Chaque joueur meule dix cartes. Pour chaque joueur, choisissez une carte de créature ou de planeswalker dans le cimetière de ce joueur. Mettez ces cartes sur le champ de bataille sous votre contrôle. Puis chaque créature que vous contrôlez devient un phyrexian en plus de ses autres types.",
+   "image": "https://cards.scryfall.io/normal/front/d/7/d7ce1a98-093e-4c15-a72b-867f451b2bb3.jpg?1782825160"
+  },
+  "origin": "MOM",
+  "colorIdentity": [
+   "B"
+  ]
+ },
+ {
   "name": "Bred for the Hunt",
   "number": "321",
   "rarity": "uncommon",
@@ -2526,6 +2619,39 @@
   },
   "origin": "FIC",
   "colorIdentity": []
+ },
+ {
+  "name": "Chancellor of the Spires",
+  "number": "31",
+  "rarity": "rare",
+  "manaCost": "{4}{U}{U}{U}",
+  "cmc": 7,
+  "typeLine": "Creature — Phyrexian Sphinx",
+  "oracleText": "You may reveal this card from your opening hand. If you do, at the beginning of the first upkeep, each opponent mills seven cards.\nFlying\nWhen this creature enters, you may cast target instant or sorcery card from an opponent's graveyard without paying its mana cost.",
+  "power": "5",
+  "toughness": "7",
+  "colors": [
+   "U"
+  ],
+  "keywords": [
+   "Flying",
+   "Mill"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/b/1/b1e06e16-96fa-4611-b4a9-512eeeeddd3c.jpg?1783941321",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/1/b1e06e16-96fa-4611-b4a9-512eeeeddd3c.jpg?1783941321",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Chancelière des cimes",
+   "typeLine": "Créature : sphinx",
+   "text": "Vous pouvez révéler cette carte depuis votre main de départ. Si vous faites ainsi, au début du premier entretien, chaque adversaire met les sept cartes du dessus de sa bibliothèque dans son cimetière.\nVol\nQuand la Chancelière des cimes arrive sur le champ de bataille, vous pouvez lancer une carte d'éphémère ou de rituel ciblée du cimetière d'un adversaire sans payer son coût de mana.",
+   "image": "https://cards.scryfall.io/normal/front/6/7/6767124a-2dc4-476f-9900-10abcbc62651.jpg?1782992511"
+  },
+  "origin": "NPH",
+  "colorIdentity": [
+   "U"
+  ]
  },
  {
   "name": "Changeling Outcast",
@@ -3051,6 +3177,38 @@
   },
   "origin": "CMR",
   "colorIdentity": []
+ },
+ {
+  "name": "Consecrated Sphinx",
+  "number": "43",
+  "rarity": "mythic",
+  "manaCost": "{4}{U}{U}",
+  "cmc": 6,
+  "typeLine": "Creature — Sphinx",
+  "oracleText": "Flying\nWhenever an opponent draws a card, you may draw two cards.",
+  "power": "4",
+  "toughness": "6",
+  "colors": [
+   "U"
+  ],
+  "keywords": [
+   "Flying"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/c/9/c9bd60fc-2777-44bc-b314-a792e8e48360.jpg?1783921921",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/9/c9bd60fc-2777-44bc-b314-a792e8e48360.jpg?1783921921",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Sphinx consacré",
+   "typeLine": "Créature : sphinx",
+   "text": "Vol\nÀ chaque fois qu'un adversaire pioche une carte, vous pouvez piocher deux cartes.",
+   "image": "https://cards.scryfall.io/normal/front/7/8/783f0000-8d7a-4478-8682-3deebca6083e.jpg?1782847959"
+  },
+  "origin": "2X2",
+  "colorIdentity": [
+   "U"
+  ]
  },
  {
   "name": "Contagion Clasp",
@@ -3909,6 +4067,38 @@
   ]
  },
  {
+  "name": "Dazzling Sphinx",
+  "number": "93",
+  "rarity": "rare",
+  "manaCost": "{3}{U}{U}",
+  "cmc": 5,
+  "typeLine": "Creature — Sphinx",
+  "oracleText": "Flying\nWhenever this creature deals combat damage to a player, that player exiles cards from the top of their library until they exile an instant or sorcery card. You may cast that card without paying its mana cost. Then that player puts the exiled cards that weren't cast this way on the bottom of their library in a random order.",
+  "power": "4",
+  "toughness": "5",
+  "colors": [
+   "U"
+  ],
+  "keywords": [
+   "Flying"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/2/d/2ddac591-825b-4304-858c-9dc9b311805b.jpg?1783911943",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/2/d/2ddac591-825b-4304-858c-9dc9b311805b.jpg?1783911943",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Sphinx éblouissant",
+   "typeLine": "Créature — sphinx",
+   "text": "Vol\nÀ chaque fois que le Sphinx éblouissant inflige des blessures de combat à un joueur, ce joueur exile les cartes du dessus de sa bibliothèque jusqu'à ce qu'il exile une carte d'éphémère ou de rituel. Vous pouvez lancer cette carte sans payer son coût de mana. Ce joueur met ensuite les cartes exilées qui n'ont pas été lancées de cette manière au-dessous de sa bibliothèque, dans un ordre aléatoire.",
+   "image": "https://cards.scryfall.io/normal/front/f/c/fc791225-7002-4fec-a5f0-bda392e893da.jpg?1782798532"
+  },
+  "origin": "OTC",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
   "name": "Deadly Rollick",
   "number": "147",
   "rarity": "rare",
@@ -4569,6 +4759,41 @@
   "origin": "FRC",
   "colorIdentity": [
    "B"
+  ]
+ },
+ {
+  "name": "Dream Trawler",
+  "number": "214",
+  "rarity": "rare",
+  "manaCost": "{2}{W}{W}{U}{U}",
+  "cmc": 6,
+  "typeLine": "Creature — Sphinx",
+  "oracleText": "Flying, lifelink\nWhenever you draw a card, this creature gets +1/+0 until end of turn.\nWhenever this creature attacks, draw a card.\nDiscard a card: This creature gains hexproof until end of turn. Tap it.",
+  "power": "3",
+  "toughness": "5",
+  "colors": [
+   "U",
+   "W"
+  ],
+  "keywords": [
+   "Flying",
+   "Lifelink"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/7/d/7d3e97d8-92c7-43c4-bdaf-7b0a6ce7cb5f.jpg?1783931523",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/d/7d3e97d8-92c7-43c4-bdaf-7b0a6ce7cb5f.jpg?1783931523",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Charrieuse de rêves",
+   "typeLine": "Créature : sphinx",
+   "text": "Vol, lien de vie\nÀ chaque fois que vous piochez une carte, la Charrieuse de rêves gagne +1/+0 jusqu'à la fin du tour.\nÀ chaque fois que la Charrieuse de rêves attaque, piochez une carte.\nDéfaussez-vous d'une carte : La Charrieuse de rêves acquiert la défense talismanique jusqu'à la fin du tour. Engagez-la.",
+   "image": "https://cards.scryfall.io/normal/front/6/4/64f3c009-aa65-4572-a6e3-7948297dc26d.jpg?1782910583"
+  },
+  "origin": "THB",
+  "colorIdentity": [
+   "U",
+   "W"
   ]
  },
  {
@@ -7029,6 +7254,33 @@
   ]
  },
  {
+  "name": "Grim Monolith",
+  "number": "126",
+  "rarity": "rare",
+  "manaCost": "{2}",
+  "cmc": 2,
+  "typeLine": "Artifact",
+  "oracleText": "This artifact doesn't untap during your untap step.\n{T}: Add {C}{C}{C}.\n{4}: Untap this artifact.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/9/d/9ddc9fe1-17c8-4e1d-aeb8-c4214e881280.jpg?1783946223",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/d/9ddc9fe1-17c8-4e1d-aeb8-c4214e881280.jpg?1783946223",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Monolithe sinistre",
+   "typeLine": "Artefact",
+   "text": "Le Monolithe sinistre ne se dégage pas pendant votre étape de dégagement.\n{T} : Ajoutez {C}{C}{C}.\n{4} : Dégagez le Monolithe sinistre.",
+   "image": "https://cards.scryfall.io/normal/front/e/9/e90c57e7-41c6-4881-8c24-2ee8d7735b65.jpg?1783045826"
+  },
+  "origin": "ULG",
+  "colorIdentity": []
+ },
+ {
   "name": "Grim Servant",
   "number": "97",
   "rarity": "uncommon",
@@ -7156,6 +7408,33 @@
    "image": "https://cards.scryfall.io/normal/front/d/5/d5be17cb-f8e2-4c16-a3a8-253d3be9930b.jpg?1785261504"
   },
   "origin": "MSC",
+  "colorIdentity": []
+ },
+ {
+  "name": "Hall of the Bandit Lord",
+  "number": "277",
+  "rarity": "rare",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Legendary Land",
+  "oracleText": "Hall of the Bandit Lord enters tapped.\n{T}, Pay 3 life: Add {C}. If that mana is spent on a creature spell, it gains haste.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/5/9/59fa5bab-8626-4b45-a3a3-621f6d9509ab.jpg?1783944274",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/9/59fa5bab-8626-4b45-a3a3-621f6d9509ab.jpg?1783944274",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Salle du seigneur bandit",
+   "typeLine": "Terrain légendaire",
+   "text": "La Salle du seigneur bandit arrive en jeu engagée. {T}, Payez 3 points de vie : Ajoutez {1} à votre réserve. Si ce mana est dépensé pour un sort de créature, cette créature a la célérité.",
+   "image": "https://cards.scryfall.io/normal/front/2/a/2a5cbb10-f8cc-441f-84f2-bb8219238768.jpg?1783023483"
+  },
+  "origin": "CHK",
   "colorIdentity": []
  },
  {
@@ -9417,6 +9696,42 @@
   ]
  },
  {
+  "name": "Magister Sphinx",
+  "number": "247",
+  "rarity": "rare",
+  "manaCost": "{4}{W}{U}{B}",
+  "cmc": 7,
+  "typeLine": "Artifact Creature — Sphinx",
+  "oracleText": "Flying\nWhen this creature enters, target player's life total becomes 10.",
+  "power": "5",
+  "toughness": "5",
+  "colors": [
+   "B",
+   "U",
+   "W"
+  ],
+  "keywords": [
+   "Flying"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/b/e/be662808-e452-407d-b142-bf6f30990b5a.jpg?1783921818",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/e/be662808-e452-407d-b142-bf6f30990b5a.jpg?1783921818",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Magister sphinx",
+   "typeLine": "Créature-artefact : sphinx",
+   "text": "Vol\nQuand le Magister sphinx arrive sur le champ de bataille, le total de points de vie d'un joueur ciblé devient 10.",
+   "image": "https://cards.scryfall.io/normal/front/f/0/f09f1e9a-6234-453f-a3c9-f452ffa69804.jpg?1782847299"
+  },
+  "origin": "2X2",
+  "colorIdentity": [
+   "B",
+   "U",
+   "W"
+  ]
+ },
+ {
   "name": "Majestic Genesis",
   "number": "240",
   "rarity": "mythic",
@@ -9712,6 +10027,38 @@
   ]
  },
  {
+  "name": "Master of Predicaments",
+  "number": "67",
+  "rarity": "rare",
+  "manaCost": "{3}{U}{U}",
+  "cmc": 5,
+  "typeLine": "Creature — Sphinx",
+  "oracleText": "Flying\nWhenever this creature deals combat damage to a player, choose a card in your hand. That player guesses whether the card's mana value is greater than 4. If the player guessed wrong, you may cast the card without paying its mana cost.",
+  "power": "4",
+  "toughness": "4",
+  "colors": [
+   "U"
+  ],
+  "keywords": [
+   "Flying"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/f/0/f0b1720b-ab7a-4b52-a6d0-11c4fc573d17.jpg?1783939190",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/0/f0b1720b-ab7a-4b52-a6d0-11c4fc573d17.jpg?1783939190",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Maître des malheurs",
+   "typeLine": "Créature : sphinx",
+   "text": "Vol\nÀ chaque fois que le Maître des malheurs inflige des blessures de combat à un joueur, choisissez une carte dans votre main. Ce joueur devine si le coût converti de mana de cette carte est supérieur à 4. Si le joueur s'est trompé, vous pouvez lancer la carte sans payer son coût de mana.",
+   "image": "https://cards.scryfall.io/normal/front/e/9/e9bc62ec-264d-4c63-96e7-97b4c125bf33.jpg?1782970248"
+  },
+  "origin": "M15",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
   "name": "Mavren Fein, Dusk Apostle",
   "number": "133",
   "rarity": "rare",
@@ -9738,6 +10085,40 @@
   },
   "origin": "LCC",
   "colorIdentity": [
+   "W"
+  ]
+ },
+ {
+  "name": "Medomai the Ageless",
+  "number": "196",
+  "rarity": "mythic",
+  "manaCost": "{4}{W}{U}",
+  "cmc": 6,
+  "typeLine": "Legendary Creature — Sphinx",
+  "oracleText": "Flying\nWhenever Medomai deals combat damage to a player, take an extra turn after this one.\nMedomai can't attack during extra turns.",
+  "power": "4",
+  "toughness": "4",
+  "colors": [
+   "U",
+   "W"
+  ],
+  "keywords": [
+   "Flying"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/b/5/b5f4b3cf-2c78-42c9-9873-3758c7f7bb7d.jpg?1783939729",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/5/b5f4b3cf-2c78-42c9-9873-3758c7f7bb7d.jpg?1783939729",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Médomaï le Sans-âge",
+   "typeLine": "Créature légendaire : sphinx",
+   "text": "Vol\nÀ chaque fois que Médomaï le Sans-âge inflige des blessures de combat à un joueur, jouez un tour supplémentaire après celui-ci.\nMédomaï le Sans-âge ne peut pas attaquer pendant les tours supplémentaires.",
+   "image": "https://cards.scryfall.io/normal/front/a/8/a86fe1b7-6ea7-4537-9787-fe6cfc06f272.jpg?1782974478"
+  },
+  "origin": "THS",
+  "colorIdentity": [
+   "U",
    "W"
   ]
  },
@@ -10095,6 +10476,36 @@
   "colorIdentity": []
  },
  {
+  "name": "Mnemonic Betrayal",
+  "number": "189",
+  "rarity": "mythic",
+  "manaCost": "{1}{U}{B}",
+  "cmc": 3,
+  "typeLine": "Sorcery",
+  "oracleText": "Exile all opponents' graveyards. You may cast spells from among those cards this turn, and mana of any type can be spent to cast them. At the beginning of the next end step, if any of those cards remain exiled, return them to their owners' graveyards.\nExile Mnemonic Betrayal.",
+  "colors": [
+   "B",
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/a/5/a5cf45aa-ed34-4add-a2ec-fc11f8c15ffa.jpg?1783934127",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/5/a5cf45aa-ed34-4add-a2ec-fc11f8c15ffa.jpg?1783934127",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Trahison mnémonique",
+   "typeLine": "Rituel",
+   "text": "Exilez toutes les cartes des cimetières de tous les adversaires. Vous pouvez lancer ces cartes ce tour-ci, et vous pouvez dépenser du mana comme s'il s'agissait de mana de n'importe quel type pour lancer ces sorts. Au début de la prochaine étape de fin, si certaines de ces cartes restent exilées, renvoyez-les dans les cimetières de leurs propriétaires.\nExilez la Trahison mnémonique.",
+   "image": "https://cards.scryfall.io/normal/front/8/4/840d6385-5ead-4fbe-8d16-7c680c9b683e.jpg?1782926327"
+  },
+  "origin": "GRN",
+  "colorIdentity": [
+   "B",
+   "U"
+  ]
+ },
+ {
   "name": "Mole Module",
   "number": "40",
   "rarity": "rare",
@@ -10411,6 +10822,34 @@
    "typeLine": "Enchantement",
    "text": "Entretien cumulatif {1} (Au début de votre entretien, mettez un marqueur « âge » sur ce permanent, puis sacrifiez-le à moins que vous ne payiez son coût d'entretien pour chaque marqueur « âge » sur lui.)\nÀ chaque fois qu'un adversaire lance un sort non-créature, vous pouvez piocher une carte à moins que ce joueur ne paie {4}.",
    "image": "https://cards.scryfall.io/normal/front/2/d/2d5dc925-0e02-4b1c-9407-00941ca9a5a1.jpg?1782833138"
+  },
+  "origin": "DMR",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
+  "name": "Mystical Tutor",
+  "number": "60",
+  "rarity": "rare",
+  "manaCost": "{U}",
+  "cmc": 1,
+  "typeLine": "Instant",
+  "oracleText": "Search your library for an instant or sorcery card, reveal it, then shuffle and put that card on top.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/3/6/36fa9a0b-b0c9-43ea-ba11-99d7982f974e.jpg?1783918491",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/6/36fa9a0b-b0c9-43ea-ba11-99d7982f974e.jpg?1783918491",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Préceptrice mystique",
+   "typeLine": "Éphémère",
+   "text": "Cherchez dans votre bibliothèque une carte d'éphémère ou de rituel, révélez-la, puis mélangez et mettez cette carte au-dessus de votre bibliothèque.",
+   "image": "https://cards.scryfall.io/normal/front/f/5/f571b3ed-9913-4d5e-bac8-707baf726f22.jpg?1782833134"
   },
   "origin": "DMR",
   "colorIdentity": [
@@ -12481,6 +12920,44 @@
   ]
  },
  {
+  "name": "Raffine, Scheming Seer",
+  "number": "213",
+  "rarity": "mythic",
+  "manaCost": "{W}{U}{B}",
+  "cmc": 3,
+  "typeLine": "Legendary Creature — Sphinx Demon",
+  "oracleText": "Flying, ward {1}\nWhenever you attack, target attacking creature connives X, where X is the number of attacking creatures. (Draw X cards, then discard X cards. Put a +1/+1 counter on that creature for each nonland card discarded this way.)",
+  "power": "1",
+  "toughness": "4",
+  "colors": [
+   "B",
+   "U",
+   "W"
+  ],
+  "keywords": [
+   "Flying",
+   "Ward",
+   "Connive"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/7/1/716a44b4-f6b0-4f14-a270-6442aed3251f.jpg?1783923074",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/1/716a44b4-f6b0-4f14-a270-6442aed3251f.jpg?1783923074",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Raffine, voyante rusée",
+   "typeLine": "Créature légendaire : sphinx et démon",
+   "text": "Vol, parade {1}\nÀ chaque fois que vous attaquez, une créature attaquante ciblée connive X, X étant le nombre de créatures attaquantes. (Piochez X cartes, puis défaussez-vous de X cartes. Mettez un marqueur +1/+1 sur cette créature pour chaque carte non-terrain défaussée de cette manière.)",
+   "image": "https://cards.scryfall.io/normal/front/e/6/e67821b9-1db2-44ca-bc15-b6f32cca354a.jpg?1782855284"
+  },
+  "origin": "SNC",
+  "colorIdentity": [
+   "B",
+   "U",
+   "W"
+  ]
+ },
+ {
   "name": "Rain-Slicked Copse",
   "number": "397",
   "rarity": "rare",
@@ -12509,6 +12986,33 @@
   "origin": "SOC",
   "colorIdentity": [
    "G",
+   "U"
+  ]
+ },
+ {
+  "name": "Raise the Palisade",
+  "number": "278",
+  "rarity": "rare",
+  "manaCost": "{4}{U}",
+  "cmc": 5,
+  "typeLine": "Sorcery",
+  "oracleText": "Choose a creature type. Return all creatures that aren't of the chosen type to their owners' hands.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/c/e/ce9347e8-962f-4fc1-808f-b59ac751de13.jpg?1783903190",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/e/ce9347e8-962f-4fc1-808f-b59ac751de13.jpg?1783903190",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Levée de la palissade",
+   "text": "Choisissez un type de créature. Renvoyez toutes les créatures qui ne sont pas du type choisi dans les mains de leurs propriétaires.",
+   "image": "https://cards.scryfall.io/normal/front/3/7/3754288b-297f-418a-b907-c201791dff00.jpg?1785268314"
+  },
+  "origin": "MSC",
+  "colorIdentity": [
    "U"
   ]
  },
@@ -12921,6 +13425,34 @@
   },
   "origin": "PIP",
   "colorIdentity": []
+ },
+ {
+  "name": "Reconnaissance",
+  "number": "82",
+  "rarity": "uncommon",
+  "manaCost": "{W}",
+  "cmc": 1,
+  "typeLine": "Enchantment",
+  "oracleText": "{0}: Remove target attacking creature you control from combat and untap it. (If you activate during end of combat, the creature will untap after it deals combat damage.)",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/f/2/f203ce7d-a079-44b8-bfda-4c63ec79b82d.jpg?1783910962",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/2/f203ce7d-a079-44b8-bfda-4c63ec79b82d.jpg?1783910962",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Reconnaissance",
+   "typeLine": "Enchantement",
+   "text": "{0} : Retirez une créature attaquante ciblée que vous contrôlez du combat et dégagez-la. (Si vous activez pendant la fin du combat, la créature se dégage après avoir infligé des blessures de combat.)",
+   "image": "https://cards.scryfall.io/normal/front/f/e/fec90af6-eb5d-476d-8dc9-2e80c42509f2.jpg?1782790929"
+  },
+  "origin": "ACR",
+  "colorIdentity": [
+   "W"
+  ]
  },
  {
   "name": "Recurring Insight",
@@ -13579,6 +14111,37 @@
   ]
  },
  {
+  "name": "Scholar of the Lost Trove",
+  "number": "14",
+  "rarity": "rare",
+  "manaCost": "{5}{U}{U}",
+  "cmc": 7,
+  "typeLine": "Creature — Sphinx",
+  "oracleText": "Flying\nWhen this creature enters, you may cast target instant, sorcery, or artifact card from your graveyard without paying its mana cost. If an instant or sorcery spell cast this way would be put into your graveyard, exile it instead.",
+  "power": "5",
+  "toughness": "5",
+  "colors": [
+   "U"
+  ],
+  "keywords": [
+   "Flying"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/a/a/aa254a86-3c30-408d-9c14-befd472f9740.jpg?1783930505",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/a/aa254a86-3c30-408d-9c14-befd472f9740.jpg?1783930505",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Érudit du trésor perdu",
+   "typeLine": "Créature : sphinx",
+   "text": "Vol\nQuand l'Érudit du trésor perdu arrive sur le champ de bataille, vous pouvez lancer une carte d'éphémère, de rituel ou d'artefact ciblée de votre cimetière sans payer son coût de mana. Si un sort d'éphémère ou de rituel lancé de cette manière devait être mis dans votre cimetière, exilez-le à la place."
+  },
+  "origin": "JMP",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
   "name": "Scorched Geyser",
   "number": "264",
   "rarity": "rare",
@@ -14049,6 +14612,42 @@
   "origin": "FRC",
   "colorIdentity": [
    "U"
+  ]
+ },
+ {
+  "name": "Sharuum the Hegemon",
+  "number": "128",
+  "rarity": "rare",
+  "manaCost": "{3}{W}{U}{B}",
+  "cmc": 6,
+  "typeLine": "Legendary Artifact Creature — Sphinx",
+  "oracleText": "Flying\nWhen Sharuum enters, you may return target artifact card from your graveyard to the battlefield.",
+  "power": "5",
+  "toughness": "5",
+  "colors": [
+   "B",
+   "U",
+   "W"
+  ],
+  "keywords": [
+   "Flying"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/2/d/2d7373e7-385f-4887-b1c7-af6d422dd70a.jpg?1783919671",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/2/d/2d7373e7-385f-4887-b1c7-af6d422dd70a.jpg?1783919671",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Sharuûm l'Hégémon",
+   "typeLine": "Créature-artefact légendaire : sphinx",
+   "text": "Vol\nQuand Sharuûm l'Hégémon arrive sur le champ de bataille, vous pouvez renvoyer sur le champ de bataille une carte d'artefact ciblée depuis votre cimetière.",
+   "image": "https://cards.scryfall.io/normal/front/d/8/d84aa2b0-2d5a-44ff-bf4e-3d0db1626f05.jpg?1782837814"
+  },
+  "origin": "BRC",
+  "colorIdentity": [
+   "B",
+   "U",
+   "W"
   ]
  },
  {
@@ -14943,6 +15542,136 @@
   "origin": "FIC",
   "colorIdentity": [
    "G"
+  ]
+ },
+ {
+  "name": "Sphinx Ambassador",
+  "number": "73",
+  "rarity": "mythic",
+  "manaCost": "{5}{U}{U}",
+  "cmc": 7,
+  "typeLine": "Creature — Sphinx",
+  "oracleText": "Flying\nWhenever this creature deals combat damage to a player, search that player's library for a card, then that player chooses a card name. If you searched for a creature card that doesn't have that name, you may put it onto the battlefield under your control. Then that player shuffles.",
+  "power": "5",
+  "toughness": "5",
+  "colors": [
+   "U"
+  ],
+  "keywords": [
+   "Flying"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/b/0/b0937274-d5cb-4790-8c10-804f537c5581.jpg?1783942388",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/0/b0937274-d5cb-4790-8c10-804f537c5581.jpg?1783942388",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Ambassadeur sphinx",
+   "typeLine": "Créature : sphinx",
+   "text": "Vol\nÀ chaque fois que l'Ambassadeur sphinx inflige des blessures de combat à un joueur, cherchez une carte dans la bibliothèque de ce joueur, et ce joueur nomme ensuite une carte. Si vous avez cherché une carte de créature qui n'est pas la carte nommée, vous pouvez la mettre sur le champ de bataille sous votre contrôle. Ce joueur mélange ensuite sa bibliothèque.",
+   "image": "https://cards.scryfall.io/normal/front/3/c/3c844389-b9cf-40ce-aab7-b8a9ab456e6d.jpg?1783001616"
+  },
+  "origin": "M10",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
+  "name": "Sphinx Summoner",
+  "number": "220",
+  "rarity": "uncommon",
+  "manaCost": "{3}{U}{B}",
+  "cmc": 5,
+  "typeLine": "Artifact Creature — Sphinx",
+  "oracleText": "Flying\nWhen this creature enters, you may search your library for an artifact creature card, reveal it, put it into your hand, then shuffle.",
+  "power": "3",
+  "toughness": "3",
+  "colors": [
+   "B",
+   "U"
+  ],
+  "keywords": [
+   "Flying"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/a/d/ad955c4d-248b-4468-a975-abad97cf84a4.jpg?1783930124",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/d/ad955c4d-248b-4468-a975-abad97cf84a4.jpg?1783930124",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Invocatrice sphinge",
+   "typeLine": "Créature-artefact : sphinx",
+   "text": "Vol\nQuand l'Invocatrice sphinge arrive sur le champ de bataille, vous pouvez chercher dans votre bibliothèque une carte de créature-artefact, la révéler et la mettre dans votre main. Si vous faites ainsi, mélangez votre bibliothèque.",
+   "image": "https://cards.scryfall.io/normal/front/7/4/74671ff6-d9f5-4536-8afd-d6a69a32575a.jpg?1782902963"
+  },
+  "origin": "2XM",
+  "colorIdentity": [
+   "B",
+   "U"
+  ]
+ },
+ {
+  "name": "Sphinx of Uthuun",
+  "number": "406",
+  "rarity": "rare",
+  "manaCost": "{5}{U}{U}",
+  "cmc": 7,
+  "typeLine": "Creature — Sphinx",
+  "oracleText": "Flying\nWhen this creature enters, reveal the top five cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other into your graveyard.",
+  "power": "5",
+  "toughness": "6",
+  "colors": [
+   "U"
+  ],
+  "keywords": [
+   "Flying"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/5/b/5bd5cd33-20e2-4063-b422-2bde13021888.jpg?1783928716",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/b/5bd5cd33-20e2-4063-b422-2bde13021888.jpg?1783928716",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Sphinx d'Uthuün",
+   "typeLine": "Créature : sphinx",
+   "text": "Vol\nQuand le Sphinx d'Uthuün arrive sur le champ de bataille, révélez les cinq cartes du dessus de votre bibliothèque. Un adversaire sépare ces cartes en deux tas. Mettez un tas dans votre main et l'autre dans votre cimetière.",
+   "image": "https://cards.scryfall.io/normal/front/9/3/93a3d32f-447f-4538-a05b-a3cfa73dcfe3.jpg?1782896378"
+  },
+  "origin": "CMR",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
+  "name": "Sphinx of the Second Sun",
+  "number": "118",
+  "rarity": "mythic",
+  "manaCost": "{6}{U}{U}",
+  "cmc": 8,
+  "typeLine": "Creature — Sphinx",
+  "oracleText": "Flying\nAt the beginning of each of your postcombat main phases, there is an additional beginning phase after this phase. (The beginning phase includes the untap, upkeep, and draw steps.)",
+  "power": "6",
+  "toughness": "6",
+  "colors": [
+   "U"
+  ],
+  "keywords": [
+   "Flying"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/b/e/be2d74cd-76fb-4bca-99b5-07749aef4d06.jpg?1783913012",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/e/be2d74cd-76fb-4bca-99b5-07749aef4d06.jpg?1783913012",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Sphinx du Second Soleil",
+   "typeLine": "Créature — sphinx",
+   "text": "Vol\nAu début de votre deuxième phase principale, il y a une phase de début supplémentaire après cette phase. (La phase de début comprend les étapes de dégagement, d'entretien et de pioche.)",
+   "image": "https://cards.scryfall.io/normal/front/3/f/3fdc3a9a-71e6-4e0f-a317-a64020dcb524.jpg?1782803841"
+  },
+  "origin": "MKC",
+  "colorIdentity": [
+   "U"
   ]
  },
  {
@@ -17371,6 +18100,46 @@
   ]
  },
  {
+  "name": "Tivit, Seller of Secrets",
+  "number": "10",
+  "rarity": "mythic",
+  "manaCost": "{3}{W}{U}{B}",
+  "cmc": 6,
+  "typeLine": "Legendary Creature — Sphinx Rogue",
+  "oracleText": "Flying, ward {3}\nCouncil's dilemma — Whenever Tivit enters or deals combat damage to a player, starting with you, each player votes for evidence or bribery. For each evidence vote, investigate. For each bribery vote, create a Treasure token.\nWhile voting, you may vote an additional time. (The votes can be for different choices or for the same choice.)",
+  "power": "6",
+  "toughness": "6",
+  "colors": [
+   "B",
+   "U",
+   "W"
+  ],
+  "keywords": [
+   "Flying",
+   "Investigate",
+   "Council's dilemma",
+   "Treasure",
+   "Ward"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/9/2/9235977e-a999-4ed0-83a3-742be87b13bb.jpg?1783923378",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/2/9235977e-a999-4ed0-83a3-742be87b13bb.jpg?1783923378",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Tivit, revendeur de secrets",
+   "typeLine": "Créature légendaire — sphinx et gredin",
+   "text": "Vol, parade {3}\nDilemme du conseil — À chaque fois que Tivit arrive sur le champ de bataille ou qu'il inflige des blessures de combat à un joueur, en commençant par vous, chaque joueur vote pour preuve ou pot-de-vin. Pour chaque vote pour preuve, enquêtez. Pour chaque vote pour pot-de-vin, créez un jeton Trésor.\nPendant le vote, vous pouvez voter une fois supplémentaire. (Les votes peuvent être pour des choix différents ou le même choix.)",
+   "image": "https://cards.scryfall.io/normal/front/c/7/c7b3087f-d267-4049-bccc-0a81798961d0.jpg?1782859731"
+  },
+  "origin": "NCC",
+  "colorIdentity": [
+   "B",
+   "U",
+   "W"
+  ]
+ },
+ {
   "name": "Together Forever",
   "number": "257",
   "rarity": "rare",
@@ -18080,6 +18849,38 @@
   ]
  },
  {
+  "name": "Unesh, Criosphinx Sovereign",
+  "number": "52",
+  "rarity": "mythic",
+  "manaCost": "{4}{U}{U}",
+  "cmc": 6,
+  "typeLine": "Legendary Creature — Sphinx",
+  "oracleText": "Flying\nSphinx spells you cast cost {2} less to cast.\nWhenever Unesh or another Sphinx you control enters, reveal the top four cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other into your graveyard.",
+  "power": "4",
+  "toughness": "4",
+  "colors": [
+   "U"
+  ],
+  "keywords": [
+   "Flying"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/f/d/fdd1a8b2-f4ba-45af-9586-98a98834b8bc.jpg?1783936046",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/d/fdd1a8b2-f4ba-45af-9586-98a98834b8bc.jpg?1783936046",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Unesh, souverain criosphinx",
+   "typeLine": "Créature légendaire : sphinx",
+   "text": "Vol\nLes sorts de sphinx que vous lancez coûtent {2} de moins à lancer.\nÀ chaque fois qu'Unesh, souverain criosphinx ou un autre sphinx arrive sur le champ de bataille sous votre contrôle, révélez les quatre cartes du dessus de votre bibliothèque. Un adversaire sépare ces cartes en deux tas. Mettez un tas dans votre main et l'autre dans votre cimetière.",
+   "image": "https://cards.scryfall.io/normal/front/5/1/514c49f4-9565-443c-8148-90177dde8d98.jpg?1782941163"
+  },
+  "origin": "HOU",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
   "name": "Unstable Molecule Suit",
   "number": "116",
   "rarity": "rare",
@@ -18243,6 +19044,30 @@
    "typeLine": "Terrain — Caverne d'Urza",
    "text": "{T} : Ajoutez {C}.\n{3}, {T}, sacrifiez la Caverne d'Urza : Cherchez dans votre bibliothèque une carte de terrain, mettez-la sur le champ de bataille engagée, puis mélangez.",
    "image": "https://cards.scryfall.io/normal/front/d/b/dbbb3cb9-d1e4-4168-befe-9fdbb067a3b1.jpg?1782792877"
+  },
+  "origin": "MH3",
+  "colorIdentity": []
+ },
+ {
+  "name": "Urza's Incubator",
+  "number": "297",
+  "rarity": "rare",
+  "manaCost": "{3}",
+  "cmc": 3,
+  "typeLine": "Artifact",
+  "oracleText": "As this artifact enters, choose a creature type.\nCreature spells of the chosen type cost {2} less to cast.",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/c/4/c4589226-6072-409b-b598-ebd87f675a6a.jpg?1783911208",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/4/c4589226-6072-409b-b598-ebd87f675a6a.jpg?1783911208",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Incubateur d'Urza",
+   "typeLine": "Artefact",
+   "text": "Au moment où l'Incubateur d'Urza arrive sur le champ de bataille, choisissez un type de créature.\nLes sorts de créature du type choisi coûtent {2} de moins à lancer.",
+   "image": "https://cards.scryfall.io/normal/front/2/c/2c407538-3a03-44f2-bf01-ce33d21055d9.jpg?1782792405"
   },
   "origin": "MH3",
   "colorIdentity": []
@@ -19652,6 +20477,38 @@
   ]
  },
  {
+  "name": "Windreader Sphinx",
+  "number": "391",
+  "rarity": "rare",
+  "manaCost": "{5}{U}{U}",
+  "cmc": 7,
+  "typeLine": "Creature — Sphinx",
+  "oracleText": "Flying\nWhenever a creature with flying attacks, you may draw a card.",
+  "power": "3",
+  "toughness": "7",
+  "colors": [
+   "U"
+  ],
+  "keywords": [
+   "Flying"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/1/1/11fac13f-bb14-48d5-90c2-0b70b252287c.jpg?1783908744",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/1/11fac13f-bb14-48d5-90c2-0b70b252287c.jpg?1783908744",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Sphinx déchiffre-vent",
+   "typeLine": "Créature — sphinx",
+   "text": "Vol\nÀ chaque fois qu'une créature avec le vol attaque, vous pouvez piocher une carte.",
+   "image": "https://cards.scryfall.io/normal/front/3/c/3cb3b6fb-396e-4510-8854-df1cf0bac061.jpg?1782780191"
+  },
+  "origin": "J25",
+  "colorIdentity": [
+   "U"
+  ]
+ },
+ {
   "name": "Windswept Heath",
   "number": "235",
   "rarity": "rare",
@@ -19883,6 +20740,44 @@
   "origin": "SOC",
   "colorIdentity": [
    "B"
+  ]
+ },
+ {
+  "name": "Yennett, Cryptic Sovereign",
+  "number": "363",
+  "rarity": "rare",
+  "manaCost": "{2}{W}{U}{B}",
+  "cmc": 5,
+  "typeLine": "Legendary Creature — Sphinx",
+  "oracleText": "Flying, vigilance, menace\nWhenever Yennett attacks, reveal the top card of your library. You may cast it without paying its mana cost if its mana value is odd. If you don't cast it, draw a card.",
+  "power": "3",
+  "toughness": "5",
+  "colors": [
+   "B",
+   "U",
+   "W"
+  ],
+  "keywords": [
+   "Flying",
+   "Vigilance",
+   "Menace"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/2/8/28ee11c9-fa23-4863-8a18-25a008f18da5.jpg?1783915606",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/2/8/28ee11c9-fa23-4863-8a18-25a008f18da5.jpg?1783915606",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Yennett, souveraine cryptique",
+   "typeLine": "Créature légendaire — sphinx",
+   "text": "Vol, vigilance, menace\nÀ chaque fois que Yennett, souveraine cryptique attaque, révélez la carte du dessus de votre bibliothèque. Vous pouvez la lancer sans payer son coût de mana si sa valeur de mana est impaire. Si vous ne la lancez pas, piochez une carte.",
+   "image": "https://cards.scryfall.io/normal/front/3/f/3f3ff334-2d76-48ae-867b-a50734de7668.jpg?1782815988"
+  },
+  "origin": "CMM",
+  "colorIdentity": [
+   "B",
+   "U",
+   "W"
   ]
  },
  {

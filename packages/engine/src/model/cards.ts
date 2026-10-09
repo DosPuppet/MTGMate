@@ -106,9 +106,11 @@ export interface CardDef {
   /** "If this card is in your opening hand, you may begin the game with it on the battlefield." */
   /**
    * `notStartingPlayer`: only if you're not the starting player; `counter`: it enters with this counter;
-   * `exileFromHand`: a card from your hand is then exiled (Gemstone Caverns).
+   * `exileFromHand`: a card from your hand is then exiled (Gemstone Caverns); `revealFirstUpkeep`: the card is revealed
+   * and stays in hand, and these effects happen at the beginning of the first upkeep (the Chancellors: "you may reveal
+   * this card from your opening hand. If you do, at the beginning of the first upkeep, …").
    */
-  leyline?: boolean | { notStartingPlayer?: boolean; counter?: string; exileFromHand?: boolean };
+  leyline?: boolean | { notStartingPlayer?: boolean; counter?: string; exileFromHand?: boolean; revealFirstUpkeep?: Effect[] };
   /** Ward: cost to pay (mana or life). */
   ward?: {
     mana?: ManaCost;
@@ -894,7 +896,18 @@ export interface EventReplacement {
    * attached to (Moonlit Meditation, Mirrormind Crown); `firstEachTurn`: only the first time each turn; `may`:
    * "you may instead" (asked by the effect creating the tokens, before they are created).
    */
-  instead?: { token?: TokenSpec; copyOfAttached?: boolean; firstEachTurn?: boolean; exileFromLibrary?: boolean; may?: boolean };
+  /**
+   * `oneOfEach`: "instead create one of each" of these tokens, for each token (Academy Manufactor); each such
+   * replacement applies once to the tokens it creates (616.1: with two Manufactors, three of each).
+   */
+  instead?: {
+    token?: TokenSpec;
+    copyOfAttached?: boolean;
+    firstEachTurn?: boolean;
+    exileFromLibrary?: boolean;
+    may?: boolean;
+    oneOfEach?: TokenSpec[];
+  };
   /** Tokens: "those tokens plus a [N] token" (Quina: a Frog; Worldwalker Helm: a Map). */
   plus?: TokenSpec;
   /**

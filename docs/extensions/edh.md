@@ -21,6 +21,8 @@ The scripts are in `packages/cards/src/edh/`; the rules tests in `packages/engin
 | `mutant-menace` | The Wise Mothman (official Fallout precon) | 57 (3 in common with Counter Blitz) |
 | `nissa` | Nissa, Leyline Tamer (landfall, four colors without green; deck removed 2026-10-09, cards kept) | 34 |
 | `vision` | The Vision (colorless artifacts, Urza lands, Eldrazi) | 63 |
+| `dark-leo` | Dark Leo & Shredder (Ninjas, white and black) | 27 |
+| `ur-sphinx` | The Ur-Sphinx (Sphinxes, Esper) | 28 |
 
 ## E0 — import ✅
 
@@ -272,3 +274,25 @@ Added on 2026-10-08 at the user's request with the "Add a Commander deck" recipe
 - **Approximations:** Helm of the Host (the token's haste is copiable), Cover of Darkness and Shizo (fear is a blocking rule, not a keyword).
 - **Balance** (medium AI on both sides, `--by-deck --deck cmd-dark-leo`, against the eleven other precons in turn): in a duel, 56.0% ± 6.9 (200 games, 18.4 turns); with four players (seats A, B, A, B, fair share 50%), 60.0% ± 9.6 (100 games, 43.5 turns). A little above the target, within the uncertainty in a duel. One declare-blockers step at 128 permanents (myriad and copy tokens) took the opposing medium AI about 9 s (game 75 with four players).
 - **Debt:** `blocked` (Throatseeker), `cantBeBlockedByPlayer` (The Black Gate) and `forbidKeywords` (Archetype of Courage) enter the baseline; the `regenerate` operation, the `returnUnblockedAttacker` property and the `Condition.mostLife` variant are no longer in it (shared); ceilings ObjectFilter 71 → 72, LayerMods 30 → 31, BlockRule 13 → 14.
+
+## Deck The Ur-Sphinx: Sphinxes ✅ (681 / 681)
+
+Added on 2026-10-09 at the user's request with the "Add a Commander deck" recipe (the Nissa deck was removed the same day, its cards kept). List: "Stolen Futures" by LoneWolf87x on Moxfield (updated 2026-09-29), in `docs/commander/decks/ur-sphinx.txt`; precon `cmd-ur-sphinx` (white, blue and black), bracket 4 (thirteen Game Changers: Ancient Tomb, Chrome Mox, Consecrated Sphinx, Cyclonic Rift, Force of Will, Grim Monolith, Mana Vault, Mox Diamond, Mystical Tutor, Rhystic Study, Smothering Tithe, Teferi's Protection, Vampiric Tutor). The commander (Multiverse Reforged) and 67 other cards were already playable; the Moxfield sideboard ("considering": Temporal Mastery, Scroll Rack, Talisman of Hierarchy) is not imported.
+
+**Import:** 28 cards absent from the catalog added to EDH; French text from Scryfall except Grim Monolith (French name only) and Scholar of the Lost Trove (never printed in French), completed by hand in `french-overrides.json`; 0 color identity discrepancies with Scryfall.
+
+**Cards (28, `edh/ursphinx.ts`, and Hall of the Bandit Lord in `edh/lands.ts`):** Sphinxes: Azor, the Lawbringer, Chancellor of the Spires, Consecrated Sphinx, Dazzling Sphinx, Dream Trawler, Magister Sphinx, Master of Predicaments, Medomai the Ageless, Raffine, Scheming Seer, Scholar of the Lost Trove, Sharuum the Hegemon, Sphinx Ambassador, Sphinx Summoner, Sphinx of Uthuun, Sphinx of the Second Sun, Tivit, Seller of Secrets, Unesh, Criosphinx Sovereign, Windreader Sphinx, Yennett, Cryptic Sovereign; other cards: Academy Manufactor, Breach the Multiverse, Grim Monolith, Hall of the Bandit Lord, Mnemonic Betrayal, Mystical Tutor, Raise the Palisade, Reconnaissance, Urza's Incubator.
+
+- **Engine** (rules 175, details in `docs/engine.md`):
+  - "connives X" (701.50e, Raffine): draw X, discard X, a counter per nonland card discarded;
+  - player effect "during that player's next turn" (`throughTheirNextTurn`, Azor: no instant or sorcery during their next turn);
+  - additional whole beginning phase, untap, upkeep and draw (Sphinx of the Second Sun); extra turns known to the rules (`TurnState.extra`, `cond.extraTurn`: Medomai can't attack during them);
+  - removal from combat (506.4, Reconnaissance);
+  - "instead create one of each" tokens (Academy Manufactor), each such replacement applied once to what it creates (616.1: two Manufactors, three of each);
+  - opening-hand reveal with effects at the first upkeep (`leyline.revealFirstUpkeep`, the Chancellor cycle);
+  - search of another player's library (choice among the cards of the `library` zone, Sphinx Ambassador), a player other than the controller choosing for the source (the opponent names a card), "not of the chosen name" read inside `not`;
+  - `exileUntil.storeAll` (Dazzling Sphinx: the cards not cast go on the bottom); votes as `forEachPlayer` + `yourChoice` (Tivit).
+- **Tests:** `engine/test/edh-ursphinx.test.ts` (29, among them Academy Manufactor's ruling with two Manufactors); EDH smoke test (681 cards).
+- **Approximations:** Dazzling Sphinx (the rest in exile order), Yennett (top card not shown when not cast), Tivit (votes take effect as cast), Breach the Multiverse (one graveyard after the other), Sphinx Ambassador (no "search" event), Sphinx of the Second Sun (only the second main phase is postcombat).
+- **Balance** (medium AI on both sides, `--by-deck --deck cmd-ur-sphinx`, against the eleven other precons in turn): in a duel, 43.0% ± 6.9 (200 games, 19.4 turns); with four players (seats A, B, A, B, fair share 50%), 35.0% ± 9.3 (100 games, 44.6 turns). Under the target, clearly with four players: a control deck whose strength lies in choices the medium AI makes poorly (free spells, piles, Mystical Tutor, Reconnaissance); to study in the AI first, the list is not touched. Slowest decision: 1.1 s (four players).
+- **Debt:** `removeFromCombat` (Reconnaissance), `Condition.extraTurn` (Medomai), `oneOfEach` (Academy Manufactor), `revealFirstUpkeep` (Chancellor of the Spires) and `storeAll` (Dazzling Sphinx) enter the baseline; `opponentSeparates` leaves it (Fact or Fiction, Sphinx of Uthuun, Unesh); ceilings Single-card values 104 → 106, Effect 149 → 150, Effect (fields) 640 → 645, Condition 53 → 54, Condition (fields) 97 → 98.

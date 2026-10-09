@@ -726,11 +726,13 @@ export const HANDLERS: OpHandlers = {
         preset = [...new Set(names)];
         if (preset.length === 0) return;
       }
+      // Sphinx Ambassador: "that player chooses a card name" (the choice still belongs to the source).
+      const chooser = (e.who && resolveRef(s, ctx, e.who).find((p) => isPlayer(s, p) && !s.players[p]?.lost)) || ctx.controller;
       return {
         ask: {
-          player: ctx.controller,
+          player: chooser,
           key: key("chosen"),
-          request: enterChoiceRequest(s, ctx.controller, ctx.sourceDefId, kind, preset),
+          request: enterChoiceRequest(s, chooser, ctx.sourceDefId, kind, preset),
         },
       };
     }
