@@ -254,6 +254,10 @@ function targetOptions(s: GameState, player: PlayerId, specs: TargetSpec[], sour
       ...(t.maxManaValueAmount !== undefined && typeof t.maxManaValueAmount === "object" && t.maxManaValueAmount.kind === "x"
         ? { xAtLeast: Object.fromEntries(legal.map((id) => [id, snapshot(s, id).manaValue ?? 0])) }
         : {}),
+      // "With mana value X": X is the target's mana value.
+      ...(t.manaValueAmount !== undefined && typeof t.manaValueAmount === "object" && t.manaValueAmount.kind === "x"
+        ? { xEquals: Object.fromEntries(legal.map((id) => [id, snapshot(s, id).manaValue ?? 0])) }
+        : {}),
     };
     if (t.of?.kind === "target")
       opt.ofTarget = { id: t.of.id, holders: Object.fromEntries(legal.map((id) => [id, holderOf(s, id)])) };
@@ -821,6 +825,16 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
         Object.keys(ab.cost).every((k) => k === "mana" || (ab.cost as Record<string, unknown>)[k] === undefined);
       const minX = ab.cost.minX ?? (xc.sacrifice || onlyX ? 1 : undefined);
       if (minX !== undefined && (xMax ?? 0) < minX) return;
+      // "With mana value X": only the targets whose mana value is an affordable X.
+      const fit = (t: TargetOption) =>
+        t.xEquals
+          ? { ...t, legal: t.legal.filter((c) => (t.xEquals?.[c] ?? 0) <= (xMax ?? 0) && (t.xEquals?.[c] ?? 0) >= (minX ?? 0)) }
+          : t;
+      if (targets.some((t) => t.xEquals)) {
+        const fitted = targets.map(fit);
+        if (!targetsAvailable(fitted)) return;
+        targets.splice(0, targets.length, ...fitted);
+      }
       out.push({
         type: "activate",
         source: id,

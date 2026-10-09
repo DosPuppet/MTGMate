@@ -3605,28 +3605,17 @@ describe("Final Fantasy, lot K8: mythic, rare and uncommon cards", () => {
       const saga = idOf(t, "p1", "battlefield", "Summon: Brynhildr");
       expect(counters(t, saga, "finality")).toBe(1);
       expect(chars(t, saga).keywords).toContain("haste");
-      // X different from the mana value (1 for an MV 2 Saga): nothing returns.
-      let u = scenario({
-        p1: { battlefield: ["Rydia, Summoner of Mist", "Mountain", "Mountain"], graveyard: ["Summon: Brynhildr"] },
-      });
-      u = resolve(
-        activate(u, "p1", idOf(u, "p1", "battlefield", "Rydia, Summoner of Mist"), "Summon", {
-          x: 1,
-          targets: { t: [idOf(u, "p1", "graveyard", "Summon: Brynhildr")] },
-        }),
-      );
-      expect(idsOf(u, "p1", "graveyard", "Summon: Brynhildr")).toHaveLength(1);
-      // X greater than the mana value: nothing either ('with mana value X').
-      let v = scenario({
+      // X different from the mana value (1 or 3 for an MV 2 Saga): the target isn't legal ("with mana value X").
+      const u = scenario({
         p1: { battlefield: ["Rydia, Summoner of Mist", ...lands("Mountain", 3)], graveyard: ["Summon: Brynhildr"] },
       });
-      v = resolve(
-        activate(v, "p1", idOf(v, "p1", "battlefield", "Rydia, Summoner of Mist"), "Summon", {
-          x: 3,
-          targets: { t: [idOf(v, "p1", "graveyard", "Summon: Brynhildr")] },
-        }),
-      );
-      expect(idsOf(v, "p1", "graveyard", "Summon: Brynhildr")).toHaveLength(1);
+      for (const x of [1, 3])
+        expect(() =>
+          activate(u, "p1", idOf(u, "p1", "battlefield", "Rydia, Summoner of Mist"), "Summon", {
+            x,
+            targets: { t: [idOf(u, "p1", "graveyard", "Summon: Brynhildr")] },
+          }),
+        ).toThrow();
     });
 
     it("Rydia's Return: your creatures +3/+3; or up to two permanent cards from the graveyard to hand", () => {

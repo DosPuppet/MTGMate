@@ -59,7 +59,6 @@ In the order they were added, set by set.
   - `rule` Memories Returning: you choose the three cards kept (the opponent does not choose those on the bottom);
   - `rule` Sin, Spira's Punishment: six copies at most per trigger;
   - `rule` Zenos, Shinryu: the chosen opponent is the first to lose the game;
-  - `rule` Rydia, Summoner of Mist: any Saga card in your graveyard can be targeted; it only returns if its mana value is X.
 - **Aetherdrift (`docs/extensions/dft.md`):**
   - `rule` Skyseer's Chariot: "a nonland card name"; a land card name is also accepted (and can be offered);
   - `rule` Lifecraft Engine: all your Vehicles, even noncreature ones, have the chosen type (the set affected in layer 4 does not follow the 613.8a dependency on crew, which is more recent);
@@ -135,7 +134,6 @@ In the order they were added, set by set.
   - `timing` Feral Encounter: "at the beginning of the next combat phase this turn" goes through a turn emblem;
   - `rule` Will, Scion of Peace, Rowan, Scion of War: the "this turn" reduction is granted to the creature and ends if it leaves the battlefield; X is read again at each spell;
   - `rule` The Irencrag: "loses all other abilities": its mana ability and its trigger are inactive once it is an Equipment, but remain listed;
-  - `timing` Likeness Looter: the mana value X of the targeted card is checked at resolution (nothing happens if it differs), and not at targeting;
   - `auto choice` Yenna, Redtooth Regent: the copy of an Aura attaches to a host chosen by the engine.
 - **Secrets of Strixhaven (`docs/extensions/sos.md`):**
   - `rule` Zimone's Experiment: the revealed cards go back on top of the library before going onto the battlefield or into hand (like Break Out);
@@ -257,7 +255,6 @@ In the order they were added, set by set.
   - `rule` Young Deathclaws: the granted scavenge is an ability of Young Deathclaws that costs {4} (and not the exiled card's mana cost);
   - `rule` Mariposa Military Base: it always enters untapped, without rad counters.
   - `auto choice` Scorched Ruins: the two untapped lands sacrificed on entering are chosen by the engine (the first ones on the battlefield), without asking the player;
-  - `timing` The Mycosynth Gardens: the mana value X of the targeted artifact is checked at resolution (nothing happens if it differs), and not at targeting, like Likeness Looter.
   - `rule` Helm of the Host: "that token gains haste" is written as an exception of the copy (707.9b): a copy of that token also has haste;
   - `rule` Cover of Darkness, Shizo, Death's Storehouse: fear (702.36) is a blocking rule ("can't be blocked except by artifact and/or black creatures"), not a keyword: no card can read that a creature "has fear".
   - `timing` Tivit, Seller of Secrets: each vote takes effect as soon as it is cast (same result: nothing reads the votes); "you may vote an additional time" only applies to Tivit's own votes (no other vote in the catalog);

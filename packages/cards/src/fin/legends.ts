@@ -335,9 +335,8 @@ export const LEGENDS: Record<string, CardScript> = {
         mana: "{X}",
         tap: true,
         sorcerySpeed: true,
-        // A target filter does not read the X of an activated ability (`cmp.manaValue("<=", amount.x)` reads the one of the
-        // spell that created the source): the Saga's mana value is compared with X on resolution.
-        targets: [target.cardInGraveyard("t", { subtype: "Saga" }, "you", "Saga card")],
+        // "Target Saga card with mana value X": checked with the announced X, and again on resolution.
+        targets: [{ ...target.cardInGraveyard("t", { subtype: "Saga" }, "you", "Saga card"), manaValueAmount: amount.x }],
         effects: [
           fx.when(
             cond.all(

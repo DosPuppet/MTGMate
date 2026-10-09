@@ -4618,7 +4618,8 @@ describe("Wilds of Eldraine, lot C3: nonlegendary copies, copy of a card from th
     const looter = idOf(s, "p1", "battlefield", "Likeness Looter");
     const bear = idOf(s, "p1", "graveyard", "Bear Cub");
     const dragon = idOf(s, "p1", "graveyard", "Shivan Dragon");
-    s = settleAll(act(s, "p1", { type: "activate", source: looter, ability: 1, x: 2, targets: { t: [dragon] } }));
+    // The Dragon (MV 6) isn't a legal target for X = 2 ("with mana value X").
+    expect(() => act(s, "p1", { type: "activate", source: looter, ability: 1, x: 2, targets: { t: [dragon] } })).toThrow();
     expect(chars(s, looter).name).toBe("Likeness Looter");
     s = scenario({ p1: { battlefield: ["Likeness Looter", ...lands("Island", 2)], graveyard: ["Bear Cub"] } });
     const l2 = idOf(s, "p1", "battlefield", "Likeness Looter");

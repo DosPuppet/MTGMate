@@ -274,6 +274,11 @@ export interface TargetOption {
    * (Kozilek's Command, Here Comes a New Hero!, Agadeem's Awakening).
    */
   xAtLeast?: Record<string, number>;
+  /**
+   * "With mana value X" (`TargetSpec.manaValueAmount` being X): the only value of X that makes each target legal (its
+   * mana value; Likeness Looter, The Mycosynth Gardens, Rydia).
+   */
+  xEquals?: Record<string, number>;
 }
 
 export interface ModeOption {

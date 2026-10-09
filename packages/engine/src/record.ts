@@ -504,8 +504,10 @@ export const RECORD_VERSION = 1;
  * - 183: PLAN-J J6b: "on the bottom in any order" asks the order (read from the text, 12 cards); the cards put back on
  *   top in any order are ordered (Rowan's Grim Search); cascade's card not cast goes to the bottom shuffled with the
  *   others (702.85a); Dazzling Sphinx's cards in a random order
+ * - 184: PLAN-J J6c: "with mana value X" on an activated ability's target is checked with the announced X (Likeness
+ *   Looter, The Mycosynth Gardens, Rydia); the legal options offer only the targets of an affordable X (`xEquals`)
  */
-export const RULES_VERSION = 183;
+export const RULES_VERSION = 184;
 
 /** One checkpoint every N decisions (plus the last one of the game). */
 export const CHECKPOINT_EVERY = 25;

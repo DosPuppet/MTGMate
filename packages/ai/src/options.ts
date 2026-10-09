@@ -4,6 +4,15 @@
 import type { ActionOption, Decision, TargetOption } from "@mtgx/engine";
 
 /** Multiple targets ("up to N"): N targets compatible with the group constraint, in the given order. */
+/** "With mana value X" (`TargetOption.xEquals`): X is the mana value of the chosen target, if any. */
+function exactX(targets: Record<string, string[]>, opts: TargetOption[]): number | undefined {
+  for (const o of opts) {
+    const id = targets[o.id]?.[0];
+    if (o.xEquals && id !== undefined && o.xEquals[id] !== undefined) return o.xEquals[id];
+  }
+  return undefined;
+}
+
 export function multiTargets(o: TargetOption, order0: string[] = o.legal): string[] {
   // A required target among `requiredAmong` (cost reduction): first.
   const must = o.requiredAmong;
@@ -158,14 +167,17 @@ export function buildCastDecision(
       const power = () => picked.reduce((n, id) => n + (tap?.powers?.[id] ?? 0), 0);
       const enough = () => (tap?.minPower !== undefined ? power() >= tap.minPower : picked.length >= (tap?.count ?? 0));
       while (tap && !enough() && pool.length) picked.push(pool.splice(Math.floor(rand() * pool.length), 1)[0] as string);
+      const targets = targetsFrom(a.targets);
       return withCountX(
         {
           type: "activate" as const,
           source: a.source,
           ability: a.ability,
-          targets: targetsFrom(a.targets),
-          // "X can't be 0": X drawn between its minimum and its maximum.
-          x: a.xMax === null ? undefined : (a.xMin ?? 0) + Math.floor(rand() * (a.xMax - (a.xMin ?? 0) + 1)),
+          targets,
+          // "X can't be 0": X drawn between its minimum and its maximum; "with mana value X": the target's.
+          x:
+            exactX(targets, a.targets) ??
+            (a.xMax === null ? undefined : (a.xMin ?? 0) + Math.floor(rand() * (a.xMax - (a.xMin ?? 0) + 1))),
           tap: tap ? picked : undefined,
         },
         a.targets,
@@ -200,8 +212,10 @@ export function enumerateDecisions(a: ActionOption, limit = 40, rank?: (ids: str
     }
     return acc;
   };
-  /** "X targets": X is the number of targets kept (at most the maximum X). */
+  /** "X targets": X is the number of targets kept (at most the maximum X); "with mana value X": the target's. */
   const fitX = (targets: Record<string, string[]>, opts: TargetOption[], xMax: number | null) => {
+    const exact = exactX(targets, opts);
+    if (exact !== undefined) return { targets, x: exact };
     const o = opts.find((t) => t.countX === true);
     if (!o || xMax === null) return { targets, x: xMax ?? undefined };
     const ids = (targets[o.id] ?? []).slice(0, xMax);

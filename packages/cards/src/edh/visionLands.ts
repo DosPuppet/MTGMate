@@ -148,7 +148,13 @@ export const EDH_VISION_LANDS: Record<string, CardScript> = {
       activated({
         mana: "{X}",
         tap: true,
-        targets: [target.permanent("t", ["Artifact"], { controller: "you", token: false }, "nontoken artifact you control")],
+        // "Target nontoken artifact you control with mana value X": checked with the announced X, and again on resolution.
+        targets: [
+          {
+            ...target.permanent("t", ["Artifact"], { controller: "you", token: false }, "nontoken artifact you control"),
+            manaValueAmount: amount.x,
+          },
+        ],
         effects: [fx.becomeCopy(ref.self, ref.target(), "permanent", { ifManaValue: amount.x })],
         label: "Becomes a copy of a nontoken artifact you control with mana value X",
       }),

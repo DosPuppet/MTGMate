@@ -89,7 +89,13 @@ export const MULTI: Record<string, CardScript> = {
       activated({
         mana: "{X}",
         sorcerySpeed: true,
-        targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "creature card with mana value X")],
+        // "Target creature card with mana value X": checked with the announced X, and again on resolution.
+        targets: [
+          {
+            ...target.cardInGraveyard("t", { types: ["Creature"] }, "you", "creature card with mana value X"),
+            manaValueAmount: amount.x,
+          },
+        ],
         effects: [
           fx.becomeCopy(ref.self, ref.target(), "permanent", {
             addKeywords: ["flying"],

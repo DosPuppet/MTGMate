@@ -3467,7 +3467,12 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     xc.removeCounters
       ? Math.max(0, Math.floor(choices.x ?? 0))
       : 0;
-  const targets = validateTargets(s, player, ab.targets, choices.targets, { sourceId: source, x });
+  // "With mana value X" (an exact or maximum mana value read from X): checked with the announced X (601.2b, then 601.2c).
+  const xCtx = { ...staticContext(s, player, source), x };
+  const specs = ab.targets?.map((t) =>
+    t.manaValueAmount !== undefined || t.maxManaValueAmount !== undefined ? concreteSpec(s, xCtx, t) : t,
+  );
+  const targets = validateTargets(s, player, specs, choices.targets, { sourceId: source, x });
   // Krumar Initiate: "pay X life".
   if (xc.payLife && x > 0 && payableLife(s, player) < x) throw new RulesError(msg("Not enough life"));
   if (xc.sacrifice && x < 1) throw new RulesError(msg("Sacrifice at least one permanent"));

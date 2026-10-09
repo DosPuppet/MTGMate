@@ -5,6 +5,7 @@
 import { describe, expect, it } from "vitest";
 import { dealDamage, sourceFromObject } from "../src/actions";
 import { submit } from "../src/game";
+import { legalActions } from "../src/legal";
 import { bump, chars, moveObject } from "../src/state";
 import { matchesObjectFilter } from "../src/targets";
 import { filterEvents } from "../src/view";
@@ -179,5 +180,19 @@ describe("PLAN-J J6b [rules 183]: library order", () => {
     const names = (ids: string[]) => ids.map((id) => s.defs[s.objects[id]?.defId ?? ""]?.name);
     // The order chosen, the last card at the bottom; Plains (sixth) now on top.
     expect(names(s.players.p1?.library ?? [])).toEqual(["Plains", "Swamp", "Forest", "Island", "Shock", "Opt"]);
+  });
+});
+
+describe("PLAN-J J6c [rules 184]: X tied to an activated ability's target", () => {
+  it("Likeness Looter: only targets whose mana value is an affordable X are offered, each with its X", () => {
+    const s = scenario({
+      p1: { battlefield: ["Likeness Looter", ...lands("Island", 2)], graveyard: ["Bear Cub", "Shivan Dragon"] },
+    });
+    const looter = idOf(s, "p1", "battlefield", "Likeness Looter");
+    const bear = idOf(s, "p1", "graveyard", "Bear Cub");
+    const a = legalActions(s, "p1").find((x) => x.type === "activate" && x.source === looter && x.ability === 1);
+    const t = a?.type === "activate" ? a.targets[0] : undefined;
+    expect(t?.legal).toEqual([bear]);
+    expect(t?.xEquals?.[bear]).toBe(2);
   });
 });
