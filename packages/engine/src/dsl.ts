@@ -224,6 +224,8 @@ export const ref = {
   /** "this card", wherever it is (Angelic Destiny). */
   selfCard: { kind: "selfCard" } as Ref,
   linked: { kind: "linked" } as Ref,
+  /** The player chosen as the source entered ("the chosen player"). */
+  chosenPlayer: { kind: "chosenPlayer" } as Ref,
   /** What was paid in objects for the cost (sacrificed permanents, discarded cards…). */
   cost: (paid: Extract<Ref, { kind: "cost" }>["paid"]): Ref => ({ kind: "cost", paid }),
   costSacrificed: { kind: "cost", paid: "sacrificed" } as Ref,
@@ -264,6 +266,8 @@ export const ref = {
     where: { kind: "not", cond: { kind: "maxSpeed" } },
   } as Ref,
   libraryTop: (who: Ref): Ref => ({ kind: "libraryTop", who }),
+  /** The bottom card of the designated player's library. */
+  libraryBottom: (who: Ref): Ref => ({ kind: "libraryTop", who, bottom: true }),
   /** The objects in a zone of the designated players (see the `zone` reference). */
   zone: (zone: Extract<Ref, { kind: "zone" }>["zone"], who: Ref, filter?: ObjectFilter): Ref => ({
     kind: "zone",
@@ -527,6 +531,8 @@ export const amount = {
   sourceManaSpent: { kind: "raw", what: "manaSpent" } as Amount,
   /** Commander: number of colors in the color identity of your commanders (903.4; 0 without a commander). */
   commanderColors: agg("distinct", "colorIdentity", { of: { kind: "commanders", who: { kind: "you" } } }),
+  /** "For each time you've cast your commander (a commander) from the command zone this game". */
+  commanderCasts: { kind: "commanderCasts" } as Amount,
 };
 
 /**

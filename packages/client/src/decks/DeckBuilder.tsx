@@ -6,6 +6,7 @@
 import {
   CARDS,
   canBeCommander,
+  canJoinCommander,
   DEFAULT_FORMAT,
   type DeckEntries,
   type DeckEntry,
@@ -24,6 +25,8 @@ import {
   CUSTOM_PRINTING,
   cardFace,
   colorIdentity,
+  customArtSet,
+  customPrinting,
   type Format,
   keyedPrinting,
   manaValue,
@@ -35,7 +38,7 @@ import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { Card, ManaCost } from "../board/Card";
 import { Preview } from "../board/Sidebar";
 import { faceName } from "../i18n";
-import { hasCustomArt, useImages } from "../images";
+import { customArtSets, hasCustomArt, useImages } from "../images";
 import { LangToggle } from "../LangToggle";
 import { useT } from "../localize";
 import { useGame } from "../store";
@@ -134,7 +137,8 @@ const PRINT_LANGS: Record<string, string> = {
 
 /** Label of a printing in the "Art" menu: "STA 42 · Strixhaven Mystical Archive · 2021 · Japanese". */
 function printingLabel(p: PrintingOption, lang: Lang): string {
-  if (p.key === CUSTOM_PRINTING) return tr(lang, "Custom illustration");
+  const set = customArtSet(p.key);
+  if (set !== undefined) return set ? tr(lang, "Custom illustration ({set})", { set }) : tr(lang, "Custom illustration");
   const info = SET_BY_CODE[p.set];
   const name = info ? setName(info, lang) : p.setName;
   const printLang = p.lang && (PRINT_LANGS[p.lang] ? textIn(lang, PRINT_LANGS[p.lang] as string) : p.lang);
@@ -149,14 +153,18 @@ function printingChoices(
   c: CardDef,
   key: string | undefined,
   table: PrintingTable | undefined,
-  custom: boolean,
+  /** The art sets that have an image of the card (`customArtSets`); `shared`: the shared images have one. */
+  custom: { sets: string[]; shared: boolean },
 ): PrintingOption[] {
   const out: PrintingOption[] = table?.printingOptions(c) ?? [
     { set: c.set ?? "", number: c.number ?? "" },
     ...(c.printings ?? []).map((p) => ({ key: p.key, set: p.set, number: p.number })),
   ];
-  // Custom art (local folder of the server, images.ts): offered if the server has one, or already chosen.
-  if (custom || key === CUSTOM_PRINTING) out.push({ key: CUSTOM_PRINTING, set: "", number: "" });
+  // Custom art (local folder of the server, images.ts): one choice per art set that has the card (the plain "custom"
+  // printing if the server lists no sets), and the one already chosen.
+  const customKeys = custom.sets.length ? custom.sets.map((x) => customPrinting(x)) : custom.shared ? [CUSTOM_PRINTING] : [];
+  if (key && customArtSet(key) !== undefined && !customKeys.includes(key)) customKeys.push(key);
+  for (const k of customKeys) out.push({ key: k, set: "", number: "" });
   const chosen = key && !out.some((p) => p.key === key) ? keyedPrinting(key) : undefined;
   return chosen ? [...out, { key, set: chosen.set, number: chosen.number }] : out;
 }
@@ -398,6 +406,7 @@ function DeckLines({
   readOnly,
   format = DEFAULT_FORMAT,
   onCommander,
+  commanders = [],
 }: {
   entries: DeckEntries;
   onChange: (name: string, d: number) => void;
@@ -406,6 +415,8 @@ function DeckLines({
   format?: Format;
   /** Commander: "set as commander" (legendary creatures of the deck). */
   onCommander?: (name: string) => void;
+  /** The current commanders (a partner or a Background can join them). */
+  commanders?: CardDef[];
 }) {
   const lang = useGame((s) => s.lang);
   const t = useT();
@@ -429,7 +440,10 @@ function DeckLines({
               const face = printedFace(cardFace(c), c, key);
               const issue = legalityIssue(c, format);
               const illegal = issue && textIn(lang, issue);
-              const choices = printingChoices(c, key, table, hasCustomArt(custom, name));
+              const choices = printingChoices(c, key, table, {
+                sets: customArtSets(custom, name),
+                shared: hasCustomArt(custom, name),
+              });
               const current = choices.find((p) => p.key === key);
               return (
                 <div
@@ -463,7 +477,7 @@ function DeckLines({
                   )}
                   {!readOnly && (
                     <span className="deck-line-btns">
-                      {onCommander && canBeCommander(c) && (
+                      {onCommander && (canBeCommander(c) || canJoinCommander(c, commanders)) && (
                         <button
                           type="button"
                           className="btn small"
@@ -581,10 +595,20 @@ export function DeckBuilder() {
     if (shownTab === "main") save({ ...deck, main: withCount(deck.main, name, delta) });
     else save({ ...deck, sideboard: withCount(deck.sideboard ?? [], name, delta) });
   };
-  /** Commander: the card becomes the commander; the former commander goes back to the deck. */
+  /**
+   * Commander: the card becomes the commander, the former one going back to the deck; a card that can be paired with the
+   * current commander (partner, Background: 702.124) joins it as the second commander.
+   */
   const setCommander = (name: string) => {
     if (readOnly) return;
-    let main = withCount(deck.main, name, -1);
+    const card = CARDS[name];
+    const current = (deck.commander ?? []).map(([, n]) => CARDS[n]).filter((c): c is CardDef => !!c);
+    const main0 = withCount(deck.main, name, -1);
+    if (card && canJoinCommander(card, current)) {
+      save({ ...deck, commander: [...(deck.commander ?? []), [1, name]], main: main0 });
+      return;
+    }
+    let main = main0;
     for (const [n, old] of deck.commander ?? []) main = withCount(main, old, n);
     save({ ...deck, commander: [[1, name]], main });
   };
@@ -770,6 +794,7 @@ export function DeckBuilder() {
               readOnly={readOnly}
               format={format}
               onCommander={isCommander && shownTab === "main" ? setCommander : undefined}
+              commanders={(deck.commander ?? []).map(([, n]) => CARDS[n]).filter((c): c is CardDef => !!c)}
             />
             {shownTab === "commander" && !deck.commander?.length && (
               <p className="hint">{t("Choose a legendary creature of the deck with the ♛ button.")}</p>

@@ -2,7 +2,16 @@
  * Printings (PLAN-G, G1): the artwork of a reprint, or of a printing from the table (`printings.ts`), chosen
  * by the deck, without changing anything about the rules.
  */
-import { CUSTOM_PRINTING, createRecordedGame, isGameRecord, keyedPrinting, projectView, replayGame } from "@mtgx/engine";
+import {
+  CUSTOM_PRINTING,
+  createRecordedGame,
+  customArtSet,
+  customPrinting,
+  isGameRecord,
+  keyedPrinting,
+  projectView,
+  replayGame,
+} from "@mtgx/engine";
 import { describe, expect, it } from "vitest";
 import {
   buildDeck,
@@ -187,31 +196,45 @@ describe("table des impressions", () => {
 });
 
 describe("impression personnelle (illustrations locales du serveur)", () => {
-  it("The Vision precon takes it for each card; the view marks its faces, its tokens and its player", () => {
+  it("The Vision and Mario & Luigi precons take it, each with its art set; the view marks faces, tokens and players", () => {
     const vision = DECKS.find((d) => d.id === "cmd-vision");
-    expect(vision?.art).toBe("custom");
-    expect([...(vision?.commander ?? []), ...(vision?.main ?? [])].every((e) => e[2] === CUSTOM_PRINTING)).toBe(true);
+    const mario = DECKS.find((d) => d.id === "cmd-mario-luigi");
+    expect([vision?.art, mario?.art]).toEqual(["custom:nier", "custom:mario"]);
+    const keys = (d: typeof vision) => new Set([...(d?.commander ?? []), ...(d?.main ?? [])].map((e) => e[2]));
+    expect([...keys(vision)]).toEqual(["custom:nier"]);
+    expect([...keys(mario)]).toEqual(["custom:mario"]);
     // The other precons keep the Scryfall printings.
-    expect(DECKS.filter((d) => d.main.some((e) => e[2] === CUSTOM_PRINTING)).map((d) => d.id)).toEqual(["cmd-vision"]);
+    expect(DECKS.filter((d) => d.main.some((e) => customArtSet(e[2]) !== undefined)).map((d) => d.id)).toEqual([
+      "cmd-vision",
+      "cmd-mario-luigi",
+    ]);
+    // Plain custom printing, or one of an art set (lowercase letters, digits, dashes).
+    expect(customPrinting("mario")).toBe("custom:mario");
+    expect([customArtSet(CUSTOM_PRINTING), customArtSet("custom:mario"), customArtSet("custom:Bad Set")]).toEqual([
+      "",
+      "mario",
+      undefined,
+    ]);
     expect(hasPrinting(card("Sol Ring"), CUSTOM_PRINTING)).toBe(true);
-    const main: DeckEntries = [
-      [30, "Sol Ring", CUSTOM_PRINTING],
-      [30, "Wastes"],
-    ];
+    expect(hasPrinting(card("Sol Ring"), "custom:mario")).toBe(true);
+    expect(hasPrinting(card("Sol Ring"), "custom:../x")).toBe(false);
+    // p1 plays the "mario" set, p2 the plain custom printing (old decks), p3 none.
+    const deck = (key?: string): DeckEntries => [[30, "Sol Ring", ...(key ? [key] : [])] as DeckEntries[number], [30, "Wastes"]];
     const { state } = createRecordedGame({
       seed: 5,
       players: [
-        { id: "p1", name: "A", deck: buildDeck({ main }), printings: deckPrintings({ main }) },
-        { id: "p2", name: "B", deck: buildDeck({ main }) },
+        { id: "p1", name: "A", deck: buildDeck({ main: deck() }), printings: deckPrintings({ main: deck("custom:mario") }) },
+        { id: "p2", name: "B", deck: buildDeck({ main: deck() }), printings: deckPrintings({ main: deck(CUSTOM_PRINTING) }) },
+        { id: "p3", name: "C", deck: buildDeck({ main: deck() }) },
       ],
     });
     const v1 = projectView(state, "p1");
     const rings = v1.hand.filter((v) => v.name === "Sol Ring");
     expect(rings.length).toBeGreaterThan(0);
-    for (const v of rings) expect(v.customArt).toBe(true);
+    for (const v of rings) expect(v.customArt).toBe("mario");
     for (const v of v1.hand.filter((x) => x.name === "Wastes")) expect(v.customArt).toBeUndefined();
-    expect(v1.players.p1?.customArt).toBe(true);
-    expect(v1.players.p2?.customArt).toBeUndefined();
-    for (const v of projectView(state, "p2").hand) expect(v.customArt).toBeUndefined();
+    expect([v1.players.p1?.customArt, v1.players.p2?.customArt, v1.players.p3?.customArt]).toEqual(["mario", true, undefined]);
+    for (const v of projectView(state, "p2").hand.filter((x) => x.name === "Sol Ring")) expect(v.customArt).toBe(true);
+    for (const v of projectView(state, "p3").hand) expect(v.customArt).toBeUndefined();
   });
 });

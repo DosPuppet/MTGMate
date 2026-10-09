@@ -12,6 +12,28 @@ import type { CardPrinting } from "./model/cards";
  */
 export const CUSTOM_PRINTING = "custom";
 
+/** Name of an art set (a proxy deck's folder, `tools/custom-art.ts`): lowercase letters, digits and dashes. */
+const ART_SET = /^[a-z0-9][a-z0-9-]{0,39}$/;
+
+/**
+ * Custom printing of one art set ("custom:mario"): the images of that folder first (each proxy deck keeps its own
+ * tokens and its own version of a shared card), then the shared ones.
+ */
+export function customPrinting(set?: string): string {
+  return set ? `${CUSTOM_PRINTING}:${set}` : CUSTOM_PRINTING;
+}
+
+/**
+ * The art set of a custom printing key: `""` for the plain custom printing, the set's name for "custom:<set>",
+ * `undefined` if the key isn't a custom printing.
+ */
+export function customArtSet(key: string | undefined): string | undefined {
+  if (key === CUSTOM_PRINTING) return "";
+  if (!key?.startsWith(`${CUSTOM_PRINTING}:`)) return undefined;
+  const set = key.slice(CUSTOM_PRINTING.length + 1);
+  return ART_SET.test(set) ? set : undefined;
+}
+
 /** "STA-42@<Scryfall id without dashes>". */
 const KEY = /^([A-Z0-9]{2,6})-([^@\s]{1,10})@([0-9a-f]{32})$/;
 

@@ -12,12 +12,13 @@ import { CARDS, DECKS, type DeckEntries, SET_BY_CODE } from "../src";
 describe("decks Commander", () => {
   const decks = commanderDecks();
 
-  it("Commander decks: 100 cards, one commander, every name known to the catalog", () => {
+  it("Commander decks: 100 cards, one commander or a pair, every name known to the catalog", () => {
     expect(decks.map((d) => d.id)).toEqual([
       "counter-blitz",
       "dark-leo",
       "edgar-markov",
       "fantastic-four",
+      "mario-luigi",
       "multiverse-reforged",
       "mutant-menace",
       "rakdos",
@@ -31,7 +32,8 @@ describe("decks Commander", () => {
     ]);
     for (const d of decks) {
       expect(d.unknown, d.id).toEqual([]);
-      expect(d.commander.length, d.id).toBe(1);
+      // One commander, or a pair (702.124: Mario & Luigi, two partners).
+      expect([1, 2], d.id).toContain(d.commander.length);
       const count = [...d.commander, ...d.main].reduce((n, [k]) => n + k, 0);
       expect(count, d.id).toBe(100);
     }

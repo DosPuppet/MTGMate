@@ -128,7 +128,7 @@ curl -sI https://mtg.mydomain.example/scry/small/front/8/d/8d8432a7-1c8a-4cfb-94
 
 Local images (proxies, alternate versions) can replace Scryfall's for the cards, tokens and backs they name. They are never in Git.
 
-1. On your machine, prepare them: `npm run custom-art -- <images folder>`. Files are named after the card's English name (details at the top of `tools/custom-art.ts`). The result goes in `data/art/`: reduced WebP images (about 100 KB each) and `manifest.json`.
+1. On your machine, prepare them: `npm run custom-art -- <images folder>=<set> […]`, with every folder at once, each one an art set (today `/home/dospu/Nier_cards=nier /home/dospu/MarioLuigi_cards=mario`): the images of a folder left out are deleted from `data/art/`. A precon chooses its set with `"art": "custom:<set>"`. Files are named after the card's English name (details at the top of `tools/custom-art.ts`). The result goes in `data/art/`: reduced WebP images (about 100 KB each) and `manifest.json`.
 2. Copy that folder to the VPS, into the app's `data/` folder: `rsync -a data/art/ vps:planecircle/data/art/`. Another location is given by `MTGX_ART_DIR`.
 3. The server serves them on `/art/`, without a restart. Every player on the server then sees the "Illustrations personnelles" ("Custom art") checkbox, ticked by default, on the home screen and in the game settings.
 4. They replace the Scryfall image only in a deck that chooses them: The Vision precon for all its cards, or a card of your choice in the deck editor ("Illustration" menu, "Illustration personnelle"). The tokens and card backs of a player whose deck uses them take their own too.

@@ -145,7 +145,8 @@ export function faceType(face: CardFace, lang: Lang): string {
  * one; otherwise Scryfall's (relayed if Scryfall is blocked, see images.ts).
  */
 export function faceImage(face: CardFace, lang: Lang): string | undefined {
-  const custom = face.customArt && face.defId !== HIDDEN_CARD_ID ? customImage(face.name, face.isToken) : undefined;
+  const custom =
+    face.customArt && face.defId !== HIDDEN_CARD_ID ? customImage(face.name, face.isToken, face.customArt) : undefined;
   if (custom) return custom;
   // Token: the image of a matching Scryfall token (data/tokens.json), otherwise the text frame.
   return imageUrl((lang === "fr" && face.fr?.image) || face.image || (face.isToken ? tokenImage(face) : undefined));

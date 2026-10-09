@@ -78,9 +78,11 @@ export const HANDLERS: OpHandlers = {
     const until =
       e.duration === "untilYourNextTurn"
         ? nextTurnOf(s, ctx.controller) - 1
-        : e.duration === "forever" || (e.times !== undefined && !e.once)
-          ? null
-          : s.turn.number;
+        : e.duration === "throughYourNextTurn"
+          ? nextTurnOf(s, ctx.controller)
+          : e.duration === "forever" || (e.times !== undefined && !e.once)
+            ? null
+            : s.turn.number;
     const times = e.times !== undefined ? evalAmount(s, ctx, e.times) : 1;
     for (const p of who)
       for (let i = 0; i < times; i++)

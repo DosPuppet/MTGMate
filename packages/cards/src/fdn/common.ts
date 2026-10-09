@@ -53,6 +53,7 @@ export const {
   firebending,
   TO_CREATURE,
   TO_OPPONENT,
+  TO_PLAYER,
   TO_PLAYER_OR_PLANESWALKER,
 } = dsl;
 

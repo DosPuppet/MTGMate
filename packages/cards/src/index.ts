@@ -14,6 +14,8 @@ export {
   CardIndex,
   COMMANDER_DECK_SIZE,
   canBeCommander,
+  canJoinCommander,
+  canPair,
   DECK_RULES,
   DEFAULT_FORMAT,
   type DeckEntries,

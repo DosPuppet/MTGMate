@@ -909,6 +909,10 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
         if (t.filter.token === false && token) return null;
         if (t.filter.token && !token) return null;
       }
+      // From the battlefield: the permanent as it was (last known information: its counters, Reyhan), then the card it
+      // became (`ref.eventObject` follows it).
+      if (ev.from === "battlefield" && ev.oldId)
+        return { objectId: ev.oldId, newObjectId: ev.newId ?? undefined, player: owner ?? me };
       return { objectId: ev.newId ?? undefined, player: owner ?? me };
     }
     case "crime":

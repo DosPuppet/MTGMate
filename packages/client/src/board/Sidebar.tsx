@@ -55,7 +55,7 @@ export function Preview() {
   const { face, obj } = hover;
   const back =
     flipped && backImage
-      ? ((face.customArt ? customImage(backImage.name) : undefined) ??
+      ? ((face.customArt ? customImage(backImage.name, false, face.customArt) : undefined) ??
         imageUrl((lang === "fr" && backImage.fr?.image) || backImage.image))
       : undefined;
   // Your face-down card: only you see which card it is.

@@ -52,7 +52,8 @@ export type Effect =
        * `during: "yourTurn"` restriction) or for the rest of the game (`forever`: "they can't gain life for the rest
        * of the game", Screaming Nemesis); absent: until end of turn.
        */
-      duration?: "untilYourNextTurn" | "untilTheirNextTurn" | "throughTheirNextTurn" | "forever";
+      /** `throughYourNextTurn`: until the end of the controller's next turn, for every affected player (Single Combat). */
+      duration?: "untilYourNextTurn" | "untilTheirNextTurn" | "throughTheirNextTurn" | "throughYourNextTurn" | "forever";
       times?: Amount;
       /** Single use, until end of turn ("the next spell you cast this turn"). */
       once?: boolean;
@@ -453,7 +454,8 @@ export type Effect =
    */
   | {
       op: "chooseOnEnter";
-      kind: "creatureType" | "color" | "cardName" | "landName" | "landType" | "parity" | "mode" | "number";
+      /** `player`: a player in the game (Saskia the Unyielding), read with `ref.chosenPlayer`. */
+      kind: "creatureType" | "color" | "cardName" | "landName" | "landType" | "parity" | "mode" | "number" | "player";
       options?: string[];
       /** Name chosen among the designated cards (Koh, the Face Stealer: a card exiled with it). */
       optionsFrom?: Ref;

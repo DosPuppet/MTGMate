@@ -235,6 +235,9 @@ export const EDH_LANDS: Record<string, CardScript> = {
   "Ketria Triome": tappedTriland,
   // Nissa, Leyline Tamer.
   "Raugrin Triome": tappedTriland,
+  "Indatha Triome": tappedTriland,
+  "Jetmir's Garden": tappedTriland,
+  "Ziatora's Proving Ground": tappedTriland,
   "Xander's Lounge": tappedTriland,
   "Arcane Sanctum": { abilities: [entersWith({ tapped: true }), manaAbility(["W", "U", "B"])] },
 

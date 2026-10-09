@@ -369,6 +369,53 @@ export function canBeCommander(c: CardDef): boolean {
   return (c.supertypes.includes("Legendary") && c.types.includes("Creature")) || /can be your commander/.test(c.text ?? "");
 }
 
+/**
+ * Commander pairs (702.124), read from the text: "Partner" alone, "Partner—[quality]" (with the same quality),
+ * "Partner with [name]", "Friends forever", "Choose a Background" (with a legendary Background enchantment) and
+ * "Doctor's companion" (with a legendary Time Lord Doctor creature).
+ */
+function pairing(c: CardDef): { kind: string; with?: string } | undefined {
+  const text = c.text ?? "";
+  const withName = /^Partner with ([^(\n]+?)\s*(?:\(|$)/m.exec(text)?.[1];
+  if (withName) return { kind: "partnerWith", with: withName };
+  const quality = /^Partner—([^(\n]+?)\s*(?:\(|$)/m.exec(text)?.[1];
+  if (quality) return { kind: `partner:${quality}` };
+  if (/^Partner\b/m.test(text)) return { kind: "partner" };
+  if (/^Friends forever\b/m.test(text)) return { kind: "friendsForever" };
+  if (/^Choose a Background\b/m.test(text)) return { kind: "chooseBackground" };
+  if (/^Doctor's companion\b/m.test(text)) return { kind: "doctorsCompanion" };
+  return undefined;
+}
+const isBackground = (c: CardDef) =>
+  c.supertypes.includes("Legendary") && c.types.includes("Enchantment") && c.subtypes.includes("Background");
+const isDoctor = (c: CardDef) =>
+  c.supertypes.includes("Legendary") &&
+  c.types.includes("Creature") &&
+  c.subtypes.includes("Time Lord") &&
+  c.subtypes.includes("Doctor");
+
+/** Can these two cards be your two commanders (702.124)? */
+export function canPair(a: CardDef, b: CardDef): boolean {
+  const pa = pairing(a);
+  const pb = pairing(b);
+  if (pa?.kind === "partnerWith" || pb?.kind === "partnerWith") return pa?.with === b.name && pb?.with === a.name;
+  if (
+    pa &&
+    pb &&
+    pa.kind === pb.kind &&
+    (pa.kind === "partner" || pa.kind === "friendsForever" || pa.kind.startsWith("partner:"))
+  )
+    return true;
+  const one = (px: typeof pa, y: CardDef) =>
+    (px?.kind === "chooseBackground" && isBackground(y)) || (px?.kind === "doctorsCompanion" && isDoctor(y));
+  return one(pa, b) || one(pb, a);
+}
+
+/** Can this card join the current commander as its pair (a partner, or a Background for "Choose a Background")? */
+export function canJoinCommander(c: CardDef, current: CardDef[]): boolean {
+  return current.length === 1 && c.name !== current[0]?.name && !!current[0] && canPair(current[0], c);
+}
+
 const count = (entries: DeckEntries) => entries.reduce((a, [n]) => a + n, 0);
 
 /**
@@ -433,8 +480,8 @@ export function validateDeck(
 }
 
 /**
- * Commander (903.5, PLAN-E): one commander (legendary creature or "can be your commander"; pairs, partner or
- * background, wait for a deck that has one), exactly 100 cards commander included, one copy of each card except basic
+ * Commander (903.5, PLAN-E): one commander (legendary creature or "can be your commander"), or two that can be paired
+ * (702.124: partner, Background…), exactly 100 cards commanders included, one copy of each card except basic
  * lands (and "any number", "up to N"), all within the commander's color identity, none banned or not legal
  * (`commander.json`), no sideboard. The Game Changers and the estimated bracket are given for information.
  */
@@ -449,8 +496,13 @@ function validateCommanderDeck(
   const sideCount = count(deck.sideboard ?? []);
   const mainCount = count(deck.main) + count(commanderEntries);
   if (commanders.length === 0) errors.push(msg("Choose a commander"));
-  else if (commanders.length > 1 || count(commanderEntries) > 1)
-    errors.push(msg("Commander pairs (partner, background…) not supported yet: a single commander"));
+  else if (commanders.length > 2 || count(commanderEntries) !== commanders.length)
+    errors.push(msg("At most two commanders, one copy each"));
+  else if (commanders.length === 2) {
+    const [a, b] = commanders.map((n) => cards[n]);
+    if (a && b && !canPair(a, b))
+      errors.push(msg("{a} and {b} can't be commanders together (partner, Background…)", { a: a.name, b: b.name }));
+  }
   if (mainCount !== COMMANDER_DECK_SIZE)
     errors.push(
       msg("The deck has {n} cards, commander included (exactly {size} are needed)", {
@@ -463,7 +515,10 @@ function validateCommanderDeck(
   for (const name of commanders) {
     const c = cards[name];
     if (!c) continue;
-    if (!canBeCommander(c)) errors.push(msg("{card} can't be your commander (legendary creature expected)", { card: name }));
+    // A Background is a commander only beside a "Choose a Background" commander (702.124k).
+    const paired = commanders.length === 2 && commanders.some((o) => o !== name && cards[o] && canPair(cards[o] as CardDef, c));
+    if (!canBeCommander(c) && !(paired && isBackground(c)))
+      errors.push(msg("{card} can't be your commander (legendary creature expected)", { card: name }));
     for (const color of colorIdentity(c)) identity.add(color);
   }
   const deckIdentity = (["W", "U", "B", "R", "G"] as Color[]).filter((x) => identity.has(x));

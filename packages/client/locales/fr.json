@@ -201,6 +201,7 @@
  "Creatures": "Les créatures",
  "Custom art": "Illustrations personnelles",
  "Custom illustration": "Illustration personnelle",
+ "Custom illustration ({set})": "Illustration personnelle ({set})",
  "Damage and effects that say \"destroy\" don't destroy it.": "Les blessures et les effets « détruire » ne la détruisent pas.",
  "Damage dealt by it also causes its controller to gain that much life.": "Les blessures qu'elle inflige font aussi gagner autant de points de vie à son contrôleur.",
  "Damage isn't removed": "Blessures conservées",

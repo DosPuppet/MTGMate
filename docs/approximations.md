@@ -296,3 +296,4 @@ In the order they were added, set by set.
   - `rule` Biotransference: only your creatures on the battlefield and your creature spells are artifacts (not your creature cards in the other zones);
   - `auto choice` Flare of Malice: the creature sacrificed instead of paying is chosen by the engine (the lowest mana value);
   - `rule` Tombstone Stairwell: the world rule (704.5k) is not done (no other world enchantment in the catalog).
+  - `rule` Reyhan, Last of the Abzan: "is put into the command zone" only from the battlefield (a commander that dies goes to the graveyard first, then may return to the command zone: the death triggers it).

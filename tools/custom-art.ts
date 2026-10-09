@@ -18,7 +18,14 @@
  * converted to WebP by Playwright's Chromium (no extra dependency). An image already prepared and not modified is not
  * redone; the files no longer used are deleted.
  *
- * Usage: npm run custom-art -- <image directory> [--out data/art]
+ * Several directories (one per proxy deck: Nier_cards, MarioLuigi_cards): all of them are prepared together, since
+ * the files not found in the sources are deleted. Each directory is an art set (`dir=set`, by default the directory's
+ * name in lowercase: "Nier_cards=nier"), whose images are listed apart in the manifest (`sets`): a deck that chooses
+ * the "custom:<set>" printing looks there first (its own tokens, its own version of a card shared by two decks). The
+ * shared lists (`cards`, `tokens`, `back`), read by the plain "custom" printing, take the first directory given on a
+ * shared name.
+ *
+ * Usage: npm run custom-art -- <image directory>[=<set>] [<image directory>[=<set>]…] [--out data/art]
  */
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from "node:fs";
@@ -29,18 +36,37 @@ import { CARDS } from "../packages/cards/src/index";
 const args = process.argv.slice(2);
 const outIdx = args.indexOf("--out");
 const OUT = outIdx >= 0 ? (args[outIdx + 1] ?? "") : process.env.MTGX_ART_DIR || "data/art";
-const srcArg = args.find((a, i) => !a.startsWith("--") && (outIdx < 0 || i !== outIdx + 1));
-if (!srcArg || !existsSync(srcArg) || !OUT) {
-  console.error("Usage: npm run custom-art -- <image directory> [--out data/art]");
+const srcArgs = args
+  .filter((a, i) => !a.startsWith("--") && (outIdx < 0 || i !== outIdx + 1))
+  .map((a) => {
+    const eq = a.lastIndexOf("=");
+    return eq > 0 ? { dir: a.slice(0, eq), set: a.slice(eq + 1) } : { dir: a, set: "" };
+  });
+/** An art set's name: lowercase letters, digits and dashes (`customArtSet`, engine). */
+const setName = (s: string) =>
+  s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40);
+if (!srcArgs.length || srcArgs.some((a) => !existsSync(a.dir)) || !OUT) {
+  console.error("Usage: npm run custom-art -- <image directory>[=<set>] [<image directory>[=<set>]…] [--out data/art]");
   process.exit(1);
 }
-const SRC = resolve(srcArg);
+const SOURCES = srcArgs.map((a) => resolve(a.dir));
+const SETS = srcArgs.map((a) => setName(a.set || basename(resolve(a.dir))));
+if (SETS.some((x) => !x) || new Set(SETS).size !== SETS.length) {
+  console.error(`Art set names: empty or repeated (${SETS.join(", ")}); give them with <directory>=<set>.`);
+  process.exit(1);
+}
 const WIDTH = 672;
 const HEIGHT = 936;
 
 type Kind = "card" | "token" | "back";
 interface Source {
   file: string;
+  /** Rank of its directory among the sources (the first one wins). */
+  root: number;
   kind: Kind;
   name: string;
   /** 0: top level of the directory; 1: subdirectory. */
@@ -55,9 +81,9 @@ function walk(dir: string, depth = 0): string[] {
   );
 }
 
-function parse(file: string): Source {
+function parse(file: string, root: number): Source {
   let base = basename(file, extname(file)).trim();
-  const depth = relative(SRC, file).split(/[\\/]/).length > 1 ? 1 : 0;
+  const depth = relative(SOURCES[root] as string, file).split(/[\\/]/).length > 1 ? 1 : 0;
   let kind: Kind = "card";
   if (/^card back\b/i.test(base)) kind = "back";
   else if (/^token - /i.test(base)) kind = "token";
@@ -72,7 +98,7 @@ function parse(file: string): Source {
     .replace(/\s*\([^)]*\)\s*$/, "")
     .replace(/_/g, "'")
     .trim();
-  return { file, kind, name, depth, variant };
+  return { file, root, kind, name, depth, variant };
 }
 
 /** Comparison key of names: case, accents, punctuation and spaces ignored ("Power-Plant" = "Power Plant"). */
@@ -100,10 +126,11 @@ function nearName(key: string): string | undefined {
 }
 
 const better = (a: Source, b: Source) => a.depth - b.depth || a.variant - b.variant;
+/** The image chosen for each name, in each art set (`root` + name). */
 const chosen = new Map<string, Source>();
 const unknown = new Set<string>();
 const skipped: string[] = [];
-for (const src of walk(SRC).map(parse)) {
+for (const src of SOURCES.flatMap((dir, root) => walk(dir).map((f) => parse(f, root)))) {
   let key: string;
   if (src.kind === "back") key = "back";
   else if (src.kind === "token") key = `token:${src.name}`;
@@ -116,11 +143,12 @@ for (const src of walk(SRC).map(parse)) {
     src.name = name;
     key = `card:${name}`;
   }
+  key = `${src.root}\u0000${key}`;
   const prev = chosen.get(key);
   if (!prev || better(src, prev) < 0) {
-    if (prev) skipped.push(relative(SRC, prev.file));
+    if (prev) skipped.push(prev.file);
     chosen.set(key, src);
-  } else skipped.push(relative(SRC, src.file));
+  } else skipped.push(src.file);
 }
 
 const slug = (s: string) =>
@@ -139,18 +167,29 @@ function outName(src: Source): string {
 }
 
 mkdirSync(OUT, { recursive: true });
-const manifest: { version: 1; cards: Record<string, string>; tokens: Record<string, string>; back?: string } = {
-  version: 1,
+interface ArtSet {
+  cards: Record<string, string>;
+  tokens: Record<string, string>;
+  back?: string;
+}
+const manifest: ArtSet & { version: 2; sets: Record<string, ArtSet> } = {
+  version: 2,
   cards: {},
   tokens: {},
+  sets: Object.fromEntries(SETS.map((x) => [x, { cards: {}, tokens: {} }])),
 };
 const todo: { src: Source; out: string }[] = [];
-for (const src of chosen.values()) {
+const record = (into: ArtSet, src: Source, out: string, first: boolean) => {
+  if (src.kind === "back") into.back = first ? (into.back ?? out) : out;
+  else if (src.kind === "token") into.tokens[src.name] = first ? (into.tokens[src.name] ?? out) : out;
+  else into.cards[src.name] = first ? (into.cards[src.name] ?? out) : out;
+};
+// In the order of the directories: the shared lists keep the first one.
+for (const src of [...chosen.values()].sort((a, b) => a.root - b.root)) {
   const out = outName(src);
-  if (src.kind === "back") manifest.back = out;
-  else if (src.kind === "token") manifest.tokens[src.name] = out;
-  else manifest.cards[src.name] = out;
-  if (!existsSync(join(OUT, out))) todo.push({ src, out });
+  record(manifest.sets[SETS[src.root] as string] as ArtSet, src, out, false);
+  record(manifest, src, out, true);
+  if (!existsSync(join(OUT, out)) && !todo.some((t) => t.out === out)) todo.push({ src, out });
 }
 
 // Cropping (bleed removed: an equal margin on the four sides that brings back the 63 × 88 format), scaling down by
@@ -218,12 +257,18 @@ if (todo.length) {
 }
 
 // Prepared files no longer used (source image modified or removed).
-const used = new Set([...Object.values(manifest.cards), ...Object.values(manifest.tokens), manifest.back]);
+const used = new Set(
+  Object.values(manifest.sets).flatMap((x) => [...Object.values(x.cards), ...Object.values(x.tokens), x.back]),
+);
 for (const f of readdirSync(OUT)) if (f.endsWith(".webp") && !used.has(f)) unlinkSync(join(OUT, f));
 writeFileSync(join(OUT, "manifest.json"), `${JSON.stringify(manifest, null, 1)}\n`);
 
 const n = Object.keys(manifest.cards).length;
 const tk = Object.keys(manifest.tokens).length;
 console.log(`${OUT}/manifest.json: ${n} cards, ${tk} tokens${manifest.back ? ", card back" : ""}.`);
+for (const [name, x] of Object.entries(manifest.sets))
+  console.log(
+    `  set "${name}": ${Object.keys(x.cards).length} cards, ${Object.keys(x.tokens).length} tokens${x.back ? ", card back" : ""}`,
+  );
 if (skipped.length) console.log(`Discarded variants (a single image per name): ${skipped.length}.`);
 if (unknown.size) console.log(`Cards absent from the catalog (ignored): ${[...unknown].sort().join(", ")}.`);

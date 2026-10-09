@@ -712,7 +712,8 @@ export type Ref =
   /** The most recent ability on the stack whose source is the event object (Firebender Ascension). */
   | { kind: "abilitiesFromEventObject" }
   /** Top card of the library of each designated player. */
-  | { kind: "libraryTop"; who: Ref }
+  /** `bottom`: the bottom card instead (Grenzo, Dungeon Warden). */
+  | { kind: "libraryTop"; who: Ref; bottom?: boolean }
   /** Creatures that saddled or crewed the source this turn (Fortune, Calamity, The Gitrog, Luxurious Locomotive). */
   | { kind: "crewedBy" }
   /** The designated objects that match the filter, in any zone (Ghost Vacuum: the creature cards). */
@@ -726,6 +727,8 @@ export type Ref =
    * Boomerang to its owner's hand'"), remembered on activation; nothing if it has changed zones since.
    */
   | { kind: "grantor" }
+  /** The player chosen by the source as it entered (Saskia the Unyielding), if still in the game. */
+  | { kind: "chosenPlayer" }
   /**
    * The controller of the designated object; gone from the battlefield this turn, its last known controller (608.2h:
    * Winds of Abandon, Indomitable Creativity); otherwise, off the battlefield and the stack, its owner.
@@ -841,6 +844,8 @@ export type Amount =
    * total"); `who`: that of the first designated player rather than yours (0 if there is none).
    */
   | { kind: "lifeTotal"; starting?: boolean; who?: Ref }
+  /** Times you've cast a commander from the command zone this game (903.8: the tax counter of each of your commanders). */
+  | { kind: "commanderCasts" }
   /** Damage marked on the source (last known information: Tangled Colony, "the damage dealt to it this turn"). */
   | { kind: "lkiDamage" }
   | { kind: "manaValueOf"; ref: Ref }

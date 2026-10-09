@@ -670,6 +670,11 @@ export interface CostDef {
 export interface BlockRule {
   /** Blockers matching the filter can't block it. */
   cantBeBlockedBy?: ObjectFilter;
+  /**
+   * "Creatures with power less than [this permanent]'s power can't block" (Champion of Lambholt): `source`, the
+   * permanent of the static (fixed by `resolveBlockRules`), its power compared at the moment of blocking.
+   */
+  cantBeBlockedByWeakerThan?: ObjectId | "source";
   /** It can block only an attacker matching the filter. */
   canBlockOnly?: ObjectFilter;
   /** Blocked by at least / at most N creatures. */
@@ -1284,7 +1289,17 @@ export interface PlayerStaticAbilityDef {
    * (Conspiracy Unraveler: 10) "rather than pay the mana cost"; only the spells matching `filter`, and
    * with `webSlinging` by returning a tapped creature (Amazing Spider-Man: "Web-slinging {G}{W}{U}").
    */
-  altCostAll?: { mana?: ManaCost; collectEvidence?: number; filter?: ObjectFilter; webSlinging?: boolean };
+  /**
+   * `blitz` (702.152): the spell's own mana cost, reduced by `reduce` generic mana (Henzie "Toolbox" Torre: the
+   * commander casts); the creature gains haste and "when it dies, draw a card", and is sacrificed at the next end step.
+   */
+  altCostAll?: {
+    mana?: ManaCost;
+    collectEvidence?: number;
+    filter?: ObjectFilter;
+    webSlinging?: boolean;
+    blitz?: { reduce?: Amount };
+  };
   /**
    * Maximum hand size (402.2), evaluated for the source's controller: Necrodominance (5), Winter, Misanthropic
    * Guide (`affects: "opponents"`); `"none"`: "you have no maximum hand size". Rule-changing effects,

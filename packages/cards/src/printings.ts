@@ -3,7 +3,7 @@
  * which a deck can choose for its art. Outside the main package (`@mtgx/cards/printings`): the interface loads it only
  * on demand (deck builder, decklist import); the server uses it to check the printing of a deck line.
  */
-import { type CardDef, CUSTOM_PRINTING, keyedPrinting, printingKey } from "@mtgx/engine";
+import { type CardDef, customArtSet, keyedPrinting, printingKey } from "@mtgx/engine";
 import data from "../data/printings.json";
 
 /** A printing offered for a card. */
@@ -54,8 +54,8 @@ export function printingOptions(c: CardDef): PrintingOption[] {
 
 /** Is the key a known printing of the card? */
 export function hasPrinting(c: CardDef, key: string): boolean {
-  // Custom printing: always accepted (the interface keeps the card's image if there is none).
-  if (key === CUSTOM_PRINTING) return true;
+  // Custom printing, of any art set: always accepted (the interface keeps the card's image if there is none).
+  if (customArtSet(key) !== undefined) return true;
   if (c.printings?.some((p) => p.key === key)) return true;
   return !!keyedPrinting(key) && tableOptions(c.name).some((p) => p.key === key);
 }

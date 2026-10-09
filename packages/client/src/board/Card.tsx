@@ -126,7 +126,7 @@ export function Card({
   if (face.defId === HIDDEN_CARD_ID)
     return (
       <div className={`card-slot ${className ?? ""}`} style={{ width, height }} data-oid={oid}>
-        <CardBack width={width} custom={!!obj && customBackOf(obj.owner)} />
+        <CardBack width={width} custom={obj ? customBackOf(obj.owner) : false} />
       </div>
     );
 
@@ -257,12 +257,12 @@ function CounterBadges({ counters }: { counters: Record<string, number> }) {
   );
 }
 
-/** Does this player's deck use custom art (card backs)? */
-const customBackOf = (owner: string): boolean => !!useGame.getState().view?.players[owner]?.customArt;
+/** Does this player's deck use custom art (card backs)? A string: their art set. */
+const customBackOf = (owner: string): boolean | string => useGame.getState().view?.players[owner]?.customArt ?? false;
 
-/** The back of a card; `custom`: the player who owns it uses custom art. */
-export function CardBack({ width, custom }: { width: string; custom?: boolean }) {
-  const back = useCustomBack();
+/** The back of a card; `custom`: the player who owns it uses custom art (a string: of that art set first). */
+export function CardBack({ width, custom }: { width: string; custom?: boolean | string }) {
+  const back = useCustomBack(typeof custom === "string" ? custom : undefined);
   const image = custom && back ? { backgroundImage: `url("${back}")` } : {};
   return <div className="card-back" style={{ width, height: `calc(${width} * 1.395)`, ...image }} />;
 }

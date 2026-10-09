@@ -1,10 +1,11 @@
 /** Deck lists only (without the card data): usable by the interface without weighing down the bundle. */
 
-import { CUSTOM_PRINTING, type Format } from "@mtgx/engine";
+import { customArtSet, type Format } from "@mtgx/engine";
 import cmdCounterBlitz from "../decks/cmd-counter-blitz.json";
 import cmdDarkLeo from "../decks/cmd-dark-leo.json";
 import cmdEdgarMarkov from "../decks/cmd-edgar-markov.json";
 import cmdFantasticFour from "../decks/cmd-fantastic-four.json";
+import cmdMarioLuigi from "../decks/cmd-mario-luigi.json";
 import cmdMultiverseReforged from "../decks/cmd-multiverse-reforged.json";
 import cmdMutantMenace from "../decks/cmd-mutant-menace.json";
 import cmdRakdos from "../decks/cmd-rakdos.json";
@@ -52,10 +53,11 @@ export interface DeckList {
    */
   bracket?: 1 | 2 | 3 | 4 | 5;
   /**
-   * Precon with custom art (`"custom"`): each line that chooses no printing takes the custom printing
-   * (`CUSTOM_PRINTING`), whose image comes from the server's local folder, if there is one.
+   * Precon with custom art (`"custom"`, or `"custom:<set>"`: the images of that art set first, `tools/custom-art.ts`):
+   * each line that chooses no printing takes that custom printing, whose image comes from the server's local folder,
+   * if there is one.
    */
-  art?: "custom";
+  art?: string;
 }
 
 /**
@@ -89,12 +91,14 @@ export const DECKS: DeckList[] = [
   cmdUrSphinx,
   cmdVivi,
   cmdSephiroth,
+  cmdMarioLuigi,
 ].map((d) => withArt({ ...(d as DeckList), builtin: true }));
 
 function withArt(d: DeckList): DeckList {
-  if (d.art !== "custom") return d;
+  const art = d.art;
+  if (!art || customArtSet(art) === undefined) return d;
   const custom = (entries: DeckEntries): DeckEntries =>
-    entries.map((e) => (e[2] ? e : ([e[0], e[1], CUSTOM_PRINTING] as DeckEntries[number])));
+    entries.map((e) => (e[2] ? e : ([e[0], e[1], art] as DeckEntries[number])));
   return { ...d, main: custom(d.main), ...(d.commander ? { commander: custom(d.commander) } : {}) };
 }
 

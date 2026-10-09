@@ -165,6 +165,7 @@ export function chosenValue(kind: string, value: string): GameObject["chosen"] {
   if (kind === "mode") return { mode: value };
   if (kind === "number") return { number: Number(value) };
   if (kind === "landType") return { landType: value };
+  if (kind === "player") return { player: value };
   return kind === "color" ? { color: value as Color } : { creatureType: value };
 }
 

@@ -1,0 +1,86 @@
+// Mario & Luigi — partners Bruse Tarl, Boorish Herder and Reyhan, Last of the Abzan (five colors, +1/+1 counters).
+// List "Mario & Luigi" by Brainstorm (Archidekt), updated on 2025-12-28, retrieved on 2026-10-09.
+// Source: https://archidekt.com/decks/5433869/mario_luigi
+Commander
+1 Bruse Tarl, Boorish Herder
+1 Reyhan, Last of the Abzan
+
+Deck
+1 Abzan Falconer
+1 All Will Be One
+1 Anafenza, Unyielding Lineage
+1 Anguished Unmaking
+1 Arcane Signet
+1 Assassin's Trophy
+1 Atla Palani, Nest Tender
+1 Atomize
+1 Beast Within
+1 Blasphemous Act
+1 Boros Signet
+1 Canopy Vista
+1 Cathars' Crusade
+1 Champion of Lambholt
+1 Cinder Glade
+1 Command Tower
+1 Conclave Mentor
+1 Corpsejack Menace
+1 Deathcap Glade
+1 Dusk Legion Duelist
+1 Duskshell Crawler
+1 Elemental Bond
+1 Farseek
+1 Felidar Retreat
+6 Forest
+1 Forgotten Ancient
+1 Gamble
+1 Gavony Township
+1 Ghave, Guru of Spores
+1 Golgari Signet
+1 Greater Good
+1 Grenzo, Dungeon Warden
+1 Hardened Scales
+1 Henzie "Toolbox" Torre
+1 Indatha Triome
+1 Inspiring Call
+1 Invigorating Hot Spring
+1 Jetmir's Garden
+1 Jiang Yanggu, Wildcrafter
+1 Jirina Kudro
+1 Kalakscion, Hunger Tyrant
+1 Kazuul's Fury // Kazuul's Cliffs
+1 Kethis, the Hidden Hand
+1 Kibo, Uktabi Prince
+1 Kresh the Bloodbraided
+1 Kutzil, Malamet Exemplar
+1 Lagorin, Soul of Alacria
+1 Lotho, Corrupt Shirriff
+1 Loyal Guardian
+1 Marketback Walker
+1 Mayael's Aria
+1 Mikaeus, the Lunarch
+6 Mountain
+1 Nature's Lore
+1 Overwhelming Stampede
+6 Plains
+1 Reprieve
+1 Requisition Raid
+1 Rhythm of the Wild
+1 Samut, the Tested
+1 Saskia the Unyielding
+1 Savai Triome
+1 Shattered Sanctum
+1 Single Combat
+1 Smoldering Marsh
+1 Sphere Grid
+1 Sundown Pass
+6 Swamp
+1 Swords to Plowshares
+1 Terrasymbiosis
+1 The Balrog of Moria
+1 Three Visits
+1 Together Forever
+1 Tuskguard Captain
+1 Valkyrie's Call
+1 Village Rites
+1 Winding Constrictor
+1 Ziatora's Proving Ground

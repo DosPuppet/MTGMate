@@ -2,10 +2,10 @@
  * Commander format (PLAN-E, E1): color identity (903.4) compared to Scryfall, deck construction rules (903.5:
  * 100 cards including the commander, singleton, identity, bans), Game Changers and estimated bracket, game deck.
  */
-import { colorIdentity, plainText } from "@mtgx/engine";
+import { type CardDef, colorIdentity, plainText } from "@mtgx/engine";
 import { describe, expect, it } from "vitest";
 import edhData from "../data/edh.json";
-import { buildGameDeck, CARDS, canBeCommander, DECKS, type DeckEntries, legalityIssue, validateDeck } from "../src";
+import { buildGameDeck, CARDS, canBeCommander, canPair, DECKS, type DeckEntries, legalityIssue, validateDeck } from "../src";
 
 const id = (name: string) => colorIdentity(CARDS[name]!).join("");
 
@@ -122,13 +122,39 @@ describe("Commander deck construction rules (903.5)", () => {
         [1, "Elenda, the Dusk Rose"],
       ] as DeckEntries,
     };
-    expect(validateDeck(two, CARDS, "commander").errors[0]).toMatch(/Commander pairs/);
+    // Two commanders that can't be paired (neither has partner).
+    expect(validateDeck(two, CARDS, "commander").errors.map(plainText)).toContain(
+      "Edgar Markov and Elenda, the Dusk Rose can't be commanders together (partner, Background…)",
+    );
     const notLegend = { commander: [[1, "Blood Artist"]] as DeckEntries, main: replace(base().main, "Blood Artist", "Swamp") };
     expect(validateDeck(notLegend, CARDS, "commander").errors.map(plainText)).toContain(
       "Blood Artist can't be your commander (legendary creature expected)",
     );
     expect(canBeCommander(CARDS["Y'shtola, Night's Blessed"]!)).toBe(true);
     expect(canBeCommander(CARDS["Sorin, Imperious Bloodlord"]!)).toBe(false);
+  });
+
+  it("commander pairs (702.124): partner, partner with, Partner—quality, friends forever, Background, Doctor's companion", () => {
+    const bruse = CARDS["Bruse Tarl, Boorish Herder"] as CardDef;
+    const reyhan = CARDS["Reyhan, Last of the Abzan"] as CardDef;
+    const edgar = CARDS["Edgar Markov"] as CardDef;
+    expect(canPair(bruse, reyhan)).toBe(true);
+    expect(canPair(bruse, edgar)).toBe(false);
+    const like = (name: string, text: string, extra: Partial<CardDef> = {}): CardDef => ({ ...edgar, name, text, ...extra });
+    // "Partner with [name]": only that one, and not with a plain partner.
+    expect(canPair(like("Pir", "Partner with Toothy"), like("Toothy", "Partner with Pir"))).toBe(true);
+    expect(canPair(like("Pir", "Partner with Toothy"), bruse)).toBe(false);
+    // "Partner—[quality]": the same quality only.
+    expect(canPair(like("A", "Partner—Survivors"), like("B", "Partner—Survivors"))).toBe(true);
+    expect(canPair(like("A", "Partner—Survivors"), bruse)).toBe(false);
+    expect(canPair(like("A", "Friends forever"), like("B", "Friends forever"))).toBe(true);
+    // "Choose a Background" with a legendary Background enchantment (which can then be a commander).
+    const background = like("Raised by Giants", "", { types: ["Enchantment"], subtypes: ["Background"] });
+    expect(canPair(like("Wilson", "Choose a Background"), background)).toBe(true);
+    expect(canPair(bruse, background)).toBe(false);
+    // The Mario & Luigi precon: two partners, legal.
+    const deck = DECKS.find((d) => d.id === "cmd-mario-luigi");
+    expect(deck && validateDeck(deck, CARDS, "commander").errors).toEqual([]);
   });
 
   it("exactly 100 cards; a single copy except basic lands; no sideboard", () => {

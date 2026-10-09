@@ -109,6 +109,8 @@ export interface GameObject {
     parity?: "odd" | "even";
     mode?: string;
     number?: number;
+    /** A player (Saskia the Unyielding: "as it enters, choose a player"). */
+    player?: PlayerId;
     /** Secret choice (A Killer Among Us): hidden from opponents until it is revealed. */
     secret?: boolean;
   };
@@ -404,7 +406,7 @@ export interface TurnStats {
  * Alternative cost paid to cast a spell (601.2b, only one per cast), read by rules or abilities: Web-slinging, Mayhem,
  * Sneak, evoke (702.74), Warp, impending (702.176), dash (702.109).
  */
-export type CastVia = "webSlinging" | "mayhem" | "sneak" | "evoke" | "warp" | "impending" | "dash";
+export type CastVia = "webSlinging" | "mayhem" | "sneak" | "evoke" | "warp" | "impending" | "dash" | "blitz";
 
 /** Objects paid for the cost of a spell or ability (last known information available). */
 export interface CostPaid {

@@ -1245,6 +1245,12 @@ export function canBlock(s: GameState, blocker: ObjectId, attacker: ObjectId): b
     )
   )
     return false;
+  // Champion of Lambholt: power compared with that of the permanent of the rule, when blocking.
+  for (const r of chars(s, attacker).blockRules) {
+    const ref = r.cantBeBlockedByWeakerThan;
+    if (ref && ref !== "source" && s.objects[ref]?.zone === "battlefield" && chars(s, blocker).power < chars(s, ref).power)
+      return false;
+  }
   const rules = chars(s, attacker).blockRules.filter((r) => r.cantBeBlockedBy);
   if (rules.length) {
     const v = snapshot(s, blocker);

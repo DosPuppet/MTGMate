@@ -95,7 +95,8 @@ export function blockRulePlaceholder(r: BlockRule): boolean {
     r.goadedBy === "you" ||
     r.mustAttackPlayer === "eventPlayer" ||
     r.mustBlockAttacker === "eventObject" ||
-    typeof r.cantBeBlockedByPlayer === "object"
+    typeof r.cantBeBlockedByPlayer === "object" ||
+    r.cantBeBlockedByWeakerThan === "source"
   );
 }
 
@@ -109,10 +110,12 @@ export function resolveBlockRules(
   you: PlayerId,
   event?: { player?: PlayerId; objectId?: ObjectId },
   player?: (r: Ref) => PlayerId | undefined,
+  sourceId?: ObjectId,
 ): BlockRule[] {
   return rules.map((r) => {
     if (!blockRulePlaceholder(r)) return r;
     const out: BlockRule = { ...r };
+    if (r.cantBeBlockedByWeakerThan === "source") out.cantBeBlockedByWeakerThan = sourceId;
     if (typeof r.cantBeBlockedByPlayer === "object") out.cantBeBlockedByPlayer = player?.(r.cantBeBlockedByPlayer);
     if (r.cantAttackPlayer === "you") out.cantAttackPlayer = you;
     if (r.goadedBy === "you") out.goadedBy = you;
@@ -1036,7 +1039,7 @@ function evalStatic(s: GameState, slot: StaticSlot, sig: (string | number)[]): {
     sig.push(`a${extra.length}`);
   }
   if (mods.addBlockRules?.some(blockRulePlaceholder)) {
-    mods = { ...mods, addBlockRules: resolveBlockRules(mods.addBlockRules, o.controller) };
+    mods = { ...mods, addBlockRules: resolveBlockRules(mods.addBlockRules, o.controller, undefined, undefined, id) };
     sig.push(`ca${o.controller}`);
   }
   if (mods.setColorsChosen) {

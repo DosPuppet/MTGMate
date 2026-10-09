@@ -440,6 +440,21 @@ export function parseTransmute(text: string, manaValue: number): CardDef["abilit
   };
 }
 
+/** Outlast (702.107): "[cost], {T}: Put a +1/+1 counter on this creature. Outlast only as a sorcery." */
+const OUTLAST = /^Outlast ((?:\{[^}]+\})+)/m;
+export function parseOutlast(text: string): CardDef["abilities"][number] | undefined {
+  const m = OUTLAST.exec(stripReminder(text));
+  if (!m) return undefined;
+  return {
+    kind: "activated",
+    cost: { mana: parseManaCost(m[1] as string), tap: true },
+    targets: [],
+    effects: [{ op: "addCounters", what: { kind: "self" }, amount: 1 }],
+    sorcerySpeed: true,
+    label: msg("Outlast"),
+  };
+}
+
 export function onlyKeywords(text: string): boolean {
   const t = stripReminder(text);
   if (!t) return true;
@@ -1219,6 +1234,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
       ...(parseTransmute(raw.oracleText, raw.cmc ?? 0)
         ? [parseTransmute(raw.oracleText, raw.cmc ?? 0) as CardDef["abilities"][number]]
         : []),
+      ...(parseOutlast(raw.oracleText) ? [parseOutlast(raw.oracleText) as CardDef["abilities"][number]] : []),
       ...extraAbilities,
       ...bloomburrowAbilities,
     ],

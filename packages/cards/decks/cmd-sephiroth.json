@@ -3,6 +3,7 @@
   "name": "Sephiroth — Aristocrats",
   "description": "Commander, mono-black, based on the list \"Sephiroth's Singularity\" by Grumpywolf (Moxfield, bracket 4: nine Game Changers, among them Necropotence, Bolas's Citadel, Demonic Tutor, Orcish Bowmasters and The One Ring). Sephiroth, Fabled SOLDIER turns every death into drain and card draw: sacrifice outlets (Ashnod's Altar, Phyrexian Altar, Viscera Seer), death triggers (Blood Artist, Zulaport Cutthroat, Drivnod), recursion (Gravecrawler, Reassembling Skeleton, Mortuary) and edicts.",
   "fr": {
+    "name": "Sephiroth — Aristocrates",
     "description": "Commander, monocolore noir, d'après la liste « Sephiroth's Singularity » de Grumpywolf (Moxfield, bracket 4 : neuf Game Changers, dont Necropotence, Bolas's Citadel, Demonic Tutor, Orcish Bowmasters et The One Ring). Sephiroth, Fabled SOLDIER transforme chaque mort en drain et en pioche : des outils de sacrifice (Ashnod's Altar, Phyrexian Altar, Viscera Seer), des déclencheurs de mort (Blood Artist, Zulaport Cutthroat, Drivnod), de la récursion (Gravecrawler, Reassembling Skeleton, Mortuary) et des sacrifices imposés aux adversaires."
   },
   "colors": [

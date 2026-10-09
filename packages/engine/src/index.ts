@@ -23,7 +23,7 @@ export { CDA_AMOUNT_KINDS, cdaKey, computeBattlefield } from "./layers";
 export { legalActions, meaningfulActions } from "./legal";
 export { availableMana, costToText, manaSources, manaValue, parseManaCost, solvePayment } from "./mana";
 export { CREATURE_TYPES, isNameAllowed, isSingleName, type NameCatalog, registerNameCatalog } from "./names";
-export { CUSTOM_PRINTING, keyedPrinting, printingKey } from "./printing";
+export { CUSTOM_PRINTING, customArtSet, customPrinting, keyedPrinting, printingKey } from "./printing";
 export {
   CHECKPOINT_EVERY,
   createRecordedGame,

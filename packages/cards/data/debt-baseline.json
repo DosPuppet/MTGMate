@@ -125,7 +125,8 @@
     "TriggerSpec.saddled": "Stubborn Burrowfiend — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists",
     "TriggerSpec.search": "Wan Shi Tong, Librarian — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists",
     "TriggerSpec.untaps": "Fishing Pole — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists",
-    "Condition.extraTurn": "Medomai the Ageless — \"during extra turns\" (500.7, TurnState.extra); generic condition for every \"extra turn\" text, a single card for now"
+    "Condition.extraTurn": "Medomai the Ageless — \"during extra turns\" (500.7, TurnState.extra); generic condition for every \"extra turn\" text, a single card for now",
+    "Ref.chosenPlayer": "Saskia the Unyielding — \"the chosen player\" (chooseForSelf \"player\", 702: \"as it enters, choose a player\"); every \"choose a player/opponent as it enters\" card shares it"
   },
   "singleCardKeys": {
     "absolute": "Loot, the Anomaly — property of a single card (audit of 2026-10-02, § 5.1): to attach to a family as soon as another card needs it",
@@ -244,7 +245,10 @@
     "storeAll": "Dazzling Sphinx — exileUntil remembers every exiled card (\"the exiled cards that weren't cast\"); to reuse for any \"exile until … put the rest\" text",
     "spellsOnly": "Misdirection — \"target spell with a single target\" (stackItems target filter); to reuse for any spell-only stack target",
     "paired": "Tandem Lookout — soulbond filter (702.95: paired, unpaired, paired with the source); shared by every soulbond card",
-    "sharesCardTypeWith": "Braids, Arisen Nightmare — \"a permanent that shares a card type with it\" (resolved by withX from the last known information); family of relative filters (sharesCreatureTypeWith)"
+    "sharesCardTypeWith": "Braids, Arisen Nightmare — \"a permanent that shares a card type with it\" (resolved by withX from the last known information); family of relative filters (sharesCreatureTypeWith)",
+    "cantBeBlockedByWeakerThan": "Champion of Lambholt — \"creatures with power less than [this]'s power can't block\": blocking rule comparing with the static's source at block time (a layer-time comparison would loop)",
+    "bottom": "Grenzo, Dungeon Warden — the bottom card of a library (Ref libraryTop with bottom); to reuse for any \"bottom card of your library\" text",
+    "blitz": "Henzie \"Toolbox\" Torre — granted blitz (702.152, altCostAll.blitz, cast via \"blitz\"); printed blitz (SNC) will read the same form from the text"
   },
   "turnFields": {},
   "engineCardLiterals": {},
@@ -267,7 +271,7 @@
     "CastInfo": 10,
     "TurnLogQuery": 26,
     "MoveSpec": 17,
-    "BlockRule": 14,
+    "BlockRule": 15,
     "TargetSpec": 23,
     "AdditionalCost": 11,
     "CastLimit": 9,
@@ -278,10 +282,10 @@
     "TriggerSpec (fields)": 162,
     "Condition": 54,
     "Condition (fields)": 98,
-    "Amount": 35,
-    "Amount (fields)": 80,
-    "Ref": 35,
-    "Ref (fields)": 63
+    "Amount": 36,
+    "Amount (fields)": 81,
+    "Ref": 36,
+    "Ref (fields)": 65
   },
   "importCycleMax": 21,
   "ceilingNotes": [
@@ -366,6 +370,7 @@
     "PLAN-I: player-facing texts (labels, prompts) no longer counted as single-card values: Single-card values 105 → 104",
     "Ur-Sphinx deck: connives X, during their next turn (castLimit), extra beginning phase, extra turn condition, removeFromCombat, one-of-each tokens, opening-hand reveal (Chancellors), exileUntil storeAll, library zone reference: Single-card values 104 → 106, Effect 149 → 150, Effect (fields) 640 → 645, Condition 53 → 54, Condition (fields) 97 → 98",
     "Vivi deck: soulbond (GameObject.pairedWith, filter paired, op pair), look op (Gitaxian Probe, Baubles), spellsOnly stack target (Misdirection): Single-card values 106 → 107, GameObject 49 → 50, ObjectFilter 72 → 73, Effect 150 → 152, Effect (fields) 645 → 653",
-    "Sephiroth deck: sharesCardTypeWith filter (Braids, Arisen Nightmare): ObjectFilter 73 → 74"
+    "Sephiroth deck: sharesCardTypeWith filter (Braids, Arisen Nightmare): ObjectFilter 73 → 74",
+    "Mario & Luigi deck: blitz (granted), commanderCasts amount, chosenPlayer ref, library bottom, Champion of Lambholt block rule: BlockRule 14 → 15, Amount 35 → 36, Amount (fields) 80 → 81, Ref 35 → 36, Ref (fields) 63 → 65"
   ]
 }

@@ -2,7 +2,7 @@
  * The user's decks, kept in the browser (localStorage), plus the precon decks.
  */
 import { CARDS, DECKS, type DeckList, deckColors } from "@mtgx/cards";
-import { type CardDef, type CardFace, CUSTOM_PRINTING, colorIdentity, keyedPrinting } from "@mtgx/engine";
+import { type CardDef, type CardFace, colorIdentity, customArtSet, keyedPrinting } from "@mtgx/engine";
 import { create } from "zustand";
 import { createJSONStorage, persist, type StateStorage } from "zustand/middleware";
 import { customImage, imageUrl } from "../images";
@@ -105,7 +105,8 @@ export function useAllDecks(): DeckList[] {
  */
 export function deckCover(deck: DeckList): string | undefined {
   const cmd = deck.commander?.[0];
-  const custom = cmd?.[2] === CUSTOM_PRINTING ? customImage(cmd[1]) : undefined;
+  const set = customArtSet(cmd?.[2]);
+  const custom = cmd && set !== undefined ? customImage(cmd[1], false, set || true) : undefined;
   if (custom) return custom;
   if (deck.cover) return imageUrl(deck.cover);
   // Commander deck: its commander's art.
@@ -118,7 +119,8 @@ export function deckCover(deck: DeckList): string | undefined {
 
 /** A card's face in the printing chosen by the deck (reprint, PLAN-G, or printing of the table). */
 export function printedFace(face: CardFace, c: CardDef, key: string | undefined): CardFace {
-  if (key === CUSTOM_PRINTING) return { ...face, customArt: true };
+  const set = customArtSet(key);
+  if (set !== undefined) return { ...face, customArt: set || true };
   const p = key ? (c.printings?.find((x) => x.key === key) ?? keyedPrinting(key)) : undefined;
   if (!p?.image) return face;
   return { ...face, image: p.image, ...(face.fr ? { fr: { ...face.fr, image: p.frImage ?? p.image } } : {}) };

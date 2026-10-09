@@ -8,9 +8,10 @@
  * Every image URL displayed goes through `imageUrl`.
  *
  * Custom art (`tools/custom-art.ts`): local images served on /art/ (outside Git). They replace Scryfall's only for the
- * cards of a deck that chooses the custom printing (`CUSTOM_PRINTING`: the whole The Vision precon, or any card chosen
- * in the deck builder), the tokens and the card back of a player whose deck uses some, and when the "Custom art"
- * checkbox is ticked (default; remembered). Without /art/manifest.json on the server, the checkbox does not appear.
+ * cards of a deck that chooses the custom printing (`CUSTOM_PRINTING`: the whole The Vision and Mario & Luigi precons,
+ * or any card chosen in the deck builder), the tokens and the card back of a player whose deck uses some, and when the
+ * "Custom art" checkbox is ticked (default; remembered). Without /art/manifest.json on the server, the checkbox does
+ * not appear. Art sets (one per proxy deck, "custom:<set>"): only the images of that set (tokens and card back included).
  */
 import { create } from "zustand";
 
@@ -25,13 +26,28 @@ const PROBE_TIMEOUT_MS = 4000;
 const ART = "/art/";
 const ART_KEY = "planecircle.customArt";
 
-/** /art/manifest.json: English name of the card (or of the face) → prepared file. */
-export interface ArtManifest {
-  version: 1;
+/** The images of one art set (or the shared ones): English name of the card (or of the face) → prepared file. */
+export interface ArtSet {
   cards: Record<string, string>;
   tokens: Record<string, string>;
   back?: string;
 }
+/** /art/manifest.json: the shared images (the first folder wins on a name) and those of each art set (version 2). */
+export interface ArtManifest extends ArtSet {
+  version: 1 | 2;
+  sets?: Record<string, ArtSet>;
+}
+
+/**
+ * The list to look in: the art set's (`set`: "mario"), alone (a deck doesn't borrow another deck's images: without an
+ * image in its set, the card keeps Scryfall's); the shared one for the plain custom printing (`true` or "") or a set
+ * the server doesn't have.
+ */
+function lists(custom: ArtManifest, set?: string | true): ArtSet[] {
+  const own = typeof set === "string" && set ? custom.sets?.[set] : undefined;
+  return own ? [own] : [custom];
+}
+const cardFile = (x: ArtSet, name: string) => x.cards[name] ?? x.cards[name.split(" // ")[0] ?? ""];
 
 function load(): ImageMode {
   try {
@@ -98,17 +114,30 @@ export function imageUrl(url: string | undefined): string | undefined {
   return RELAY + url.slice(SCRYFALL.length);
 }
 
-/** Custom art of a card (by its English name, or that of its first face) or of a token. */
-export function customImage(name: string, token = false): string | undefined {
+/**
+ * Custom art of a card (by its English name, or that of its first face) or of a token; `set`: the art set to look in
+ * first (`CardFace.customArt`).
+ */
+export function customImage(name: string, token = false, set?: string | true): string | undefined {
   const { custom, customOn } = useImages.getState();
   if (!custom || !customOn) return undefined;
-  const file = token ? custom.tokens[name] : (custom.cards[name] ?? custom.cards[name.split(" // ")[0] ?? ""]);
-  return file ? ART + file : undefined;
+  for (const x of lists(custom, set)) {
+    const file = token ? x.tokens[name] : cardFile(x, name);
+    if (file) return ART + file;
+  }
+  return undefined;
 }
 
-/** Does the server have custom art for this card (checkbox ticked or not)? */
-export function hasCustomArt(custom: ArtManifest | null, name: string): boolean {
-  return !!custom && !!(custom.cards[name] ?? custom.cards[name.split(" // ")[0] ?? ""]);
+/** Does the server have custom art for this card (checkbox ticked or not), in this art set or in the shared ones? */
+export function hasCustomArt(custom: ArtManifest | null, name: string, set?: string): boolean {
+  return !!custom && lists(custom, set).some((x) => !!cardFile(x, name));
+}
+
+/** The art sets that have an image of this card (deck builder: one "Illustration" choice per set). */
+export function customArtSets(custom: ArtManifest | null, name: string): string[] {
+  return Object.entries(custom?.sets ?? {})
+    .filter(([, x]) => !!cardFile(x, name))
+    .map(([set]) => set);
 }
 
 /** Components: re-render when the relay turns on or off, or when the custom art changes. */
@@ -123,16 +152,20 @@ export async function loadCustomArt(): Promise<void> {
     const res = await fetch(`${ART}manifest.json`, { cache: "no-cache" });
     if (!res.ok || !res.headers.get("content-type")?.includes("json")) return;
     const custom = (await res.json()) as ArtManifest;
-    if (custom?.version !== 1 || typeof custom.cards !== "object") return;
+    if ((custom?.version !== 1 && custom?.version !== 2) || typeof custom.cards !== "object") return;
     useImages.setState({ custom: { ...custom, tokens: custom.tokens ?? {} } });
   } catch {
     // No custom art (or offline).
   }
 }
 
-/** Custom card back (if there is one and the checkbox is ticked): for a player whose deck uses some. */
-export function useCustomBack(): string | undefined {
-  return useImages((s) => (s.customOn && s.custom?.back ? ART + s.custom.back : undefined));
+/** Custom card back (if there is one and the checkbox is ticked): for a player whose deck uses some, of their art set. */
+export function useCustomBack(set?: string | true): string | undefined {
+  return useImages((s) => {
+    if (!s.customOn || !s.custom) return undefined;
+    const back = lists(s.custom, set).find((x) => x.back)?.back;
+    return back ? ART + back : undefined;
+  });
 }
 
 function loads(src: string): Promise<boolean> {

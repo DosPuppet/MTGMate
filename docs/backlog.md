@@ -21,7 +21,7 @@ From PLAN-R ("Deferred until no card requires it", state of 2026-10-02, audit se
 | 616.1 | A `ChoiceRequest` for the order of replacement effects: the engine still picks the order best for the affected player (`chooseReplacementOrder`, up to 5 replacements, then the best result) | a card where the order is a real decision for a player who is not the affected one | deferred (PLAN-R R1) |
 | 722 | View of the player who controls another player's turn | done (`view.ts`) | done |
 | 615.7 | "The next time" shields | done (`fx.shield`, TDM) | done |
-| 903 partner / background | Commander pairs (partner, "choose a Background", friends forever): the model already accepts two commanders but validation refuses pairs | a deck that has a pair (PLAN-E) | still deferred |
+| 903 partner / background | Commander pairs (partner, "choose a Background", friends forever) | a deck that has a pair (PLAN-E) | done 2026-10-09 (rules 178, Mario & Luigi deck: `canPair`, `decklist.ts`) |
 | Mechanics absent from the pool on 2026-09-30 | day and night, dungeons, the Ring, energy, initiative (the undertaking), battles. Phyrexian mana, phasing, regeneration, monarch were added since (G4e, H6) | check each against the pool with `npm run coverage -- --set <ext> --text` before assuming it is absent | check |
 
 Related deferrals from the same plans:

@@ -480,8 +480,13 @@ export const RECORD_VERSION = 1;
  *   number" choices with a maximum (Intuition); "target spell with a single target" (Misdirection)
  * - 177: Sephiroth deck (Commander): "a permanent that shares a card type with it" (Braids, Arisen Nightmare), the
  *   sacrifice filters resolve the values of what is resolving; sacrifice as an alternative cost (the Flares)
+ * - 178: Mario & Luigi deck (Commander): commander pairs (702.124, partner, Background…); blitz granted (Henzie
+ *   "Toolbox" Torre); "times you've cast a commander" (Jirina Kudro); "the chosen player" (Saskia); bottom card of a
+ *   library (Grenzo); "weaker than [this] can't block" (Champion of Lambholt); outlast read from the text; a
+ *   "zoneChange" trigger from the battlefield keeps the permanent's last known information (Reyhan); effects on all
+ *   players until the end of your next turn (Single Combat)
  */
-export const RULES_VERSION = 177;
+export const RULES_VERSION = 178;
 
 /** One checkpoint every N decisions (plus the last one of the game). */
 export const CHECKPOINT_EVERY = 25;

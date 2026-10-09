@@ -6,7 +6,7 @@
 import { copiedDefId, FACE_DOWN_WARD } from "./layers";
 import { legalActions } from "./legal";
 import { costToText, manaValue, totalCost } from "./mana";
-import { CUSTOM_PRINTING, keyedPrinting } from "./printing";
+import { customArtSet, keyedPrinting } from "./printing";
 import { abilitiesOf, castTerms, landPermitted, modesOf, spellCost } from "./stack";
 import { chars, commanderOf, decider, HIDDEN_CARD_ID, isSummoningSick, obj } from "./state";
 import { mayLookAt, untapStepRule } from "./statics";
@@ -53,9 +53,9 @@ export interface CardFace {
   otherFaces?: CardDef["prepareFace"][];
   /**
    * Custom printing (`CUSTOM_PRINTING`): the interface shows the card's custom art (by its name), if there is one;
-   * also on the tokens of a player whose deck uses it.
+   * also on the tokens of a player whose deck uses it. A string: the art set to look in first ("custom:mario").
    */
-  customArt?: true;
+  customArt?: true | string;
 }
 
 export interface ObjectView extends CardFace {
@@ -153,8 +153,11 @@ export interface PlayerView {
   /** Restricted mana of the pool ("spend this mana only to…"), by type; absent when there is none. */
   restrictedMana?: ManaType[];
   lost: boolean;
-  /** Their deck uses the custom printing: the back of their hidden cards is the custom back, if there is one. */
-  customArt?: true;
+  /**
+   * Their deck uses the custom printing: the back of their hidden cards is the custom back, if there is one (a string:
+   * that of their art set first).
+   */
+  customArt?: true | string;
   /** Emblems (command zone). */
   /** Emblems (114); `id`: the object, source of an emblem's activated abilities (Karn, Living Legacy). */
   emblems: { id: ObjectId; name: string; text: string }[];
@@ -355,23 +358,37 @@ function otherFaces(d: CardDef): NonNullable<CardFace["otherFaces"]> {
 function printedFace(s: GameState, uid: string, defId: string, d: CardDef): CardFace {
   const face = cardFace(d);
   const key = s.printings?.[uid];
-  if (key === CUSTOM_PRINTING) return d.id === defId ? { ...face, customArt: true } : face;
+  const set = customArtSet(key);
+  if (set !== undefined) return d.id === defId ? { ...face, customArt: set || true } : face;
   const p = key && d.id === defId ? (d.printings?.find((x) => x.key === key) ?? keyedPrinting(key)) : undefined;
   if (!p?.image) return face;
   return { ...face, image: p.image, ...(face.fr ? { fr: { ...face.fr, image: p.frImage ?? p.image } } : {}) };
 }
 
-const NO_OWNERS: ReadonlySet<PlayerId> = new Set();
-/** Players whose deck uses the custom printing, per printing table (fixed when the game is created). */
-const customOwnersCache = new WeakMap<object, ReadonlySet<PlayerId>>();
-function customArtOwners(s: GameState): ReadonlySet<PlayerId> {
+const NO_OWNERS: ReadonlyMap<PlayerId, true | string> = new Map();
+/**
+ * Players whose deck uses the custom printing, with their art set (the most frequent among their cards; `true`: the
+ * plain custom printing), per printing table (fixed when the game is created).
+ */
+const customOwnersCache = new WeakMap<object, ReadonlyMap<PlayerId, true | string>>();
+function customArtOwners(s: GameState): ReadonlyMap<PlayerId, true | string> {
   const printings = s.printings;
   if (!printings) return NO_OWNERS;
   let owners = customOwnersCache.get(printings);
   if (!owners) {
-    const uids = new Set(Object.keys(printings).filter((uid) => printings[uid] === CUSTOM_PRINTING));
-    const found = new Set<PlayerId>();
-    if (uids.size) for (const o of Object.values(s.objects)) if (uids.has(o.uid)) found.add(o.owner);
+    const tally = new Map<PlayerId, Map<string, number>>();
+    for (const o of Object.values(s.objects)) {
+      const set = customArtSet(printings[o.uid]);
+      if (set === undefined) continue;
+      const t = tally.get(o.owner) ?? new Map<string, number>();
+      t.set(set, (t.get(set) ?? 0) + 1);
+      tally.set(o.owner, t);
+    }
+    const found = new Map<PlayerId, true | string>();
+    for (const [p, t] of tally) {
+      const best = [...t].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1))[0]?.[0] ?? "";
+      found.set(p, best || true);
+    }
     owners = found;
     customOwnersCache.set(printings, owners);
   }
@@ -396,7 +413,7 @@ export function objectView(s: GameState, id: ObjectId): ObjectView {
   return {
     ...printedFace(s, o.uid, o.defId, d),
     // Token of a player whose deck uses custom art: its own, if there is one.
-    ...(o.isToken && customArtOwners(s).has(o.owner) ? { customArt: true as const } : {}),
+    ...(o.isToken && customArtOwners(s).has(o.owner) ? { customArt: customArtOwners(s).get(o.owner) } : {}),
     id,
     uid: o.uid,
     owner: o.owner,
@@ -572,7 +589,7 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
       manaPool: { ...pl.manaPool },
       ...(pl.restrictedMana?.length ? { restrictedMana: pl.restrictedMana.map((m) => m.type) } : {}),
       lost: pl.lost,
-      ...(customArtOwners(s).has(p) ? { customArt: true as const } : {}),
+      ...(customArtOwners(s).has(p) ? { customArt: customArtOwners(s).get(p) } : {}),
       emblems: pl.command
         .filter((id) => obj(s, id).isToken)
         .map((id) => {

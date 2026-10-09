@@ -9,7 +9,7 @@ import { checkDecisionShape } from "./decisionShape";
 import { outcomeHash } from "./fingerprint";
 import { LOOP_LIMIT, LOOP_SUSPECT } from "./limits";
 import { activateManaAbility, undoMana } from "./mana";
-import { CUSTOM_PRINTING, keyedPrinting } from "./printing";
+import { customArtSet, keyedPrinting } from "./printing";
 import { activateAbility, answerCastNow, answerResolutionChoice, castSpell, playLand, RulesError } from "./stack";
 import { answerStackChoice } from "./stackChoices";
 import {
@@ -164,7 +164,7 @@ export function createGame(opts: GameOptions): StepResult {
         // Art of another printing (reprint, or printing from the table, checked by the caller): recorded by physical
         // identity, followed from one zone to another.
         const key = p.printings?.[i];
-        if (key && (key === CUSTOM_PRINTING || card.printings?.some((x) => x.key === key) || keyedPrinting(key)))
+        if (key && (customArtSet(key) !== undefined || card.printings?.some((x) => x.key === key) || keyedPrinting(key)))
           s.printings = { ...s.printings, [o.uid]: key };
       });
       shuffle(s, s.players[p.id]?.library ?? []);

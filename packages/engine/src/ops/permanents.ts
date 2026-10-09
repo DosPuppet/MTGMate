@@ -166,6 +166,19 @@ export function enterChoiceRequest(
   preset?: string[],
 ): ChoiceRequest {
   const ctx = { controller, sourceDefId };
+  // "Choose a player" (Saskia the Unyielding): the players still in the game; suggestion, the next opponent.
+  if (kind === "player") {
+    const players = s.playerOrder.filter((p) => !s.players[p]?.lost);
+    return {
+      type: "pick",
+      intent: "chooseOnEnter",
+      prompt: msg("Choose a player"),
+      options: players,
+      min: 1,
+      max: 1,
+      suggested: opponentsOf(s, controller).slice(0, 1),
+    };
+  }
   {
     let options: string[];
     if (preset) options = preset;

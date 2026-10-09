@@ -85,6 +85,7 @@ import { checkCondition, checkCrime, createDelayed, onceKey, pushInline, simulta
 import { activatedThisTurn, countTurnEvents, logTurnEvent, objectDidThisTurn } from "./turnlog";
 import type {
   AbilityCostMod,
+  AbilityDef,
   AbilityKind,
   ActivatedAbilityDef,
   AltCostPay,
@@ -102,6 +103,7 @@ import type {
   GameObject,
   GameState,
   Keyword,
+  LayerMods,
   LkiSnapshot,
   ManaAbilityDef,
   ManaCost,
@@ -118,6 +120,23 @@ import type {
 import { BASIC_LAND_TYPES, isManaAbility, PERMANENT_TYPES } from "./types";
 
 export { RulesError };
+
+/** Blitz (702.152): "When this creature dies, draw a card", gained as it enters. */
+const BLITZ_DRAW: AbilityDef = {
+  kind: "triggered",
+  trigger: { on: "dies", who: "self" },
+  targets: [],
+  effects: [{ op: "draw", who: { kind: "you" }, amount: 1 }],
+  label: msg("Blitz: when this creature dies, draw a card"),
+};
+
+/** Modifications a permanent spell enters with: subtypes (Noctis), blitz's draw. */
+function arrivalMods(item: StackItem): LayerMods | undefined {
+  const subtypes = item.arrival?.subtypes;
+  const blitz = item.cast?.via === "blitz";
+  if (!subtypes && !blitz) return undefined;
+  return { ...(subtypes ? { addSubtypes: subtypes } : {}), ...(blitz ? { addAbilities: [BLITZ_DRAW] } : {}) };
+}
 
 /** Available alternative cost: the card's own (if its condition is met), otherwise the one granted to your spells (`altCostAll`). */
 export function altCostFor(
@@ -143,6 +162,12 @@ export function altCostFor(
     if (a.webSlinging && a.mana) {
       if (webSlingingOptions(s, player).length === 0) continue;
       return { mana: a.mana, label: msg("Web-slinging — {cost}", { cost: costToText(a.mana) }), webSlinging: true };
+    }
+    // Blitz granted (Henzie "Toolbox" Torre): the spell's mana cost, possibly reduced.
+    if (a.blitz && d.manaCost) {
+      const reduce = a.blitz.reduce !== undefined ? Math.max(0, evalAmount(s, staticContext(s, player, id), a.blitz.reduce)) : 0;
+      const mana = { ...d.manaCost, generic: Math.max(0, d.manaCost.generic - reduce) };
+      return { mana, label: msg("Blitz — {cost}", { cost: costToText(mana) }), via: "blitz" };
     }
     // Conspiracy Unraveler: collect evidence N rather than pay the mana cost.
     if (a.collectEvidence)
@@ -3929,8 +3954,8 @@ function finishResolution(
             // Counters, haste and subtypes on entering (Torgal, Summon: Fenrir, Noctis), impending: before the event.
             counters: item.arrival?.counters,
             ...(item.arrival?.loyalty !== undefined ? { loyalty: item.arrival.loyalty } : {}),
-            haste: item.arrival?.haste,
-            mods: item.arrival?.subtypes ? { addSubtypes: item.arrival.subtypes } : undefined,
+            haste: item.arrival?.haste || item.cast?.via === "blitz",
+            mods: arrivalMods(item),
             impending: item.cast?.via === "impending" ? (d.impending ?? 0) : undefined,
           },
           choices,
@@ -3941,6 +3966,15 @@ function finishResolution(
       // Fear of Abduction: the cards exiled to pay the additional cost are linked to the permanent.
       const exiled = item.paid?.exiled ?? [];
       if (arrived && exiled.length) arrived.linked = [...(arrived.linked ?? []), ...exiled];
+      // Blitz (702.152): sacrificed at the beginning of the next end step (haste and the draw come with its entering).
+      if (item.cast?.via === "blitz" && arrived) {
+        createDelayed(s, item.controller, arrived.id, arrived.defId, {
+          targets: [],
+          effects: [{ op: "sacrificeIt", what: { kind: "target", id: "b" } }],
+          bound: { b: [arrived.id] },
+          label: msg("Blitz: sacrifice it"),
+        });
+      }
       // Warp: exiled at the beginning of the next end step.
       if (item.cast?.via === "warp" && arrived) {
         createDelayed(s, item.controller, arrived.id, arrived.defId, {

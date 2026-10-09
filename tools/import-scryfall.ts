@@ -185,7 +185,9 @@ async function importByName(SET: string): Promise<void> {
   const names = [...wanted].filter((n) => !known.has(n)).sort();
   const batches: string[][] = [];
   for (let i = 0; i < names.length; i += NAME_BATCH) batches.push(names.slice(i, i + NAME_BATCH));
-  const query = (list: string[]) => `(${list.map((n) => `!"${n.replace(/"/g, '\\"')}"`).join(" or ")})`;
+  // A name with double quotes (Henzie "Toolbox" Torre) between single quotes: Scryfall doesn't read \" in an exact name.
+  const exact = (n: string) => (n.includes('"') ? `!'${n}'` : `!"${n}"`);
+  const query = (list: string[]) => `(${list.map(exact).join(" or ")})`;
   const front = (c: ScryfallCard) => c.name.split(" // ")[0] as string;
   const en: ScryfallCard[] = [];
   const fr: ScryfallCard[] = [];

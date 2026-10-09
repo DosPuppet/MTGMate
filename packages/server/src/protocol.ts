@@ -15,8 +15,10 @@ import type { AutopilotSettings, CardFace, Decision, Format, GameEvent, GameReco
  *   `commander` on join, optional wins per seat; AI seats (`ai` on create, `players[].ai`).
  * - 4: "name" question (`ChoiceRequest` of type `name`: card name, land card name, creature type), which no longer
  *   lists the cards of the game; the interface searches the whole catalog.
+ * - 5: custom art by art set: a `customArt` of the view (face, token, player) may be the set's name ("custom:<set>"
+ *   printings).
  */
-export const PROTOCOL_VERSION = 4;
+export const PROTOCOL_VERSION = 5;
 
 /** Client versions (protocol and engine rules). */
 export interface ClientVersion {

@@ -396,6 +396,10 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
       return (ctx.targets[GRANTOR_KEY] ?? []).filter((id) => !!s.objects[id]);
     case "self":
       return [ctx.sourceId];
+    case "chosenPlayer": {
+      const p = (s.objects[ctx.sourceId] ?? s.lki[ctx.sourceId])?.chosen?.player;
+      return p && s.players[p] && !s.players[p]?.lost ? [p] : [];
+    }
     case "you":
       return [ctx.controller];
     case "eachOpponent":
@@ -484,7 +488,11 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
       );
     }
     case "libraryTop":
-      return resolveRef(s, ctx, ref.who).flatMap((p) => (s.players[p]?.library[0] ? [s.players[p]?.library[0] as string] : []));
+      return resolveRef(s, ctx, ref.who).flatMap((p) => {
+        const lib = s.players[p]?.library ?? [];
+        const id = ref.bottom ? lib[lib.length - 1] : lib[0];
+        return id ? [id] : [];
+      });
     case "sameName": {
       // The names are read now, before what the effect does (on the battlefield: the computed name).
       const nameOf_ = (id: string) => (s.objects[id] ? chars(s, id).name : s.lki[id]?.name);
@@ -644,6 +652,11 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       return a.base ** Math.min(20, Math.max(0, evalAmount(s, ctx, a.of)));
     case "var":
       return readVar(ctx, a.name);
+    case "commanderCasts":
+      // Jirina Kudro, Henzie "Toolbox" Torre: all your commanders together.
+      return Object.values(s.commander?.cards ?? {})
+        .filter((c) => c.owner === ctx.controller)
+        .reduce((n, c) => n + c.casts, 0);
     case "lifeTotal": {
       const p = a.who ? resolveRef(s, ctx, a.who).find((x) => isPlayer(s, x)) : ctx.controller;
       const pl = p ? s.players[p] : undefined;
