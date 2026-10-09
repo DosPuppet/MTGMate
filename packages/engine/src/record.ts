@@ -485,8 +485,13 @@ export const RECORD_VERSION = 1;
  *   library (Grenzo); "weaker than [this] can't block" (Champion of Lambholt); outlast read from the text; a
  *   "zoneChange" trigger from the battlefield keeps the permanent's last known information (Reyhan); effects on all
  *   players until the end of your next turn (Single Combat)
+ * - 179: PLAN-J J4a: damage of the turn log carries the damaged and source objects ("was dealt damage this turn" also
+ *   counts damage no longer marked; Tangled Colony counts the damage dealt to it this turn; Steel Hellkite reads the
+ *   players its own object damaged); untaps logged (The Millennium Calendar only for one or more); Mimeoplasm's copy
+ *   exceptions are copiable (707.9b); Consuming Aberration reveals then puts into the graveyard (no mill); Ertha Jo
+ *   also sees granted abilities; a card manifested by an effect asks no shock-land or Aura-host question
  */
-export const RULES_VERSION = 178;
+export const RULES_VERSION = 179;
 
 /** One checkpoint every N decisions (plus the last one of the game). */
 export const CHECKPOINT_EVERY = 25;

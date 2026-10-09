@@ -373,6 +373,8 @@ export function untapObject(s: GameState, o: GameObject): boolean {
       );
     bump(s);
   } else bumpFor(s, "tapped");
+  const untapStep = s.turn.step === "untap" && s.turn.active === o.controller;
+  logTurnEvent(s, { e: "untap", player: o.controller, id: o.id, ...(untapStep ? { untapStep: true } : {}) });
   rulesEvent(s, { e: "untap", objectId: o.id });
   return true;
 }

@@ -330,8 +330,6 @@ export type Effect =
   /** 705: coin flip; `store` is 1 if the controller wins. */
   /** Flips a coin (1 if won, 0 otherwise) or, with `sides`, rolls an N-sided die (706, result from 1 to N); stored. */
   | { op: "coinFlip"; store: string; sides?: number }
-  /** Taii Wakeen: this turn, your noncombat damage is increased by N. */
-  | { op: "noncombatBonusThisTurn"; amount: Amount }
   /** Another Round: choose permanents you control, exile them and return them, N times. */
   | { op: "flickerChosen"; filter: ObjectFilter; times: Amount }
   /** Choose a card name (without seeing any hidden card), remembered for `exileNamed` (Ancient Vendetta). */
@@ -488,15 +486,14 @@ export type Effect =
       tapped?: boolean;
       exile?: boolean;
     }
-  /** Mimeoplasm: the source becomes a copy of the card, 0/0, keeping its activated abilities. */
-  | { op: "becomeCopyKeepAbilities"; what: Ref }
   /** Reveals cards until N matching cards; those go according to `to`, the rest to the bottom at random. */
   /**
    * Reveals cards until N matching cards; they go to `to`, the rest to the bottom in a random order. Without `to`:
    * nothing moves, the matching cards are remembered (`store`, Sanar).
    */
-  /** `who`: the revealed library (yours by default; Jhoira: a target opponent). */
-  | { op: "revealUntilN"; filter: ObjectFilter; n: Amount; to?: MoveSpec; store?: string; who?: Ref }
+  /** `who`: the revealed library (yours by default; Jhoira: a target opponent); `rest: "graveyard"`: the other revealed
+   * cards go to the graveyard (Consuming Aberration: "then puts those cards into their graveyard"). */
+  | { op: "revealUntilN"; filter: ObjectFilter; n: Amount; to?: MoveSpec; store?: string; who?: Ref; rest?: "graveyard" }
   /** The controller separates the top N cards into two piles, an opponent chooses one (to the hand), the other to the graveyard. */
   /** `revealed`: two revealed piles (Intrude on the Mind); `storeGraveyard`: number of cards put into the graveyard. */
   /** `opponentSeparates`: an opponent separates the revealed cards, the controller chooses their pile (Fact or Fiction). */
@@ -558,8 +555,6 @@ export type Effect =
       nonlegendary?: boolean;
       loyalty?: Amount;
     }
-  /** Each designated player reveals cards until a card matching the filter, then puts them all into the graveyard. */
-  | { op: "millUntil"; who: Ref; filter: ObjectFilter }
   /** Exiles the top N cards of the library of each designated player (remembered under `store`). */
   /** `allBut`: all the cards except the bottom N (Doomsday Excruciator, Jace, Reality Sculptor). */
   | { op: "exileTop"; who: Ref; n?: Amount; allBut?: Amount; store?: string; faceDown?: MoveSpec["faceDown"] }
@@ -713,9 +708,6 @@ export type Effect =
   /** The source Mount becomes saddled until end of turn (702.171a). */
   /** The source (or the designated permanent) becomes saddled until end of turn. */
   | { op: "saddle"; what?: Ref }
-  /** Puts the designated cards onto the battlefield face down (manifest; `ward`: cloak). */
-  /** `store`: the face-down creatures (Cryptic Coat: "then attach this Equipment to it"); `ownerControl`: under the owner's control (Yarus). */
-  | { op: "putFaceDown"; what: Ref; ward: boolean; store?: string; ownerControl?: boolean }
   /** Manifest dread (701.62): look at the top two cards, manifest one, the other to the graveyard. */
   /** Manifest dread (701.62): `who` manifests (you by default), `times` times; `store` remembers the face-down creatures. */
   | { op: "manifestDread"; who?: Ref; times?: Amount; store?: string }
@@ -803,8 +795,6 @@ export type Effect =
   | { op: "revealFaceDown"; what: Ref }
   /** Counts the resolutions of this ability this turn, stored under `store` (Venom Connoisseur). */
   | { op: "countResolution"; store: string }
-  /** Destroys the nonland permanents with mana value X of the players dealt combat damage by the source this turn. */
-  | { op: "hellkite" }
   /** Links cards to the source (Hoarding Dragon). */
   /** `to`: links to this object rather than to the source (an emblem created by the spell). */
   | { op: "link"; what: Ref; to?: Ref }

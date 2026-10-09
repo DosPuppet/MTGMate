@@ -199,9 +199,15 @@ export const MULTI: Record<string, CardScript> = {
   "Consuming Aberration": {
     cdaPT: amount.countIn("graveyard", {}, "opponents"),
     abilities: [
-      triggered(when.castSpell("you"), [fx.millUntil(ref.eachOpponent, { types: ["Land"] })], {
-        label: "each opponent mills until a land",
-      }),
+      // "Each opponent reveals cards from the top of their library until they reveal a land card, then puts those cards
+      // into their graveyard."
+      triggered(
+        when.castSpell("you"),
+        fx.forEachPlayer(ref.eachOpponent, (p) => [
+          { op: "revealUntilN", who: p, n: 1, filter: { types: ["Land"] }, to: { to: "graveyard" }, rest: "graveyard" },
+        ]),
+        { label: "each opponent mills until a land" },
+      ),
     ],
   },
   "Muldrotha, the Gravetide": {

@@ -1,8 +1,8 @@
 /** Engine effects: damage, fights and prevention. Each key is an `op` of `Effect` (see `runEffect`, effects.ts). */
 
-import { dealDamage, destroy, sourceFromObject } from "../actions";
+import { dealDamage, sourceFromObject } from "../actions";
 import type { OpHandlers } from "../effects";
-import { damageSource, evalAmount, nameOf, resolveRef, store, viewOf } from "../effects";
+import { damageSource, evalAmount, nameOf, resolveRef, store } from "../effects";
 import { addReplacement } from "../replacement";
 import { chars, isCreature, isPlayer, newId, onBattlefield } from "../state";
 import { addPlayerEffect } from "../statics";
@@ -170,18 +170,6 @@ export const HANDLERS: OpHandlers = {
       const src = sourceFromObject(s, id);
       const n = e.amount !== undefined ? evalAmount(s, ctx, e.amount) : chars(s, id).power;
       for (const t of to) dealDamage(s, src, t, Math.max(0, n), false);
-    }
-    return;
-  },
-  hellkite(s, _r, _e, ctx) {
-    const victims = s.objects[ctx.sourceId]?.combatDamagedPlayers ?? [];
-    for (const id of s.battlefield.filter((x) => {
-      const o = s.objects[x];
-      return (
-        !!o && victims.includes(o.controller) && !chars(s, x).types.includes("Land") && (viewOf(s, x)?.manaValue ?? 0) === ctx.x
-      );
-    })) {
-      destroy(s, id, false, ctx.controller);
     }
     return;
   },

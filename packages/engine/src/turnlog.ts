@@ -133,8 +133,10 @@ function charsMatch(have: Chars, q: Pick<TurnLogQuery, "types" | "subtype" | "su
   return hasAny<Color>(have.colors, q.colors);
 }
 
-function matches(s: GameState, e: TurnLogEntry, q: TurnLogQuery, me: PlayerId, subject?: PlayerId): boolean {
+function matches(s: GameState, e: TurnLogEntry, q: TurnLogQuery, me: PlayerId, subject?: PlayerId, source?: ObjectId): boolean {
   if (e.e !== q.event) return false;
+  // Damage dealt to the ability's source or by it.
+  if (q.self && (e.e !== "damage" || !source || (q.self === "target" ? e.id : e.sourceId) !== source)) return false;
   const who = subjectOf(e, q.byOwner);
   // "An opponent": an opponent still in the game (800.4a: a player who has left the game is no longer an opponent).
   const opponent = () => who !== me && !!who && !s.players[who]?.lost;
@@ -154,6 +156,7 @@ function matches(s: GameState, e: TurnLogEntry, q: TurnLogQuery, me: PlayerId, s
   if (e.e === "cast" && q.warped && !e.warped) return false;
   if (e.e === "cast" && q.minManaValue !== undefined && (e.manaValue ?? 0) < q.minManaValue) return false;
   if (e.e === "activate" && q.equip && !e.equip) return false;
+  if (e.e === "untap" && q.untapStep && !e.untapStep) return false;
   if (e.e === "activate" && q.loyalty && !e.loyalty) return false;
   if (e.e === "attack" && q.againstYou && e.defender !== me) return false;
   if (e.e === "damage") {
@@ -204,20 +207,21 @@ function distinctValues(e: TurnLogEntry, d: NonNullable<TurnLogQuery["distinct"]
  * `distinct`), seen from `me`. `perPlayer`: the largest total among the concerned players ("a player was dealt 10 or
  * more combat damage this turn").
  */
-export function countTurnEvents(s: GameState, q: TurnLogQuery, me: PlayerId, subject?: PlayerId): number {
+export function countTurnEvents(s: GameState, q: TurnLogQuery, me: PlayerId, subject?: PlayerId, source?: ObjectId): number {
   if (q.distinct) {
     const values = new Set<string>();
-    for (const e of s.turnLog) if (matches(s, e, q, me, subject)) for (const v of distinctValues(e, q.distinct)) values.add(v);
+    for (const e of s.turnLog)
+      if (matches(s, e, q, me, subject, source)) for (const v of distinctValues(e, q.distinct)) values.add(v);
     return values.size;
   }
-  if (subject !== undefined) return s.turnLog.reduce((n, e) => n + (matches(s, e, q, me, subject) ? weight(e, q) : 0), 0);
+  if (subject !== undefined) return s.turnLog.reduce((n, e) => n + (matches(s, e, q, me, subject, source) ? weight(e, q) : 0), 0);
   if (q.perPlayer) {
     return Math.max(
       0,
-      ...s.playerOrder.map((p) => s.turnLog.reduce((n, e) => n + (matches(s, e, q, me, p) ? weight(e, q) : 0), 0)),
+      ...s.playerOrder.map((p) => s.turnLog.reduce((n, e) => n + (matches(s, e, q, me, p, source) ? weight(e, q) : 0), 0)),
     );
   }
-  return s.turnLog.reduce((n, e) => n + (matches(s, e, q, me) ? weight(e, q) : 0), 0);
+  return s.turnLog.reduce((n, e) => n + (matches(s, e, q, me, undefined, source) ? weight(e, q) : 0), 0);
 }
 
 /**

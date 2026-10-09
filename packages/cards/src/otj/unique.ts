@@ -742,7 +742,17 @@ export const UNIQUE: Record<string, CardScript> = {
           label: "Draw",
         },
       ),
-      activated({ mana: "{X}", tap: true, effects: [fx.noncombatBonusThisTurn(amount.x)], label: "Noncombat damage +X" }),
+      activated({
+        mana: "{X}",
+        tap: true,
+        // "This turn, if a source you control would deal noncombat damage, it deals that much damage plus X instead."
+        effects: [
+          fx.thisTurn({
+            replacement: { event: "damage", source: { controller: "you" }, combat: false, modify: { add: amount.x } },
+          }),
+        ],
+        label: "Noncombat damage +X",
+      }),
     ],
   },
   "Vraska, the Silencer": {

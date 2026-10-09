@@ -174,8 +174,6 @@ export interface GameObject {
   crewedBy?: { turn: number; ids: ObjectId[] };
   /** Sources that dealt damage to it this turn (Predator Ooze). */
   damagedBy?: ObjectId[];
-  /** Players it dealt combat damage to this turn (Steel Hellkite). */
-  combatDamagedPlayers?: PlayerId[];
   /**
    * Modes already chosen (Demonic Pact); `turn`: the turn they refer to for the unique "this turn" modes (the list
    * starts over on another turn).
@@ -400,8 +398,6 @@ export interface TurnStats {
   coinFlips?: number;
   /** Exhaust abilities activated this turn (Elvish Refueler). */
   exhaustActivated?: number;
-  /** Permanents untapped during this player's untap step (The Millennium Calendar). */
-  untappedInUntapStep?: number;
   /** Warped Space: a spell cast from exile without paying its mana cost this turn. */
   freeFromExile?: number;
   /** Total mana spent to cast spells this turn (Expend, Bloomburrow). */
@@ -524,6 +520,8 @@ export type TurnLogEntry =
     }
   /** A permanent becomes tapped ("the first time it becomes tapped this turn"); `player`: who taps it. */
   | { e: "tap"; player: PlayerId; id: ObjectId; types?: CardType[]; subtypes?: string[] }
+  /** A permanent untaps; `untapStep`: during its controller's untap step (The Millennium Calendar). */
+  | { e: "untap"; player: PlayerId; id: ObjectId; untapStep?: boolean; types?: CardType[]; subtypes?: string[] }
   /** A Mount becomes saddled (702.171b: until end of turn). */
   | { e: "saddled"; player: PlayerId; id: ObjectId; types?: CardType[]; subtypes?: string[] }
   /** Life gained or lost by `player` (one event per gain or loss). */
@@ -551,6 +549,9 @@ export type TurnLogEntry =
       sourceSupertypes: string[];
       /** Identity of the source ("three or more sources dealt damage", Case of the Burning Masks). */
       sourceKey?: string;
+      /** The damaged permanent (an object that changes zones is a new object, 400.7) and the source object, if any. */
+      id?: ObjectId;
+      sourceId?: ObjectId;
       types?: CardType[];
       subtypes?: string[];
       supertypes?: string[];
@@ -604,6 +605,13 @@ export interface TurnLogQuery {
   source?: Pick<TurnLogQuery, "types" | "subtype" | "supertype" | "colors"> & { controller?: "you" };
   /** The sum of the quantities (damage, life, discarded cards) rather than the number of entries. */
   sum?: boolean;
+  /**
+   * Damage: only the damage dealt to the ability's source (`target`: Tangled Colony, "the amount of damage dealt to it
+   * this turn") or by it (`source`: Steel Hellkite, "dealt combat damage by this creature this turn").
+   */
+  self?: "target" | "source";
+  /** Untap: during the controller's untap step ("whenever you untap one or more permanents during your untap step"). */
+  untapStep?: boolean;
   perPlayer?: boolean;
   /** Activated ability: only loyalty abilities. */
   loyalty?: boolean;

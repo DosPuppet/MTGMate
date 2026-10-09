@@ -104,7 +104,7 @@ In the order they were added, set by set.
   - `rule` Cavern mana (Bat Colony) and "using mana produced by [source]" (Tecutlan, The Myriad Pools): only the mana committed by the automatic payment;
   - `timing` Squirming Emergence: the mana value is only checked at resolution; Abuelo's Awakening: the card enters as a flying Spirit creature, but its base P/T only becomes 1/1 right after it enters;
   - `rule` The Myriad Pools: the permanent becomes a copy of the spell on the stack;
-  - `timing` Thousand Moons Infantry: untaps at the beginning of each opponent's upkeep (and not during their untap step); The Millennium Calendar: its time counters are put on at the beginning of your upkeep;
+  - `timing` Thousand Moons Infantry: untaps at the beginning of each opponent's upkeep (and not during their untap step);
   - `rule` Locus of Enlightenment: the gained abilities are not limited to one activation per turn;
   - `timing` Ojer Kaslem: the creature card is put onto the battlefield just before the land card (and not at the same time);
   - `rule` Deep-Cavern Bat: only the nonland cards in the opposing hand are shown, in the choice window; with no nonland card, the hand is not shown.
@@ -166,7 +166,6 @@ In the order they were added, set by set.
 - **Avatar: The Last Airbender (`docs/extensions/tla.md`):**
   - `auto choice` Waterbend, convoke, improvise, Cave: outside full control, the objects that pay are chosen by the automatic payment, after the lands (as on Arena); in full control, the player chooses them;
   - `rule` Honest Work: the enchanted creature takes the single subtype Citizen (an artifact creature would also lose its artifact subtypes);
-  - `rule` Sold Out: "was dealt damage this turn" is read from the damage still marked;
   - `timing` Elemental Teachings: the cards found go through your hand (revealed), then the opponent chooses two;
   - `rule` Raucous Audience: two mana abilities, each under its condition;
   - `rule` Azula, Cunning Usurper: the exiled cards are cast during your turn with mana of any type, but without flash;

@@ -176,10 +176,7 @@ function untapStep(s: GameState, keep: ObjectId[]): void {
     if (!o.tapped || keep.includes(id)) continue;
     if (!propRoom && untapStepRule(s, id) === true) continue;
     // 122.1d: a stun counter is removed instead of untapping (`untapObject`).
-    if (untapObject(s, o)) {
-      const stats = s.players[o.controller]?.turnStats;
-      if (stats && o.controller === active) stats.untappedInUntapStep = (stats.untappedInUntapStep ?? 0) + 1;
-    }
+    untapObject(s, o);
   }
   s.flow = "stepEnd"; // no priority during the untap step
 }
@@ -506,7 +503,6 @@ function finishCleanup(s: GameState): void {
     o.deathtouched = false;
     delete o.regenShields;
     o.damagedBy = undefined;
-    o.combatDamagedPlayers = undefined;
   }
   s.effects = s.effects.filter(
     (e) =>

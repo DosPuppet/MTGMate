@@ -3,7 +3,9 @@
  * variant or field, on the card that used it, for the cases the merge could have changed.
  */
 import { describe, expect, it } from "vitest";
+import { dealDamage, sourceFromObject } from "../src/actions";
 import { bump, chars, moveObject } from "../src/state";
+import { matchesObjectFilter } from "../src/targets";
 import { advanceUntil, idOf, lands, scenario } from "./helpers";
 
 describe("PLAN-J J1: exact merges into existing forms", () => {
@@ -55,5 +57,26 @@ describe("PLAN-J J1: exact merges into existing forms", () => {
     s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "draw");
     // p2 has more cards than p1 (2 > 1), p3 the same number: a single Clue.
     expect(clues(s)).toBe(1);
+  });
+});
+
+describe("PLAN-J J4a [rules 179]: the turn log carries the objects of damage and untaps", () => {
+  it('"was dealt damage this turn" also counts damage no longer marked (removed by regeneration)', () => {
+    const s = scenario({ p1: { battlefield: ["Shivan Dragon"] }, p2: { battlefield: ["Serra Angel"] } });
+    const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+    expect(matchesObjectFilter(s, "p1", angel, { damaged: true })).toBe(false);
+    dealDamage(s, sourceFromObject(s, idOf(s, "p1", "battlefield", "Shivan Dragon")), angel, 2, false);
+    const o = s.objects[angel];
+    if (o) o.damage = 0;
+    bump(s);
+    expect(matchesObjectFilter(s, "p1", angel, { damaged: true })).toBe(true);
+  });
+
+  it("The Millennium Calendar: nothing untapped during your untap step, no trigger", () => {
+    let s = scenario({ p1: { battlefield: ["The Millennium Calendar", "Forest"] }, active: "p2", step: "end", turn: 2 });
+    s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.stack.length === 0);
+    const cal = idOf(s, "p1", "battlefield", "The Millennium Calendar");
+    expect(s.objects[cal]?.counters.time ?? 0).toBe(0);
+    expect(s.turnLog.some((e) => e.e === "untap")).toBe(false);
   });
 });

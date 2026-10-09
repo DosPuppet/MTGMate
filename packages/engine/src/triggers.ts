@@ -825,6 +825,18 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
         const v = s.objects[item.sourceId]?.zone === "battlefield" ? snapshot(s, item.sourceId) : s.lki[item.sourceId];
         if (!v || !matchesView(v, t.source, me, src.id)) return null;
       }
+      const tg = t.targeting;
+      if (
+        tg &&
+        !Object.values(item.targets)
+          .flat()
+          .some((id) =>
+            s.players[id]
+              ? !!tg.players && whose(tg.players, id, me)
+              : !!tg.objects && matchesObjectFilter(s, me, id, tg.objects, src.id),
+          )
+      )
+        return null;
       return { objectId: item.id, player: me };
     }
     case "explores": {
@@ -933,14 +945,6 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       if (ev.from === "battlefield" && ev.oldId)
         return { objectId: ev.oldId, newObjectId: ev.newId ?? undefined, player: owner ?? me };
       return { objectId: ev.newId ?? undefined, player: owner ?? me };
-    }
-    case "activateTargeting": {
-      if (ev.e !== "targeted" || ev.controller !== me) return null;
-      const item = s.stack.find((x) => x.id === ev.stackId);
-      if (item?.kind !== "ability" || item.inline || item.copy) return null;
-      if (s.defs[item.sourceDefId]?.abilities[item.abilityIndex]?.kind !== "activated") return null;
-      const ok = ev.targets.some((id) => !!s.players[id] || (s.objects[id]?.zone === "battlefield" && isCreature(s, id)));
-      return ok ? { objectId: item.id, player: me } : null;
     }
     case "step": {
       if (ev.e !== "step" || !whose(t.whose, ev.active, me)) return null;

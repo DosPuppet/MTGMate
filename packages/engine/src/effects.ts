@@ -718,21 +718,17 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
         (n, id) => n + (s.objects[id]?.controller === ctx.controller ? (s.objects[id]?.unlocked?.length ?? 0) : 0),
         0,
       );
-    case "lkiDamage":
-      return s.objects[ctx.sourceId]?.damage ?? s.lki[ctx.sourceId]?.damage ?? 0;
     case "cardsIn":
       return s.players[ctx.controller]?.[a.zone].length ?? 0;
     case "inExile":
       return resolveRef(s, ctx, a.ref).filter((id) => s.objects[id]?.zone === "exile").length;
     case "turnEvents":
-      if (!a.of) return countTurnEvents(s, a.query, ctx.controller);
+      if (!a.of) return countTurnEvents(s, a.query, ctx.controller, undefined, ctx.sourceId);
       return resolveRef(s, ctx, a.of)
         .filter((x) => isPlayer(s, x))
-        .reduce((n, p) => n + countTurnEvents(s, a.query, ctx.controller, p), 0);
+        .reduce((n, p) => n + countTurnEvents(s, a.query, ctx.controller, p, ctx.sourceId), 0);
     case "lkiPower":
       return Math.max(0, ctx.sourceSnapshot.power);
-    case "untappedInUntapStep":
-      return s.players[ctx.controller]?.turnStats.untappedInUntapStep ?? 0;
     case "raw": {
       if (a.of) {
         // Without a designated object still on the battlefield, no value: no comparison is true.

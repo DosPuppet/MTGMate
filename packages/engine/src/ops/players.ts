@@ -42,7 +42,7 @@ import { addPlayerEffect, cantLose, playerStatic } from "../statics";
 import { matchesObjectFilter } from "../targets";
 import { msg } from "../text";
 import { eliminate, endTheTurn } from "../turn";
-import type { EventReplacement, Step } from "../types";
+import type { Step } from "../types";
 
 export const HANDLERS: OpHandlers = {
   playerEffect(s, _r, e0, ctx) {
@@ -68,10 +68,16 @@ export const HANDLERS: OpHandlers = {
         : e0;
     // "Can't attack you" (Sandswirl Wanderglyph), "your Jaces" (Jace, Multiverse Architect): "you" is the controller of
     // the effect, who is not affected themselves.
-    const ability =
+    const base =
       e.ability.cantAttack?.of === "you"
         ? { ...e.ability, cantAttack: { ...e.ability.cantAttack, of: ctx.controller } }
         : e.ability;
+    // Taii Wakeen: "this turn, noncombat damage from your sources is increased by X": the amount is frozen now.
+    const add = base.replacement?.modify.add;
+    const ability =
+      base.replacement && add !== undefined && typeof add !== "number"
+        ? { ...base, replacement: { ...base.replacement, modify: { ...base.replacement.modify, add: evalAmount(s, ctx, add) } } }
+        : base;
     const who = (e.who ? resolveRef(s, ctx, e.who).filter((p) => isPlayer(s, p)) : [ctx.controller]).filter(
       (p) => p !== ability.cantAttack?.of,
     );
@@ -374,13 +380,6 @@ export const HANDLERS: OpHandlers = {
     const won = rigged || random(s) < 0.5;
     emit({ type: "coinFlip", player: ctx.controller, won });
     store(r, e.store, won ? 1 : 0);
-    return;
-  },
-  noncombatBonusThisTurn(s, _r, e, ctx) {
-    // Taii Wakeen: "this turn, noncombat damage from your sources is increased by X" (X frozen now).
-    const add = evalAmount(s, ctx, e.amount);
-    const replacement: EventReplacement = { event: "damage", source: { controller: "you" }, combat: false, modify: { add } };
-    addPlayerEffect(s, ctx.controller, { replacement }, s.turn.number);
     return;
   },
   poison(s, _r, e, ctx) {

@@ -716,16 +716,6 @@ export const HANDLERS: OpHandlers = {
     if (picked && e.exile) r.vars.$copyCard = [picked];
     return;
   },
-  becomeCopyKeepAbilities(s, _r, e, ctx) {
-    const card = resolveRef(s, ctx, e.what)[0];
-    const self = s.objects[ctx.sourceId];
-    const d = s.defs[s.objects[card ?? ""]?.defId ?? ""];
-    if (!card || !d || self?.zone !== "battlefield") return;
-    // "… except it's 0/0 and has this ability": its printed activated abilities are kept.
-    const own = (s.defs[self.defId]?.abilities ?? []).filter((a) => a.kind === "activated");
-    addEffect(s, [self.id], { copyOf: d.id, setPower: 0, setToughness: 0, addAbilities: own }, "permanent");
-    return;
-  },
   chooseOnEnter(s, r, e, ctx, key) {
     if (r.vars.$chosen) return;
     const answer = r.vars[key("chosen")];

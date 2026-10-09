@@ -22,7 +22,7 @@ import { playerStatics } from "./statics";
 import { ALL_CREATURE_TYPES, hasChosen, matchesObjectFilter, matchesView, withChosen } from "./targets";
 import { msg } from "./text";
 import { checkCondition } from "./triggers";
-import { countersPutThisTurn, countTurnEvents, onTurnLogged } from "./turnlog";
+import { countersPutThisTurn, countTurnEvents, objectDidThisTurn, onTurnLogged } from "./turnlog";
 import type {
   AbilityDef,
   Amount,
@@ -786,7 +786,9 @@ function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, def
     pairedWith: o.pairedWith,
     blocking: !!s.combat?.blockers.some((b) => b.id === id),
     blocked: defender !== undefined ? blockedState(s, id) : undefined,
-    damaged: o.damage > 0 || undefined,
+    // "Was dealt damage this turn": damage still marked, or dealt this turn (removed by regeneration, or dealt as
+    // counters by wither or infect).
+    damaged: o.damage > 0 || objectDidThisTurn(s, id, "damage") || undefined,
     counters: o.counters,
     preparedSpell: !!o.preparedFor || undefined,
     prepared: !!o.preparedCopy || undefined,

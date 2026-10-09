@@ -105,7 +105,7 @@ function arrivalChoices(
     const d = s.defs[s.objects[id]?.defId ?? ""];
     const who = controllerOf(id);
     const n = d?.shockLand;
-    if (d && n && !random && !spec.tapped && spec.as !== "cloak" && payableLife(s, who) >= n) {
+    if (d && n && !random && !spec.tapped && !spec.as && payableLife(s, who) >= n) {
       const k = key(`shock-${id}`);
       const answer = r.vars[k];
       if (!answer) {
@@ -1132,7 +1132,8 @@ export const HANDLERS: OpHandlers = {
     // start once the answer is given): what an Aura enchants (303.4f); then `arrivalChoices` ("as this enters" effects,
     // shock lands, defender).
     const choices: Record<string, Partial<EntersContext>> = {};
-    if (e.spec.to === "battlefield") {
+    // A card put onto the battlefield face down (manifest, cloak) is a 2/2 creature: no host to choose.
+    if (e.spec.to === "battlefield" && !e.spec.as) {
       const host = e.attachTo ? resolveRef(s, ctx, e.attachTo).find((x) => onBattlefield(s, x)) : undefined;
       for (const id of ids) {
         const o = s.objects[id];
@@ -1530,6 +1531,10 @@ export const HANDLERS: OpHandlers = {
     }
     // The moved cards (Jhoira: "lose life equal to its mana value").
     if (e.store) r.vars[`$ids:${e.store}`] = moved;
+    if (e.rest === "graveyard") {
+      for (const id of rest) moveWithSpec(s, ctx.controller, id, { to: "graveyard" });
+      return;
+    }
     const lib = player.library.filter((id) => !rest.includes(id));
     shuffle(s, rest);
     player.library = [...lib, ...rest];
@@ -1643,16 +1648,6 @@ export const HANDLERS: OpHandlers = {
       ids = exiled
         .map((id) => moveObject(s, id, "battlefield", { controller: s.objects[id]?.owner }))
         .filter((x): x is string => !!x);
-    }
-    return;
-  },
-  millUntil(s, _r, e, ctx) {
-    for (const p of resolveRef(s, ctx, e.who)) {
-      const pl = s.players[p];
-      if (!pl) continue;
-      const i = pl.library.findIndex((id) => matchesCard(s, ctx.controller, id, { ...e.filter, controller: undefined }));
-      const cards = i < 0 ? [...pl.library] : pl.library.slice(0, i + 1);
-      millCards(s, [[p, cards]]);
     }
     return;
   },
@@ -1931,17 +1926,6 @@ export const HANDLERS: OpHandlers = {
       announceDiscardBatch(s, p, cards.length);
       if (nonland > 0 && onBattlefield(s, id)) changeCounters(s, o, P1P1, nonland);
     }
-    return;
-  },
-  putFaceDown(s, r, e, ctx) {
-    // Manifest (701.34) / cloak (701.58): face down, under the control of the effect's controller (or of the owner).
-    const made: string[] = [];
-    for (const id of resolveRef(s, ctx, e.what)) {
-      const owner = s.objects[id]?.owner ?? ctx.controller;
-      const n = putFaceDown(s, e.ownerControl ? owner : ctx.controller, id, e.ward);
-      if (n) made.push(n);
-    }
-    if (e.store) r.vars[`$ids:${e.store}`] = made;
     return;
   },
   manifestDread(s, r, e, ctx, key) {

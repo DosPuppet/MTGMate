@@ -373,6 +373,8 @@ function logDamage(
       source.defId,
     types: victim?.types,
     subtypes: victim?.subtypes,
+    ...(toPlayer ? {} : { id: target }),
+    ...(source.id ? { sourceId: source.id } : {}),
   });
 }
 
@@ -471,11 +473,7 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
   }
   let excess = 0;
   if (isPlayer(s, target)) {
-    // Tracking of the players dealt combat damage by this source this turn (Steel Hellkite).
     const src = source.id ? s.objects[source.id] : undefined;
-    if (combat && src && !src.combatDamagedPlayers?.includes(target)) {
-      src.combatDamagedPlayers = [...(src.combatDamagedPlayers ?? []), target];
-    }
     emit({ type: "damage", sourceDefId: source.defId, target, amount, combat });
     logDamage(s, source, target, target, true, amount, combat);
     // 903.10a: combat damage from a commander, accumulated over the game (704.6c: 21, the player loses).

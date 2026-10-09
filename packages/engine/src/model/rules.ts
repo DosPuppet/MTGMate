@@ -290,10 +290,6 @@ export interface FilterCompare {
   to?: Amount | "power" | "basePower";
 }
 
-/**
- * Trigger event (603). "self": the source itself; otherwise an object matching the filter, seen from the source's
- * controller.
- */
 /** Events a generic `action` trigger can match (`TriggerSpec` `action`): the `e` of the engine's `RulesEvent`. */
 export type ActionEvent =
   | "search"
@@ -315,6 +311,10 @@ export type ActionEvent =
   | "cycled"
   | "transformed";
 
+/**
+ * Trigger event (603). "self": the source itself; otherwise an object matching the filter, seen from the source's
+ * controller.
+ */
 export type TriggerSpec =
   /**
    * A player performs an action announced by the engine's event of that name (PLAN-J J3), `whose` relative to the
@@ -524,8 +524,6 @@ export type TriggerSpec =
   | { on: "playLand"; from?: Zone[]; whose?: "you" | "opponent" | "any" }
   /** "Whenever [you] discard one or more cards" (amount: their number). */
   | { on: "discardBatch"; whose: "you" | "opponent" | "any" }
-  /** "Whenever you activate an ability that targets a creature or player" (Ertha Jo). */
-  | { on: "activateTargeting" }
   /**
    * A card changes zones (Ketramose: "put into exile from graveyards and/or the battlefield"; Dredger's Insight:
    * "leave your graveyard"). `whose`: the card's owner.
@@ -534,8 +532,9 @@ export type TriggerSpec =
   /** "Whenever you activate a loyalty ability [by removing at least N counters]"; `byOpponent`: an opponent activates it. */
   | { on: "loyaltyActivated"; minRemoved?: number; byOpponent?: boolean }
   /** "Whenever you activate an ability that isn't a mana ability" (the object: the ability on the stack);
-   * `source`: only that of a matching permanent (Elrond, Moon-Reader: "of a creature"). */
-  | { on: "activateAbility"; source?: ObjectFilter };
+   * `source`: only that of a matching permanent (Elrond, Moon-Reader: "of a creature"); `targeting`: that targets a
+   * matching object or player (Ertha Jo: "a creature or player"). */
+  | { on: "activateAbility"; source?: ObjectFilter; targeting?: Pick<TargetFilter, "objects" | "players"> };
 
 /** Conditions ("intervening if" 603.4, "as long as"…). */
 export type Condition =
@@ -557,7 +556,6 @@ export type Condition =
   /** Value stored during the resolution ("if you do", "if a creature card was exiled"). */
   | { kind: "var"; name: string; atLeast?: number }
   | { kind: "all"; of: Condition[] }
-  /** The designated player has exactly N life (evaluated during the resolution). */
   /** At least N permanents matching the filter on the whole battlefield (Blasphemous Edict). */
   | { kind: "battlefieldCount"; filter: ObjectFilter; atLeast: number }
   /** The source matches the filter ("if Kellan is a Scout"). */
@@ -579,7 +577,6 @@ export type Condition =
   | { kind: "amountGreater"; a: Amount; b: Amount }
   /** X of the spell resolving. */
   | { kind: "xAtLeast"; n: number }
-  /** "as long as you have N or more unspent mana" (Ozai, the Phoenix King). */
   /** It is the first combat phase of the turn (Genji Glove). */
   | { kind: "firstCombat" }
   /** You control a creature with the greatest power or tied for it (Summon: Fenrir). */
@@ -624,8 +621,6 @@ export type Condition =
   | { kind: "solved" }
   /** Max speed (4); `not` for "a player who doesn't have max speed". */
   | { kind: "maxSpeed" }
-  /** At least N cards in exile (Ketramose). */
-  /** Total number of counters on the source is even (Sab-Sunen). */
   /** It is at least your Nth turn (Jace Reawakened: "not during your first three turns"). */
   | { kind: "turnsTakenAtLeast"; n: number }
   /** It is this step (Smoky Lounge: "your first main phase"). */
@@ -824,8 +819,6 @@ export type Amount =
   | { kind: "lifeTotal"; starting?: boolean; who?: Ref }
   /** Times you've cast a commander from the command zone this game (903.8: the tax counter of each of your commanders). */
   | { kind: "commanderCasts" }
-  /** Damage marked on the source (last known information: Tangled Colony, "the damage dealt to it this turn"). */
-  | { kind: "lkiDamage" }
   | { kind: "manaValueOf"; ref: Ref }
   | { kind: "toughnessOf"; ref: Ref }
   /** Number of cards in a zone of the controller. */
@@ -853,17 +846,13 @@ export type Amount =
   | { kind: "numberChosen"; store: string }
   /** Number of graveyards that contain at least N cards (Master's Councillors, The Master of Lake-town). */
   | { kind: "graveyardsWithAtLeast"; n: number }
-  /** Different names among the unlocked doors of their Rooms (Promising Stairs). */
   /** Designated objects still in exile (Dragonhawk: "those of these cards still exiled"). */
   | { kind: "inExile"; ref: Ref }
-  /** Opponents who have more cards in hand than you (Wojek Investigator). */
   /** Power of the source when the ability triggered ("when this creature dies, … equal to its power"). */
   | { kind: "lkiPower" }
   /** Turn log (`turnlog.ts`): matching entries, seen from the ability's controller. */
   /** `of`: count for these players ("the cards milled by target player") rather than for the controller. */
   | { kind: "turnEvents"; query: TurnLogQuery; of?: Ref }
-  /** Permanents untapped during your untap step this turn (The Millennium Calendar). */
-  | { kind: "untappedInUntapStep" }
   /**
    * Raw value, without a floor (107.1b), for the comparisons of filters (`ObjectFilter.compare`). Without `of`, of the
    * source: `power`, its power on the battlefield, otherwise from its last known information (0 without a source);

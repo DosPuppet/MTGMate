@@ -396,7 +396,8 @@ export const amount = {
   /** Counters on the source from its last known information ("when it dies" ability). */
   /** Counters of a kind on the source, or from its last known information ("if it had a counter…"). */
   lkiCounters: (counter: string): Amount => ({ kind: "countersOn", ref: { kind: "self" }, counter }),
-  lkiDamage: { kind: "lkiDamage" } as Amount,
+  /** "The amount of damage dealt to it this turn" (Tangled Colony): the turn log, damage dealt to the source. */
+  lkiDamage: { kind: "turnEvents", query: { event: "damage", self: "target", sum: true } } as Amount,
   /** Converge: colors of mana spent to cast this spell. */
   colorsSpent: spent("colors"),
   plus: (...of: Amount[]): Amount => ({ kind: "sum", of }),
@@ -977,7 +978,6 @@ export const fx = {
     store,
     ...(who ? { who } : {}),
   }),
-  becomeCopyKeepAbilities: (what: Ref): Effect => ({ op: "becomeCopyKeepAbilities", what }),
   /** "Exile the top N cards. Choose one of them. You may play it this turn (or until the end of your next turn)." */
   impulse: (n: number, until: "thisTurn" | "yourNextTurn" | "yourNextEndStep" = "thisTurn"): Effect => ({
     op: "impulse",
@@ -1016,7 +1016,6 @@ export const fx = {
     ...opts,
     ...(sacrificeAtEndStep ? { atEnd: "sacrifice" as const } : {}),
   }),
-  millUntil: (who: Ref, filter: ObjectFilter): Effect => ({ op: "millUntil", who, filter }),
   /** "Exile the top N cards"; `faceDown`: face down, and who can look at them (406.3). */
   exileTop: (who: Ref, n: Amount, store: string, faceDown?: MoveSpec["faceDown"]): Effect => ({
     op: "exileTop",
@@ -1135,7 +1134,6 @@ export const fx = {
     ...(afterStep ? { after: "step" as const } : {}),
   }),
   plotOnResolve: (what: Ref): Effect => ({ op: "spellFate", fate: "plot", what }),
-  noncombatBonusThisTurn: (amount: Amount): Effect => ({ op: "noncombatBonusThisTurn", amount }),
   flickerChosen: (filter: ObjectFilter, times: Amount): Effect => ({ op: "flickerChosen", filter, times }),
   exchangeControl: (a: Ref, b: Ref): Effect => ({ op: "exchangeControl", a, b }),
   /** Gains control as long as you control the source; `restrict`: it can't attack or block (Possession Engine). */
@@ -1207,15 +1205,27 @@ export const fx = {
     duration: "endOfTurn",
   }),
   exileFromOwnHand: (who: Ref, store: string): Effect => ({ op: "exileFromOwnHand", who, store }),
-  /** Manifest (without ward) or cloak (`ward`) the designated cards. */
+  /**
+   * Manifest (701.40, under your control unless `ownerControl`: Yarus) or cloak (701.58, `ward`: 2/2 with ward {2})
+   * the designated cards; `store`: the face-down creatures (Cryptic Coat: "then attach this Equipment to it").
+   */
   putFaceDown: (what: Ref, ward = false, opts: { store?: string; ownerControl?: boolean } = {}): Effect => ({
-    op: "putFaceDown",
+    op: "moveTo",
     what,
-    ward,
-    ...opts,
+    spec: {
+      to: "battlefield",
+      as: ward ? "cloak" : "manifest",
+      ...(ward || opts.ownerControl ? {} : { underYourControl: true }),
+    },
+    ...(opts.store ? { store: { name: opts.store } } : {}),
   }),
   /** Cloak (701.58): face down, 2/2 with ward {2}; `store`: the creatures created this way. */
-  cloak: (what: Ref, store?: string): Effect => ({ op: "putFaceDown", what, ward: true, ...(store ? { store } : {}) }),
+  cloak: (what: Ref, store?: string): Effect => ({
+    op: "moveTo",
+    what,
+    spec: { to: "battlefield", as: "cloak" },
+    ...(store ? { store: { name: store } } : {}),
+  }),
   manifestDread: { op: "manifestDread" } as Effect,
   revealFaceDown: (what: Ref): Effect => ({ op: "revealFaceDown", what }),
   eachOfDealsDamage: (from: Ref, to: Ref): Effect => ({ op: "eachDealsDamage", filter: {}, to, from }),
@@ -1391,7 +1401,27 @@ export const fx = {
   /** "That player loses the game" (Summon: Primal Odin). */
   playerLoses: (who: Ref): Effect => ({ op: "loseGame", who }),
   countResolution: (store: string): Effect => ({ op: "countResolution", store }),
-  hellkite: { op: "hellkite" } as Effect,
+  /**
+   * Steel Hellkite: "destroy each nonland permanent with mana value X whose controller was dealt combat damage by this
+   * creature this turn" (the turn log, damage dealt by the source).
+   */
+  hellkite: {
+    op: "destroy",
+    what: {
+      kind: "zone",
+      zone: "battlefield",
+      who: {
+        kind: "playersWhere",
+        of: { kind: "eachPlayer" },
+        where: {
+          kind: "amountAtLeast",
+          amount: { kind: "turnEvents", query: { event: "damage", who: "you", combat: true, toPlayer: true, self: "source" } },
+          n: 1,
+        },
+      },
+      filter: { notTypes: ["Land"], compare: [{ what: "manaValue", cmp: "=", to: { kind: "x" } }] },
+    },
+  } as Effect,
   link: (what: Ref, to?: Ref): Effect => ({ op: "link", what, to }),
   /** "That player chooses one of them": `ref.stored(store)` the chosen one, `ref.stored(store + "Rest")` the others. */
   chooseAmong: (
@@ -2382,7 +2412,11 @@ export const when = {
   /** "When this card becomes plotted" */
   plottedSelf: { on: "action", action: "plotted", self: true } as TriggerSpec,
   /** "Whenever you activate an ability that targets a creature or player" */
-  activateTargeting: { on: "activateTargeting" } as TriggerSpec,
+  /** "Whenever you activate an ability that targets a creature or player" (Ertha Jo). */
+  activateTargeting: {
+    on: "activateAbility",
+    targeting: { objects: { types: ["Creature"] }, players: "any" },
+  } as TriggerSpec,
   /** A card changes zones (see TriggerSpec `zoneChange`). */
   zoneChange: (
     from: Zone[],

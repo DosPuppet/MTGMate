@@ -106,6 +106,9 @@ const confluence = (): ModeDef[] => {
   return out;
 };
 
+/** Permanents you untapped during your untap step this turn (The Millennium Calendar). */
+const UNTAPPED_IN_UNTAP_STEP = amount.turnEvents({ event: "untap", who: "you", untapStep: true });
+
 export const LEGENDS: Record<string, CardScript> = {
   // --- White ------------------------------------------------------------------
   "Dauntless Dismantler": {
@@ -641,7 +644,9 @@ export const LEGENDS: Record<string, CardScript> = {
   "The Core": { abilities: [manaAbility([...ANY], 1, { perGraveyard: PERMANENT_CARD })] },
   "The Millennium Calendar": {
     abilities: [
-      triggered(when.yourUpkeep, [fx.counters(ref.self, "time", { kind: "untappedInUntapStep" })], {
+      // "Whenever you untap one or more permanents during your untap step": the ability waits for the upkeep (502.4).
+      triggered(when.yourUpkeep, [fx.counters(ref.self, "time", UNTAPPED_IN_UNTAP_STEP)], {
+        condition: cond.amountAtLeast(UNTAPPED_IN_UNTAP_STEP, 1),
         label: "A time counter for each untapped permanent",
       }),
       activated({

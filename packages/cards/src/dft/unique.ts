@@ -465,7 +465,17 @@ export const UNIQUE: Record<string, CardScript> = {
             filter: { exiled: { linked: true, filter: { types: ["Creature"] } } },
           },
         ],
-        effects: [fx.becomeCopyKeepAbilities(ref.target())],
+        // "Becomes a copy of the exiled card, except it's 0/0 and has this ability" (707.9b: copiable exceptions).
+        effects: [
+          {
+            op: "becomeCopy",
+            what: ref.self,
+            of: ref.target(),
+            duration: "permanent",
+            keepAbilities: [0],
+            except: { setPower: 0, setToughness: 0 },
+          },
+        ],
         label: "Becomes a copy (0/0)",
       }),
     ],
