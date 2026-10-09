@@ -234,7 +234,7 @@ Three read-only surveys (2026-10-09) checked every tracked entry against the for
 - A layer-4 change that keeps `NON_CREATURE_SUBTYPES` (`targets.ts:197`).
 - Lifts Nameless Inversion and Honest Work, and fixes the ~12 `setSubtypes` scripts (`otj/blue.ts:132`, `fdn/blue.ts:198,270`, `tmt/blue.ts:242`, `ecl/blue.ts:190`, `spm/green.ts:127`, `msh/green.ts:336`, …).
 
-### J7 — Closing — 🔄 in progress
+### J7 — Closing — ✅ done (history § 14, backlog "PLAN-J: not done", verify --full)
 
 - `docs/history.md`: new section 14 "PLAN-J", with a bilan in the format of the PLAN-H one.
 - `docs/backlog.md`:
@@ -313,3 +313,4 @@ Three read-only surveys (2026-10-09) checked every tracked entry against the for
 | J6b | done | 183 | library order: bottomAnyOrder (12 cards, read from the text), Rowan's top order, cascade shuffle, Dazzling Sphinx random bottom; 4 approximation entries lifted; golden games identical |
 | J6c | done | 184 | X tied to an activated ability's target (xEquals, concrete specs at activation, AI X from the target); 3 approximation entries lifted |
 | J6d | done | 185 | "is a [creature type]" keeps noncreature subtypes (205.1b); Honest Work lifted; Nameless Inversion kept (an empty set means "all subtypes" for Ultima) |
+| J7 | done | — | history § 14, backlog, CLAUDE.md; debt 241 → 167 tracked entries, approximations 224 → 197 per-card lines |
