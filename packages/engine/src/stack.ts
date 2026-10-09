@@ -969,17 +969,7 @@ export function spellCost(
   const symbols = playerStatics(s, player, "spellCost").filter(
     ({ ab }) => ab.spellCost?.colored && matchesView(spellView(d, player), ab.spellCost.filter, player),
   );
-  const cost = symbols.length ? { ...cost2, colored: { ...cost2.colored } } : cost2;
-  for (const { ab } of symbols) {
-    for (const [m, n] of Object.entries(ab.spellCost?.colored ?? {}) as [ManaType, number][]) {
-      for (let i = 0; i < n; i++) {
-        const left = cost.colored[m] ?? 0;
-        if (left > 1) cost.colored[m] = left - 1;
-        else if (left === 1) delete cost.colored[m];
-        else if (cost.generic > 0) cost.generic -= 1;
-      }
-    }
-  }
+  const cost = symbols.reduce((c, { ab }) => withoutColored(c, ab.spellCost?.colored ?? {}), cost2);
   // Case File Auditor: "as though it were mana of any color" for the matching spells.
   const anyMana =
     opts.anyMana ||
@@ -1556,7 +1546,12 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     if (d.warp?.fromGraveyard) return { source: "graveyard", warpOnly: true };
     // Mayhem: discarded this turn, it is cast from the graveyard for its mayhem cost.
     if (d.mayhem && objectDidThisTurn(s, o.id, "discard")) return { source: "graveyard", mayhem: true };
-    if (d.flashback) return { source: "flashback" };
+    if (d.flashback) {
+      // Deep Analysis: "Flashback—{1}{U}, Pay 3 life".
+      const life = d.flashbackCost?.payLife;
+      if (life && payableLife(s, player) < life) return null;
+      return { source: "flashback", ...(life ? { payLife: life } : {}) };
+    }
     // "Play from the graveyard" permissions (family C): Case of the Uneaten Feast, Hades, The Tomb of Aclazotz,
     // Noctis (life and finality), Festival of Embers (life), Osteomancer Adept (forage and finality)…
     const rules = playFromRules(s, player, card, "graveyard", "spells");
@@ -2503,15 +2498,22 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   announceTargets(s, stackId, player, targets);
 }
 
-/** Removes colored symbols from a cost (without going below zero). */
+/**
+ * Removes colored symbols from a cost: each symbol removes one of its color, otherwise one generic mana (118.7c), without
+ * going below zero.
+ */
 function withoutColored(cost: ManaCost, colored: ManaCost["colored"]): ManaCost {
   const out = { ...cost.colored };
+  let generic = cost.generic;
   for (const [k, n] of Object.entries(colored)) {
-    const left = (out[k as ManaType] ?? 0) - (n ?? 0);
-    if (left > 0) out[k as ManaType] = left;
-    else delete out[k as ManaType];
+    for (let i = 0; i < (n ?? 0); i++) {
+      const left = out[k as ManaType] ?? 0;
+      if (left > 1) out[k as ManaType] = left - 1;
+      else if (left === 1) delete out[k as ManaType];
+      else if (generic > 0) generic -= 1;
+    }
   }
-  return { ...cost, colored: out };
+  return { ...cost, generic, colored: out };
 }
 
 /** Sum of two mana costs. */
@@ -2859,11 +2861,11 @@ function counterSources(s: GameState, player: PlayerId, source: ObjectId, ab: Ac
     .filter(
       (id) =>
         obj(s, id).controller === player &&
-        (obj(s, id).counters[c.kind] ?? 0) > 0 &&
+        countersFor(obj(s, id), c.kind) > 0 &&
         matchesObjectFilter(s, player, id, c.filter, source),
     )
-    .sort((a, b) => (obj(s, b).counters[c.kind] ?? 0) - (obj(s, a).counters[c.kind] ?? 0));
-  const out = ids.flatMap((id) => Array<ObjectId>(obj(s, id).counters[c.kind] ?? 0).fill(id));
+    .sort((a, b) => countersFor(obj(s, b), c.kind) - countersFor(obj(s, a), c.kind));
+  const out = ids.flatMap((id) => Array<ObjectId>(countersFor(obj(s, id), c.kind)).fill(id));
   const n = c.n ?? 1;
   return out.length >= n ? out.slice(0, n) : null;
 }
@@ -3101,17 +3103,20 @@ export function activationPicks(
   if (c.removeCounterFrom) {
     const r = c.removeCounterFrom;
     const options = s.battlefield.filter(
-      (id) => mine(id) && (obj(s, id).counters[r.kind] ?? 0) > 0 && matchesObjectFilter(s, player, id, r.filter, source),
+      (id) => mine(id) && countersFor(obj(s, id), r.kind) > 0 && matchesObjectFilter(s, player, id, r.filter, source),
     );
     const suggested = counterSources(s, player, source, ab);
     if (suggested)
       out.push({
         slot: "counterFrom",
-        label: msg("Remove {n} {kind} counter(s)", { n: r.n ?? 1, kind: r.kind }),
+        label:
+          r.kind === "any"
+            ? msg("Remove {n} counter(s)", { n: r.n ?? 1 })
+            : msg("Remove {n} {kind} counter(s)", { n: r.n ?? 1, kind: r.kind }),
         count: r.n ?? 1,
         options,
         suggested,
-        repeat: Object.fromEntries(options.map((id) => [id, obj(s, id).counters[r.kind] ?? 0])),
+        repeat: Object.fromEntries(options.map((id) => [id, countersFor(obj(s, id), r.kind)])),
       });
   }
   if (fc.exileFromGraveyard) {
@@ -3638,7 +3643,12 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   if (blighted && ab.cost.blight) changeCounters(s, obj(s, blighted), "-1/-1", ab.cost.blight, true);
   // "Remove a counter from a creature you control": by default, the one that carries the most.
   if (ab.cost.removeCounterFrom)
-    for (const id of pick("counterFrom")) changeCounters(s, obj(s, id), ab.cost.removeCounterFrom.kind, -1, true);
+    for (const id of pick("counterFrom")) {
+      // "Remove a counter" of any kind (Scholar of New Horizons): chosen by the engine, −1/−1 first, +1/+1 last.
+      const k = ab.cost.removeCounterFrom.kind;
+      const kind = k === "any" ? anyCountersDefault(obj(s, id), 1)[0] : k;
+      if (kind) changeCounters(s, obj(s, id), kind, -1, true);
+    }
   // Collect evidence N as a cost (Forensic Researcher, Polygraph Orb).
   if (ab.cost.collectEvidence) {
     const exiled = collectEvidence(s, player, pick("evidence"));

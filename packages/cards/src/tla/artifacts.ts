@@ -13,6 +13,7 @@ import {
   firebending,
   fx,
   manaAbility,
+  playerStatic,
   ref,
   spell,
   staticAbility,
@@ -90,8 +91,8 @@ export const ARTIFACTS: Record<string, CardScript> = {
   },
   "Bender's Waterskin": {
     abilities: [
-      // Approximation (like Thousand Moons Infantry): untaps at the beginning of each opponent's upkeep.
-      triggered(when.step("upkeep", "opponent"), [fx.untap(ref.self)], { label: "Untaps during each opponent's turn" }),
+      // "Untap this artifact during each other player's untap step."
+      playerStatic({ untapOnOthersUntap: { self: true }, label: "Untaps during each opponent's turn" }),
       manaAbility(ANY_COLOR),
     ],
   },

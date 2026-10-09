@@ -170,17 +170,10 @@ export const EDH_RAKDOS: Record<string, CardScript> = {
   },
   "Gray Merchant of Asphodel": {
     abilities: [
-      triggered(
-        when.entersSelf,
-        fx.forEachPlayer(ref.eachOpponent, (p) =>
-          fx.when(
-            cond.amountAtLeast(amount.refCount(p), 1),
-            fx.loseLife(amount.devotion("B"), p),
-            fx.gainLife(amount.devotion("B")),
-          ),
-        ),
-        { label: "Each opponent loses X life (devotion to black), you gain that much" },
-      ),
+      // "You gain life equal to the life lost this way": the loss actually done (Teferi's Protection, Bloodletter).
+      triggered(when.entersSelf, [fx.loseLife(amount.devotion("B"), ref.eachOpponent, "lost"), fx.gainLife(amount.v("lost"))], {
+        label: "Each opponent loses X life (devotion to black), you gain that much",
+      }),
     ],
   },
   "Plague Spitter": {

@@ -3838,13 +3838,14 @@ describe("Wilds of Eldraine, lot A — multicolores, incolores et terrains", () 
     it("Troyan: {G}{U} only for a spell with MV 5 or more; {U}, {T}: draw, then discard", () => {
       let s = scenario({ p1: { battlefield: ["Troyan, Gutsy Explorer"], hand: ["Bear Cub"] } });
       const troyan = idOf(s, "p1", "battlefield", "Troyan, Gutsy Explorer");
-      s = settle(activate(s, "p1", troyan, { label: "Add" }));
+      // A mana ability (605.1a): resolved at once, no question for a single color.
+      s = activate(s, "p1", troyan, { label: "Add" });
       const restricted = s.players.p1?.restrictedMana?.map((m) => m.type).sort();
       expect(restricted).toEqual(["G", "U"]);
       // Bear Cub ({1}{G}, MV 2) can't be paid with this mana.
       expect(() => cast(s, "p1", "Bear Cub")).toThrow();
       const t = scenario({ p1: { battlefield: ["Troyan, Gutsy Explorer", ...lands("Mountain", 4)], hand: ["Shivan Dragon"] } });
-      let u = settle(activate(t, "p1", idOf(t, "p1", "battlefield", "Troyan, Gutsy Explorer"), { label: "Add" }));
+      let u = activate(t, "p1", idOf(t, "p1", "battlefield", "Troyan, Gutsy Explorer"), { label: "Add" });
       // Shivan Dragon ({4}{R}{R}): 4 Mountains + restricted {G}{U} = 6 mana.
       u = settle(cast(u, "p1", "Shivan Dragon"));
       expect(idsOf(u, "p1", "battlefield", "Shivan Dragon")).toHaveLength(1);

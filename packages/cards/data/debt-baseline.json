@@ -102,7 +102,6 @@
     "blocked": "Throatseeker — \"blocked / unblocked attacking creature\" filter (509.1h, ObjectFilter): family of combat filters (`attacking`, `blocking`), to reuse for any card that mentions blocked or unblocked attackers",
     "cantBeBlockedByPlayer": "The Black Gate — blocking rule \"can't be blocked by creatures that player controls\" (BlockRule, player fixed on resolution): family of blocking rules (R4.1)",
     "cantBeCopied": "Choreographed Sparks — a printed spell property, no other user",
-    "cause": "Agent Maria Hill — teamwork tap cause, no other user",
     "collectEvidenceTargetsManaValue": "Urgent Necropsy — property of a single card (audit of 2026-10-02, § 5.1): to attach to a family as soon as another card needs it",
     "costPerExtraTarget": "Officious Interrogation — a colored surcharge per extra target; Amount cost reductions are generic only",
     "createToken": "Head of the Hunt — property of a single card (audit of 2026-10-02, § 5.1): to attach to a family as soon as another card needs it",
@@ -180,8 +179,8 @@
   "turnFields": {},
   "engineCardLiterals": {},
   "ceilings": {
-    "Single-card values": 125,
-    "CardDef": 90,
+    "Single-card values": 126,
+    "CardDef": 91,
     "GameObject": 49,
     "StackItem": 29,
     "PlayerState": 23,
@@ -200,7 +199,7 @@
     "MoveSpec": 17,
     "BlockRule": 15,
     "TargetSpec": 23,
-    "AdditionalCost": 11,
+    "AdditionalCost": 12,
     "CastLimit": 9,
     "NextSpell": 9,
     "Effect": 147,
@@ -303,6 +302,7 @@
     "PLAN-J J2: small shared forms — ObjectFilter shares {what, with} (sharesCreatureTypeWith, sharesCardTypeWith, nameOf, tapChosen sharesColorWith) and chosen (six *Chosen flags); ability reduction read with the target (reduceByTargetColors, reduceByTargetCounters); ManaAbilityDef amountOf (five amount* fields) and produceColorsOf as a Ref (produceColorsZone, produceLinkedColors); LayerMods gainAbilitiesOf (three fields); stackItems only; prevention source filter (bySource); redirectTo (keyword absorbsDamage); player designations (Condition citysBlessing, enduringStory); firstEndStep, sourceDealtCombatDamage, discardSelf, untaps, excessDamage folded into step, sourceDealtDamage, discard, taps, isDealtDamage. Single-card values 105 → 111: six values replace single-card keys or variants (chosen \"number\", only \"spells\", redirectTo \"source\", shares what \"cardType\"/\"color\"/\"name\", designation \"citysBlessing\"), lighter than the fields they replace: Single-card values 105 → 111, ObjectFilter 71 → 64, ActivatedAbilityDef 19 → 17, LayerMods 31 → 29, Effect (fields) 652 → 651, TriggerSpec 61 → 58, TriggerSpec (fields) 161 → 158, Condition 50 → 47",
     "PLAN-J J3: generic action trigger { on: \"action\", action, whose, self, n } matching the engine's events (search, playerLost, discover, forage, gift, bend, caseSolved, manifestDread, attackTriggered, crime, collectEvidence, scry, exhaust, expend, saddled, plotted, cycled, transformed): 18 TriggerSpec variants into 1. Single-card values 111 → 121: the ten single-card variants become ten values of ActionEvent written by one card each: Single-card values 111 → 121, TriggerSpec 58 → 41, TriggerSpec (fields) 158 → 142",
     "PLAN-J J4a [rules 179]: turn-log damage entries with the damaged and source objects (TurnLogQuery self: Tangled Colony's lkiDamage, Steel Hellkite's op and GameObject.combatDamagedPlayers removed); untaps in the turn log (untappedInUntapStep amount and turn stat removed); becomeCopyKeepAbilities, noncombatBonusThisTurn, millUntil and putFaceDown expressed by becomeCopy, fx.thisTurn, revealUntilN rest and moveTo as; activateTargeting folded into activateAbility targeting; TurnLogQuery 26 → 28 (self, untapStep: they replace an Amount variant, an op, a GameObject field and a turn stat): GameObject 50 → 49, TurnLogQuery 26 → 28, Effect 152 → 147, Effect (fields) 651 → 639, TriggerSpec 41 → 40, Amount 34 → 32, Amount (fields) 79 → 77",
-    "PLAN-J J4b [rules 180]: \"X\" costs written in the cost keys (sacrifice, tapOthers, exileFromGraveyard count \"X\"; removeCounters n \"X\"; discard \"X\"; payLife { kind: \"x\" }; read by xCosts and fixedCost) instead of six single-card keys; Twists and Turns as an explore replacement; Warped Space as castPermission freeFrom \"exile\". Single-card values 121 → 125: four values (n \"X\", discard \"X\", event \"explore\", freeFrom \"exile\") replace six keys and two player statics: Single-card values 121 → 125, CostDef 33 → 27"
+    "PLAN-J J4b [rules 180]: \"X\" costs written in the cost keys (sacrifice, tapOthers, exileFromGraveyard count \"X\"; removeCounters n \"X\"; discard \"X\"; payLife { kind: \"x\" }; read by xCosts and fixedCost) instead of six single-card keys; Twists and Turns as an explore replacement; Warped Space as castPermission freeFrom \"exile\". Single-card values 121 → 125: four values (n \"X\", discard \"X\", event \"explore\", freeFrom \"exile\") replace six keys and two player statics: Single-card values 121 → 125, CostDef 33 → 27",
+    "PLAN-J J5 [rules 182]: approximation lifts; CardDef.faceUpCounters (\"as it is turned face up\", Bubble Smuggler and Crowd-Control Warden, replacing two triggered approximations) CardDef 90 → 91; AdditionalCost.payLife (Deep Analysis's flashback life) AdditionalCost 11 → 12; tap cause \"mana\" (Forbidden Orchard) makes cause shared: Single-card values 125 → 126: Single-card values 125 → 126, CardDef 90 → 91, AdditionalCost 11 → 12"
   ]
 }

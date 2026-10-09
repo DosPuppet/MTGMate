@@ -184,7 +184,8 @@ export const LEGENDS: Record<string, CardScript> = {
   "Temple of Civilization": temple("W", cond.amountAtLeast(amount.attackersThisTurn, 3)),
   "Thousand Moons Infantry": {
     abilities: [
-      triggered(when.step("upkeep", "opponent"), [fx.untap(ref.self)], { label: "Untaps during each opponent's turn" }),
+      // "Untap this creature during each other player's untap step."
+      playerStatic({ untapOnOthersUntap: { self: true }, label: "Untaps during each opponent's turn" }),
     ],
   },
   "Thousand Moons Smithy": {
@@ -373,10 +374,15 @@ export const LEGENDS: Record<string, CardScript> = {
   },
   "Deep-Cavern Bat": {
     abilities: [
-      triggered(when.entersSelf, [fx.exileFromHandLinked(ref.target(), { notTypes: ["Land"] }, true)], {
-        targets: [target.player("t", "opponent")],
-        label: "Exile a nonland card from their hand",
-      }),
+      // "Look at target opponent's hand. You may exile a nonland card from it."
+      triggered(
+        when.entersSelf,
+        [fx.look(ref.handOf(ref.target())), fx.exileFromHandLinked(ref.target(), { notTypes: ["Land"] }, true)],
+        {
+          targets: [target.player("t", "opponent")],
+          label: "Exile a nonland card from their hand",
+        },
+      ),
     ],
   },
   "Preacher of the Schism": {

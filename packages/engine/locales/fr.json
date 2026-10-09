@@ -299,6 +299,7 @@
  "Quest": "Quête",
  "Rad": "Radiation",
  "Radiation: mill a card per counter": "Radiation : meulez une carte par marqueur",
+ "Remove {n} counter(s)": "Retirez {n} marqueur(s)",
  "Remove {n} counter(s) from among creatures you control": "Retirez {n} marqueur(s) parmi les créatures que vous contrôlez",
  "Remove {n} counter(s) from this creature": "Retirez {n} marqueur(s) de cette créature",
  "Remove {n} {kind} counter(s)": "Retirez {n} marqueur(s) {kind}",

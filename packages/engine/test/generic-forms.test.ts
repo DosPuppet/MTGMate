@@ -4,9 +4,11 @@
  */
 import { describe, expect, it } from "vitest";
 import { dealDamage, sourceFromObject } from "../src/actions";
+import { submit } from "../src/game";
 import { bump, chars, moveObject } from "../src/state";
 import { matchesObjectFilter } from "../src/targets";
-import { advanceUntil, idOf, lands, scenario } from "./helpers";
+import { filterEvents } from "../src/view";
+import { advanceUntil, cast, idOf, lands, scenario } from "./helpers";
 
 describe("PLAN-J J1: exact merges into existing forms", () => {
   it("Ketramose (exileAtLeast → count of exile): face-down cards and every owner's cards count", () => {
@@ -78,5 +80,60 @@ describe("PLAN-J J4a [rules 179]: the turn log carries the objects of damage and
     const cal = idOf(s, "p1", "battlefield", "The Millennium Calendar");
     expect(s.objects[cal]?.counters.time ?? 0).toBe(0);
     expect(s.turnLog.some((e) => e.e === "untap")).toBe(false);
+  });
+});
+
+describe("PLAN-J J5 [rules 182]: small approximation lifts", () => {
+  it("Thousand Moons Infantry: untaps during the opponent's untap step (no trigger at the upkeep)", () => {
+    let s = scenario({ p1: { battlefield: [{ name: "Thousand Moons Infantry", tapped: true }] }, active: "p1", step: "end" });
+    s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "upkeep");
+    const inf = idOf(s, "p1", "battlefield", "Thousand Moons Infantry");
+    expect(s.objects[inf]?.tapped).toBe(false);
+    expect(s.stack).toHaveLength(0);
+  });
+
+  it("Hancock, Ghoulish Mayor: X counts counters of any kind", () => {
+    const s = scenario({
+      p1: { battlefield: [{ name: "Hancock, Ghoulish Mayor", counters: { "+1/+1": 1, shield: 1 } }, "Glowing One"] },
+    });
+    // Glowing One (Zombie Mutant 1/1 printed): +2/+2 for two counters of two kinds.
+    const one = idOf(s, "p1", "battlefield", "Glowing One");
+    const printed = s.defs[s.objects[one]?.defId ?? ""]?.power ?? 0;
+    expect(chars(s, one).power).toBe(printed + 2);
+  });
+
+  it("Sorcerous Spyglass: as it enters, its controller (only) looks at an opponent's hand, then names a card", () => {
+    const s = scenario({
+      p1: { battlefield: lands("Island", 2), hand: ["Sorcerous Spyglass"] },
+      p2: { hand: ["Shock", "Island"] },
+    });
+    let r = submit(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Sorcerous Spyglass") });
+    const events = [...r.events];
+    for (let i = 0; i < 20 && r.state.pending && (r.state.stack.length || r.state.pending.kind === "choice"); i++) {
+      const p = r.state.pending;
+      r =
+        p.kind === "choice"
+          ? submit(r.state, p.player, {
+              type: "choose",
+              values: [String(p.request.type === "name" ? "Shock" : (p.request as { suggested: unknown[] }).suggested[0])],
+            })
+          : submit(r.state, p.player, { type: "pass" });
+      events.push(...r.events);
+    }
+    const look = events.find((e) => e.type === "reveal" && e.look);
+    expect(look?.type === "reveal" && look.defIds.map((d) => s.defs[d]?.name).sort()).toEqual(["Island", "Shock"]);
+    expect(filterEvents(events, "p2").some((e) => e.type === "reveal" && e.look)).toBe(false);
+  });
+
+  it("Riku of Many Paths: Expel the Interlopers (a number to choose, eleven engine modes) is not a modal spell", () => {
+    let s = scenario({
+      p1: { battlefield: ["Riku of Many Paths", ...lands("Plains", 5)], hand: ["Expel the Interlopers"] },
+    });
+    const expel = idOf(s, "p1", "hand", "Expel the Interlopers");
+    const mode = s.defs[s.objects[expel]?.defId ?? ""]?.spell?.modes?.length ?? 0;
+    expect(mode).toBeGreaterThan(1);
+    s = cast(s, "p1", "Expel the Interlopers", { mode: 10 });
+    expect(s.triggers).toHaveLength(0);
+    expect(s.stack.filter((i) => i.kind === "ability")).toHaveLength(0);
   });
 });

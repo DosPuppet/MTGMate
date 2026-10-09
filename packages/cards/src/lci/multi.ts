@@ -274,7 +274,14 @@ export const MULTI: Record<string, CardScript> = {
   },
   "Squirming Emergence": {
     spell: spell(
-      [target.cardInGraveyard("t", { permanent: true, notTypes: ["Land"] }, "you", "nonland permanent card")],
+      [
+        {
+          ...target.cardInGraveyard("t", { permanent: true, notTypes: ["Land"] }, "you", "nonland permanent card"),
+          // "with mana value less than or equal to the number of permanent cards in your graveyard": at targeting and
+          // again on resolution (608.2b).
+          maxManaValueAmount: PERMANENT_CARDS,
+        },
+      ],
       [
         ...fx.when(
           cond.amountAtLeast(amount.plus(PERMANENT_CARDS, amount.neg(amount.manaValueOf(ref.target()))), 0),

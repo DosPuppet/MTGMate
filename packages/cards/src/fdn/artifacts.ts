@@ -281,7 +281,11 @@ export const ARTIFACTS: Record<string, CardScript> = {
       }),
     ],
   },
-  "Sorcerous Spyglass": { asEnters: [fx.chooseForSelf("cardName")], chosenNameAbilities: "forbid" },
+  // "As this artifact enters, look at an opponent's hand, then choose any card name."
+  "Sorcerous Spyglass": {
+    asEnters: [fx.chooseOpponent("o"), fx.look(ref.handOf(ref.stored("o"))), fx.chooseForSelf("cardName")],
+    chosenNameAbilities: "forbid",
+  },
   "Soul-Guide Lantern": {
     abilities: [
       triggered(when.entersSelf, [fx.exileCard(ref.target())], {

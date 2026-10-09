@@ -579,7 +579,7 @@ export function activateManaAbility(
   // information, before the sacrifice (Roxanne, Starfall Savant and a Treasure: two mana), as the solver counted them.
   const before = ab.cost.self === "sacrifice" ? { amount: manaAmount(s, id, ab), reps: manaReplacements(s, id, ab) } : null;
   const amountNow = () => before?.amount ?? manaAmount(s, id, ab);
-  if (ab.cost.tap) tapObject(s, o);
+  if (ab.cost.tap) tapObject(s, o, "mana");
   if (ab.oncePerTurn) s.turn.onceFired.push(`mana:${id}`);
   if (ab.tapAnother) tapObject(s, obj(s, otherToTap(s, id, ab) as ObjectId));
   if (ab.cost.self === "sacrifice") sacrifice(s, id);

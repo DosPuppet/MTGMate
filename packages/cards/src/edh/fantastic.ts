@@ -434,8 +434,8 @@ export const EDH_FANTASTIC: Record<string, CardScript> = {
     spell: spell([], [fx.draw(1, ref.eachOpponent), fx.draw(amount.refCount(ref.eachOpponent))]),
   },
   "Deep Analysis": {
-    // Approximation: the flashback costs {1}{U} without the 3 life.
     flashback: "{1}{U}",
+    flashbackCost: { payLife: 3 },
     spell: spell([target.player("p")], [fx.draw(2, ref.target("p"))]),
   },
   "Fantastic Elasticity": {

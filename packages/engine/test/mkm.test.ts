@@ -5289,7 +5289,8 @@ describe("Murders at Karlov Manor, lot C2: amounts and costs", () => {
     let s = scenario({ p1: { battlefield: ["Tin Street Gossip", "Mountain"], hand: ["Fugitive Codebreaker", "Bear Cub"] } });
     const gossip = idOf(s, "p1", "battlefield", "Tin Street Gossip");
     const a = legalActions(s, "p1").find((x) => x.type === "activate" && x.source === gossip);
-    s = settle(act(s, "p1", { type: "activate", source: gossip, ability: a?.type === "activate" ? a.ability : -1 }));
+    // A mana ability (605.1a): resolved at once, no question for a single color.
+    s = act(s, "p1", { type: "activate", source: gossip, ability: a?.type === "activate" ? a.ability : -1 });
     // Bear Cub ({1}{G}): no (restricted mana); Fugitive Codebreaker face down ({3}): yes.
     expect(legalActions(s, "p1").some((x) => x.type === "cast" && x.card === idOf(s, "p1", "hand", "Bear Cub"))).toBe(false);
     expect(

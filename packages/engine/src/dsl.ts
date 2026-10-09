@@ -73,6 +73,7 @@ export interface CardScript {
   flashback?: string;
   /** "Flashback—[cost], discard a card" or "Flashback—tap three creatures": costs on top of the flashback. */
   flashbackCost?: AdditionalCost;
+  faceUpCounters?: CardDef["faceUpCounters"];
   /** "This spell can't be countered." */
   cantBeCountered?: boolean;
   /** "This spell can't be copied." */

@@ -243,7 +243,8 @@ describe("Commander (EDH): Edgar Markov's Vampires", () => {
       });
       const master = idOf(s, "p1", "battlefield", "Master of Dark Rites");
       expect(castable(s, "p1", idOf(s, "p1", "hand", DIRE_MOON))).toBe(false);
-      s = settle(activateLabel(s, "p1", master, "{B}{B}{B}", { sacrifice: [idOf(s, "p1", "battlefield", "Savannah Lions")] }));
+      // A mana ability (605.1a): resolved at once.
+      s = activateLabel(s, "p1", master, "{B}{B}{B}", { sacrifice: [idOf(s, "p1", "battlefield", "Savannah Lions")] });
       expect(s.players.p1?.restrictedMana?.map((m) => m.type)).toEqual(["B", "B", "B"]);
       expect(castable(s, "p1", idOf(s, "p1", "hand", DIRE_MOON))).toBe(true);
       expect(castable(s, "p1", idOf(s, "p1", "hand", "Murder"))).toBe(false);

@@ -72,7 +72,14 @@ export const COMMANDER_CARDS: Record<string, CardScript> = {
       activated({
         tap: true,
         sacrifice: true,
-        effects: [fx.moveTo(ref.zone("command", ref.you, { commander: true }), { to: "hand" })],
+        // "Put a commander you own from the command zone into your hand": one, chosen among two partners.
+        effects: [
+          fx.chooseAmong(ref.zone("command", ref.you, { commander: true }), ref.you, "c", {
+            anyZone: true,
+            prompt: "Choose your commander",
+          }),
+          fx.moveTo(ref.stored("c"), { to: "hand" }),
+        ],
         label: "Put your commander into your hand from the command zone",
       }),
     ],

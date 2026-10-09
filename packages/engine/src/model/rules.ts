@@ -473,7 +473,15 @@ export type TriggerSpec =
    * tapped this turn (Captain America, Living Legend).
    */
   /** `untap`: "whenever [it] becomes untapped" instead (Fishing Pole). */
-  | { on: "taps"; who: "self" | ObjectFilter; byYou?: boolean; cause?: "teamwork"; firstThisTurn?: boolean; untap?: boolean }
+  | {
+      on: "taps";
+      who: "self" | ObjectFilter;
+      byYou?: boolean;
+      /** `mana`: tapped for mana (Forbidden Orchard: "whenever you tap it for mana"). */
+      cause?: "teamwork" | "mana";
+      firstThisTurn?: boolean;
+      untap?: boolean;
+    }
   /** "When you cast this spell" (the source is the spell on the stack). */
   | { on: "castSelf" }
   /** Saga chapter (714.2): a lore counter makes the count reach or exceed one of these chapters. */

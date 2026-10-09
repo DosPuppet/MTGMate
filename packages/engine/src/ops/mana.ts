@@ -23,8 +23,9 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   addManaChoice(s, r, e, ctx, key) {
-    const answer = r.vars[key("color")];
     const options = e.colors ?? ["W", "U", "B", "R", "G"];
+    // A single possible color: no question (Abstract Paintmage: "add {U}{R}").
+    const answer = r.vars[key("color")] ?? (options.length === 1 ? [options[0] as string] : undefined);
     const n = evalAmount(s, ctx, e.n);
     // "In any combination": the player divides the N mana among the colors.
     const split = !!e.combination && n > 1 && options.length > 1;

@@ -315,8 +315,11 @@ export const UNIQUE: Record<string, CardScript> = {
 
   // --- Lot C3: unique cards --------------------------------------------------
   "Arachne, Psionic Weaver": {
-    // Web-slinging {W}: read from the text. The card type is chosen like an entry mode.
+    // Web-slinging {W}: read from the text. "As Arachne enters, look at an opponent's hand, then choose a noncreature
+    // card type": the card type is chosen like an entry mode.
     asEnters: [
+      fx.chooseOpponent("o"),
+      fx.look(ref.handOf(ref.stored("o"))),
       fx.chooseForSelf("mode", {
         options: ["Artifact", "Battle", "Enchantment", "Instant", "Kindred", "Planeswalker", "Sorcery"],
       }),

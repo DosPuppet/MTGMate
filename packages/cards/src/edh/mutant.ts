@@ -98,14 +98,14 @@ export const EDH_MUTANT: Record<string, CardScript> = {
   },
   "Hancock, Ghoulish Mayor": {
     abilities: [
-      // Approximation: X counts its +1/+1 counters (not the other kinds).
+      // "where X is the number of counters on Hancock" (all kinds).
       {
         ...staticAbility(
           { ...ZOMBIE_OR_MUTANT_YOU, other: true },
           { power: 1, toughness: 1 },
           { label: "+X/+X to your other Zombies and Mutants" },
         ),
-        perCounter: "+1/+1",
+        perCounter: "any",
       },
       // Undying (702.93).
       triggered(when.diesSelf, [fx.toBattlefield(ref.eventObject, { counters: { kind: "+1/+1", n: 1 } })], {
@@ -144,8 +144,8 @@ export const EDH_MUTANT: Record<string, CardScript> = {
   },
   "Jason Bright, Glowing Prophet": {
     abilities: [
-      // Approximation: "power different from its base power" is read as "greater".
-      triggered(when.dies({ ...ZOMBIE_OR_MUTANT_YOU, compare: [cmp.power(">", "basePower")] }), [fx.draw(1)], {
+      // "with power different from its base power".
+      triggered(when.dies({ ...ZOMBIE_OR_MUTANT_YOU, not: { compare: [cmp.power("=", "basePower")] } }), [fx.draw(1)], {
         label: "A modified Zombie or Mutant dies: draw a card",
       }),
       activated({
@@ -302,8 +302,14 @@ export const EDH_MUTANT: Record<string, CardScript> = {
   },
   // Trample: read from the text.
   "Lumbering Megasloth": {
-    // Approximation: only counters on permanents count (not those on players).
-    costReduction: { generic: amount.countersAmong({ permanent: true }, "any") },
+    // "{1} less for each counter among permanents and players": players only have poison and rad counters.
+    costReduction: {
+      generic: amount.plus(
+        amount.countersAmong({ permanent: true }, "any"),
+        amount.sumOverPlayers(ref.eachPlayer, amount.poison),
+        amount.sumOverPlayers(ref.eachPlayer, amount.rad),
+      ),
+    },
     abilities: [entersWith({ tapped: true })],
   },
   // Vigilance: read from the text.

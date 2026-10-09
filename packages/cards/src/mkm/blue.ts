@@ -105,8 +105,8 @@ export const BLUE: Record<string, CardScript> = {
     ],
   },
   "Bubble Smuggler": {
-    // Disguise: read from the text. "As it is turned face up": approximated by a triggered ability.
-    abilities: [triggered(when.turnedFaceUp, [fx.addCounters(ref.self, 4)], { label: "Turned face up: four +1/+1 counters" })],
+    // Disguise: read from the text. "As this creature is turned face up, put four +1/+1 counters on it."
+    faceUpCounters: { kind: "+1/+1", n: 4 },
   },
   "Burden of Proof": {
     enchant: ENCHANT_CREATURE,

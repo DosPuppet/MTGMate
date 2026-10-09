@@ -202,9 +202,9 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
     abilities: [
       activated({
         tap: true,
-        removeCounterFrom: { filter: { notTypes: ["Land"] }, kind: "+1/+1" },
+        removeCounterFrom: { filter: { notTypes: ["Land"] }, kind: "any" },
         effects: [fx.draw(1)],
-        label: "Remove a +1/+1 counter from one of your nonland permanents: draw a card",
+        label: "Remove a counter from one of your nonland permanents: draw a card",
       }),
     ],
   },
@@ -450,7 +450,7 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
       // Automatic choice: the Plains enters the battlefield whenever that is allowed.
       activated({
         tap: true,
-        removeCounterFrom: { filter: {}, kind: "+1/+1" },
+        removeCounterFrom: { filter: {}, kind: "any" },
         effects: [
           ...fx.when(cond.opponentHasMore("lands"), fx.search({ subtype: "Plains" }, { to: "battlefield", tapped: true })),
           ...fx.when(cond.not(cond.opponentHasMore("lands")), fx.search({ subtype: "Plains" }, { to: "hand" })),
@@ -710,19 +710,23 @@ export const EDH_COUNTER_BLITZ: Record<string, CardScript> = {
     },
   },
   "Promise of Loyalty": {
+    // "Each player puts a vow counter on a creature they control and sacrifices the rest": all choices first (APNAP),
+    // then the sacrifices at once (`keep`).
     spell: spell(
       [],
-      fx.forEachPlayer(ref.eachPlayer, (p) => [
-        fx.sacrifice(p, { types: ["Creature"] }, amount.plus(amount.refCount(ref.permanentsOf(p, { types: ["Creature"] })), -1)),
-        fx.counters(ref.permanentsOf(p, { types: ["Creature"] }), "vow"),
-        fx.modifyWhileCounter(
-          ref.permanentsOf(p, { types: ["Creature"], withCounter: "vow" }),
-          {
-            addBlockRules: [{ cantAttackPlayer: "you", label: "Can't attack the player who cast Promise of Loyalty" }],
-          },
-          "vow",
-        ),
-      ]),
+      [
+        fx.keep(ref.eachPlayer, "one", { types: ["Creature"] }),
+        ...fx.forEachPlayer(ref.eachPlayer, (p) => [
+          fx.counters(ref.permanentsOf(p, { types: ["Creature"] }), "vow"),
+          fx.modifyWhileCounter(
+            ref.permanentsOf(p, { types: ["Creature"], withCounter: "vow" }),
+            {
+              addBlockRules: [{ cantAttackPlayer: "you", label: "Can't attack the player who cast Promise of Loyalty" }],
+            },
+            "vow",
+          ),
+        ]),
+      ],
     ),
   },
   "Protection Magic": {

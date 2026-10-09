@@ -493,8 +493,16 @@ export const RECORD_VERSION = 1;
  * - 180: PLAN-J J4b: Twists and Turns is an explore replacement (each copy scries 1); Warped Space is a free-cast
  *   permission from exile, once each turn per permission, never combined with another alternative cost (118.9a)
  * - 181: PLAN-J J4c: The Mindskinner's opponents really mill (mill replacements, "milled" event, turn log)
+ * - 182: PLAN-J J5: looking at an opponent's hand (Sorcerous Spyglass, Arachne, Deep-Cavern Bat); untap during the
+ *   other players' untap steps (Thousand Moons Infantry, Bender's Waterskin); counters as it is turned face up (Bubble
+ *   Smuggler, Crowd-Control Warden); "the life lost this way" is the loss done (Gray Merchant, Malakir Bloodwitch,
+ *   Exsanguinate); a counter of any kind for a cost (Scholar of New Horizons, O'aka); Chromatic Orrery's abilities;
+ *   Jason Bright's "different", Hancock's counters of any kind, Lumbering Megasloth's player counters; Promise of
+ *   Loyalty through keep; Deep Analysis's flashback life; Squirming Emergence checked at targeting; one commander for
+ *   Hellkite Courser and Command Beacon; no question for a single mana color; Forbidden Orchard only tapped for mana;
+ *   Riku's modal spells read from the text; colored cost reductions follow 118.7c
  */
-export const RULES_VERSION = 181;
+export const RULES_VERSION = 182;
 
 /** One checkpoint every N decisions (plus the last one of the game). */
 export const CHECKPOINT_EVERY = 25;

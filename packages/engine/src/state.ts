@@ -90,7 +90,7 @@ export type RulesEvent =
   | { e: "transformed"; objectId: ObjectId }
   /** `by`: the player who taps it (controller of what is resolving; otherwise, cost or mana, its controller). */
   /** `cause`: tapped to pay for teamwork; `first`: the first time this turn. */
-  | { e: "tap"; objectId: ObjectId; by: PlayerId; cause?: "teamwork"; first?: boolean }
+  | { e: "tap"; objectId: ObjectId; by: PlayerId; cause?: "teamwork" | "mana"; first?: boolean }
   /** A player just scried or surveilled. */
   | { e: "scry"; player: PlayerId }
   /** A player searched their library (Wan Shi Tong). */
@@ -338,7 +338,7 @@ export function counterPT(o: { counters: Record<string, number> }): number {
 }
 
 /** Taps a permanent ("whenever it becomes tapped"). */
-export function tapObject(s: GameState, o: GameObject, cause?: "teamwork"): void {
+export function tapObject(s: GameState, o: GameObject, cause?: "teamwork" | "mana"): void {
   if (o.tapped) return;
   o.tapped = true;
   // Captain America, Living Legend: "if it's the first time this creature became tapped this turn".
@@ -720,6 +720,13 @@ export function turnFaceUp(s: GameState, id: ObjectId): void {
   if (o?.zone !== "battlefield" || !o.faceDown) return;
   o.defId = o.faceDown.card;
   delete o.faceDown;
+  // "As it is turned face up, put N counters on it" (a replacement-like effect, before the event).
+  const fc = s.defs[o.defId]?.faceUpCounters;
+  if (fc) {
+    bump(s);
+    const n = Math.max(0, evalAmount(s, staticContext(s, o.controller, id), fc.n));
+    if (n) changeCounters(s, o, fc.kind, n);
+  }
   logTurnEvent(s, { e: "turnFaceUp", player: o.controller });
   bump(s);
   emit({ type: "turnedFaceUp", objectId: id, defId: o.defId });
@@ -804,6 +811,7 @@ export function setPrepared(s: GameState, o: GameObject, on: boolean): void {
 // ---------------------------------------------------------------------------
 
 import { syncControl } from "./control";
+import { evalAmount, staticContext } from "./effects";
 import { bump, bumpFor, carryLayerCache, chars, snapshot } from "./layers";
 import { chooseReplacementOrder } from "./modifiers";
 import { applyEntersReplacements, auraHosts, type EntersContext, releaseLinkedExile, replaceGraveyard } from "./replacement";

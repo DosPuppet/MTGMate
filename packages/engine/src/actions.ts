@@ -201,15 +201,16 @@ export function payLife(s: GameState, p: PlayerId, amount: number): void {
 }
 
 /** `damage`: the loss comes from damage (Angel's Grace: "damage that would reduce your life total to less than 1"). */
-export function loseLife(s: GameState, p: PlayerId, amount: number, damage = false): void {
+/** A player loses life, replacements included; returns the life actually lost ("the life lost this way"). */
+export function loseLife(s: GameState, p: PlayerId, amount: number, damage = false): number {
   const player = s.players[p];
-  if (!player || amount <= 0) return;
+  if (!player || amount <= 0) return 0;
   // Life loss replacements (Bloodletter of Aclazotz: during your turn, an opponent loses twice that much).
   const mods: AmountMod[] = [];
   for (const a of eventReplacements(s, "lifeLoss")) {
     if (!recipientMatches(s, a, p)) continue;
     // "Your life total can't change" (Teferi's Protection): no loss (the damage itself is still dealt).
-    if (a.r.modify.prevent) return;
+    if (a.r.modify.prevent) return 0;
     const add = replacementAdd(s, a);
     if (add) mods.push({ add });
     if (a.r.modify.times) mods.push({ times: a.r.modify.times });
@@ -218,7 +219,7 @@ export function loseLife(s: GameState, p: PlayerId, amount: number, damage = fal
   if (damage) {
     const floors = playerStatics(s, p, "damageLifeFloor").map(({ ab }) => ab.damageLifeFloor ?? 0);
     if (floors.length) amount = Math.min(amount, Math.max(0, player.life - Math.max(...floors)));
-    if (amount <= 0) return;
+    if (amount <= 0) return 0;
   }
   player.life -= amount;
   bumpFor(s, "life");
@@ -231,6 +232,7 @@ export function loseLife(s: GameState, p: PlayerId, amount: number, damage = fal
   if (p !== active && s.players[active]?.speed !== undefined && !s.turn.onceFired.includes(SPEED_KEY)) {
     if (rulesTrigger(s, active, "speed")) s.turn.onceFired.push(SPEED_KEY);
   }
+  return amount;
 }
 
 /** Speed trigger this turn (702.179: once per turn), in `s.turn.onceFired`. */

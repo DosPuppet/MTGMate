@@ -53,7 +53,6 @@ In the order they were added, set by set.
   - `rule` Soulstone Sanctuary ("all creature types"): any subtype except the known land, artifact and enchantment ones;
   - `auto choice` Moonlit Meditation, Mirrormind Crown: "you may" is asked for the tokens created by a token-creating effect; those from amass, endure or a gift are always replaced by copies.
 - **Foundations (`docs/extensions/fdn.md`):**
-  - `rule` Sorcerous Spyglass: the opponent's hand is not shown before the name is chosen (any name in the catalog can be chosen; the names of the opposing permanents are offered first);
   - `auto choice` Quilled Greatwurm (and Dawnhand Dissident): you divide the removed counters among your creatures, but the kind of counters removed from a single creature is chosen for you (−1/−1 first, +1/+1 last);
   - `auto choice` Muldrotha: a card with several permanent types automatically uses the first type still free.
 - **Final Fantasy (`docs/extensions/fin.md`):**
@@ -102,12 +101,11 @@ In the order they were added, set by set.
   - `rule` Alania: an Alania spell cast earlier in the turn counts as an Otter spell (the next Otter spell is no longer "the first"); Ral (emblem): the copy is counted at resolution (a spell cast in response to the trigger counts).
 - **The Lost Caverns of Ixalan (`docs/extensions/lci.md`):**
   - `rule` Cavern mana (Bat Colony) and "using mana produced by [source]" (Tecutlan, The Myriad Pools): only the mana committed by the automatic payment;
-  - `timing` Squirming Emergence: the mana value is only checked at resolution; Abuelo's Awakening: the card enters as a flying Spirit creature, but its base P/T only becomes 1/1 right after it enters;
+  - `timing` Abuelo's Awakening: the card enters as a flying Spirit creature, but its base P/T only becomes 1/1 right after it enters;
   - `rule` The Myriad Pools: the permanent becomes a copy of the spell on the stack;
   - `timing` Thousand Moons Infantry: untaps at the beginning of each opponent's upkeep (and not during their untap step);
   - `rule` Locus of Enlightenment: the gained abilities are not limited to one activation per turn;
   - `timing` Ojer Kaslem: the creature card is put onto the battlefield just before the land card (and not at the same time);
-  - `rule` Deep-Cavern Bat: only the nonland cards in the opposing hand are shown, in the choice window; with no nonland card, the hand is not shown.
 - **Reality Fracture (`docs/extensions/fra.md`):**
   - `auto choice` Theorist's Sanctum: you behold a Jace on entering as soon as possible, without revealing the card;
   - `rule` Extrapolate the Impossible: does nothing, as on Arena in BO1 (no "outside the game" cards);
@@ -146,22 +144,18 @@ In the order they were added, set by set.
   - `rule` Silverquill, the Disputant: the granted victim is a triggered ability at casting (sacrifice a creature, then copy), and not a cost: it can be responded to;
   - `timing` Prismari, the Inspiration: the granted storm counts the spells cast before this one at the ability's resolution (a spell cast in response is counted);
   - `rule` Dina's Guidance: the searched card goes to hand, then you may put it into the graveyard;
-  - `auto choice` Abstract Paintmage: {U}{R} is added as two choices of one color (two questions without alternative);
   - `rule` Transcendent Archaic: "if you draw one or more cards this way" is "if X is 1 or more";
   - `rule` cascade (Quandrix, the Proof): the card not cast goes to the bottom after the other exiled cards (and not in a random order with them);
   - `rule` Lorehold, the Historian: the granted miracle is a triggered ability on the first draw of the turn (the card is not revealed), which offers to cast it for {2}.
 - **Murders at Karlov Manor (`docs/extensions/mkm.md`):**
   - `rule` suspect (701.60): menace and "can't block" are added after layer 6 effects; a "loses all abilities" effect does not remove them;
-  - `timing` Bubble Smuggler: "when turned face up, four +1/+1 counters" is a triggered ability (it can be responded to);
   - `rule` Living Conundrum: "if your library is empty" is judged once for a multi-card draw;
   - `auto choice` Agency Outfitter: each name is searched for in the graveyard, then the hand, then the library (fixed order);
   - `timing` Archdruid's Charm, Flourishing Bloom-Kin: the searched cards go through the hand before the land enters tapped; the shuffle takes place before;
-  - `timing` Crowd-Control Warden: turned face up, the counters come from a triggered ability (on entering, it is a replacement);
   - `rule` Break Out: the revealed creature goes back on top of the library before going onto the battlefield or into hand;
   - `auto choice` Worldsoul's Rage: the lands are taken from the hand, then from the graveyard;
   - `rule` Rakdos, Patron of Chaos: an opponent who accepts sacrifices what they can, and you draw anyway;
   - `rule` Expose the Culprit: the exiled cards are not shuffled into a face-down pile before being cloaked (you know each of your face-down cards);
-  - `timing` Tin Street Gossip: {R}{G} comes from an activated ability that uses the stack (like Troyan, Gutsy Explorer);
   - `rule` A Killer Among Us: the chosen type is not revealed separately; the ability checks the type at resolution.
 - **Avatar: The Last Airbender (`docs/extensions/tla.md`):**
   - `auto choice` Waterbend, convoke, improvise, Cave: outside full control, the objects that pay are chosen by the automatic payment, after the lands (as on Arena); in full control, the player chooses them;
@@ -195,7 +189,6 @@ In the order they were added, set by set.
   - `rule` Maximum Carnage: at chapter I, the attack requirements ("attacks each combat if able, and a player other than you if able") only affect the creatures present at resolution, not those that arrive afterwards;
   - `rule` Spinneret and Spiderling: the threshold of 4 damage is read per damage dealt; combat damage divided among several blockers (2 + 2) does not trigger it;
   - `rule` Spider-Slayer, Hatred Honed: "whenever it deals damage to a Spider" is read as "whenever a Spider damaged by it this turn is dealt damage"; an indestructible Spider already damaged by it would make the ability trigger if another source damages it;
-  - `rule` Arachne, Psionic Weaver: the opponent's hand is not shown before the type is chosen.
 - **Teenage Mutant Ninja Turtles (`docs/extensions/tmt.md`):**
   - `rule` Turtles Forever: the search only covers the library (nothing outside the game), and "exactly four" is not enforced (the opponent chooses among the cards found);
   - `rule` Renet, Temporal Apprentice: "entered this turn" also counts a permanent whose control changed this turn;
@@ -243,18 +236,15 @@ In the order they were added, set by set.
   - `rule` Orcish Bowmasters: "the first card drawn during its draw step" is the step's draw (504.1); if it is replaced or skipped, a later draw in the same step triggers anyway.
   - `auto choice` Rewind, Unwind, Frantic Search: "untap up to N lands" only untaps your lands, chosen automatically;
   - `rule` Teferi's Protection: an Aura already attached to the player (curse) does not fall off.
-  - `rule` Forbidden Orchard: "when you tap this land for mana" triggers when it becomes tapped, for whatever reason;
-  - `rule` Chromatic Orrery: "spend mana as though it were mana of any color" applies to spells, not to activated abilities;
-  - `auto choice` Hellkite Courser: with two commanders in the command zone, both enter; Command Beacon: both go to hand;
   - `auto choice` Zurgo and Ojutai: the two cards that do not go to hand are put on the bottom in a random order (not by choice).
   - `auto choice` Foreboding Ruins, Fortified Village, Port Town, Vineglimmer Snarl: a card of the right type in hand is revealed automatically if possible;
-  - `auto choice` Scholar of New Horizons: the Plains card goes onto the battlefield as soon as permitted (without offering to put it into hand); `rule` only a +1/+1 counter can be removed for the cost (and not a counter of any kind);
-  - `rule` O'aka, Traveling Merchant: only a +1/+1 counter can be removed for the cost;
+  - `auto choice` Scholar of New Horizons: the Plains card goes onto the battlefield as soon as permitted (without offering to put it into hand); the kind of counter removed for the cost is chosen by the engine (−1/−1 first, +1/+1 last);
+  - `auto choice` O'aka, Traveling Merchant: the kind of counter removed for the cost is chosen by the engine (−1/−1 first, +1/+1 last);
   - `rule` Pandemonium: the target of the damage is chosen by Pandemonium's controller, not by the controller of the creature that enters (exact when it is the same person);
   - `rule` Emrakul, the World Anew: "protection from spells" is read as from instants and sorceries (not from an Aura or permanent spell);
   - `auto choice` Cryptolith Fragment: its mana ability is activated by hand (the automatic payment does not use it);
   - `rule` Wheel of Misfortune: the numbers are chosen one after the other (in APNAP order, without seeing those of the others), from 0 to 20;
-  - `rule` Gray Merchant of Asphodel, Creeping Bloodsucker: the life gained is computed (devotion per opponent, number of opponents), not read from the actual life losses and damage (different only if they are replaced);
+  - `rule` Creeping Bloodsucker: the life gained is computed (number of opponents), not read from the actual damage (different only if it is replaced);
   - `rule` Keen Duelist: the top cards are not explicitly revealed.
   - `rule` Incubate (701.53): the transformation is a permanent modification (Phyrexian artifact creature 0/0), not a switch to the back face; the token keeps its name;
   - `rule` The Ur-Sphinx: player by player, it mills then you may cast one of its cards (and not all the mills first);
@@ -264,14 +254,11 @@ In the order they were added, set by set.
   - `auto choice` Forgotten Ancient: all its +1/+1 counters go on a single other creature; Resourceful Defense: all the +1/+1 counters are moved;
   - `rule` Yuna, Grand Summoner: the two counters go to the creature spell paid with its mana (and not to the next creature spell of the turn);
   - `rule` Fathom Mage: a single question for a group of counters, as many cards as counters;
-  - `timing` Promise of Loyalty: each player, in turn, keeps a creature and sacrifices the others (and not simultaneously);
-  - `rule` Deep Analysis: flashback costs {1}{U}, without the 3 life;
   - `rule` First Family: only the colors of your permanents count (not those of the spells cast this turn);
   - `rule` Willie Lumpkin: the prohibition on attacking lasts until its controller's next turn (which covers the next turn of the damaged player);
   - `rule` Cut a Deal: you draw a card per opponent, even if their draw did not happen (empty library, replaced draw);
-  - `rule` Hancock: X counts its +1/+1 counters only; Jason Bright: "a power different from its base power" is read as "greater";
   - `rule` Harold and Bob: the chosen Forest gains its ability forever, and the card stays in the graveyard (it does not become an Aura);
-  - `rule` Lumbering Megasloth: only the counters on permanents count (not those on players); Winding Constrictor: the clause "if you would get counters" is not handled;
+  - `rule` Winding Constrictor: the clause "if you would get counters" is not handled;
   - `rule` Nuka-Nuke Launcher: intimidate is read as "can't be blocked except by artifact creatures", and the rad counters hit each opponent until your next turn;
   - `rule` Young Deathclaws: the granted scavenge is an ability of Young Deathclaws that costs {4} (and not the exiled card's mana cost);
   - `rule` Mariposa Military Base: it always enters untapped, without rad counters.

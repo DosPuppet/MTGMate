@@ -354,15 +354,13 @@ export const MULTI: Record<string, CardScript> = {
 
   // --- Selesnya (green and white) ----------------------------------------------
   "Crowd-Control Warden": {
-    // "As it enters or is turned face up": on entering, a replacement; turned face up, a triggered ability
-    // (approximation: the counters arrive on resolution).
+    // "As it enters or is turned face up, put X +1/+1 counters on it, where X is the number of other creatures you
+    // control": as it enters and as it is turned face up, no ability on the stack.
+    faceUpCounters: { kind: "+1/+1", n: amount.count({ ...CREATURES_YOU, other: true }) },
     abilities: [
       entersWith({
         counters: amount.count({ types: ["Creature"], controller: "you", other: true }),
         label: "Enters with a +1/+1 counter for each other creature",
-      }),
-      triggered(when.turnedFaceUp, [fx.addCounters(ref.self, amount.count({ ...CREATURES_YOU, other: true }))], {
-        label: "Turned face up: a +1/+1 counter for each other creature",
       }),
     ],
   },
@@ -826,7 +824,7 @@ export const MULTI: Record<string, CardScript> = {
   },
   "Tin Street Gossip": {
     abilities: [
-      // Restricted {R}{G}: an activated ability (using the stack) that adds both mana, like Troyan.
+      // Restricted {R}{G}: a mana ability (605.1a, no stack) that adds both mana.
       activated({
         tap: true,
         effects: [fx.addManaChoice(1, ["R"], FACE_DOWN_MANA), fx.addManaChoice(1, ["G"], FACE_DOWN_MANA)],

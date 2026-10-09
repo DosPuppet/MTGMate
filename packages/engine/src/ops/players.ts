@@ -251,8 +251,8 @@ export const HANDLERS: OpHandlers = {
     for (const p of resolveRef(s, ctx, e.who)) {
       if (!isPlayer(s, p)) continue;
       const n = e.half ? Math.floor(Math.max(0, s.players[p]?.life ?? 0) / 2) : amount;
-      loseLife(s, p, n);
-      lost += n;
+      // "The life lost this way": what was actually lost (prevented by Teferi's Protection, doubled by Bloodletter).
+      lost += loseLife(s, p, n);
     }
     store(r, e.store, lost);
     return;

@@ -1087,7 +1087,9 @@ function evalStatic(s: GameState, slot: StaticSlot, sig: (string | number)[]): {
       ? (s.players[o.controller]?.graveyard ?? []).filter((x) => matchesView(snapshotBase(s, x), g, o.controller, id)).length
       : f
         ? s.battlefield.filter((x) => matchesView(snapshotBase(s, x), f, o.controller, id)).length
-        : (o.counters[ab.perCounter as string] ?? 0);
+        : ab.perCounter === "any"
+          ? Object.values(o.counters).reduce((n, k) => n + Math.max(0, k), 0)
+          : (o.counters[ab.perCounter as string] ?? 0);
     const n = raw;
     if (f) {
       dependent = true;

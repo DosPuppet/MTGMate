@@ -478,6 +478,9 @@ function whose(rel: "you" | "opponent" | "any", player: PlayerId, controller: Pl
   return rel === "any" || (rel === "you" ? player === controller : player !== controller);
 }
 
+/** Text of a modal spell (700.2). */
+const MODAL_TEXT = /\bchoose (?:one|two|three|four|five|up to|any number|one or more|one or both)\b|\bSpree\b/i;
+
 /**
  * Generic `action` trigger (PLAN-J J3): the engine's event of that name, done by a player `whose` relative to the
  * controller (you by default), or on the source itself (`self`).
@@ -709,9 +712,11 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       // "your second spell each turn".
       if (t.nth !== undefined && s.players[ev.player]?.turnStats.spellsCast !== t.nth) return null;
       if (t.notTheirTurn && s.turn.active === ev.player) return null;
+      // Modal spell (700.2): "choose one / two / up to…" or spree; not the engine's modes for overload, cleave or a
+      // number to choose (Expel the Interlopers).
       if (t.modal) {
         const d = s.defs[s.objects[ev.stackId]?.defId ?? ""];
-        if ((d?.spell?.modes?.length ?? 0) < 2) return null;
+        if ((d?.spell?.modes?.length ?? 0) < 2 || !MODAL_TEXT.test(d?.text ?? "")) return null;
       }
       const from = s.stack.find((x) => x.id === ev.stackId)?.cast?.from;
       if (t.notFromHand && from === "hand") return null;

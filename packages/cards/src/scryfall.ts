@@ -1383,6 +1383,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     warp: parseWarp(raw.oracleText),
     plot: parsePlot(raw.oracleText),
     foretell: parseForetell(raw.oracleText),
+    faceUpCounters: script?.faceUpCounters,
     asEnters: asEntersOf(script?.asEnters, raw.oracleText),
     equipDiscountWhenTargeted: script?.equipDiscountWhenTargeted,
     evoke: evoke ? parseManaCost(evoke) : undefined,

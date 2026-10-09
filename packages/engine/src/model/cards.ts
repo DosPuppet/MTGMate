@@ -168,6 +168,11 @@ export interface CardDef {
   exileOnResolve?: boolean;
   /** Plot (702.170): cost of the special action "plot this card" (read from the text). */
   plot?: ManaCost;
+  /**
+   * "As this creature is turned face up, put N [kind] counters on it" (Bubble Smuggler; Crowd-Control Warden: an amount
+   * evaluated for it): put before it is turned face up, no ability on the stack.
+   */
+  faceUpCounters?: { kind: string; n: Amount };
   /** Foretell (702.143): cost to cast the foretold card on a later turn (read from the text). */
   foretell?: ManaCost;
   /**
@@ -383,6 +388,8 @@ export type AbilityDef =
 
 export interface AdditionalCost {
   discard?: number;
+  /** "Pay N life" (Deep Analysis: "Flashback—{1}{U}, Pay 3 life", in `flashbackCost`). */
+  payLife?: number;
   /** Only matching cards (retrace, 702.81: a land card). */
   discardFilter?: ObjectFilter;
   /**
@@ -1342,7 +1349,7 @@ export interface StaticAbilityDef {
   mods: LayerMods;
   /** P/T multiplied by the number of matching permanents ("+1/+1 for each Forest you control"). */
   per?: ObjectFilter;
-  /** P/T multiplied by the number of counters of this type on the source (Banner of Kinship). */
+  /** P/T multiplied by the number of counters of this type on the source (Banner of Kinship; `"any"`: all kinds, Hancock). */
   perCounter?: string;
   /** P/T multiplied by the number of cards in the controller's graveyard matching the filter (Winter). */
   perGraveyard?: ObjectFilter;

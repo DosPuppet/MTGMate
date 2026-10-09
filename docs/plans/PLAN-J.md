@@ -69,7 +69,7 @@ Three read-only surveys (2026-10-09) checked every tracked entry against the for
 
 ## Lots
 
-### J0 — Housekeeping (no rules change)
+### J0 — Housekeeping (no rules change) — ✅ done (b05f461)
 
 - Write `docs/plans/PLAN-J.md` from this plan, and point CLAUDE.md's "Plans" line to it.
 - `debt-baseline.json` reason texts:
@@ -85,7 +85,7 @@ Three read-only surveys (2026-10-09) checked every tracked entry against the for
   - recheck Virtue of Loyalty: it is exact within the catalog, since Blossombind also stops untapping.
 - `docs/audits/2026-10-07-debt.md`: add a short "Checked 2026-10-09 (PLAN-J)" note correcting the four §5 claims.
 
-### J1 — Exact merges into existing forms (no rules change)
+### J1 — Exact merges into existing forms (no rules change) — ✅ done (1e8f826)
 
 **Variants** (model types in `packages/engine/src/model/rules.ts`; DSL helpers in `dsl.ts` emit the generic form, so card scripts don't change):
 - `manaPoolAtLeast`: becomes `amountAtLeast(manaInPool)`. Amount `manaInPool` then has 2 users.
@@ -112,7 +112,7 @@ Three read-only surveys (2026-10-09) checked every tracked entry against the for
 - `bounceOther` / `exileOther` → `CostDef.bounce` / `CostDef.exile`.
 - `ownerControl` → op `putFaceDown` replaced by `moveTo` + `MoveSpec.as`. Guard the Aura-host choice.
 
-### J2 — Small shared forms (no rules change)
+### J2 — Small shared forms (no rules change) — ✅ done (5ee3cc3)
 
 - **Activated-ability reduction by target:** `reduction.generic` evaluated with the target. Absorbs `reduceByTargetColors` and `reduceByTargetCounters`.
 - **ObjectFilter `shares: {what, with: Ref}`**, resolved in `withX`. Absorbs `nameOf`, `sharesCardTypeWith`, `sharesColorWith` and `sharesCreatureTypeWith`; `tapChosen` must call `withX`.
@@ -131,7 +131,7 @@ Three read-only surveys (2026-10-09) checked every tracked entry against the for
   - `untaps` → `taps{untap}`;
   - `excessDamage` → `isDealtDamage{excess}`.
 
-### J3 — Generic action trigger (no rules change)
+### J3 — Generic action trigger (no rules change) — ✅ done (594c17c)
 
 - One `TriggerSpec {on:"action", action, whose?, self?}`. It matches the **existing** RulesEvents through a table: event kind → acting player, object, amount. Emitting the existing events keeps the client log, the sounds (`eventSounds.ts`) and the hidden-information filters (`filterEvents`) untouched.
 - It absorbs the single-card `search`, `playerLoses`, `discover`, `forage`, `gift`, `bend`, `caseSolved`, `manifestDread`, `attackAbilityTriggered` and `saddled`, and the multi-card `crime`, `collectEvidence`, `scryOrSurveil`, `exhaustActivated`, `expend` (with `n`), `plottedSelf`, `cycleSelf` and `transformsSelf`.
@@ -146,7 +146,7 @@ Three read-only surveys (2026-10-09) checked every tracked entry against the for
 
 ### J4 — Debt merges that change behaviour [rules]
 
-**J4a — Turn-log damage entries and untap batch:**
+**J4a — Turn-log damage entries and untap batch:** ✅ done, rules 179 (99ddb35)
 - Damage entries get the damaged object's `id` and the source object's id, and `TurnLogQuery` gets `self: "target" | "source"`. Match on the object id, not the physical card id (400.7).
 - With that:
   - Amount `lkiDamage` (Tangled Colony) goes;
@@ -159,7 +159,7 @@ Three read-only surveys (2026-10-09) checked every tracked entry against the for
 - `millUntil` → `revealUntilN{rest:"graveyard"}`: reveal and put, not mill.
 - `activateTargeting` → `activateAbility.targeting`. Granted abilities now count.
 
-**J4b — Costs:**
+**J4b — Costs:** ✅ done, rules 180 (643cd46); activation flags and ninjutsu bounce cost kept (renames only)
 - `"X"` is allowed in `sacrifice.count`, `tapOthers.count`, `exileFromGraveyard.count`, `discard`, `removeCounters.n` and `payLife`. Absorbs `discardX`, `sacrificeX`, `tapX`, `payLifeX`, `removeCountersX` and `exileFromGraveyardX`. Sacrifice for X now respects `cantBeSacrificed`.
 - Ninjutsu-style return: `CostDef.bounce{attacking, blocked:false}` (key `blocked`). The default pick changes from weakest attacker to lowest mana value.
 - `scryBeforeExplore` → `eventReplacement{explore, add 1}`; explore reads `quantityMods("explore")`.
@@ -170,7 +170,7 @@ Three read-only surveys (2026-10-09) checked every tracked entry against the for
   - `instantSpeed` absorbs `jaceLoyaltyInstant`;
   - turn-log `activate` entries get an `exhaust` flag.
 
-**J4c — Immediate effects and copies:**
+**J4c — Immediate effects and copies:** ✅ done, rules 181 (29830e1): The Mindskinner's mill fixed; the immediate-effects form, token-copy exceptions and low-value keys kept
 - Replacements and mana abilities get immediate `effects: Effect[]`, run off the stack like `asEnters`. Absorbs `gainLife`, `createToken` (through `reflexive`), `opponentsMill`, `removeCounter`, `opponentsGainLife`, `counters`, `countersOnDamaged`, `addCounter` and `drawback`. The Mindskinner's mill now goes through the real mill path, with its replacements, triggers and log.
 - Token copies take `except: LayerMods`, and `copyToken`'s ~10 exception fields map onto it. Absorbs `equipDiscount` (Firion becomes copiable, without duplicate equip abilities) and `removeSupertypes`.
 - Low-value keys, done last:
@@ -180,7 +180,7 @@ Three read-only surveys (2026-10-09) checked every tracked entry against the for
   - `collectEvidenceTargetsManaValue` → an Amount;
   - `distinctColors` and `preferHighManaValue` (default-pick hints) → merged.
 
-### J5 — Small approximation lifts [rules]
+### J5 — Small approximation lifts [rules] — ✅ done, rules 182 (Skyseer's Chariot kept: a new name kind across client, server and protocol for one card)
 
 **Families:**
 - **Look at an opponent's hand:** `fx.look(ref.handOf(...))`. For Sorcerous Spyglass and Arachne it runs in `asEnters` after `fx.chooseOpponent`; Deep-Cavern Bat looks before its exile.
@@ -206,7 +206,7 @@ Three read-only surveys (2026-10-09) checked every tracked entry against the for
 - the Riku modal check excludes overload/cleave alternative-cost modes;
 - the `spellCost.colored` unmatched-symbol reduction follows 118.7c (a shared implementation with `costReduction.colored`).
 
-### J6 — Medium approximation families [rules]
+### J6 — Medium approximation families [rules] — 🔄 in progress
 
 **J6a — Public reveal:**
 - `fx.reveal(ref)`: the `look` op without `look: true`.
@@ -234,7 +234,7 @@ Three read-only surveys (2026-10-09) checked every tracked entry against the for
 - A layer-4 change that keeps `NON_CREATURE_SUBTYPES` (`targets.ts:197`).
 - Lifts Nameless Inversion and Honest Work, and fixes the ~12 `setSubtypes` scripts (`otj/blue.ts:132`, `fdn/blue.ts:198,270`, `tmt/blue.ts:242`, `ecl/blue.ts:190`, `spm/green.ts:127`, `msh/green.ts:336`, …).
 
-### J7 — Closing
+### J7 — Closing — ⏳ to do
 
 - `docs/history.md`: new section 14 "PLAN-J", with a bilan in the format of the PLAN-H one.
 - `docs/backlog.md`:
@@ -301,10 +301,11 @@ Three read-only surveys (2026-10-09) checked every tracked entry against the for
 
 | Lot | State | Rules | Commit |
 |---|---|---|---|
-| J0 | done | — | housekeeping |
+| J0 | done | — | housekeeping (also: library-search window fix eb9cac1, user request) |
 | J1 | done | — | exact merges: 7 variants, 18 single-card keys; fingerprints (seed 7) identical; `putFaceDown` → J4a (manifest through `MoveSpec` would ask a shock land's question) |
 | J2 | done | — | small shared forms: 5 variants, 14 single-card keys, 1 player static, 1 keyword; whole pool and mixed fingerprints identical; Commander c42297fe → 637ffb4c (Chrome Mox offers its colors in WUBRG order, no rules change) |
 | J3 | done | — | generic action trigger: 18 TriggerSpec variants into 1 (58 → 41); fingerprints identical |
 | J4a | done | 179 | turn-log damage and untap entries; 4 ops, 3 variants, 1 key, GameObject.combatDamagedPlayers removed; Sold Out and the Calendar half lifted; golden games and fingerprints identical |
 | J4b | done | 180 | X costs in the cost keys (6 keys), Twists and Turns as an explore replacement, Warped Space as a cast permission; activation flags and ninjutsu bounce cost kept (renames only); fingerprints identical |
 | J4c | done | 181 | The Mindskinner mills for real; immediate effects in replacements and mana abilities, token-copy exceptions and the low-value keys kept (no form that removes debt without an off-stack effect runner or a copy rework) |
+| J5 | done | 182 | 21 approximation entries lifted or removed as stale (Tin Street Gossip), 3 undocumented deviations fixed (life lost, Riku, 118.7c); Skyseer's Chariot kept |

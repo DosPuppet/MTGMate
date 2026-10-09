@@ -148,7 +148,9 @@ export const EDH_URDRAGON: Record<string, CardScript> = {
   "Chromatic Orrery": {
     abilities: [
       playerStatic({
+        // Spells and activated abilities alike.
         spellCost: { filter: {}, anyMana: true },
+        abilityCost: { anyMana: true },
         label: "You may spend mana as though it were mana of any color",
       }),
       manaAbility("C", 5),
@@ -172,7 +174,8 @@ export const EDH_URDRAGON: Record<string, CardScript> = {
   "Forbidden Orchard": {
     abilities: [
       manaAbility(ANY_COLOR),
-      triggered(when.tapsSelf, [fx.createTokens(SPIRIT_COLORLESS, 1, ref.target())], {
+      // "Whenever you tap this land for mana".
+      triggered({ on: "taps", who: "self", cause: "mana" }, [fx.createTokens(SPIRIT_COLORLESS, 1, ref.target())], {
         targets: [target.player("t", "opponent")],
         label: "Target opponent creates a 1/1 colorless Spirit",
       }),
@@ -401,7 +404,12 @@ export const EDH_URDRAGON: Record<string, CardScript> = {
         when.entersSelf,
         fx.may(
           "Put your commander onto the battlefield?",
-          fx.moveTo(ref.zone("command", ref.you, { commander: true }), { to: "battlefield" }, { name: "cmd" }),
+          // "Put a commander you own from the command zone onto the battlefield": one, chosen among two partners.
+          fx.chooseAmong(ref.zone("command", ref.you, { commander: true }), ref.you, "c", {
+            anyZone: true,
+            prompt: "Choose your commander",
+          }),
+          fx.moveTo(ref.stored("c"), { to: "battlefield" }, { name: "cmd" }),
           fx.pump(ref.stored("cmd"), 0, 0, ["haste"]),
           fx.delayed([fx.moveTo(ref.target("cmd"), { to: "command" })], { cmd: ref.stored("cmd") }),
         ),

@@ -273,7 +273,8 @@ describe("Counter Blitz (EDH)", () => {
       });
       const angel = idOf(s, "p2", "battlefield", "Serra Angel");
       s = settle(castIt(s, "p1", "Promise of Loyalty"), (req, p) =>
-        p === "p2" && req.type === "pick" ? [idOf(s, "p2", "battlefield", "Savannah Lions")] : undefined,
+        // The creature kept (the others are sacrificed together).
+        p === "p2" && req.type === "pick" ? [angel] : undefined,
       );
       expect([onField(s, "p2", "Serra Angel"), onField(s, "p2", "Savannah Lions")]).toEqual([1, 0]);
       expect(s.objects[angel]?.counters.vow).toBe(1);

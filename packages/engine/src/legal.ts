@@ -3,6 +3,7 @@
  * The interface highlights only these options; the AI and the autopilot use them too.
  */
 
+import { concreteSpec, staticContext } from "./effects";
 import { availableMana, canPay, costToText, type ManaPurpose, manaAbilitiesOf, manaSources, manaValue, totalCost } from "./mana";
 import { asEntersChoices } from "./replacement";
 import {
@@ -216,8 +217,19 @@ function withoutUnpayableLifeTax(s: GameState, player: PlayerId, opts: TargetOpt
   return opts.map((o) => (o.legal.some((id) => tax(id) > life) ? { ...o, legal: o.legal.filter((id) => tax(id) <= life) } : o));
 }
 
+/**
+ * A mana value computed from the game, not from X (Squirming Emergence: "less than or equal to the number of permanent
+ * cards in your graveyard"): evaluated now, as the engine does on casting (601.2c); an X bound stays a hint (`xAtLeast`).
+ */
+function concreteManaValue(s: GameState, player: PlayerId, t: TargetSpec, sourceId?: ObjectId): TargetSpec {
+  const amounts = [t.maxManaValueAmount, t.manaValueAmount].filter((a) => a !== undefined);
+  if (!amounts.length || amounts.some((a) => JSON.stringify(a).includes('"kind":"x"'))) return t;
+  return concreteSpec(s, staticContext(s, player, sourceId ?? ""), t);
+}
+
 function targetOptions(s: GameState, player: PlayerId, specs: TargetSpec[], sourceId?: ObjectId): TargetOption[] {
-  return specs.map((t) => {
+  return specs.map((t0) => {
+    const t = concreteManaValue(s, player, t0, sourceId);
     const all = legalTargets(s, player, t, sourceId);
     // "Total mana value N or less": a target that exceeds N on its own can never be chosen.
     const cap = t.maxTotalManaValue;
