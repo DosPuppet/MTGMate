@@ -5,11 +5,11 @@ import type { OpHandlers, OpResult } from "../effects";
 import {
   announceDiscard,
   announceDiscardBatch,
+  cardRefOf,
   evalAmount,
   grantPlay,
   moveDiscarded,
   moveWithSpec,
-  nameOf,
   nextTurnOf,
   resolveRef,
   store,
@@ -114,8 +114,8 @@ export const HANDLERS: OpHandlers = {
             key: key("cast"),
             cards: [hit],
             prompt: e.cascade
-              ? msg("Cascade: cast {card} for free? (otherwise, on the bottom of your library)", { card: nameOf(s, hit) })
-              : msg("Discover: cast {card} for free? (otherwise, into your hand)", { card: nameOf(s, hit) }),
+              ? msg("Cascade: cast {card} for free? (otherwise, on the bottom of your library)", { card: cardRefOf(s, hit) })
+              : msg("Discover: cast {card} for free? (otherwise, into your hand)", { card: cardRefOf(s, hit) }),
           },
         };
       }
@@ -267,7 +267,7 @@ export const HANDLERS: OpHandlers = {
           request: {
             type: "yesNo",
             intent: "unlessPay",
-            prompt: msg("{card}: pay {cost} to avoid it?", { card: nameOf(s, ctx.sourceId), cost: what }),
+            prompt: msg("{card}: pay {cost} to avoid it?", { card: cardRefOf(s, ctx.sourceId), cost: what }),
             suggested: [1],
           },
         },
@@ -482,7 +482,7 @@ export const HANDLERS: OpHandlers = {
           request: {
             type: "yesNo",
             intent: "may",
-            prompt: msg("{card}: {prompt}", { card: nameOf(s, ctx.sourceId), prompt: e.prompt }),
+            prompt: msg("{card}: {prompt}", { card: cardRefOf(s, ctx.sourceId), prompt: e.prompt }),
             suggested: [1],
           },
         },
@@ -543,7 +543,7 @@ export const HANDLERS: OpHandlers = {
           request: {
             type: "number",
             intent: "payX",
-            prompt: msg("{card}: {prompt}", { card: nameOf(s, ctx.sourceId), prompt: e.prompt }),
+            prompt: msg("{card}: {prompt}", { card: cardRefOf(s, ctx.sourceId), prompt: e.prompt }),
             min: 0,
             max,
             suggested: [e.life ? Math.min(max, Math.max(0, life - 10)) : max],
@@ -575,7 +575,7 @@ export const HANDLERS: OpHandlers = {
         // as originally, the original ones suggested (as for a copy, 707.10c).
         for (const [sid] of entries) {
           const k = key(`ct-${id}-${sid}`);
-          const request = retargetRequest(s, item, sid, nameOf(s, item.sourceId));
+          const request = retargetRequest(s, item, sid, cardRefOf(s, item.sourceId));
           if (!request) continue;
           const answer = r.vars[k];
           if (!answer) return { ask: { player: ctx.controller, key: k, request } };
@@ -809,7 +809,7 @@ function castNowLoop(
     // Only the cards that can really be cast (targets, additional costs) are offered.
     const castable = open.filter((id) => castTerms(s, player, id));
     if (castable.length) {
-      const names = castable.map((id) => nameOf(s, id)).join(", ");
+      const names = castable.map((id) => cardRefOf(s, id)).join(", ");
       return {
         ask: {
           castNow: {
@@ -820,11 +820,11 @@ function castNowLoop(
             prompt:
               castable.length > 1
                 ? opts.free
-                  ? msg("{card}: cast a spell for free?", { card: nameOf(s, source) })
-                  : msg("{card}: cast a spell?", { card: nameOf(s, source) })
+                  ? msg("{card}: cast a spell for free?", { card: cardRefOf(s, source) })
+                  : msg("{card}: cast a spell?", { card: cardRefOf(s, source) })
                 : opts.free
-                  ? msg("{card}: cast {spell} for free?", { card: nameOf(s, source), spell: names })
-                  : msg("{card}: cast {spell}?", { card: nameOf(s, source), spell: names }),
+                  ? msg("{card}: cast {spell} for free?", { card: cardRefOf(s, source), spell: names })
+                  : msg("{card}: cast {spell}?", { card: cardRefOf(s, source), spell: names }),
           },
         },
         cast,

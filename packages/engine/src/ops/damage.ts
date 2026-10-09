@@ -2,7 +2,7 @@
 
 import { dealDamage, sourceFromObject } from "../actions";
 import type { OpHandlers } from "../effects";
-import { damageSource, evalAmount, nameOf, resolveRef, store } from "../effects";
+import { cardRefOf, damageSource, evalAmount, resolveRef, store } from "../effects";
 import { addReplacement } from "../replacement";
 import { chars, isCreature, isPlayer, newId, onBattlefield } from "../state";
 import { addPlayerEffect } from "../statics";
@@ -148,7 +148,7 @@ export const HANDLERS: OpHandlers = {
             request: {
               type: "pick",
               intent: "other",
-              prompt: msg("{card}: choose the source whose next damage will be prevented", { card: nameOf(s, ctx.sourceId) }),
+              prompt: msg("{card}: choose the source whose next damage will be prevented", { card: cardRefOf(s, ctx.sourceId) }),
               options,
               min: 1,
               max: 1,

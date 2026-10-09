@@ -4,6 +4,7 @@
  */
 
 import { type DamageSource, payLife, removeFromCombat, sourceFromObject } from "./actions";
+import { cardRef } from "./choices";
 import { colorIdentity } from "./identity";
 import { copiedDefId, hasType } from "./layers";
 import { manaValue } from "./mana";
@@ -957,8 +958,10 @@ export function contextOf(r: Resolution): EffectContext {
   };
 }
 
-export function nameOf(s: GameState, id: string): string {
-  return s.defs[s.objects[id]?.defId ?? ""]?.name ?? id;
+/** The object's card, cited in a player-facing text (`cardRef`: shown in the interface language). */
+export function cardRefOf(s: GameState, id: string): string {
+  const defId = s.objects[id]?.defId;
+  return defId && s.defs[defId] ? cardRef(defId) : id;
 }
 
 export function moveAndLog(s: GameState, id: ObjectId, to: "hand" | "exile" | "graveyard"): ObjectId | null {

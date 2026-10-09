@@ -6,6 +6,7 @@ import type { EffectContext, OpHandlers, OpResult } from "../effects";
 import {
   announceDiscard,
   announceDiscardBatch,
+  cardRefOf,
   damageSource,
   evalAmount,
   evalMoveSpec,
@@ -14,7 +15,6 @@ import {
   moveAndLog,
   moveDiscarded,
   moveWithSpec,
-  nameOf,
   putFaceDown,
   readVar,
   resolveRef,
@@ -189,8 +189,8 @@ function opponentChoice(
       chooser: { kind: "you" },
       store,
       prompt: separates
-        ? msg("{card}: choose the opponent who separates the cards into two piles", { card: nameOf(s, ctx.sourceId) })
-        : msg("{card}: choose the opponent who chooses one of the piles", { card: nameOf(s, ctx.sourceId) }),
+        ? msg("{card}: choose the opponent who separates the cards into two piles", { card: cardRefOf(s, ctx.sourceId) })
+        : msg("{card}: choose the opponent who chooses one of the piles", { card: cardRefOf(s, ctx.sourceId) }),
     },
     ctx,
     (x) => key(`opponent-${x}`),
@@ -757,10 +757,10 @@ export const HANDLERS: OpHandlers = {
               intent: "topOrBottom",
               prompt: e.fromTop
                 ? msg("{card}: in position {n} from the top or on the bottom of your library?", {
-                    card: nameOf(s, o.id),
+                    card: cardRefOf(s, o.id),
                     n: e.fromTop,
                   })
-                : msg("{card}: on top of or on the bottom of your library?", { card: nameOf(s, o.id) }),
+                : msg("{card}: on top of or on the bottom of your library?", { card: cardRefOf(s, o.id) }),
               options: ["top", "bottom"],
               labels: {
                 top: e.fromTop ? msg("Position {n} from the top", { n: e.fromTop }) : msg("On top"),
@@ -1537,8 +1537,8 @@ export const HANDLERS: OpHandlers = {
             type: "pick",
             intent: "sacrifice",
             prompt: fromGy
-              ? msg("{card}: exile up to {n} card(s) from your graveyard", { card: nameOf(s, ctx.sourceId), n: max })
-              : msg("{card}: devour (sacrifice as many permanents as you want)", { card: nameOf(s, ctx.sourceId) }),
+              ? msg("{card}: exile up to {n} card(s) from your graveyard", { card: cardRefOf(s, ctx.sourceId), n: max })
+              : msg("{card}: devour (sacrifice as many permanents as you want)", { card: cardRefOf(s, ctx.sourceId) }),
             options,
             min: 0,
             max,
@@ -1637,8 +1637,8 @@ export const HANDLERS: OpHandlers = {
     const faceUp = top.filter((id) => !faceDown.includes(id));
     let pick = r.vars[key("pile")]?.[0];
     if (pick === undefined && chooser) {
-      const names = faceUp.map((id) => nameOf(s, id)).join(", ") || msg("no card");
-      const downNames = faceDown.map((id) => nameOf(s, id)).join(", ") || msg("no card");
+      const names = faceUp.map((id) => cardRefOf(s, id)).join(", ") || msg("no card");
+      const downNames = faceDown.map((id) => cardRefOf(s, id)).join(", ") || msg("no card");
       if (e.revealed && !e.opponentSeparates)
         emit({ type: "reveal", player: ctx.controller, defIds: top.map((id) => s.objects[id]?.defId ?? "") });
       return {
@@ -1650,10 +1650,10 @@ export const HANDLERS: OpHandlers = {
             intent: "piles",
             prompt: e.opponentSeparates
               ? msg("{card}: choose the pile to put into your hand (the other goes to the graveyard)", {
-                  card: nameOf(s, ctx.sourceId),
+                  card: cardRefOf(s, ctx.sourceId),
                 })
               : msg("{card}: choose the pile the opponent puts into their hand (the other goes to the graveyard)", {
-                  card: nameOf(s, ctx.sourceId),
+                  card: cardRefOf(s, ctx.sourceId),
                 }),
             options: ["down", "up"],
             labels: e.revealed
@@ -1688,7 +1688,7 @@ export const HANDLERS: OpHandlers = {
           request: {
             type: "pick",
             intent: "pickCards",
-            prompt: msg("{card}: choose the permanents to exile then return", { card: nameOf(s, ctx.sourceId) }),
+            prompt: msg("{card}: choose the permanents to exile then return", { card: cardRefOf(s, ctx.sourceId) }),
             options,
             min: 0,
             max: options.length,
@@ -1905,7 +1905,7 @@ export const HANDLERS: OpHandlers = {
                 request: {
                   type: "yesNo",
                   intent: "may",
-                  prompt: msg("Explore: put {card} into your graveyard?", { card: nameOf(s, top) }),
+                  prompt: msg("Explore: put {card} into your graveyard?", { card: cardRefOf(s, top) }),
                   suggested: [0],
                 },
               },

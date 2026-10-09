@@ -15,11 +15,11 @@ import type { OpHandlers } from "../effects";
 import {
   announceDiscard,
   announceDiscardBatch,
+  cardRefOf,
   damageSource,
   evalAmount,
   millCards,
   moveDiscarded,
-  nameOf,
   nextTurnOf,
   resolveCompare,
   resolveRef,
@@ -142,7 +142,7 @@ export const HANDLERS: OpHandlers = {
             type: "yesNo",
             intent: "may",
             prompt: msg("{card}: discard your hand ({n} card(s)) and draw seven cards?", {
-              card: nameOf(s, ctx.sourceId),
+              card: cardRefOf(s, ctx.sourceId),
               n: hand,
             }),
             suggested: [hand < 4 ? 1 : 0],
@@ -180,7 +180,7 @@ export const HANDLERS: OpHandlers = {
               request: {
                 type: "pick",
                 intent: "punisher",
-                prompt: msg("{card}: choose", { card: nameOf(s, ctx.sourceId) }),
+                prompt: msg("{card}: choose", { card: cardRefOf(s, ctx.sourceId) }),
                 options,
                 labels: {
                   life:
@@ -310,7 +310,7 @@ export const HANDLERS: OpHandlers = {
             request: {
               type: "number",
               intent: "other",
-              prompt: msg("{card}: secretly choose a number", { card: nameOf(s, ctx.sourceId) }),
+              prompt: msg("{card}: secretly choose a number", { card: cardRefOf(s, ctx.sourceId) }),
               min: 0,
               max: e.max,
               suggested: [0],
@@ -349,7 +349,7 @@ export const HANDLERS: OpHandlers = {
                 type: "yesNo",
                 intent: "may",
                 prompt: msg("{card}: shuffle your hand and graveyard into your library and draw {n} cards?", {
-                  card: nameOf(s, ctx.sourceId),
+                  card: cardRefOf(s, ctx.sourceId),
                   n: e.n,
                 }),
                 suggested: [(s.players[p]?.hand.length ?? 0) < 4 ? 1 : 0],

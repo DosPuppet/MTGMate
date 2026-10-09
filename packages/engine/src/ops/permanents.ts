@@ -9,9 +9,9 @@ import {
   addPump,
   attach,
   attackingDefender,
+  cardRefOf,
   evalAmount,
   exiledUid,
-  nameOf,
   nextTurnOf,
   resolveRef,
   store,
@@ -197,8 +197,14 @@ export function askCopiesInstead(
             intent: "may",
             prompt:
               n > 1
-                ? msg("{card}: create copies of {host} instead?", { card: nameOf(s, rep.sourceId), host: nameOf(s, rep.host) })
-                : msg("{card}: create a copy of {host} instead?", { card: nameOf(s, rep.sourceId), host: nameOf(s, rep.host) }),
+                ? msg("{card}: create copies of {host} instead?", {
+                    card: cardRefOf(s, rep.sourceId),
+                    host: cardRefOf(s, rep.host),
+                  })
+                : msg("{card}: create a copy of {host} instead?", {
+                    card: cardRefOf(s, rep.sourceId),
+                    host: cardRefOf(s, rep.host),
+                  }),
             suggested: [1],
           },
         },

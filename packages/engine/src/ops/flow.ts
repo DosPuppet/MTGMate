@@ -2,7 +2,7 @@
 import { canForage, forage, payLife } from "../actions";
 import { cardRef } from "../choices";
 import type { OpHandlers } from "../effects";
-import { concreteSpec, evalAmount, evalCondition, nameOf, nextTurnOf, resolveRef, store } from "../effects";
+import { cardRefOf, concreteSpec, evalAmount, evalCondition, nextTurnOf, resolveRef, store } from "../effects";
 import { RulesError } from "../errors";
 import { canPay, manaValue, payMana } from "../mana";
 import { beholdOptions, collectEvidence, pickEvidence } from "../stack";
@@ -24,7 +24,7 @@ export const HANDLERS: OpHandlers = {
           request: {
             type: "yesNo",
             intent: "may",
-            prompt: msg("{card}: {prompt}", { card: nameOf(s, ctx.sourceId), prompt: e.prompt }),
+            prompt: msg("{card}: {prompt}", { card: cardRefOf(s, ctx.sourceId), prompt: e.prompt }),
             suggested: [1],
           },
         },
@@ -50,7 +50,7 @@ export const HANDLERS: OpHandlers = {
             type: "yesNo",
             intent: "may",
             prompt: msg("{card}: forage (exile three cards from your graveyard or sacrifice a Food)?", {
-              card: nameOf(s, ctx.sourceId),
+              card: cardRefOf(s, ctx.sourceId),
             }),
             suggested: [1],
           },
@@ -78,7 +78,7 @@ export const HANDLERS: OpHandlers = {
             request: {
               type: "number",
               intent: "payX",
-              prompt: msg("{card}: collect evidence X (0: no)?", { card: nameOf(s, ctx.sourceId) }),
+              prompt: msg("{card}: collect evidence X (0: no)?", { card: cardRefOf(s, ctx.sourceId) }),
               min: 0,
               max: total,
               suggested: [total],
@@ -102,7 +102,7 @@ export const HANDLERS: OpHandlers = {
               intent: "may",
               prompt: msg(
                 "{card}: collect evidence {n} (exile cards with total mana value {n} or greater from your graveyard)?",
-                { card: nameOf(s, ctx.sourceId), n },
+                { card: cardRefOf(s, ctx.sourceId), n },
               ),
               suggested: [1],
             },
@@ -126,7 +126,7 @@ export const HANDLERS: OpHandlers = {
               type: "pick",
               intent: "pickCards",
               prompt: msg("{card}: collect evidence {n} — cards in your graveyard to exile (total mana value {n} or greater)", {
-                card: nameOf(s, ctx.sourceId),
+                card: cardRefOf(s, ctx.sourceId),
                 n,
               }),
               options: pool,
@@ -214,7 +214,7 @@ export const HANDLERS: OpHandlers = {
             type: "pick",
             intent: "pickCards",
             prompt: msg("{card}: you may behold (a permanent, or a revealed card from your hand)", {
-              card: nameOf(s, ctx.sourceId),
+              card: cardRefOf(s, ctx.sourceId),
             }),
             options,
             // Named: a card from the hand is not on the board (land played, PLAN-L L5).
@@ -247,7 +247,7 @@ export const HANDLERS: OpHandlers = {
           request: {
             type: "pick",
             intent: "other",
-            prompt: msg("{card}: {prompt}", { card: nameOf(s, ctx.sourceId), prompt: e.prompt }),
+            prompt: msg("{card}: {prompt}", { card: cardRefOf(s, ctx.sourceId), prompt: e.prompt }),
             options,
             labels: Object.fromEntries(e.labels.map((l, i) => [String(i), l])),
             min: 1,
@@ -274,7 +274,7 @@ export const HANDLERS: OpHandlers = {
           request: {
             type: "yesNo",
             intent: "may",
-            prompt: msg("{card}: {prompt}", { card: nameOf(s, ctx.sourceId), prompt: e.prompt }),
+            prompt: msg("{card}: {prompt}", { card: cardRefOf(s, ctx.sourceId), prompt: e.prompt }),
             suggested: [1],
           },
         },
