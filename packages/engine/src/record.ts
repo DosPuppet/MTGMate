@@ -507,8 +507,11 @@ export const RECORD_VERSION = 1;
  * - 184: PLAN-J J6c: "with mana value X" on an activated ability's target is checked with the announced X (Likeness
  *   Looter, The Mycosynth Gardens, Rydia); the legal options offer only the targets of an affordable X (`xEquals`)
  * - 185: PLAN-J J6d: "is a [creature type]" replaces only the creature types, the other subtypes stay (205.1b)
+ * - 186: PLAN-L L2: activated abilities from the command zone (commander ninjutsu, 702.49d); the players of a "one or
+ *   more" batch kept with the trigger (`ref.eventPlayers`); a sacrifice that reduces the cost pays {N} each (Dargo)
+ *   and never leaves mana in the pool
  */
-export const RULES_VERSION = 185;
+export const RULES_VERSION = 186;
 
 /** One checkpoint every N decisions (plus the last one of the game). */
 export const CHECKPOINT_EVERY = 25;

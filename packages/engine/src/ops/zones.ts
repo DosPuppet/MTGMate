@@ -292,11 +292,11 @@ export const HANDLERS: OpHandlers = {
       r.vars[key("among")] = [picked];
     }
     if (picked === undefined) {
-      // Suggestion: a player, the first designated (the next opponent in turn order); an object, the one with the
-      // greatest toughness.
-      const suggested = players
-        ? (ids[0] as string)
-        : ([...ids].sort((a, b) => chars(s, b).toughness - chars(s, a).toughness)[0] as string);
+      // Suggestion: a player, the first designated (the next opponent in turn order; "that player or a planeswalker
+      // they control": the player); otherwise the object with the greatest toughness.
+      const suggested =
+        ids.find((id) => isPlayer(s, id)) ??
+        ([...ids].sort((a, b) => chars(s, b).toughness - chars(s, a).toughness)[0] as string);
       return {
         ask: {
           player: chooser,

@@ -238,7 +238,7 @@ export const BLACK: Record<string, CardScript> = {
   },
   "Rottenmouth Viper": {
     // Optional additional cost: each nonland permanent sacrificed reduces the cost by {1} (the player's choice).
-    additionalCost: { sacrificeToPay: { notTypes: ["Land"] } },
+    additionalCost: { sacrificeToPay: { filter: { notTypes: ["Land"] } } },
     abilities: [
       ...[when.entersSelf, when.attacksSelf].map((w) =>
         triggered(

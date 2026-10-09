@@ -421,10 +421,18 @@ export interface AdditionalCost {
   /** `orPay`: "sacrifice a creature or pay {3}{B}" (without a sacrifice, this mana is added to the cost). */
   sacrifice?: { filter: ObjectFilter; count: number; orPay?: ManaCost };
   /**
-   * "You may sacrifice any number of [filter]. This spell costs {1} less to cast for each permanent sacrificed
-   * this way" (Rottenmouth Viper): each sacrifice pays {1} of the generic, as the player chooses (otherwise as few as possible).
+   * "You may sacrifice any number of [filter]. This spell costs {N} less to cast for each permanent sacrificed
+   * this way" (Rottenmouth Viper {1}, Dargo {2}): each sacrifice pays `each` (1 by default) of the generic, as the
+   * player chooses (otherwise as few as possible).
    */
-  sacrificeToPay?: ObjectFilter;
+  sacrificeToPay?: SacrificeToPay;
+}
+
+/** Sacrifice as an additional cost that pays part of the generic cost (`AdditionalCost.sacrificeToPay`). */
+export interface SacrificeToPay {
+  filter: ObjectFilter;
+  /** Generic mana paid by each sacrifice ({2} less for each: Dargo); 1 by default. */
+  each?: number;
 }
 
 /** "[Filter] spells you cast cost {N} less." */
@@ -541,6 +549,11 @@ export interface ActivatedAbilityDef {
   fromGraveyard?: boolean;
   /** Ability activated from hand (cycling, "discard this card: …"). */
   fromHand?: boolean;
+  /**
+   * Also activated from the command zone, as well as from its own zone (commander ninjutsu, 702.49d: "from your hand
+   * or the command zone").
+   */
+  fromCommand?: boolean;
   /** Cycling ability (702.29): "when you cycle this card" triggers. */
   cycling?: boolean;
   /** Exhaust (702.177): a single activation; "whenever you activate an exhaust ability" triggers. */

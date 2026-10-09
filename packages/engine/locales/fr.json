@@ -8,7 +8,7 @@
  "A {n}/{n} Spirit token": "Un jeton Esprit {n}/{n}",
  "Activated ability": "Capacité activée",
  "Additional cost paid: choose both modes": "Coût additionnel payé : choisissez les deux modes",
- "Additional cost: the permanents to sacrifice (each reduces the cost by {1})": "Coût additionnel : les permanents à sacrifier (chacun réduit le coût de {1})",
+ "Additional cost: the permanents to sacrifice (each reduces the cost by {cost})": "Coût additionnel : les permanents à sacrifier (chacun réduit le coût de {cost})",
  "Age": "Âge",
  "Alternative cost unavailable": "Coût alternatif indisponible",
  "Alternative cost — {cost}": "Coût alternatif — {cost}",

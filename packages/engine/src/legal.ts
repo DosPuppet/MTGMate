@@ -748,9 +748,10 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     (s.players[player]?.[zone] ?? []).filter((id) =>
       s.defs[obj(s, id).defId]?.abilities.some((ab) => ab.kind === "activated" && ab[flag]),
     );
-  // Emblems: their activated abilities work in the command zone (114.4; Karn, Living Legacy).
-  const emblems = (s.players[player]?.command ?? []).filter(
-    (id) => obj(s, id).isToken && s.defs[obj(s, id).defId]?.abilities.some((ab) => ab.kind === "activated"),
+  // Emblems: their activated abilities work in the command zone (114.4; Karn, Living Legacy); a card's, only those
+  // that say so (commander ninjutsu).
+  const emblems = (s.players[player]?.command ?? []).filter((id) =>
+    s.defs[obj(s, id).defId]?.abilities.some((ab) => ab.kind === "activated" && (obj(s, id).isToken || ab.fromCommand)),
   );
   for (const id of [...s.battlefield, ...offField("graveyard", "fromGraveyard"), ...offField("hand", "fromHand"), ...emblems]) {
     const o = obj(s, id);

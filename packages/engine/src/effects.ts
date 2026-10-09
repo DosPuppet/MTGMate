@@ -414,6 +414,10 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
     }
     case "eventPlayer":
       return ctx.event?.player ? [ctx.event.player] : [];
+    case "eventPlayers": {
+      const ev = ctx.event;
+      return [...new Set([ev?.player, ...(ev?.others ?? []).map((x) => x.player)].filter((p): p is PlayerId => !!p))];
+    }
     case "controllerOf":
       return resolveRef(s, ctx, ref.ref).flatMap((id) => {
         if (isPlayer(s, id)) return [id];

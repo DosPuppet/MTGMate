@@ -659,10 +659,10 @@ export interface TriggerEventData {
    */
   defendingPlayer?: PlayerId;
   /**
-   * "One or more …" (`batched` trigger): the objects of the other events of the batch, in order (the first is
-   * `objectId`); read by `ref.eventObjects` ("those creatures", "one of them").
+   * "One or more …" (`batched` trigger): the objects and players of the other events of the batch, in order (the first
+   * is `objectId`, `player`); read by `ref.eventObjects` ("those creatures", "one of them") and `ref.eventPlayers`.
    */
-  others?: { objectId?: ObjectId; newObjectId?: ObjectId }[];
+  others?: { objectId?: ObjectId; newObjectId?: ObjectId; player?: PlayerId }[];
 }
 
 /** Triggered ability waiting to be put on the stack (603.3). */

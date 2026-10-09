@@ -66,11 +66,13 @@ export const evolve = triggered(
  * Ninjutsu (702.49): "[cost], return an unblocked attacker you control to hand: put this card onto the battlefield from
  * your hand tapped and attacking"; it attacks what the returned creature was attacking (702.49c).
  */
-export const ninjutsu = (cost: string): AbilityDef =>
+export const ninjutsu = (cost: string, opts: { commander?: boolean } = {}): AbilityDef =>
   activated({
     mana: cost,
     fromHand: true,
+    // Commander ninjutsu (702.49d): from the hand or the command zone.
+    ...(opts.commander ? { fromCommand: true } : {}),
     returnUnblockedAttacker: true,
     effects: [fx.toBattlefield(ref.self, { tapped: true, attacking: ref.cost("defender") })],
-    label: msg("Ninjutsu {cost}", { cost }),
+    label: opts.commander ? msg("Commander ninjutsu {cost}", { cost }) : msg("Ninjutsu {cost}", { cost }),
   });

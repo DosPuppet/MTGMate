@@ -2639,6 +2639,39 @@
   ]
  },
  {
+  "name": "Breeches, Brazen Plunderer",
+  "number": "217",
+  "rarity": "uncommon",
+  "manaCost": "{3}{R}",
+  "cmc": 4,
+  "typeLine": "Legendary Creature — Goblin Pirate",
+  "oracleText": "Menace\nWhenever one or more Pirates you control deal damage to your opponents, exile the top card of each of those opponents' libraries. You may play those cards this turn, and you may spend mana as though it were mana of any color to cast those spells.\nPartner (You can have two commanders if both have partner.)",
+  "power": "3",
+  "toughness": "3",
+  "colors": [
+   "R"
+  ],
+  "keywords": [
+   "Partner",
+   "Menace"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/f/b/fb6dc94e-9b57-4161-a835-15e46c3bb13a.jpg?1783913866",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/b/fb6dc94e-9b57-4161-a835-15e46c3bb13a.jpg?1783913866",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Braies, saccageur des hardis",
+   "typeLine": "Créature légendaire — gobelin et pirate",
+   "text": "Menace\nÀ chaque fois qu'au moins un pirate que vous contrôlez inflige des blessures à vos adversaires, exilez la carte du dessus de la bibliothèque de chacun de ces adversaires. Vous pouvez jouer ces cartes ce tour-ci, et vous pouvez dépenser du mana comme s'il s'agissait de mana de n'importe quelle couleur pour lancer ces sorts.\nPartenariat (Vous pouvez avoir deux commandants si les deux ont le partenariat.)",
+   "image": "https://cards.scryfall.io/normal/front/c/4/c4282a7b-5e1b-4b50-9831-4ffd4fcaed00.jpg?1782810010"
+  },
+  "origin": "LCC",
+  "colorIdentity": [
+   "R"
+  ]
+ },
+ {
   "name": "Brotherhood Regalia",
   "number": "71",
   "rarity": "uncommon",
@@ -4592,6 +4625,39 @@
   "origin": "FIC",
   "colorIdentity": [
    "W"
+  ]
+ },
+ {
+  "name": "Dargo, the Shipwrecker",
+  "number": "172",
+  "rarity": "uncommon",
+  "manaCost": "{6}{R}",
+  "cmc": 7,
+  "typeLine": "Legendary Creature — Giant Pirate",
+  "oracleText": "As an additional cost to cast this spell, you may sacrifice any number of artifacts and/or creatures. This spell costs {2} less to cast for each permanent sacrificed this way and {2} less to cast for each other artifact or creature you've sacrificed this turn.\nTrample\nPartner (You can have two commanders if both have partner.)",
+  "power": "7",
+  "toughness": "5",
+  "colors": [
+   "R"
+  ],
+  "keywords": [
+   "Partner",
+   "Trample"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/5/c/5cd87cf8-4d5d-4aba-8dfa-800b1fb3799b.jpg?1783928817",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/c/5cd87cf8-4d5d-4aba-8dfa-800b1fb3799b.jpg?1783928817",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Dargo, le faiseur d'épaves",
+   "typeLine": "Créature légendaire : géant et pirate",
+   "text": "En tant que coût supplémentaire pour lancer ce sort, vous pouvez sacrifier n'importe quel nombre d'artefacts et/ou de créatures. Ce sort coûte {2} de moins à lancer pour chaque permanent sacrifié de cette manière et {2} de moins à lancer pour chaque autre artefact ou créature que vous avez sacrifié ce tour-ci.\nPiétinement\nPartenariat (Vous pouvez avoir deux commandants si les deux ont le partenariat.)",
+   "image": "https://cards.scryfall.io/normal/front/8/b/8ba72fd8-2f6a-4a0c-9dcc-cd7bce458806.jpg?1782897774"
+  },
+  "origin": "CMR",
+  "colorIdentity": [
+   "R"
   ]
  },
  {
@@ -9544,6 +9610,42 @@
   ]
  },
  {
+  "name": "Inalla, Archmage Ritualist",
+  "number": "38",
+  "rarity": "mythic",
+  "manaCost": "{2}{U}{B}{R}",
+  "cmc": 5,
+  "typeLine": "Legendary Creature — Human Wizard",
+  "oracleText": "Eminence — Whenever another nontoken Wizard you control enters, if Inalla is in the command zone or on the battlefield, you may pay {1}. If you do, create a token that's a copy of that Wizard. The token gains haste. Exile it at the beginning of the next end step.\nTap five untapped Wizards you control: Target player loses 7 life.",
+  "power": "4",
+  "toughness": "5",
+  "colors": [
+   "B",
+   "R",
+   "U"
+  ],
+  "keywords": [
+   "Eminence"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/7/c/7c6e803a-451c-4aa6-97a2-400077f32c47.jpg?1783935937",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/c/7c6e803a-451c-4aa6-97a2-400077f32c47.jpg?1783935937",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Inalla, archimage ritualiste",
+   "typeLine": "Créature légendaire : humain et sorcier",
+   "text": "Éminence — À chaque fois qu'un autre sorcier non-jeton arrive sur le champ de bataille sous votre contrôle, si Inalla, archimage ritualiste est dans la zone de commandement ou sur le champ de bataille, vous pouvez payer {1}. Si vous faites ainsi, créez un jeton qui est une copie de ce sorcier. Le jeton acquiert la célérité. Exilez-le au début de la prochaine étape de fin.\nEngagez cinq sorciers dégagés que vous contrôlez : Un joueur ciblé perd 7 points de vie.",
+   "image": "https://cards.scryfall.io/normal/front/e/4/e4bfcfa3-10b5-462e-a133-44692e20052e.jpg?1782939765"
+  },
+  "origin": "C17",
+  "colorIdentity": [
+   "B",
+   "R",
+   "U"
+  ]
+ },
+ {
   "name": "Incubation Druid",
   "number": "309",
   "rarity": "rare",
@@ -9947,6 +10049,41 @@
   "origin": "TMC",
   "colorIdentity": [
    "U"
+  ]
+ },
+ {
+  "name": "Ishai, Ojutai Dragonspeaker",
+  "number": "12",
+  "rarity": "mythic",
+  "manaCost": "{2}{W}{U}",
+  "cmc": 4,
+  "typeLine": "Legendary Creature — Bird Monk",
+  "oracleText": "Flying\nWhenever an opponent casts a spell, put a +1/+1 counter on Ishai.\nPartner (You can have two commanders if both have partner.)",
+  "power": "1",
+  "toughness": "1",
+  "colors": [
+   "U",
+   "W"
+  ],
+  "keywords": [
+   "Flying",
+   "Partner"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/2/e/2e89ce6a-6bc9-427f-a8b2-c07a9fc3218f.jpg?1783934777",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/2/e/2e89ce6a-6bc9-427f-a8b2-c07a9fc3218f.jpg?1783934777",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Ishaï, languedragon d'Ojutaï",
+   "typeLine": "Créature légendaire : oiseau et moine",
+   "text": "Vol\nÀ chaque fois qu'un adversaire lance un sort, mettez un marqueur +1/+1 sur Ishaï, languedragon d'Ojutaï.\nPartenariat (Vous pouvez avoir deux commandants si les deux ont le partenariat.)",
+   "image": "https://cards.scryfall.io/normal/front/b/b/bb7cdfcc-ef73-4f6c-8e65-79eae5e805b1.jpg?1782947292"
+  },
+  "origin": "CM2",
+  "colorIdentity": [
+   "U",
+   "W"
   ]
  },
  {
@@ -11050,6 +11187,42 @@
   ]
  },
  {
+  "name": "Kraum, Ludevic's Opus",
+  "number": "34",
+  "rarity": "rare",
+  "manaCost": "{3}{U}{R}",
+  "cmc": 5,
+  "typeLine": "Legendary Creature — Zombie Horror",
+  "oracleText": "Flying, haste\nWhenever an opponent casts their second spell each turn, draw a card.\nPartner (You can have two commanders if both have partner.)",
+  "power": "4",
+  "toughness": "4",
+  "colors": [
+   "R",
+   "U"
+  ],
+  "keywords": [
+   "Flying",
+   "Haste",
+   "Partner"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/5/5/557fcd17-6cb3-414a-b2b1-ea9ae32e5aec.jpg?1783937084",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/5/557fcd17-6cb3-414a-b2b1-ea9ae32e5aec.jpg?1783937084",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Kraum, opus de Ludevic",
+   "typeLine": "Créature légendaire : zombie et horreur",
+   "text": "Vol, célérité\nÀ chaque fois qu'un adversaire lance son deuxième sort à chaque tour, piochez une carte.\nPartenariat (Vous pouvez avoir deux commandants si les deux ont le partenariat.)",
+   "image": "https://cards.scryfall.io/normal/front/d/0/d0efa0b4-83fb-4577-a6d7-ecbc8375d7e0.jpg?1782947288"
+  },
+  "origin": "C16",
+  "colorIdentity": [
+   "R",
+   "U"
+  ]
+ },
+ {
   "name": "Kresh the Bloodbraided",
   "number": "345",
   "rarity": "mythic",
@@ -12105,6 +12278,47 @@
   "origin": "ZNR",
   "colorIdentity": [
    "B"
+  ]
+ },
+ {
+  "name": "Malcolm, Keen-Eyed Navigator",
+  "number": "161",
+  "rarity": "uncommon",
+  "manaCost": "{2}{U}",
+  "cmc": 3,
+  "typeLine": "Legendary Creature — Siren Pirate",
+  "oracleText": "Flying\nWhenever one or more Pirates you control deal damage to your opponents, you create a Treasure token for each opponent dealt damage. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")\nPartner (You can have two commanders if both have partner.)",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+   "U"
+  ],
+  "keywords": [
+   "Flying",
+   "Treasure",
+   "Partner"
+  ],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/5/1/51187cdb-85ee-4f68-9e29-d84d296f0825.jpg?1783913885",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/1/51187cdb-85ee-4f68-9e29-d84d296f0825.jpg?1783913885",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Malcolm, navigateur à l'œil perçant",
+   "typeLine": "Créature légendaire — sirène et pirate",
+   "text": "Vol\nÀ chaque fois qu'au moins un pirate que vous contrôlez inflige des blessures à vos adversaires, vous créez un jeton Trésor pour chaque adversaire qui a subi des blessures. (C'est un artefact avec « {T}, sacrifiez cet artefact : Ajoutez un mana de la couleur de votre choix. »)\nPartenariat (Vous pouvez avoir deux commandants si les deux ont le partenariat.)",
+   "image": "https://cards.scryfall.io/normal/front/8/f/8f76d99e-3562-4d1b-83cb-f9de9d011b09.jpg?1782810308"
+  },
+  "origin": "LCC",
+  "colorIdentity": [
+   "U"
   ]
  },
  {
@@ -13993,9 +14207,9 @@
   },
   "fr": {
    "name": "Broche de cassation",
-   "image": "https://cards.scryfall.io/normal/front/0/8/08b7dee5-ace3-4389-8e95-23fad0e6d4e3.jpg?1783048874",
    "typeLine": "Artefact",
-   "text": "{2}, {T}, défaussez-vous de votre main : Contrecarrez un sort non-créature ciblé."
+   "text": "{2}, {T}, défaussez-vous de votre main : Contrecarrez un sort non-créature ciblé.",
+   "image": "https://cards.scryfall.io/normal/front/0/8/08b7dee5-ace3-4389-8e95-23fad0e6d4e3.jpg?1783048874"
   },
   "origin": "EXO",
   "colorIdentity": []
@@ -17194,9 +17408,9 @@
   },
   "fr": {
    "name": "Ruines dévastées",
-   "image": "https://cards.scryfall.io/normal/front/e/1/e10ffde5-6b47-4c92-9ac8-5c6f2dd738a9.jpg?1783051889",
    "typeLine": "Terrain",
-   "text": "Si ce terrain devait arriver, sacrifiez deux terrains dégagés à la place. Si vous faites ainsi, mettez ce terrain sur le champ de bataille. Sinon, mettez-le dans le cimetière de son propriétaire.\n{T} : Ajoutez {C}{C}{C}{C}."
+   "text": "Si ce terrain devait arriver, sacrifiez deux terrains dégagés à la place. Si vous faites ainsi, mettez ce terrain sur le champ de bataille. Sinon, mettez-le dans le cimetière de son propriétaire.\n{T} : Ajoutez {C}{C}{C}{C}.",
+   "image": "https://cards.scryfall.io/normal/front/e/1/e10ffde5-6b47-4c92-9ac8-5c6f2dd738a9.jpg?1783051889"
   },
   "origin": "WTH",
   "colorIdentity": []
@@ -21189,6 +21403,41 @@
   "colorIdentity": []
  },
  {
+  "name": "Thrasios, Triton Hero",
+  "number": "46",
+  "rarity": "rare",
+  "manaCost": "{G}{U}",
+  "cmc": 2,
+  "typeLine": "Legendary Creature — Merfolk Wizard",
+  "oracleText": "{4}: Scry 1, then reveal the top card of your library. If it's a land card, put it onto the battlefield tapped. Otherwise, draw a card.\nPartner (You can have two commanders if both have partner.)",
+  "power": "1",
+  "toughness": "3",
+  "colors": [
+   "G",
+   "U"
+  ],
+  "keywords": [
+   "Partner",
+   "Scry"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/2/1/21e27b91-c7f1-4709-aa0d-8b5d81b22a0a.jpg?1783937081",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/2/1/21e27b91-c7f1-4709-aa0d-8b5d81b22a0a.jpg?1783937081",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Thrasios, héros triton",
+   "typeLine": "Créature légendaire : ondin et sorcier",
+   "text": "{4} : Regard 1, puis révélez la carte du dessus de votre bibliothèque. Si c'est une carte de terrain, mettez-la sur le champ de bataille engagée. Sinon, piochez une carte.\nPartenariat (Vous pouvez avoir deux commandants si les deux ont le partenariat.)",
+   "image": "https://cards.scryfall.io/normal/front/f/8/f8b876c8-48c3-45e8-91c8-10661ed1638a.jpg?1782947228"
+  },
+  "origin": "C16",
+  "colorIdentity": [
+   "G",
+   "U"
+  ]
+ },
+ {
   "name": "Three Visits",
   "number": "181",
   "rarity": "uncommon",
@@ -22024,6 +22273,41 @@
   "origin": "A25",
   "colorIdentity": [
    "U"
+  ]
+ },
+ {
+  "name": "Tymna the Weaver",
+  "number": "48",
+  "rarity": "rare",
+  "manaCost": "{1}{W}{B}",
+  "cmc": 3,
+  "typeLine": "Legendary Creature — Human Cleric",
+  "oracleText": "Lifelink\nAt the beginning of each of your postcombat main phases, you may pay X life, where X is the number of opponents that were dealt combat damage this turn. If you do, draw X cards.\nPartner (You can have two commanders if both have partner.)",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+   "B",
+   "W"
+  ],
+  "keywords": [
+   "Lifelink",
+   "Partner"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/b/c/bc7cbe9b-324e-42b8-94e2-36e91cb32163.jpg?1783937081",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/c/bc7cbe9b-324e-42b8-94e2-36e91cb32163.jpg?1783937081",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Tymna la tisseuse",
+   "typeLine": "Créature légendaire : humain et clerc",
+   "text": "Lien de vie\nAu début de votre deuxième phase principale, vous pouvez payer X points de vie, X étant le nombre d'adversaires ayant subi des blessures de combat ce tour-ci. Si vous faites ainsi, piochez X cartes.\nPartenariat (Vous pouvez avoir deux commandants si les deux ont le partenariat.)",
+   "image": "https://cards.scryfall.io/normal/front/3/5/355c4f21-55aa-46ee-bf39-854620715638.jpg?1782947219"
+  },
+  "origin": "C16",
+  "colorIdentity": [
+   "B",
+   "W"
   ]
  },
  {
@@ -23170,6 +23454,40 @@
   "origin": "PIP",
   "colorIdentity": [
    "U"
+  ]
+ },
+ {
+  "name": "Vial Smasher the Fierce",
+  "number": "239",
+  "rarity": "mythic",
+  "manaCost": "{1}{B}{R}",
+  "cmc": 3,
+  "typeLine": "Legendary Creature — Goblin Berserker",
+  "oracleText": "Whenever you cast your first spell each turn, choose an opponent at random. Vial Smasher deals damage equal to that spell's mana value to that player or a planeswalker that player controls.\nPartner (You can have two commanders if both have partner.)",
+  "power": "2",
+  "toughness": "3",
+  "colors": [
+   "B",
+   "R"
+  ],
+  "keywords": [
+   "Partner"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/c/c/cc7be939-2202-40fe-8899-a05682d76190.jpg?1783909586",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/c/cc7be939-2202-40fe-8899-a05682d76190.jpg?1783909586",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Casse-fiole la redoutable",
+   "typeLine": "Créature légendaire — gobelin et berserker",
+   "text": "À chaque fois que vous lancez votre premier sort à chaque tour, choisissez un adversaire au hasard. Casse-fiole la redoutable inflige un nombre de blessures égal à la valeur de mana de ce sort à ce joueur ou à un planeswalker que ce joueur contrôle.\nPartenariat (Vous pouvez avoir deux commandants si les deux ont le partenariat.)",
+   "image": "https://cards.scryfall.io/normal/front/5/e/5eb69eba-0d06-4309-a29a-b5d07518b489.jpg?1782786195"
+  },
+  "origin": "DSC",
+  "colorIdentity": [
+   "B",
+   "R"
   ]
  },
  {
@@ -24522,6 +24840,40 @@
    "G",
    "U",
    "W"
+  ]
+ },
+ {
+  "name": "Yuriko, the Tiger's Shadow",
+  "number": "364",
+  "rarity": "rare",
+  "manaCost": "{1}{U}{B}",
+  "cmc": 3,
+  "typeLine": "Legendary Creature — Human Ninja",
+  "oracleText": "Commander ninjutsu {U}{B} ({U}{B}, Return an unblocked attacker you control to hand: Put this card onto the battlefield from your hand or the command zone tapped and attacking.)\nWhenever a Ninja you control deals combat damage to a player, reveal the top card of your library and put that card into your hand. Each opponent loses life equal to that card's mana value.",
+  "power": "1",
+  "toughness": "3",
+  "colors": [
+   "B",
+   "U"
+  ],
+  "keywords": [
+   "Commander ninjutsu"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/f/e/fe9be3e0-076c-4703-9750-2a6b0a178bc9.jpg?1783915606",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/e/fe9be3e0-076c-4703-9750-2a6b0a178bc9.jpg?1783915606",
+  "legalities": {
+   "standard": "not_legal"
+  },
+  "fr": {
+   "name": "Yuriko, l'ombre du tigre",
+   "typeLine": "Créature légendaire — humain et ninja",
+   "text": "Ninjutsu de commandant {U}{B} ({U}{B}, renvoyez en main un attaquant non-bloqué que vous contrôlez : Mettez sur le champ de bataille cette carte, engagée et attaquante, depuis votre main ou la zone de commandement.)\nÀ chaque fois qu'un ninja que vous contrôlez inflige des blessures de combat à un joueur, révélez la carte du dessus de votre bibliothèque et mettez cette carte dans votre main. Chaque adversaire perd un nombre de points de vie égal à la valeur de mana de cette carte.",
+   "image": "https://cards.scryfall.io/normal/front/f/a/fa1c9177-5527-4e24-9154-a10f1d419b80.jpg?1782815983"
+  },
+  "origin": "CMM",
+  "colorIdentity": [
+   "B",
+   "U"
   ]
  },
  {

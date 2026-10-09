@@ -115,6 +115,7 @@ import type {
   ObjectId,
   PlayerId,
   PlayFromZone,
+  SacrificeToPay,
   StackItem,
   TargetSpec,
 } from "./types";
@@ -2877,10 +2878,11 @@ export function abilityZone(ab: ActivatedAbilityDef): "battlefield" | "graveyard
 
 /**
  * Zone this object activates this ability from: the ability's own, or the command zone for an emblem (114.4: its
- * abilities work there; Karn, Living Legacy). Outside the battlefield, the owner activates it.
+ * abilities work there; Karn, Living Legacy) and for an ability that says so (`fromCommand`: commander ninjutsu).
+ * Outside the battlefield, the owner activates it.
  */
 export function activationZone(o: GameObject, ab: ActivatedAbilityDef): "battlefield" | "graveyard" | "hand" | "command" {
-  return o.zone === "command" && o.isToken ? "command" : abilityZone(ab);
+  return o.zone === "command" && (o.isToken || ab.fromCommand) ? "command" : abilityZone(ab);
 }
 
 /** Counters of a kind on an object (`any`: all). */
@@ -3296,7 +3298,7 @@ function manaHelperPicks(
   s: GameState,
   player: PlayerId,
   except: ObjectId,
-  kinds: { convoke?: boolean; improvise?: boolean; waterbend?: boolean; delve?: boolean; sacrificeToPay?: ObjectFilter },
+  kinds: { convoke?: boolean; improvise?: boolean; waterbend?: boolean; delve?: boolean; sacrificeToPay?: SacrificeToPay },
 ): CostPick[] {
   const out: CostPick[] = [];
   const untapped = (id: ObjectId) =>
@@ -3323,10 +3325,12 @@ function manaHelperPicks(
       s.battlefield.filter((id) => untapped(id) && (chars(s, id).types.includes("Artifact") || isCreature(s, id))),
     );
   if (kinds.sacrificeToPay) {
-    const f = kinds.sacrificeToPay;
+    const f = kinds.sacrificeToPay.filter;
     add(
       "sacrificeToPay",
-      msg("Additional cost: the permanents to sacrifice (each reduces the cost by {1})"),
+      msg("Additional cost: the permanents to sacrifice (each reduces the cost by {cost})", {
+        cost: `{${kinds.sacrificeToPay.each ?? 1}}`,
+      }),
       s.battlefield.filter(
         (id) => id !== except && s.objects[id]?.controller === player && matchesObjectFilter(s, player, id, f),
       ),

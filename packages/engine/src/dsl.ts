@@ -207,6 +207,8 @@ export const ref = {
   /** "One or more …" (`batched` trigger): the objects of all the events of the batch ("those creatures"). */
   eventObjects: { kind: "eventObjects" } as Ref,
   eventPlayer: { kind: "eventPlayer" } as Ref,
+  /** "One or more …" (`batched` trigger): the players of all the events of the batch ("each of those opponents"). */
+  eventPlayers: { kind: "eventPlayers" } as Ref,
   /** The permanent that grants the ability ("Return Trusty Boomerang", in the ability granted to the equipped creature). */
   grantor: { kind: "grantor" } as Ref,
   self: { kind: "self" } as Ref,
@@ -2181,6 +2183,8 @@ export function activated(opts: {
   fromGraveyard?: boolean;
   /** Activated from the hand (cycling, "discard this card: …"). */
   fromHand?: boolean;
+  /** Also from the command zone (commander ninjutsu). */
+  fromCommand?: boolean;
   exileSelf?: boolean;
   discardSelf?: boolean;
   bounceSelf?: boolean;
@@ -2293,6 +2297,7 @@ export function activated(opts: {
     activationCondition: opts.activationCondition,
     fromGraveyard: opts.fromGraveyard,
     fromHand: opts.fromHand,
+    ...(opts.fromCommand ? { fromCommand: true } : {}),
     label: opts.label,
   };
 }

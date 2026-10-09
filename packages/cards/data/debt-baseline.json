@@ -108,7 +108,6 @@
     "discardRandom": "Alpharael, Stonechosen — discard:\"random\" would only trade a key for a single-card value",
     "disguiseReduction": "Fugitive Codebreaker — the face-down 2/2 has no abilities, so abilityCost on itself cannot apply (layers.ts)",
     "distinctColors": "Sunbird Standard // Sunbird Effigy — property of a single card (audit of 2026-10-02, § 5.1): to attach to a family as soon as another card needs it",
-    "each": "Throne of the Grim Captain — a genuine craft variant",
     "effectOnly": "Doubling Season — a unique counter qualifier (counters put by effects only)",
     "emblems": "The Masamune — generic field of the triggerMod family (R4.5): abilities of the player's emblems (PLAN-C, C14)",
     "equipDiscount": "Firion, Wild Rose Warrior — property of a single card (audit of 2026-10-02, § 5.1): to attach to a family as soon as another card needs it",
@@ -156,7 +155,6 @@
     "removeCounter": "Ojer Pakpatiq, Deepest Epoch // Temple of Cyclical Time — property of a single card, invisible to the guard until the audit of 2026-10-07 (key written without a value by the builders, or declared away from the start of a line): to attach to a family",
     "removeSupertypes": "Shuri, Wakandan Inventor — property of a single card (audit of 2026-10-02, § 5.1): to attach to a family as soon as another card needs it",
     "replacePrevious": "Superior Foes of Spider-Man — a unique permission chaining",
-    "sacrificeToPay": "Rottenmouth Viper — additional cost \"sacrifice any number of nonland permanents\", each reducing the cost by {1} (batch K1): family of additional costs that reduce the cost (convoke, delve), to reuse for any card \"sacrifice …; this spell costs {1} less for each …\"",
     "secret": "A Killer Among Us — a hidden choice",
     "spellToSoleTarget": "Imodane, the Pyrohammer — unique",
     "stash": "Tinybones, Bauble Burglar — property of a single card (audit of 2026-10-02, § 5.1): to attach to a family as soon as another card needs it",
@@ -188,7 +186,7 @@
     "ObjectFilter": 64,
     "FilterCompare": 3,
     "CostDef": 27,
-    "ActivatedAbilityDef": 17,
+    "ActivatedAbilityDef": 18,
     "CastPermissionAbilityDef": 9,
     "PlayFromZone": 21,
     "LayerMods": 29,
@@ -210,8 +208,8 @@
     "Condition (fields)": 90,
     "Amount": 32,
     "Amount (fields)": 77,
-    "Ref": 36,
-    "Ref (fields)": 65
+    "Ref": 37,
+    "Ref (fields)": 66
   },
   "importCycleMax": 21,
   "ceilingNotes": [
@@ -304,6 +302,7 @@
     "PLAN-J J4a [rules 179]: turn-log damage entries with the damaged and source objects (TurnLogQuery self: Tangled Colony's lkiDamage, Steel Hellkite's op and GameObject.combatDamagedPlayers removed); untaps in the turn log (untappedInUntapStep amount and turn stat removed); becomeCopyKeepAbilities, noncombatBonusThisTurn, millUntil and putFaceDown expressed by becomeCopy, fx.thisTurn, revealUntilN rest and moveTo as; activateTargeting folded into activateAbility targeting; TurnLogQuery 26 → 28 (self, untapStep: they replace an Amount variant, an op, a GameObject field and a turn stat): GameObject 50 → 49, TurnLogQuery 26 → 28, Effect 152 → 147, Effect (fields) 651 → 639, TriggerSpec 41 → 40, Amount 34 → 32, Amount (fields) 79 → 77",
     "PLAN-J J4b [rules 180]: \"X\" costs written in the cost keys (sacrifice, tapOthers, exileFromGraveyard count \"X\"; removeCounters n \"X\"; discard \"X\"; payLife { kind: \"x\" }; read by xCosts and fixedCost) instead of six single-card keys; Twists and Turns as an explore replacement; Warped Space as castPermission freeFrom \"exile\". Single-card values 121 → 125: four values (n \"X\", discard \"X\", event \"explore\", freeFrom \"exile\") replace six keys and two player statics: Single-card values 121 → 125, CostDef 33 → 27",
     "PLAN-J J5 [rules 182]: approximation lifts; CardDef.faceUpCounters (\"as it is turned face up\", Bubble Smuggler and Crowd-Control Warden, replacing two triggered approximations) CardDef 90 → 91; AdditionalCost.payLife (Deep Analysis's flashback life) AdditionalCost 11 → 12; tap cause \"mana\" (Forbidden Orchard) makes cause shared: Single-card values 125 → 126: Single-card values 125 → 126, CardDef 90 → 91, AdditionalCost 11 → 12",
-    "PLAN-J J6a: public reveals — search.reveal and lookAtTop.reveal deduced from the Oracle text (\"search … reveal it\", 143 cards; \"look at the top … reveal\", 45 cards), look.reveal (fx.reveal: Parker Luck, Keen Duelist, Yennett, Cloak and Dagger, Intuition): Effect (fields) 639 → 642"
+    "PLAN-J J6a: public reveals — search.reveal and lookAtTop.reveal deduced from the Oracle text (\"search … reveal it\", 143 cards; \"look at the top … reveal\", 45 cards), look.reveal (fx.reveal: Parker Luck, Keen Duelist, Yennett, Cloak and Dagger, Intuition): Effect (fields) 639 → 642",
+    "PLAN-L L2 [rules 186]: Commander-only reprints; ActivatedAbilityDef.fromCommand (commander ninjutsu, 702.49d: the same flag as on triggered and static abilities) ActivatedAbilityDef 17 → 18; ref.eventPlayers (the players of a \"one or more\" batch: Breeches, Malcolm) Ref 36 → 37; AdditionalCost.sacrificeToPay becomes { filter, each } (Rottenmouth Viper {1}, Dargo {2}): sacrificeToPay and each leave the single-card keys: ActivatedAbilityDef 17 → 18, Ref 36 → 37, Ref (fields) 65 → 66"
   ]
 }

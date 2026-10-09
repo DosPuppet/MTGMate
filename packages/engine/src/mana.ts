@@ -36,9 +36,9 @@ import type {
   ManaCost,
   ManaRestriction,
   ManaType,
-  ObjectFilter,
   ObjectId,
   PlayerId,
+  SacrificeToPay,
   TaggedMana,
 } from "./types";
 import { MANA_TYPES } from "./types";
@@ -133,7 +133,7 @@ export interface ManaSource {
   waterbend?: boolean;
   /** Artifact tapped for improvise (702.126): pays only generic mana. */
   improvise?: boolean;
-  /** Permanent sacrificed as an additional cost, which reduces the cost by {1} (Rottenmouth Viper): pays only generic mana. */
+  /** Permanent sacrificed as an additional cost, which reduces the cost by {N} (Rottenmouth Viper, Dargo): pays only generic mana. */
   sacrificeToPay?: boolean;
   /** "… in any combination": each mana produced takes one of the types of `colors`. */
   combination?: boolean;
@@ -304,10 +304,10 @@ export interface ManaPurpose {
   /** Improvise (702.126): each untapped artifact can pay {1} of the generic part. */
   improvise?: boolean;
   /**
-   * "As an additional cost, you may sacrifice any number of [filter]; this spell costs {1} less for each" (Rottenmouth
-   * Viper): each matching permanent sacrificed pays {1} of the generic part.
+   * "As an additional cost, you may sacrifice any number of [filter]; this spell costs {N} less for each" (Rottenmouth
+   * Viper, Dargo): each matching permanent sacrificed pays `each` ({1} by default) of the generic part.
    */
-  sacrificeToPay?: ObjectFilter;
+  sacrificeToPay?: SacrificeToPay;
   /**
    * Permanents sacrificed to pay the cost: their mana abilities can be used first (601.2g, 602.2b), except those that
    * sacrifice them themselves (Treasure).
@@ -473,13 +473,13 @@ export function manaSources(
     for (const id of s.battlefield) {
       const o = obj(s, id);
       if (o.controller !== player || exclude.has(id) || taken.has(id)) continue;
-      if (!matchesObjectFilter(s, player, id, purpose.sacrificeToPay)) continue;
+      if (!matchesObjectFilter(s, player, id, purpose.sacrificeToPay.filter)) continue;
       if (purpose.only?.sacrificeToPay && !purpose.only.sacrificeToPay.includes(id)) continue;
       out.push({
         id,
         ability: SACRIFICE_PAY,
         colors: [],
-        amount: 1,
+        amount: purpose.sacrificeToPay.each ?? 1,
         isCreature: false,
         sacrifice: true,
         sacrificeToPay: true,
@@ -650,8 +650,11 @@ export function undoMana(s: GameState, player: PlayerId, source: ObjectId): void
 // ---------------------------------------------------------------------------
 
 export interface PaymentPlan {
-  /** Mana abilities to activate. `colors`: the type of each mana of an "in any combination" source. */
-  taps: { id: ObjectId; ability: number; color: ManaType; colors?: ManaType[] }[];
+  /**
+   * Mana abilities to activate. `colors`: the type of each mana of an "in any combination" source. `paid`: the generic
+   * mana a sacrifice that reduces the cost pays (Dargo: {2} each, only {1} if that is all that is left).
+   */
+  taps: { id: ObjectId; ability: number; color: ManaType; colors?: ManaType[]; paid?: number }[];
   /** Mana spent from the pool, by type, once the abilities are activated. */
   spend: Record<ManaType, number>;
 }
@@ -828,8 +831,8 @@ function solvePaymentOnce(
     if (src.waterbend) waterbent += 1;
     const m = (src.colors[0] ?? "C") as ManaType;
     used.add(src.key);
-    taps.push({ id: src.id, ability: src.ability, color: m });
     const n = Math.min(generic, src.amount);
+    taps.push({ id: src.id, ability: src.ability, color: m, ...(src.sacrificeToPay && src.amount > 1 ? { paid: n } : {}) });
     spend[m] += n;
     generic -= n;
   }
@@ -955,9 +958,10 @@ export function payMana(
       tapObject(s, obj(s, t.id));
       pool[t.color] += 1;
     } else if (t.ability === SACRIFICE_PAY) {
-      // The permanent sacrificed as an additional cost pays {1} (Rottenmouth Viper).
+      // The permanent sacrificed as an additional cost pays {1} (Rottenmouth Viper), or {2} (Dargo): a reduction, which
+      // never leaves mana in the pool.
       sacrifice(s, t.id);
-      pool.C += 1;
+      pool.C += t.paid ?? 1;
     } else if (t.ability === DELVE) {
       // The card exiled from your graveyard pays {1} (702.66a).
       const o = obj(s, t.id);

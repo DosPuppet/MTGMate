@@ -11,17 +11,7 @@ import { buildDeck, buildGameDeck, CARDS, DECKS, validateDeck } from "@mtgx/card
 /** Precons other than Commander (Commander decks are played with their own rules, PLAN-E). */
 const PRECONS = DECKS.filter((d) => d.format !== "commander");
 
-import {
-  type Agent,
-  createGame,
-  fallbackDecision,
-  type GameRecord,
-  type GameState,
-  legalActions,
-  RulesError,
-  replayStates,
-  submit,
-} from "@mtgx/engine";
+import { type Agent, createGame, fallbackDecision, RulesError, submit } from "@mtgx/engine";
 
 function run(label: string, players: number, games: number, agentFor: (seed: number, i: number) => Agent) {
   let decisions = 0;

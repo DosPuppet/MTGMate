@@ -678,6 +678,8 @@ export type Ref =
    * `eventObject` for each; in an aggregate, an object gone from the battlefield is read from its last known information.
    */
   | { kind: "eventObjects" }
+  /** "Those players" of a "one or more" batch: the players of all its events (Breeches: "each of those opponents"). */
+  | { kind: "eventPlayers" }
   /** The permanent the source is attached to ("equipped / enchanted creature"). */
   | { kind: "attached" }
   /** The permanents attached to the designated object ("an Equipment attached to that creature", Light of Judgment). */

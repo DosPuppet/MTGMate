@@ -29,9 +29,9 @@ export interface SetInfo {
 /**
  * Cards of the reprint sets left out, whatever the set, with the reason (PLAN-G): part of the card only works in
  * Commander (partner, eminence, commander ninjutsu, command zone, commander's color identity, "if you control a
- * commander"). The EDH pseudo-set (PLAN-E) can define them when a Commander deck asks for them.
+ * commander"). The EDH pseudo-set (PLAN-E) defines them: its import adds these names (PLAN-L L2).
  */
-const COMMANDER_ONLY = "mechanic specific to Commander (to revisit with Commander)";
+const COMMANDER_ONLY = "mechanic specific to Commander (defined in EDH)";
 export const EXCLUDED_REPRINTS: Readonly<Record<string, string>> = {
   "Akroma's Will": COMMANDER_ONLY,
   "Breeches, Brazen Plunderer": COMMANDER_ONLY,

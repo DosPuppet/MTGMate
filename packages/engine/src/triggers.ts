@@ -1084,16 +1084,23 @@ export function detectTriggers(s: GameState, ev: RulesEvent, only?: (src: Source
       // number.
       const batch = currentBatch ?? s.eventBatch ?? 0;
       if (ab.batched) {
-        // The objects of the other events of the batch join the pending trigger (`ref.eventObjects`).
+        // The objects and players of the other events of the batch join the pending trigger (`ref.eventObjects`,
+        // `ref.eventPlayers`).
         const same = s.triggers.filter((t) => t.sourceId === src.id && t.abilityIndex === index && t.batch === batch);
         if (same.length > 0) {
-          if (data.objectId)
+          if (data.objectId || data.player)
             for (const t of same) {
-              const known = [t.event, ...(t.event.others ?? [])].some((x) => x.objectId === data.objectId);
-              if (!known)
+              const all = [t.event, ...(t.event.others ?? [])];
+              const knownObject = !data.objectId || all.some((x) => x.objectId === data.objectId);
+              const knownPlayer = !data.player || all.some((x) => x.player === data.player);
+              if (!knownObject || !knownPlayer)
                 t.event.others = [
                   ...(t.event.others ?? []),
-                  { objectId: data.objectId, ...(data.newObjectId ? { newObjectId: data.newObjectId } : {}) },
+                  {
+                    ...(data.objectId ? { objectId: data.objectId } : {}),
+                    ...(data.newObjectId ? { newObjectId: data.newObjectId } : {}),
+                    ...(data.player ? { player: data.player } : {}),
+                  },
                 ];
             }
           return;

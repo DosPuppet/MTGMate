@@ -147,8 +147,8 @@ const PRINT_SETS_EXCLUDED = new Set(["plst", "mb1", "mb2", "mbc"]);
 const NAME_BATCH = 15;
 
 /**
- * Pseudo-set imported by name (PLAN-E): every card of the registry's decklists (`byName.decks`) absent from the other
- * sets of the catalog, each with a default printing (the newest one from an ordinary set, normal frame), its set of
+ * Pseudo-set imported by name (PLAN-E): every card of the registry's decklists (`byName.decks`), and for EDH the
+ * reprints left out of the reprint sets (`EXCLUDED_REPRINTS`), absent from the other sets of the catalog, each with a default printing (the newest one from an ordinary set, normal frame), its set of
  * origin (`origin`) and Scryfall's color identity (`colorIdentity`, checked against the identity computed by the
  * engine). The French text comes from the French printing of the same set if it exists, otherwise from the newest one
  * (without its image). A card already imported stays, even if no decklist cites it any more (modified deck): it serves
@@ -168,6 +168,8 @@ async function importByName(SET: string): Promise<void> {
       if (m && !line.trim().startsWith("//")) wanted.add((m[1] as string).replace(/\s+\([A-Za-z0-9]{2,6}\).*$/, "").trim());
     }
   }
+  // The reprints left out of the reprint sets for a Commander-only mechanic (PLAN-G, PLAN-L L2): defined here.
+  if (info.code === "EDH") for (const name of Object.keys(EXCLUDED_REPRINTS)) wanted.add(name);
   // Cards already imported: kept (modified deck, card removed from its list).
   const ownFile = join(DATA_DIR, `${info.code.toLowerCase()}.json`);
   if (existsSync(ownFile))
