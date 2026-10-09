@@ -2908,6 +2908,56 @@ button.emblem-chip.activatable {
   overflow-y: auto;
   padding: 8px 14px;
 }
+/* Deck tools (PLAN-L L9): basic lands, sample hand, columns view. */
+.deck-tools {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.deck-tools .btn.on {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+/* The deck in mana-value columns, in place of the collection; each card overlaps the previous one. */
+.deck-columns {
+  --column-w: clamp(96px, 8vw, 130px);
+  display: flex;
+  gap: 10px;
+  padding: 12px;
+  overflow: auto;
+  min-height: 0;
+  align-items: flex-start;
+}
+.deck-column {
+  flex: 0 0 var(--column-w);
+  display: flex;
+  flex-direction: column;
+}
+.deck-column .deck-group-title {
+  justify-content: flex-start;
+  gap: 6px;
+}
+.deck-column .deck-group-title span {
+  color: var(--gold);
+}
+.deck-column-card {
+  position: relative;
+  cursor: pointer;
+}
+.deck-column-card + .deck-column-card {
+  margin-top: calc(var(--column-w) * -1.1);
+}
+.deck-column-card:hover {
+  z-index: 2;
+}
+.sample-hand {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  max-height: 60dvh;
+  overflow-y: auto;
+}
 .deck-group {
   margin-bottom: 10px;
 }

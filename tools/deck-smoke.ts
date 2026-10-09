@@ -58,6 +58,22 @@ check((await page.locator(".deck-tabs").innerText()).includes("60"), "60 cards i
 check((await page.locator(".v-ok").count()) === 1, "deck valid and playable");
 await page.screenshot({ path: join(OUT, "02-deck.png") });
 
+// Deck tools (PLAN-L L9): sample hand, mana-value columns, basic lands.
+await page.getByRole("button", { name: "Main d'essai" }).click();
+check((await page.locator(".sample-hand .card").count()) === 7, "sample hand of seven cards");
+await page.getByRole("button", { name: "Piochez une carte" }).click();
+check((await page.locator(".sample-hand .card").count()) === 8, "a card drawn in the sample hand");
+await page.waitForTimeout(700);
+await page.screenshot({ path: join(OUT, "02b-sample-hand.png") });
+await page.getByRole("button", { name: "Fermer" }).click();
+await page.getByRole("button", { name: "Colonnes" }).click();
+check((await page.locator(".deck-column").count()) === 8, "deck in mana-value columns");
+await page.screenshot({ path: join(OUT, "02c-columns.png") });
+await page.getByRole("button", { name: "Collection" }).click();
+await page.getByRole("button", { name: "Terrains de base" }).click();
+await page.waitForTimeout(200);
+check((await page.locator(".deck-tabs").innerText()).includes("60"), "basic lands: still 60 cards");
+
 // Editing by clicks: remove a Giant Growth, add a Llanowar Elves, refused (already 4).
 await page
   .locator(".deck-line", { hasText: /Croissance gigantesque|Giant Growth/ })

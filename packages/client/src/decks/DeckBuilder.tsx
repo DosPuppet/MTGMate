@@ -43,7 +43,8 @@ import { LangToggle } from "../LangToggle";
 import { useT } from "../localize";
 import { useGame } from "../store";
 import { type Lang, textIn, tr } from "../translate";
-import { ExportModal, ImportModal } from "./ImportExport";
+import { withBasicLands } from "./autoLands";
+import { DeckModal, ExportModal, ImportModal } from "./ImportExport";
 import { type PrintingTable, usePrintings } from "./printings";
 import { searchFilter } from "./search";
 import { deckName, printedFace, useAllDecks, useDecks } from "./store";
@@ -506,7 +507,7 @@ function DeckLines({
   );
 }
 
-function Stats({ deck }: { deck: DeckList }) {
+function Stats({ deck, children }: { deck: DeckList; children?: React.ReactNode }) {
   const curve = [0, 0, 0, 0, 0, 0, 0];
   const pips: Record<string, number> = { W: 0, U: 0, B: 0, R: 0, G: 0 };
   for (const [n, name] of deck.main) {
@@ -535,11 +536,115 @@ function Stats({ deck }: { deck: DeckList }) {
           .filter(([, v]) => v > 0)
           .map(([c, v]) => (
             <span key={c}>
-              <ManaCost cost={`{${c}}`} size={14} /> {v}
+              <ManaCost cost={`{${c}}`} size={14} /> {Math.round(v * 10) / 10}
             </span>
           ))}
       </div>
+      {children}
     </div>
+  );
+}
+
+/** Mana-value columns of the deck (PLAN-L L9), Arena style: a click adds a copy, a right click removes one. */
+const COLUMNS: [string, (c: CardDef) => boolean][] = [
+  ...[0, 1, 2, 3, 4, 5, 6].map((mv): [string, (c: CardDef) => boolean] => [
+    mv === 6 ? "6+" : String(mv),
+    (c) => !c.types.includes("Land") && (mv === 6 ? manaValue(c.manaCost) >= 6 : manaValue(c.manaCost) === mv),
+  ]),
+  [msg("Lands"), (c) => c.types.includes("Land")],
+];
+
+function DeckColumns({
+  entries,
+  onChange,
+  readOnly,
+}: {
+  entries: DeckEntries;
+  onChange: (name: string, d: number) => void;
+  readOnly: boolean;
+}) {
+  const lang = useGame((s) => s.lang);
+  const t = useT();
+  return (
+    <section className="deck-columns" data-testid="deck-columns">
+      {COLUMNS.map(([label, test]) => {
+        const cards = entries
+          .filter(([, name]) => CARDS[name] && test(CARDS[name] as CardDef))
+          .sort((a, b) => a[1].localeCompare(b[1]));
+        return (
+          <div key={label} className="deck-column">
+            <div className="deck-group-title">
+              {textIn(lang, label)} <span>{count(cards)}</span>
+            </div>
+            {cards.map(([n, name, key]) => {
+              const c = CARDS[name] as CardDef;
+              return (
+                <div
+                  key={name}
+                  className="deck-column-card"
+                  title={readOnly ? undefined : t("Click: one more · right click: one less")}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    if (!readOnly) onChange(name, -1);
+                  }}
+                >
+                  <Card
+                    face={printedFace(cardFace(c), c, key)}
+                    width="var(--column-w)"
+                    onClick={readOnly ? undefined : () => onChange(name, 1)}
+                  />
+                  {n > 1 && <span className="copies">{n}</span>}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
+    </section>
+  );
+}
+
+/** Sample hand (PLAN-L L9): seven cards of the shuffled deck, a card more on demand. */
+function SampleHand({ entries, onClose }: { entries: DeckEntries; onClose: () => void }) {
+  const t = useT();
+  const shuffle = () => {
+    const cards = entries.flatMap(([n, name, key]) => Array.from({ length: n }, () => [name, key] as const));
+    for (let i = cards.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [cards[i], cards[j]] = [cards[j] as (typeof cards)[number], cards[i] as (typeof cards)[number]];
+    }
+    return cards;
+  };
+  const [library, setLibrary] = useState(shuffle);
+  const [drawn, setDrawn] = useState(7);
+  return (
+    <DeckModal title={t("Sample hand")} onClose={onClose}>
+      <div className="sample-hand" data-testid="sample-hand">
+        {library.slice(0, drawn).map(([name, key], i) => {
+          const c = CARDS[name] as CardDef;
+          return <Card key={`${i}-${name}`} face={printedFace(cardFace(c), c, key)} width="var(--collection-w)" />;
+        })}
+      </div>
+      <p className="hint">{t("{n} cards in the library", { n: library.length - drawn })}</p>
+      <div className="modal-actions">
+        <button
+          type="button"
+          className="btn"
+          onClick={() => {
+            setLibrary(shuffle());
+            setDrawn(7);
+          }}
+        >
+          {t("New hand")}
+        </button>
+        <button type="button" className="btn" disabled={drawn >= library.length} onClick={() => setDrawn(drawn + 1)}>
+          {t("Draw a card")}
+        </button>
+        <button type="button" className="btn ghost" onClick={onClose}>
+          {t("Close")}
+        </button>
+      </div>
+    </DeckModal>
   );
 }
 
@@ -557,7 +662,9 @@ export function DeckBuilder() {
   const decks = useAllDecks();
   const { save, remove, duplicate, create } = useDecks();
   const [tab, setTab] = useState<"main" | "side" | "commander">("main");
-  const [modal, setModal] = useState<"import" | "export" | null>(null);
+  const [modal, setModal] = useState<"import" | "export" | "hand" | null>(null);
+  // The main area: the collection, or the deck in mana-value columns (PLAN-L L9).
+  const [columns, setColumns] = useState(false);
   const select = (id: string | null) => useGame.setState({ editingDeck: id });
 
   const deck = decks.find((d) => d.id === editing) ?? decks.find((d) => !d.builtin) ?? decks[0];
@@ -621,6 +728,19 @@ export function DeckBuilder() {
   const choosePrinting = (name: string, key: string | undefined) => {
     if (readOnly) return;
     save({ ...deck, main: withPrinting(deck.main, name, key), sideboard: withPrinting(deck.sideboard ?? [], name, key) });
+  };
+  /** Basic lands up to the deck's size, by the colored symbols (Commander: within the identity). */
+  const fillLands = () => {
+    if (readOnly) return;
+    const identity = isCommander
+      ? [...new Set((deck.commander ?? []).flatMap(([, n]) => (CARDS[n] ? colorIdentity(CARDS[n]) : [])))]
+      : undefined;
+    const main = withBasicLands(deck.main, v.minMain, identity);
+    if (!main) {
+      notify(t("No room for basic lands, or no colored symbol to follow."));
+      return;
+    }
+    save({ ...deck, main });
   };
   const opponent = decks.find(
     (d) =>
@@ -724,7 +844,15 @@ export function DeckBuilder() {
         </div>
       </header>
       <div className="builder-body">
-        <Collection deck={deck} onChange={change} />
+        {columns ? (
+          <DeckColumns
+            entries={shownTab === "main" ? deck.main : shownTab === "commander" ? (deck.commander ?? []) : (deck.sideboard ?? [])}
+            onChange={change}
+            readOnly={readOnly}
+          />
+        ) : (
+          <Collection deck={deck} onChange={change} />
+        )}
         <section className="deck-panel">
           <div className="deck-tabs">
             <button type="button" className={shownTab === "main" ? "on" : ""} onClick={() => setTab("main")}>
@@ -783,7 +911,24 @@ export function DeckBuilder() {
               )}
             </div>
           )}
-          <Stats deck={deck} />
+          <Stats deck={deck}>
+            <div className="deck-tools">
+              <button type="button" className="btn small" disabled={readOnly} onClick={fillLands}>
+                {t("Basic lands")}
+              </button>
+              <button type="button" className="btn small" disabled={count(deck.main) < 7} onClick={() => setModal("hand")}>
+                {t("Sample hand")}
+              </button>
+              <button
+                type="button"
+                className={`btn small ${columns ? "on" : ""}`}
+                aria-pressed={columns}
+                onClick={() => setColumns(!columns)}
+              >
+                {columns ? t("Collection") : t("Columns")}
+              </button>
+            </div>
+          </Stats>
           <div className="deck-lines">
             <DeckLines
               entries={
@@ -849,6 +994,7 @@ export function DeckBuilder() {
         />
       )}
       {modal === "export" && <ExportModal deck={deck} onClose={() => setModal(null)} />}
+      {modal === "hand" && <SampleHand entries={deck.main} onClose={() => setModal(null)} />}
     </div>
   );
 }

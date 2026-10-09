@@ -14,7 +14,7 @@ const SLOT = "\u0001";
 
 const INDEX = new CardIndex(CARDS);
 
-function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
+export function DeckModal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
   return (
     <div className="modal-backdrop full" onClick={onClose} onKeyDown={(e) => e.key === "Escape" && onClose()}>
       <div
@@ -73,7 +73,7 @@ export function ImportModal({
   };
   const counts = t("Deck: {main} cards · Sideboard: {side}", { main: SLOT, side: SLOT }).split(SLOT);
   return (
-    <Modal title={t("Import a decklist")} onClose={onClose}>
+    <DeckModal title={t("Import a decklist")} onClose={onClose}>
       <p className="hint">
         {t('Paste a list exported from MTG Arena, MTGO or a deck site ("4 Llanowar Elves (FDN) 227", "4 Elfes de Llanowar"…).')}
       </p>
@@ -121,7 +121,7 @@ export function ImportModal({
           {t("Create a new deck")}
         </button>
       </div>
-    </Modal>
+    </DeckModal>
   );
 }
 
@@ -157,7 +157,7 @@ export function ExportModal({ deck, onClose }: { deck: DeckList; onClose: () => 
     URL.revokeObjectURL(url);
   };
   return (
-    <Modal title={t('Export "{name}"', { name })} onClose={onClose}>
+    <DeckModal title={t('Export "{name}"', { name })} onClose={onClose}>
       <div className="seg export-format">
         <button type="button" className={format === "mtga" ? "on" : ""} onClick={() => setFormat("mtga")}>
           MTG Arena
@@ -181,6 +181,6 @@ export function ExportModal({ deck, onClose }: { deck: DeckList; onClose: () => 
           {copied ? t("Copied!") : t("Copy")}
         </button>
       </div>
-    </Modal>
+    </DeckModal>
   );
 }
