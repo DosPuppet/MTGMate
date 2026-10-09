@@ -1430,7 +1430,21 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     ...(SEARCH_REVEAL.test(raw.oracleText) ? ["search"] : []),
     ...(LOOK_REVEAL.test(raw.oracleText) ? ["lookAtTop"] : []),
   ]);
-  return reveal.size ? withReveal(def, reveal) : def;
+  const revealed = reveal.size ? withReveal(def, reveal) : def;
+  return BOTTOM_ANY_ORDER.test(raw.oracleText) ? withBottomAnyOrder(revealed) : revealed;
+}
+
+/** "… the rest on the bottom of your library in any order": the player orders them (`lookAtTop` `bottomAnyOrder`). */
+const BOTTOM_ANY_ORDER = /bottom of (?:your|their|his or her|its owner.s) library in any order/i;
+
+/** The card's looks put the rest on the bottom in an order chosen by the player: copies, like `withReveal`. */
+function withBottomAnyOrder<T>(x: T): T {
+  if (Array.isArray(x)) return x.map(withBottomAnyOrder) as T;
+  if (!x || typeof x !== "object") return x;
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(x)) out[k] = withBottomAnyOrder(v);
+  if (out.op === "lookAtTop" && out.rest === "bottom") out.rest = "bottomAnyOrder";
+  return out as T;
 }
 
 /** "Search your library for …, reveal it" (701.23; typecycling's reminder text too). */

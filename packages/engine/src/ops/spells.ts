@@ -80,8 +80,9 @@ export const HANDLERS: OpHandlers = {
       }
       emit({ type: "reveal", player: p, defIds: [...rest, ...(hit ? [hit] : [])].map((id) => s.objects[id]?.defId ?? "") });
       shuffle(s, rest);
-      for (const id of rest) moveObject(s, id, "library", { position: "bottom" });
+      const bottom = rest.map((id) => moveObject(s, id, "library", { position: "bottom" })).filter((id): id is string => !!id);
       r.vars[key("done")] = [1];
+      r.vars[key("bottom")] = bottom;
       r.vars[key("hit")] = hit ? [hit] : [];
       if (!e.cascade) rulesEvent(s, { e: "discover", player: p, n });
     }
@@ -120,9 +121,16 @@ export const HANDLERS: OpHandlers = {
       }
     }
     dropNowPermissions(s);
-    // Cascade: the card not cast goes to the bottom of the library (after the others, random order approximated).
+    // Cascade (702.85a): the card not cast goes to the bottom with the other exiled cards, in a random order.
     if (e.cascade) {
-      moveObject(s, hit, "library", { position: "bottom" });
+      const last = moveObject(s, hit, "library", { position: "bottom" });
+      const lib = s.players[p]?.library;
+      const group = [...(r.vars[key("bottom")] ?? []).map(String), ...(last ? [last] : [])].filter((id) => lib?.includes(id));
+      if (lib && group.length > 1) {
+        shuffle(s, group);
+        const others = lib.filter((id) => !group.includes(id));
+        lib.splice(0, lib.length, ...others, ...group);
+      }
       return;
     }
     const inHand = moveObject(s, hit, "hand");

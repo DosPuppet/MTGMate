@@ -501,8 +501,11 @@ export const RECORD_VERSION = 1;
  *   Loyalty through keep; Deep Analysis's flashback life; Squirming Emergence checked at targeting; one commander for
  *   Hellkite Courser and Command Beacon; no question for a single mana color; Forbidden Orchard only tapped for mana;
  *   Riku's modal spells read from the text; colored cost reductions follow 118.7c
+ * - 183: PLAN-J J6b: "on the bottom in any order" asks the order (read from the text, 12 cards); the cards put back on
+ *   top in any order are ordered (Rowan's Grim Search); cascade's card not cast goes to the bottom shuffled with the
+ *   others (702.85a); Dazzling Sphinx's cards in a random order
  */
-export const RULES_VERSION = 182;
+export const RULES_VERSION = 183;
 
 /** One checkpoint every N decisions (plus the last one of the game). */
 export const CHECKPOINT_EVERY = 25;

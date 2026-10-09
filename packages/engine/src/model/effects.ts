@@ -284,7 +284,9 @@ export type Effect =
       filter?: ObjectFilter;
       count: Amount;
       to: MoveSpec;
-      rest: "bottom" | "graveyard" | "top" | "reorder" | "hand";
+      /** `bottomAnyOrder`: "the rest on the bottom of your library in any order" (read from the text): the player orders
+       * them; `bottom`: in a random order. */
+      rest: "bottom" | "bottomAnyOrder" | "graveyard" | "top" | "reorder" | "hand";
       /** Maximum mana value of the cards taken (evaluated on resolution). */
       maxManaValue?: Amount;
       /** Total mana value of the cards taken at most N (Michelangelo's Technique). */

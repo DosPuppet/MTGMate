@@ -1184,8 +1184,13 @@ export const HANDLERS: OpHandlers = {
     if (!(arrival instanceof Map)) return arrival;
     for (const [id, a] of arrival) choices[id] = { ...choices[id], ...a };
     const moved: string[] = [];
-    for (const id of ids) {
-      const n = moveWithSpec(s, ctx.controller, id, evalMoveSpec(s, ctx, e.spec), choices[id]);
+    // "On the bottom of their library in a random order" (Dazzling Sphinx): the group is shuffled, then moved in order.
+    const bottomRandom = e.spec.to === "libraryBottom" && !!e.spec.shuffle;
+    const order = bottomRandom ? [...ids] : ids;
+    if (bottomRandom) shuffle(s, order);
+    const spec = bottomRandom ? { ...e.spec, shuffle: undefined } : e.spec;
+    for (const id of order) {
+      const n = moveWithSpec(s, ctx.controller, id, evalMoveSpec(s, ctx, spec), choices[id]);
       if (n) moved.push(n);
       // A token that ceases to exist (off the battlefield): its old identifier, for its last known information
       // (Zoyowa's Justice: owner and mana value).
@@ -1355,9 +1360,9 @@ export const HANDLERS: OpHandlers = {
       }
     }
     const rest = top.filter((id) => !picked.includes(id));
-    // "Put them back in any order": the player looking orders the rest before any move.
+    // "Put them back in any order" / "on the bottom in any order": the player looking orders the rest before any move.
     let order = rest;
-    if (e.rest === "reorder" && rest.length > 1) {
+    if ((e.rest === "reorder" || e.rest === "bottomAnyOrder") && rest.length > 1) {
       const answer = r.vars[key("order")];
       if (!answer) {
         return {
@@ -1367,7 +1372,10 @@ export const HANDLERS: OpHandlers = {
             request: {
               type: "order",
               intent: "scryOrder",
-              prompt: msg("Order of the cards put back on top (the first will be drawn first)"),
+              prompt:
+                e.rest === "reorder"
+                  ? msg("Order of the cards put back on top (the first will be drawn first)")
+                  : msg("Order of the cards put on the bottom (the last will be the bottom card)"),
               items: rest,
               suggested: rest,
             },
@@ -1377,6 +1385,30 @@ export const HANDLERS: OpHandlers = {
       order = answer.map(String);
       if (order.length !== rest.length || !rest.every((id) => order.includes(id)))
         throw new RulesError(msg("The order must include each of the cards looked at"));
+    }
+    // "Put up to two of them back on top of your library in any order" (Rowan's Grim Search): the player orders them.
+    if (e.to.to === "libraryTop" && picked.length > 1) {
+      const answer = r.vars[key("takenOrder")];
+      if (!answer) {
+        return {
+          ask: {
+            player: chooser,
+            key: key("takenOrder"),
+            request: {
+              type: "order",
+              intent: "scryOrder",
+              prompt: msg("Order of the cards put back on top (the first will be drawn first)"),
+              items: picked,
+              suggested: picked,
+            },
+          },
+        };
+      }
+      const chosen = answer.map(String);
+      if (chosen.length !== picked.length || !picked.every((id) => chosen.includes(id)))
+        throw new RulesError(msg("The order must include each of the cards looked at"));
+      // Each card moved on top covers the previous one: the last moved is drawn first.
+      picked = [...chosen].reverse();
     }
     const arrival = arrivalChoices(s, r, ctx, picked, e.to, ownerOr(s, e.to, ctx.controller), key, !!e.random);
     if (!(arrival instanceof Map)) return arrival;
@@ -1393,6 +1425,9 @@ export const HANDLERS: OpHandlers = {
     else if (e.rest === "reorder") {
       const lib = player.library.filter((id) => !order.includes(id));
       player.library = [...order.filter((id) => player.library.includes(id)), ...lib];
+    } else if (e.rest === "bottomAnyOrder") {
+      const lib = player.library.filter((id) => !order.includes(id));
+      player.library = [...lib, ...order.filter((id) => player.library.includes(id))];
     } else if (e.rest === "bottom") {
       // Random order ("in a random order").
       const lib = player.library.filter((id) => !rest.includes(id));

@@ -82,8 +82,8 @@ export const EDH_UR_SPHINX: Record<string, CardScript> = {
         [
           { op: "exileUntil", filter: INSTANT_SORCERY, store: "d", who: ref.eventPlayer, storeAll: "all" },
           fx.castNow(ref.stored("d"), { free: true }),
-          // The cards not cast: on the bottom of their owner's library (in the order they were exiled).
-          fx.moveTo(ref.stored("all"), { to: "libraryBottom" }),
+          // "Then that player puts the exiled cards that weren't cast on the bottom of their library in a random order."
+          fx.moveTo(ref.stored("all"), { to: "libraryBottom", shuffle: true }),
         ],
         {
           label: "That player exiles cards until an instant or sorcery card; you may cast it for free; the rest on the bottom",

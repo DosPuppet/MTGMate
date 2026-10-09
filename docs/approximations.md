@@ -32,7 +32,6 @@ Each entry carries its nature:
 - `rule` **Ability counters:** they apply after the other layer 6 effects.
 - `timing` **Costs paid before the mana:** a permanent exiled, returned or sacrificed for an additional or alternative cost leaves the battlefield before the mana is paid: its mana abilities and its mana replacements (Lavaleaper) no longer help pay for that spell (601.2g-h would allow committing mana earlier). For an activated ability, the mana abilities of the permanents sacrificed for the cost are used first.
 - `auto choice` **Phyrexian mana:** the available mana pays first; life is only paid for the symbols it does not cover.
-- `auto choice` **"The rest on the bottom of your library in any order":** in a random order (Rediscover the Way, Commune with Nature, Avengers Tower); "put back on top in any order": the order is not chosen (Rowan's Grim Search).
 - `rule` **Suspend (702.62):** haste is given to the next creature spell cast this turn, even if it is not the suspended card (also Taigam, Master Opportunist).
 - `auto choice` **Controlling another player's turn** (Mindslaver, The Dominion Bracelet): an AI that controls another player's turn contents itself with the default decisions (pass, do not attack).
 - `rule` **Tokens created attacking (508.4):** a single choice of defender for all the tokens that one effect creates for one player (mobilize...), whereas each token could attack a different defender; the copies beyond a doubler keep the defender chosen for their player (myriad).
@@ -144,7 +143,6 @@ In the order they were added, set by set.
   - `timing` Prismari, the Inspiration: the granted storm counts the spells cast before this one at the ability's resolution (a spell cast in response is counted);
   - `rule` Dina's Guidance: the searched card goes to hand, then you may put it into the graveyard;
   - `rule` Transcendent Archaic: "if you draw one or more cards this way" is "if X is 1 or more";
-  - `rule` cascade (Quandrix, the Proof): the card not cast goes to the bottom after the other exiled cards (and not in a random order with them);
   - `rule` Lorehold, the Historian: the granted miracle is a triggered ability on the first draw of the turn (the card is not revealed), which offers to cast it for {2}.
 - **Murders at Karlov Manor (`docs/extensions/mkm.md`):**
   - `rule` suspect (701.60): menace and "can't block" are added after layer 6 effects; a "loses all abilities" effect does not remove them;
@@ -234,7 +232,6 @@ In the order they were added, set by set.
   - `rule` Orcish Bowmasters: "the first card drawn during its draw step" is the step's draw (504.1); if it is replaced or skipped, a later draw in the same step triggers anyway.
   - `auto choice` Rewind, Unwind, Frantic Search: "untap up to N lands" only untaps your lands, chosen automatically;
   - `rule` Teferi's Protection: an Aura already attached to the player (curse) does not fall off.
-  - `auto choice` Zurgo and Ojutai: the two cards that do not go to hand are put on the bottom in a random order (not by choice).
   - `auto choice` Foreboding Ruins, Fortified Village, Port Town, Vineglimmer Snarl: a card of the right type in hand is revealed automatically if possible;
   - `auto choice` Scholar of New Horizons: the Plains card goes onto the battlefield as soon as permitted (without offering to put it into hand); the kind of counter removed for the cost is chosen by the engine (−1/−1 first, +1/+1 last);
   - `auto choice` O'aka, Traveling Merchant: the kind of counter removed for the cost is chosen by the engine (−1/−1 first, +1/+1 last);
@@ -263,7 +260,6 @@ In the order they were added, set by set.
   - `timing` The Mycosynth Gardens: the mana value X of the targeted artifact is checked at resolution (nothing happens if it differs), and not at targeting, like Likeness Looter.
   - `rule` Helm of the Host: "that token gains haste" is written as an exception of the copy (707.9b): a copy of that token also has haste;
   - `rule` Cover of Darkness, Shizo, Death's Storehouse: fear (702.36) is a blocking rule ("can't be blocked except by artifact and/or black creatures"), not a keyword: no card can read that a creature "has fear".
-  - `rule` Dazzling Sphinx: the exiled cards that weren't cast go on the bottom in the order they were exiled (not in a random order);
   - `timing` Tivit, Seller of Secrets: each vote takes effect as soon as it is cast (same result: nothing reads the votes); "you may vote an additional time" only applies to Tivit's own votes (no other vote in the catalog);
   - `timing` Breach the Multiverse: the chosen cards enter one graveyard after the other (not simultaneously);
   - `rule` Sphinx Ambassador: the search of the opponent's library is a choice among its cards (no "search" event: "whenever a player searches" doesn't trigger); the named card is remembered by the Sphinx;

@@ -1446,7 +1446,7 @@ export interface MoveSpec {
   attacking?: boolean | Ref;
   /** With `libraryTop`: Nth from the top (Riptide Gearhulk: 3). */
   fromTop?: number;
-  /** With `libraryTop`: "shuffle it into its owner's library". */
+  /** With `libraryTop`: "shuffle it into its owner's library"; with `libraryBottom`: "on the bottom in a random order". */
   shuffle?: boolean;
   /**
    * Exiled face down (406.3): who may look at it — the effect's controller ("you may look at it"), its

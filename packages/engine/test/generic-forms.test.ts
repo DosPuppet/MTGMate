@@ -8,7 +8,7 @@ import { submit } from "../src/game";
 import { bump, chars, moveObject } from "../src/state";
 import { matchesObjectFilter } from "../src/targets";
 import { filterEvents } from "../src/view";
-import { advanceUntil, cast, idOf, lands, scenario } from "./helpers";
+import { advanceUntil, cast, idOf, lands, scenario, settle } from "./helpers";
 
 describe("PLAN-J J1: exact merges into existing forms", () => {
   it("Ketramose (exileAtLeast → count of exile): face-down cards and every owner's cards count", () => {
@@ -158,5 +158,26 @@ describe("PLAN-J J6a: public reveals read from the text", () => {
     }
     const shown = filterEvents(events, "p2").find((e) => e.type === "reveal" && !e.look);
     expect(shown?.type === "reveal" && shown.defIds.map((d) => s.defs[d]?.name)).toEqual(["Serra Angel"]);
+  });
+});
+
+describe("PLAN-J J6b [rules 183]: library order", () => {
+  it('Commune with Nature: "the rest on the bottom of your library in any order" asks the order', () => {
+    const lib = ["Opt", "Shock", "Island", "Forest", "Swamp", "Plains"];
+    let s = scenario({ p1: { battlefield: ["Forest"], hand: ["Commune with Nature"], library: lib } });
+    s = cast(s, "p1", "Commune with Nature");
+    let asked: string[] = [];
+    s = settle(s, (req) => {
+      if (req.type === "pick") return [];
+      if (req.type === "order") {
+        asked = req.items.map(String);
+        return [...req.items].reverse();
+      }
+      return undefined;
+    });
+    expect(asked).toHaveLength(5);
+    const names = (ids: string[]) => ids.map((id) => s.defs[s.objects[id]?.defId ?? ""]?.name);
+    // The order chosen, the last card at the bottom; Plains (sixth) now on top.
+    expect(names(s.players.p1?.library ?? [])).toEqual(["Plains", "Swamp", "Forest", "Island", "Shock", "Opt"]);
   });
 });

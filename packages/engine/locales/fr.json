@@ -274,6 +274,7 @@
  "Only one target per word \"target\"": "Une seule cible par mot « cible »",
  "Order of resolution of your triggered abilities (the first one resolves first)": "Ordre de résolution de vos capacités déclenchées (la première se résout en premier)",
  "Order of the cards put back on top (the first will be drawn first)": "Ordre des cartes remises au-dessus (la première sera piochée en premier)",
+ "Order of the cards put on the bottom (the last will be the bottom card)": "Ordre des cartes mises au-dessous de la bibliothèque (la dernière sera la carte du dessous)",
  "Overload — {cost}": "Surcharge — {cost}",
  "Page": "Page",
  "Paradigm: cast a copy of {card}": "Paradigme : lancer une copie de {card}",

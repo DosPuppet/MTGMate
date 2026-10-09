@@ -310,3 +310,4 @@ Three read-only surveys (2026-10-09) checked every tracked entry against the for
 | J4c | done | 181 | The Mindskinner mills for real; immediate effects in replacements and mana abilities, token-copy exceptions and the low-value keys kept (no form that removes debt without an off-stack effect runner or a copy rework) |
 | J5 | done | 182 | 21 approximation entries lifted or removed as stale (Tin Street Gossip), 3 undocumented deviations fixed (life lost, Riku, 118.7c); Skyseer's Chariot kept |
 | J6a | done | — | public reveals: search.reveal (143 cards) and lookAtTop.reveal (45 cards) deduced from the text, fx.reveal for 5 cards; 6 approximation entries lifted (general Search 701.23 included); events only, fingerprints identical |
+| J6b | done | 183 | library order: bottomAnyOrder (12 cards, read from the text), Rowan's top order, cascade shuffle, Dazzling Sphinx random bottom; 4 approximation entries lifted; golden games identical |
