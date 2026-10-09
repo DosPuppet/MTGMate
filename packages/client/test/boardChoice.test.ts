@@ -1,6 +1,14 @@
 import type { CardFace, ChoiceRequest, GameView, ObjectView } from "@mtgx/engine";
 import { describe, expect, it } from "vitest";
-import { boardPick, choiceSource, type PickRequest, pickValid, shortPrompt, togglePick } from "../src/prompts/boardChoice";
+import {
+  boardPick,
+  choiceSource,
+  type PickRequest,
+  pickValid,
+  shortPrompt,
+  shownOptions,
+  togglePick,
+} from "../src/prompts/boardChoice";
 
 const perm = (id: string, controller: string) => ({ id, controller }) as unknown as ObjectView;
 const pick = (over: Partial<PickRequest> = {}): ChoiceRequest => ({
@@ -67,5 +75,28 @@ describe("choice on the board", () => {
     const v = view(pick());
     const pending = { ...v.pending, purpose: { kind: "triggerTarget" }, source: { face: { name: "Elf" }, effect: "ETB" } };
     expect(choiceSource({ ...v, pending } as unknown as GameView)?.face.name).toBe("Elf");
+  });
+});
+
+describe("shownOptions: options of a choice window", () => {
+  const library = Array.from({ length: 90 }, (_, i) => `o${i}`);
+  const name = (id: string) => (id === "o85" ? "Sol Ring Anneau solaire" : `Forest Forêt ${id}`);
+
+  it("a whole library searched: every card is shown (Commander, 90 cards)", () => {
+    expect(shownOptions(library, [], "", name, true)).toHaveLength(90);
+  });
+
+  it("the search reads the card's name, accents and case folded", () => {
+    expect(shownOptions(library, [], "anneau", name, true)).toEqual(["o85"]);
+    expect(shownOptions(library, [], "FORET o1", name, true)).toEqual(["o1", ...library.filter((id) => /^o1\d$/.test(id))]);
+  });
+
+  it("the selection comes first and stays shown", () => {
+    expect(shownOptions(library, ["o40"], "anneau", name, true)).toEqual(["o40", "o85"]);
+  });
+
+  it("a long list of words is cut at 60, short lists are left alone", () => {
+    expect(shownOptions(library, [], "", name, false)).toHaveLength(60);
+    expect(shownOptions(["a", "b"], [], "zzz", name, false)).toEqual(["a", "b"]);
   });
 });

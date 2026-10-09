@@ -72,3 +72,31 @@ export function choiceSource(view: GameView): { face: CardFace; effect?: string 
   const top = view.stack[view.stack.length - 1];
   return top ? { face: top, effect: top.effect } : null;
 }
+
+/** Folds case and accents for the search of a choice window. */
+const fold = (t: string) =>
+  t
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+/**
+ * Options shown by a choice window: above 20, the selection first, then those whose searchable text (a card's name,
+ * otherwise its label) contains the query. Cards are never cut (a whole library searched must stay reachable); a long
+ * list of words (creature types) shows its first 60 matches, the search finds the others.
+ */
+export function shownOptions(
+  options: readonly string[],
+  selected: readonly string[],
+  query: string,
+  searchable: (id: string) => string,
+  cards: boolean,
+): string[] {
+  if (options.length <= 20) return [...options];
+  const q = fold(query);
+  const matching = [
+    ...options.filter((id) => selected.includes(id)),
+    ...options.filter((id) => !selected.includes(id) && fold(searchable(id)).includes(q)),
+  ];
+  return cards ? matching : matching.slice(0, 60);
+}

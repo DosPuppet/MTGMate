@@ -8,7 +8,7 @@ import { Card } from "../board/Card";
 import { faceName } from "../i18n";
 import { useLocalize, useLocalizedView, useT } from "../localize";
 import { useGame } from "../store";
-import { boardPick, choiceSource, type PickRequest, pickValid, shortPrompt, togglePick } from "./boardChoice";
+import { boardPick, choiceSource, type PickRequest, pickValid, shortPrompt, shownOptions, togglePick } from "./boardChoice";
 import { NameSearch } from "./NameSearch";
 import { ZoneTabbed } from "./ZoneTabs";
 
@@ -135,19 +135,15 @@ function ChoiceModal({ view }: { view: GameView }) {
     case "pick": {
       const toggle = (id: string) => setValues((cur) => togglePick(req, cur.map(String), id));
       valid = values.length >= req.min && values.length <= req.max;
-      // Long lists (creature types…): search, and the suggestion first.
+      // Long lists (a library searched, creature types…): search, and the selection first.
       const long = req.options.length > 20;
-      const norm = (t: string) =>
-        t
-          .toLowerCase()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "");
-      const shown = long
-        ? [
-            ...req.options.filter((id) => values.includes(id)),
-            ...req.options.filter((id) => !values.includes(id) && norm(req.labels?.[id] ?? id).includes(norm(query))),
-          ].slice(0, 60)
-        : req.options;
+      // What the search reads: a card's name in the interface language (and its English name), otherwise the label.
+      const searchable = (id: string) => {
+        const o = objects.find((x) => x.id === id);
+        return o ? `${faceName(o, lang)} ${o.name}` : loc(req.labels?.[id] ?? id);
+      };
+      const cards = req.options.every((id) => objects.some((x) => x.id === id));
+      const shown = shownOptions(req.options, values.map(String), query, searchable, cards);
       body = (
         <>
           {long && (
