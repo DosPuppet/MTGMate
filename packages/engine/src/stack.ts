@@ -1060,7 +1060,7 @@ export function plotCard(s: GameState, id: ObjectId): ObjectId | null {
   rulesEvent(s, { e: "plotted", card: card.id });
   // "When this card becomes plotted": the card is in exile, the ability triggers from there.
   for (const ab of s.defs[card.defId]?.abilities ?? []) {
-    if (ab.kind === "triggered" && ab.trigger.on === "plottedSelf") {
+    if (ab.kind === "triggered" && ab.trigger.on === "action" && ab.trigger.action === "plotted" && ab.trigger.self) {
       pushInline(s, player, card.id, card.defId, { targets: ab.targets, effects: ab.effects, label: ab.label });
     }
   }

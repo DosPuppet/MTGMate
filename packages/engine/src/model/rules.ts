@@ -294,7 +294,41 @@ export interface FilterCompare {
  * Trigger event (603). "self": the source itself; otherwise an object matching the filter, seen from the source's
  * controller.
  */
+/** Events a generic `action` trigger can match (`TriggerSpec` `action`): the `e` of the engine's `RulesEvent`. */
+export type ActionEvent =
+  | "search"
+  | "playerLost"
+  | "discover"
+  | "forage"
+  | "gift"
+  | "bend"
+  | "caseSolved"
+  | "manifestDread"
+  | "attackTriggered"
+  | "crime"
+  | "collectEvidence"
+  | "scry"
+  | "exhaust"
+  | "expend"
+  | "saddled"
+  | "plotted"
+  | "cycled"
+  | "transformed";
+
 export type TriggerSpec =
+  /**
+   * A player performs an action announced by the engine's event of that name (PLAN-J J3), `whose` relative to the
+   * controller (you by default): search ("whenever an opponent searches their library": Wan Shi Tong), playerLost
+   * ("when an opponent loses the game": Shinryu; a player who just lost still counts as an opponent), discover (the
+   * event amount is N), forage, gift, bend (waterbend, earthbend, firebend or airbend), caseSolved, manifestDread (the
+   * event object is the card put into the graveyard), attackTriggered ("a creature you control attacking causes one of
+   * its abilities to trigger"), crime (700.13), collectEvidence, scry (scry or surveil), exhaust ("whenever you
+   * activate an exhaust ability"), expend (`n`: "whenever you expend your Nth total mana", Bloomburrow). `self`: an
+   * action on the source itself: saddled (702.171), plotted ("when this card becomes plotted"), cycled (from the
+   * graveyard; the event amount is the X of the cycling cost), transformed ("when this permanent transforms into
+   * [this face]": carried by that face, read after the transformation).
+   */
+  | { on: "action"; action: ActionEvent; whose?: "you" | "opponent" | "any"; self?: boolean; n?: number }
   /**
    * `fromZone`: only an object that entered from that zone, or was cast from it (Twilight Diviner: a graveyard;
    * Extraordinary Journey: exile).
@@ -319,15 +353,6 @@ export type TriggerSpec =
    * lose life" (`change` absent); `whose` relative to the controller, you by default.
    */
   | { on: "life"; change?: "gain" | "loss"; whose?: "you" | "opponent" | "any"; first?: boolean }
-  /**
-   * "When this permanent transforms into [this face]": carried by the face in question, it triggers only when the
-   * permanent becomes that face (the abilities are read after the transformation).
-   */
-  | { on: "transformsSelf" }
-  /** "Whenever an opponent searches their library" (Wan Shi Tong). */
-  | { on: "search"; whose: "you" | "opponent" | "any" }
-  /** "When an opponent loses the game" (Shinryu). */
-  | { on: "playerLoses"; whose: "opponent" | "any" }
   /** "Whenever an opponent gains control of a permanent you controlled" (Zidane). */
   | { on: "controlChange" }
   /**
@@ -441,8 +466,7 @@ export type TriggerSpec =
       /** Only by an ability (not a spell). */
       only?: "abilities";
     }
-  /** "Whenever [equipped creature] becomes untapped" */
-  /** "Whenever [this creature] becomes tapped" */
+  /** "Whenever [this creature] becomes tapped" (`untap`: becomes untapped). */
   /** `byYou`: "whenever you tap [a creature]" (Solitary Sanctuary: an opponent's creature). */
   /**
    * `cause: "teamwork"`: tapped to pay for teamwork (Agent Maria Hill); `firstThisTurn`: the first time it becomes
@@ -450,8 +474,6 @@ export type TriggerSpec =
    */
   /** `untap`: "whenever [it] becomes untapped" instead (Fishing Pole). */
   | { on: "taps"; who: "self" | ObjectFilter; byYou?: boolean; cause?: "teamwork"; firstThisTurn?: boolean; untap?: boolean }
-  /** "Whenever you scry or surveil" (Reality Fracture). */
-  | { on: "scryOrSurveil" }
   /** "When you cast this spell" (the source is the spell on the stack). */
   | { on: "castSelf" }
   /** Saga chapter (714.2): a lore counter makes the count reach or exceed one of these chapters. */
@@ -462,16 +484,12 @@ export type TriggerSpec =
   | { on: "explores"; who: "self" | ObjectFilter; land?: boolean }
   /** "Whenever you sacrifice [a permanent]" */
   | { on: "sacrifice"; anyPlayer?: boolean; byOpponent?: boolean; who: ObjectFilter }
-  /** "Whenever this Mount becomes saddled" (702.171). */
-  | { on: "saddled" }
   /** "Whenever this creature saddles a Mount or crews a Vehicle [during your main phase]"; the event object is the Mount or the Vehicle. */
   | { on: "crews"; mainPhase?: boolean }
   /** "When this creature is turned face up"; `who`: "whenever a [filter] permanent is turned face up". */
   | { on: "turnedFaceUp"; who?: ObjectFilter }
   /** "Whenever a [creature] becomes blocked" (Norin). */
   | { on: "becomesBlocked"; who: ObjectFilter }
-  /** "Whenever you manifest dread": the event object is the card put into the graveyard. */
-  | { on: "manifestDread" }
   /** "When you unlock this door" (Room: `door` is set at import from the face). */
   | { on: "unlockDoor"; door?: number }
   /** Eerie (Duskmourn): "whenever an enchantment you control enters and whenever you fully unlock a Room". */
@@ -506,14 +524,6 @@ export type TriggerSpec =
   | { on: "playLand"; from?: Zone[]; whose?: "you" | "opponent" | "any" }
   /** "Whenever [you] discard one or more cards" (amount: their number). */
   | { on: "discardBatch"; whose: "you" | "opponent" | "any" }
-  /** "When you cycle this card" (from the graveyard; amount: the X of the cycling cost). */
-  | { on: "cycleSelf" }
-  /** "Whenever you activate an exhaust ability" */
-  | { on: "exhaustActivated" }
-  /** "Whenever you commit a crime" (700.13) */
-  | { on: "crime" }
-  /** "When this card becomes plotted" */
-  | { on: "plottedSelf" }
   /** "Whenever you activate an ability that targets a creature or player" (Ertha Jo). */
   | { on: "activateTargeting" }
   /**
@@ -523,22 +533,6 @@ export type TriggerSpec =
   | { on: "zoneChange"; from: Zone[]; to?: Zone[]; filter?: ObjectFilter; whose?: "you" | "opponent" | "any" }
   /** "Whenever you activate a loyalty ability [by removing at least N counters]"; `byOpponent`: an opponent activates it. */
   | { on: "loyaltyActivated"; minRemoved?: number; byOpponent?: boolean }
-  /** Expend N (Bloomburrow): "whenever you expend your Nth total mana to cast spells during a turn". */
-  | { on: "expend"; n: number }
-  /** "Whenever you forage" (Corpseberry Cultivator). */
-  | { on: "forage" }
-  /** "Whenever you collect evidence" (Surveillance Monitor). */
-  | { on: "collectEvidence" }
-  /** "Whenever a creature you control attacking causes one of its abilities to trigger." */
-  | { on: "attackAbilityTriggered" }
-  /** "Whenever you waterbend, earthbend, firebend, or airbend" (Avatar). */
-  | { on: "bend" }
-  /** "Whenever you solve a Case" (Case File Auditor). */
-  | { on: "caseSolved" }
-  /** "Whenever you give a gift" (Jolly Gerbils). */
-  | { on: "gift" }
-  /** "Whenever you discover" (`amount.eventAmount`: the value N). */
-  | { on: "discover" }
   /** "Whenever you activate an ability that isn't a mana ability" (the object: the ability on the stack);
    * `source`: only that of a matching permanent (Elrond, Moon-Reader: "of a creature"). */
   | { on: "activateAbility"; source?: ObjectFilter };

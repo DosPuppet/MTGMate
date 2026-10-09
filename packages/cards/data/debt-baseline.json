@@ -98,17 +98,7 @@
     "Ref.numberChoosers": "Wheel of Misfortune — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists",
     "Ref.targetsOfEventObject": "Storm, Windrider — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists",
     "TriggerSpec.activateTargeting": "Ertha Jo, Frontier Mentor — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists",
-    "TriggerSpec.attackAbilityTriggered": "Firebender Ascension — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists",
-    "TriggerSpec.bend": "Avatar Aang // Aang, Master of Elements — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists",
-    "TriggerSpec.caseSolved": "Case File Auditor — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists",
     "TriggerSpec.destroyed": "Karmic Justice — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists",
-    "TriggerSpec.discover": "Curator of Sun's Creation — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists",
-    "TriggerSpec.forage": "Corpseberry Cultivator — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists",
-    "TriggerSpec.gift": "Jolly Gerbils — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists",
-    "TriggerSpec.manifestDread": "Paranormal Analyst — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists",
-    "TriggerSpec.playerLoses": "Zenos yae Galvus // Shinryu, Transcendent Rival — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists",
-    "TriggerSpec.saddled": "Stubborn Burrowfiend — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists",
-    "TriggerSpec.search": "Wan Shi Tong, Librarian — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists",
     "Condition.extraTurn": "Medomai the Ageless — \"during extra turns\" (500.7, TurnState.extra); generic condition for every \"extra turn\" text, a single card for now",
     "Ref.chosenPlayer": "Saskia the Unyielding — \"the chosen player\" (chooseForSelf \"player\", 702: \"as it enters, choose a player\"); every \"choose a player/opponent as it enters\" card shares it"
   },
@@ -206,7 +196,7 @@
   "turnFields": {},
   "engineCardLiterals": {},
   "ceilings": {
-    "Single-card values": 111,
+    "Single-card values": 121,
     "CardDef": 90,
     "GameObject": 50,
     "StackItem": 29,
@@ -231,8 +221,8 @@
     "NextSpell": 9,
     "Effect": 152,
     "Effect (fields)": 651,
-    "TriggerSpec": 58,
-    "TriggerSpec (fields)": 158,
+    "TriggerSpec": 41,
+    "TriggerSpec (fields)": 142,
     "Condition": 47,
     "Condition (fields)": 90,
     "Amount": 34,
@@ -326,6 +316,7 @@
     "Sephiroth deck: sharesCardTypeWith filter (Braids, Arisen Nightmare): ObjectFilter 73 → 74",
     "Mario & Luigi deck: blitz (granted), commanderCasts amount, chosenPlayer ref, library bottom, Champion of Lambholt block rule: BlockRule 14 → 15, Amount 35 → 36, Amount (fields) 80 → 81, Ref 35 → 36, Ref (fields) 63 → 65",
     "PLAN-J J1: exact merges into existing forms (Condition manaPoolAtLeast, refLife, exileAtLeast, evenCounters and Amount opponentsWithMoreInHand, unlockedDoorNames written by the DSL with generic forms; perTurnEvents, perSpeed, perDivisor -> perAmount; freeMaxManaValueCreatures -> freeFilter compare; notSameNameAs -> not sameNameAs; noManaSpent, discardedThisTurn, graveyardCastRemoveCounters, exilePermanents, firstThisTurnFree, toYou, usingManaFromSelf, castSpell targeting opponent removed or renamed): Single-card values 107 → 105, CardDef 91 → 90, ObjectFilter 74 → 71, CastPermissionAbilityDef 10 → 9, Effect (fields) 653 → 652, TriggerSpec (fields) 162 → 161, Condition 54 → 50, Condition (fields) 98 → 90, Amount 36 → 34, Amount (fields) 81 → 79",
-    "PLAN-J J2: small shared forms — ObjectFilter shares {what, with} (sharesCreatureTypeWith, sharesCardTypeWith, nameOf, tapChosen sharesColorWith) and chosen (six *Chosen flags); ability reduction read with the target (reduceByTargetColors, reduceByTargetCounters); ManaAbilityDef amountOf (five amount* fields) and produceColorsOf as a Ref (produceColorsZone, produceLinkedColors); LayerMods gainAbilitiesOf (three fields); stackItems only; prevention source filter (bySource); redirectTo (keyword absorbsDamage); player designations (Condition citysBlessing, enduringStory); firstEndStep, sourceDealtCombatDamage, discardSelf, untaps, excessDamage folded into step, sourceDealtDamage, discard, taps, isDealtDamage. Single-card values 105 → 111: six values replace single-card keys or variants (chosen \"number\", only \"spells\", redirectTo \"source\", shares what \"cardType\"/\"color\"/\"name\", designation \"citysBlessing\"), lighter than the fields they replace: Single-card values 105 → 111, ObjectFilter 71 → 64, ActivatedAbilityDef 19 → 17, LayerMods 31 → 29, Effect (fields) 652 → 651, TriggerSpec 61 → 58, TriggerSpec (fields) 161 → 158, Condition 50 → 47"
+    "PLAN-J J2: small shared forms — ObjectFilter shares {what, with} (sharesCreatureTypeWith, sharesCardTypeWith, nameOf, tapChosen sharesColorWith) and chosen (six *Chosen flags); ability reduction read with the target (reduceByTargetColors, reduceByTargetCounters); ManaAbilityDef amountOf (five amount* fields) and produceColorsOf as a Ref (produceColorsZone, produceLinkedColors); LayerMods gainAbilitiesOf (three fields); stackItems only; prevention source filter (bySource); redirectTo (keyword absorbsDamage); player designations (Condition citysBlessing, enduringStory); firstEndStep, sourceDealtCombatDamage, discardSelf, untaps, excessDamage folded into step, sourceDealtDamage, discard, taps, isDealtDamage. Single-card values 105 → 111: six values replace single-card keys or variants (chosen \"number\", only \"spells\", redirectTo \"source\", shares what \"cardType\"/\"color\"/\"name\", designation \"citysBlessing\"), lighter than the fields they replace: Single-card values 105 → 111, ObjectFilter 71 → 64, ActivatedAbilityDef 19 → 17, LayerMods 31 → 29, Effect (fields) 652 → 651, TriggerSpec 61 → 58, TriggerSpec (fields) 161 → 158, Condition 50 → 47",
+    "PLAN-J J3: generic action trigger { on: \"action\", action, whose, self, n } matching the engine's events (search, playerLost, discover, forage, gift, bend, caseSolved, manifestDread, attackTriggered, crime, collectEvidence, scry, exhaust, expend, saddled, plotted, cycled, transformed): 18 TriggerSpec variants into 1. Single-card values 111 → 121: the ten single-card variants become ten values of ActionEvent written by one card each: Single-card values 111 → 121, TriggerSpec 58 → 41, TriggerSpec (fields) 158 → 142"
   ]
 }

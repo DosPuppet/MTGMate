@@ -478,6 +478,58 @@ function whose(rel: "you" | "opponent" | "any", player: PlayerId, controller: Pl
   return rel === "any" || (rel === "you" ? player === controller : player !== controller);
 }
 
+/**
+ * Generic `action` trigger (PLAN-J J3): the engine's event of that name, done by a player `whose` relative to the
+ * controller (you by default), or on the source itself (`self`).
+ */
+function matchAction(
+  s: GameState,
+  ev: RulesEvent,
+  t: Extract<TriggerSpec, { on: "action" }>,
+  src: Source,
+  me: PlayerId,
+): TriggerEventData | null {
+  if (ev.e !== t.action) return null;
+  const by = (p: PlayerId) => whose(t.whose ?? "you", p, me);
+  switch (ev.e) {
+    case "search":
+      return by(ev.player) ? { player: ev.player } : null;
+    // A player who has just lost still counts as an opponent.
+    case "playerLost":
+      return ev.player !== me && (t.whose === "any" || opponentsOf(s, me).includes(ev.player) || s.players[ev.player]?.lost)
+        ? { player: ev.player }
+        : null;
+    case "discover":
+      return by(ev.player) ? { player: me, amount: ev.n } : null;
+    case "forage":
+    case "gift":
+    case "bend":
+    case "crime":
+    case "collectEvidence":
+    case "scry":
+      return by(ev.player) ? { player: me } : null;
+    case "expend":
+      return by(ev.player) && ev.n === t.n ? { player: me } : null;
+    case "caseSolved":
+      return by(ev.player) ? { player: me, objectId: ev.objectId } : null;
+    case "manifestDread":
+      return by(ev.player) ? { objectId: ev.graveyard?.[0], player: me } : null;
+    case "attackTriggered":
+      return by(ev.player) ? { objectId: ev.objectId, player: me } : null;
+    case "exhaust":
+      return by(ev.player) ? { objectId: ev.source, player: me } : null;
+    case "saddled":
+      return t.self && ev.objectId === src.id ? { objectId: src.id, player: src.view.controller } : null;
+    case "plotted":
+      return t.self && ev.card === src.id ? { objectId: src.id, player: me } : null;
+    case "transformed":
+      return t.self && ev.objectId === src.id ? { objectId: src.id, player: me } : null;
+    case "cycled":
+      return t.self && ev.card === src.id ? { objectId: src.id, player: ev.player, amount: ev.x } : null;
+  }
+  return null;
+}
+
 function liveView(s: GameState, id: ObjectId | null): LkiSnapshot | null {
   return id && s.objects[id] ? snapshot(s, id) : null;
 }
@@ -533,12 +585,8 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       return ev.e === "destroyed" && (!t.byOpponent || opponentsOf(s, me).includes(ev.by)) && matchWho(t.who, ev.lki, src)
         ? { objectId: ev.lki.id, player: ev.by }
         : null;
-    case "playerLoses":
-      return ev.e === "playerLost" &&
-        ev.player !== me &&
-        (t.whose === "any" || opponentsOf(s, me).includes(ev.player) || s.players[ev.player]?.lost)
-        ? { player: ev.player }
-        : null;
+    case "action":
+      return matchAction(s, ev, t, src, me);
     case "controlChange":
       return ev.e === "controlChange" && ev.from === me && ev.to !== me ? { objectId: ev.objectId, player: ev.to } : null;
     case "leaves": {
@@ -779,8 +827,6 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       }
       return { objectId: item.id, player: me };
     }
-    case "discover":
-      return ev.e === "discover" && ev.player === me ? { player: me, amount: ev.n } : null;
     case "explores": {
       if (ev.e !== "explore" || (t.land !== undefined && t.land !== ev.land)) return null;
       const v = liveView(s, ev.objectId);
@@ -811,12 +857,6 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       const v = liveView(s, ev.objectId);
       return v && matchWho(t.who, v, src) ? { objectId: ev.objectId, player: ev.player } : null;
     }
-    case "search":
-      if (ev.e !== "search") return null;
-      if ((t.whose === "you" && ev.player !== me) || (t.whose === "opponent" && ev.player === me)) return null;
-      return { player: ev.player };
-    case "saddled":
-      return ev.e === "saddled" && ev.objectId === src.id ? { objectId: src.id, player: src.view.controller } : null;
     case "crews": {
       if (ev.e !== "crewed" || !ev.crew.includes(src.id)) return null;
       if (t.mainPhase && (s.turn.active !== me || (s.turn.step !== "main1" && s.turn.step !== "main2"))) return null;
@@ -828,8 +868,6 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       const v = liveView(s, ev.objectId);
       return v && matchWho(t.who, v, src) ? { objectId: v.id, player: v.controller } : null;
     }
-    case "manifestDread":
-      return ev.e === "manifestDread" && ev.player === me ? { objectId: ev.graveyard?.[0], player: me } : null;
     case "becomesBlocked": {
       if (ev.e !== "blocked") return null;
       const v = liveView(s, ev.attacker);
@@ -896,8 +934,6 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
         return { objectId: ev.oldId, newObjectId: ev.newId ?? undefined, player: owner ?? me };
       return { objectId: ev.newId ?? undefined, player: owner ?? me };
     }
-    case "crime":
-      return ev.e === "crime" && ev.player === me ? { player: me } : null;
     case "activateTargeting": {
       if (ev.e !== "targeted" || ev.controller !== me) return null;
       const item = s.stack.find((x) => x.id === ev.stackId);
@@ -906,14 +942,6 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       const ok = ev.targets.some((id) => !!s.players[id] || (s.objects[id]?.zone === "battlefield" && isCreature(s, id)));
       return ok ? { objectId: item.id, player: me } : null;
     }
-    case "plottedSelf":
-      return ev.e === "plotted" && ev.card === src.id ? { objectId: src.id, player: me } : null;
-    case "exhaustActivated":
-      return ev.e === "exhaust" && ev.player === me ? { objectId: ev.source, player: me } : null;
-    case "transformsSelf":
-      return ev.e === "transformed" && ev.objectId === src.id ? { objectId: src.id, player: me } : null;
-    case "cycleSelf":
-      return ev.e === "cycled" && ev.card === src.id ? { objectId: src.id, player: ev.player, amount: ev.x } : null;
     case "step": {
       if (ev.e !== "step" || !whose(t.whose, ev.active, me)) return null;
       const main = ev.step === "main1" || ev.step === "main2";
@@ -925,8 +953,6 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       const v = liveView(s, ev.newId);
       return v?.types.includes("Land") && v.controller === me ? { objectId: v.id, player: me } : null;
     }
-    case "scryOrSurveil":
-      return ev.e === "scry" && ev.player === me ? { player: me } : null;
     case "draw":
       // The drawn card is the object of the event (miracle: Lorehold, the Historian).
       return ev.e === "draw" &&
@@ -973,20 +999,6 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       if (t.by === "yourSpell" && (ev.controller !== me || byItem?.kind !== "spell" || byItem.copy)) return null;
       return { objectId: ev.stackId, player: ev.controller };
     }
-    case "expend":
-      return ev.e === "expend" && ev.player === me && ev.n === t.n ? { player: me } : null;
-    case "forage":
-      return ev.e === "forage" && ev.player === me ? { player: me } : null;
-    case "collectEvidence":
-      return ev.e === "collectEvidence" && ev.player === me ? { player: me } : null;
-    case "bend":
-      return ev.e === "bend" && ev.player === me ? { player: me } : null;
-    case "attackAbilityTriggered":
-      return ev.e === "attackTriggered" && ev.player === me ? { objectId: ev.objectId, player: me } : null;
-    case "caseSolved":
-      return ev.e === "caseSolved" && ev.player === me ? { player: me, objectId: ev.objectId } : null;
-    case "gift":
-      return ev.e === "gift" && ev.player === me ? { player: me } : null;
     case "countersPut": {
       if (ev.e !== "counters" || (t.kind && ev.kind !== t.kind) || (t.firstThisTurn && !ev.first)) return null;
       if (t.by === "you" && ev.by !== me) return null;

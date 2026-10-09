@@ -2325,7 +2325,7 @@ export const when = {
   /** "When this creature enters the battlefield" */
   entersSelf: { on: "enters", who: "self" } as TriggerSpec,
   /** "When it transforms into [this face]" (to put on the face concerned). */
-  transformsSelf: { on: "transformsSelf" } as TriggerSpec,
+  transformsSelf: { on: "action", action: "transformed", self: true } as TriggerSpec,
   /** "Whenever a(n) [filter] enters the battlefield" */
   enters: (filter: ObjectFilter): TriggerSpec => ({ on: "enters", who: filter }),
   diesSelf: { on: "dies", who: "self" } as TriggerSpec,
@@ -2338,8 +2338,8 @@ export const when = {
   /** "Whenever a [creature you control …] leaves the battlefield" (filter seen from the controller of the source). */
   leaves: (who: ObjectFilter): TriggerSpec => ({ on: "leaves", who }),
   /** "Whenever an opponent searches their library" */
-  search: (whose: "you" | "opponent" | "any" = "opponent"): TriggerSpec => ({ on: "search", whose }),
-  opponentLoses: { on: "playerLoses", whose: "opponent" } as TriggerSpec,
+  search: (whose: "you" | "opponent" | "any" = "opponent"): TriggerSpec => ({ on: "action", action: "search", whose }),
+  opponentLoses: { on: "action", action: "playerLost", whose: "opponent" } as TriggerSpec,
   attacksSelf: { on: "attacks", who: "self" } as TriggerSpec,
   /** "Whenever [this creature] attacks a player" (not a planeswalker). */
   attacksAPlayer: { on: "attacks", who: "self", defending: "player" } as TriggerSpec,
@@ -2378,9 +2378,9 @@ export const when = {
     minManaSpent: n,
   }),
   /** "Whenever you commit a crime" */
-  crime: { on: "crime" } as TriggerSpec,
+  crime: { on: "action", action: "crime" } as TriggerSpec,
   /** "When this card becomes plotted" */
-  plottedSelf: { on: "plottedSelf" } as TriggerSpec,
+  plottedSelf: { on: "action", action: "plotted", self: true } as TriggerSpec,
   /** "Whenever you activate an ability that targets a creature or player" */
   activateTargeting: { on: "activateTargeting" } as TriggerSpec,
   /** A card changes zones (see TriggerSpec `zoneChange`). */
@@ -2498,13 +2498,13 @@ export const when = {
   /** "Whenever you cast a spell that targets this creature" */
   targetedBySpellYouCast: { on: "becomesTarget", who: "self", by: "yourSpell" } as TriggerSpec,
   /** "Whenever you scry or surveil" */
-  scryOrSurveil: { on: "scryOrSurveil" } as TriggerSpec,
+  scryOrSurveil: { on: "action", action: "scry" } as TriggerSpec,
   /** "When you discard this card" (with `fromGraveyard`). */
   discardSelf: { on: "discard", whose: "any", self: true } as TriggerSpec,
   /** "When you cycle this card" (with `fromGraveyard`; `amount.eventAmount`: the X of the cost). */
-  cycleSelf: { on: "cycleSelf" } as TriggerSpec,
+  cycleSelf: { on: "action", action: "cycled", self: true } as TriggerSpec,
   /** "Whenever you activate an exhaust ability" */
-  exhaustActivated: { on: "exhaustActivated" } as TriggerSpec,
+  exhaustActivated: { on: "action", action: "exhaust" } as TriggerSpec,
   /** "When you cast this spell" */
   castSelf: { on: "castSelf" } as TriggerSpec,
   /** "Whenever you copy a [matching] spell" */
@@ -2519,9 +2519,9 @@ export const when = {
   /** "Whenever enchanted player is dealt damage" (player Aura). */
   attachedPlayerDamaged: { on: "isDealtDamage", who: "attached" } as TriggerSpec,
   /** "Whenever you manifest dread" (the object of the event: the card put into the graveyard). */
-  manifestDread: { on: "manifestDread" } as TriggerSpec,
+  manifestDread: { on: "action", action: "manifestDread" } as TriggerSpec,
   /** "Whenever you discover" (`amount.eventAmount`: the value N). */
-  discover: { on: "discover" } as TriggerSpec,
+  discover: { on: "action", action: "discover" } as TriggerSpec,
   /** "Whenever a [creature] explores [a land / nonland card]" */
   explores: (who: "self" | ObjectFilter, land?: boolean): TriggerSpec => ({ on: "explores", who, land }),
   /** "Whenever you sacrifice [a permanent]" */
@@ -2533,7 +2533,7 @@ export const when = {
     byOpponent,
   }),
   /** "Whenever this Mount becomes saddled" */
-  saddled: { on: "saddled" } as TriggerSpec,
+  saddled: { on: "action", action: "saddled", self: true } as TriggerSpec,
   /** "Whenever this creature saddles a Mount or crews a Vehicle [during your main phase]" */
   crews: (mainPhase = false): TriggerSpec => ({ on: "crews", mainPhase }),
   /** "When this Class reaches level N" */
@@ -2558,16 +2558,16 @@ export const when = {
     spells,
   }),
   /** Expend N: "whenever you expend N" (your Nth total mana spent on spells during a turn). */
-  expend: (n: number): TriggerSpec => ({ on: "expend", n }),
-  forage: { on: "forage" } as TriggerSpec,
-  collectEvidence: { on: "collectEvidence" } as TriggerSpec,
+  expend: (n: number): TriggerSpec => ({ on: "action", action: "expend", n }),
+  forage: { on: "action", action: "forage" } as TriggerSpec,
+  collectEvidence: { on: "action", action: "collectEvidence" } as TriggerSpec,
   /** "Whenever you waterbend, earthbend, firebend, or airbend" (Avatar). */
-  bend: { on: "bend" } as TriggerSpec,
+  bend: { on: "action", action: "bend" } as TriggerSpec,
   /** "Whenever a creature you control attacks and causes one of its triggered abilities to trigger." */
-  attackAbilityTriggered: { on: "attackAbilityTriggered" } as TriggerSpec,
-  caseSolved: { on: "caseSolved" } as TriggerSpec,
+  attackAbilityTriggered: { on: "action", action: "attackTriggered" } as TriggerSpec,
+  caseSolved: { on: "action", action: "caseSolved" } as TriggerSpec,
   /** "Whenever you give a gift" */
-  giveGift: { on: "gift" } as TriggerSpec,
+  giveGift: { on: "action", action: "gift" } as TriggerSpec,
   /** "Whenever you gain or lose life" */
   lifeChange: { on: "life" } as TriggerSpec,
   /** "Whenever a [creature] leaves the battlefield without dying" */
