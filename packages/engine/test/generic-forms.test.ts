@@ -4,6 +4,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { dealDamage, sourceFromObject } from "../src/actions";
+import { addEffect } from "../src/effects";
 import { submit } from "../src/game";
 import { legalActions } from "../src/legal";
 import { bump, chars, moveObject } from "../src/state";
@@ -194,5 +195,14 @@ describe("PLAN-J J6c [rules 184]: X tied to an activated ability's target", () =
     const t = a?.type === "activate" ? a.targets[0] : undefined;
     expect(t?.legal).toEqual([bear]);
     expect(t?.xEquals?.[bear]).toBe(2);
+  });
+});
+
+describe('PLAN-J J6d [rules 185]: "is a [creature type]" keeps the noncreature subtypes (205.1b)', () => {
+  it("a Vehicle that becomes a Citizen is still a Vehicle", () => {
+    const s = scenario({ p1: { battlefield: ["Cultivator's Caravan"] } });
+    const caravan = idOf(s, "p1", "battlefield", "Cultivator's Caravan");
+    addEffect(s, [caravan], { setSubtypes: ["Citizen"] }, "endOfTurn");
+    expect(chars(s, caravan).subtypes.sort()).toEqual(["Citizen", "Vehicle"]);
   });
 });

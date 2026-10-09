@@ -206,7 +206,7 @@ Three read-only surveys (2026-10-09) checked every tracked entry against the for
 - the Riku modal check excludes overload/cleave alternative-cost modes;
 - the `spellCost.colored` unmatched-symbol reduction follows 118.7c (a shared implementation with `costReduction.colored`).
 
-### J6 — Medium approximation families [rules] — 🔄 in progress
+### J6 — Medium approximation families [rules] — ✅ done (J6a 119a1e7, J6b rules 183, J6c rules 184, J6d rules 185); alt-cost picks not done (automatic choices kept)
 
 **J6a — Public reveal:**
 - `fx.reveal(ref)`: the `look` op without `look: true`.
@@ -234,7 +234,7 @@ Three read-only surveys (2026-10-09) checked every tracked entry against the for
 - A layer-4 change that keeps `NON_CREATURE_SUBTYPES` (`targets.ts:197`).
 - Lifts Nameless Inversion and Honest Work, and fixes the ~12 `setSubtypes` scripts (`otj/blue.ts:132`, `fdn/blue.ts:198,270`, `tmt/blue.ts:242`, `ecl/blue.ts:190`, `spm/green.ts:127`, `msh/green.ts:336`, …).
 
-### J7 — Closing — ⏳ to do
+### J7 — Closing — 🔄 in progress
 
 - `docs/history.md`: new section 14 "PLAN-J", with a bilan in the format of the PLAN-H one.
 - `docs/backlog.md`:
@@ -312,3 +312,4 @@ Three read-only surveys (2026-10-09) checked every tracked entry against the for
 | J6a | done | — | public reveals: search.reveal (143 cards) and lookAtTop.reveal (45 cards) deduced from the text, fx.reveal for 5 cards; 6 approximation entries lifted (general Search 701.23 included); events only, fingerprints identical |
 | J6b | done | 183 | library order: bottomAnyOrder (12 cards, read from the text), Rowan's top order, cascade shuffle, Dazzling Sphinx random bottom; 4 approximation entries lifted; golden games identical |
 | J6c | done | 184 | X tied to an activated ability's target (xEquals, concrete specs at activation, AI X from the target); 3 approximation entries lifted |
+| J6d | done | 185 | "is a [creature type]" keeps noncreature subtypes (205.1b); Honest Work lifted; Nameless Inversion kept (an empty set means "all subtypes" for Ultima) |

@@ -154,7 +154,6 @@ In the order they were added, set by set.
   - `rule` A Killer Among Us: the chosen type is not revealed separately; the ability checks the type at resolution.
 - **Avatar: The Last Airbender (`docs/extensions/tla.md`):**
   - `auto choice` Waterbend, convoke, improvise, Cave: outside full control, the objects that pay are chosen by the automatic payment, after the lands (as on Arena); in full control, the player chooses them;
-  - `rule` Honest Work: the enchanted creature takes the single subtype Citizen (an artifact creature would also lose its artifact subtypes);
   - `timing` Elemental Teachings: the cards found go through your hand (revealed), then the opponent chooses two;
   - `rule` Raucous Audience: two mana abilities, each under its condition;
   - `rule` Azula, Cunning Usurper: the exiled cards are cast during your turn with mana of any type, but without flash;

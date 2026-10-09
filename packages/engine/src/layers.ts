@@ -15,7 +15,7 @@
  */
 import { capReached, MAX_LAYER_PASSES } from "./limits";
 import { manaValue } from "./mana";
-import { hasName, printedName, shareName } from "./names";
+import { hasName, isCreatureType, printedName, shareName } from "./names";
 import { grantedSpellKeywords } from "./stack";
 import { commandZoneAbilities, counterPT, obj } from "./state";
 import { playerStatics } from "./statics";
@@ -1136,6 +1136,10 @@ function evalStatic(s: GameState, slot: StaticSlot, sig: (string | number)[]): {
 function replacedSubtypes(old: string[], set: string[]): string[] {
   if (set.length > 0 && set.every((t) => LAND_TYPES.has(t)))
     return [...old.filter((t) => !LAND_TYPES.has(t) && !set.includes(t)), ...set];
+  // 205.1b: "is a [creature type]": the new creature types replace the old ones, the other subtypes stay (Vehicle,
+  // Equipment, land types). An empty set removes all subtypes (Ultima: "loses all land types").
+  if (set.length > 0 && set.every(isCreatureType))
+    return [...old.filter((t) => !isCreatureType(t) && t !== ALL_CREATURE_TYPES && !set.includes(t)), ...set];
   return [...set];
 }
 

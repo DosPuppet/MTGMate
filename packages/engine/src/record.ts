@@ -506,8 +506,9 @@ export const RECORD_VERSION = 1;
  *   others (702.85a); Dazzling Sphinx's cards in a random order
  * - 184: PLAN-J J6c: "with mana value X" on an activated ability's target is checked with the announced X (Likeness
  *   Looter, The Mycosynth Gardens, Rydia); the legal options offer only the targets of an affordable X (`xEquals`)
+ * - 185: PLAN-J J6d: "is a [creature type]" replaces only the creature types, the other subtypes stay (205.1b)
  */
-export const RULES_VERSION = 184;
+export const RULES_VERSION = 185;
 
 /** One checkpoint every N decisions (plus the last one of the game). */
 export const CHECKPOINT_EVERY = 25;
