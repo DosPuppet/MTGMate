@@ -120,7 +120,6 @@ describe("construction rules", () => {
       "cmd-counter-blitz",
       "cmd-fantastic-four",
       "cmd-mutant-menace",
-      "cmd-nissa",
       "cmd-vision",
       "cmd-dark-leo",
     ];

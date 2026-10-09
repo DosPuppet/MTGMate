@@ -19,7 +19,7 @@ The scripts are in `packages/cards/src/edh/`; the rules tests in `packages/engin
 | `counter-blitz` | Tidus, Yuna's Guardian (official Final Fantasy X precon) | 67 |
 | `fantastic-four` | Invisible Woman (official Fantastic Four precon) | 47 (6 in common with Counter Blitz) |
 | `mutant-menace` | The Wise Mothman (official Fallout precon) | 57 (3 in common with Counter Blitz) |
-| `nissa` | Nissa, Leyline Tamer (landfall, four colors without green) | 34 |
+| `nissa` | Nissa, Leyline Tamer (landfall, four colors without green; deck removed 2026-10-09, cards kept) | 34 |
 | `vision` | The Vision (colorless artifacts, Urza lands, Eldrazi) | 63 |
 
 ## E0 — import ✅
@@ -205,6 +205,8 @@ Added on 2026-10-07 at the user's request: three official lists retrieved from M
 - **Approximations:** see `docs/approximations.md` (radiation without the stack, lifted by PLAN-H H6; Sin, Altered Ego, Collective Effort, Forgotten Ancient, Resourceful Defense, Yuna, Grand Summoner, Fathom Mage, Promise of Loyalty, Deep Analysis, First Family, Namor, Black Bolt, Willie Lumpkin, Tragic Arrogance, Negative Zone Portal, Cut a Deal, Hancock, Harold and Bob, Jason Bright, Lumbering Megasloth, Nightkin Ambusher, Nuka-Nuke Launcher, Young Deathclaws, Winding Constrictor, Mariposa Military Base, Finality, Mutational Advantage).
 
 ## Deck Nissa, Leyline Tamer: landfall and big creatures ✅ (555 / 555)
+
+**Removed on 2026-10-09 at the user's request:** list `docs/commander/decks/nissa.txt` and precon `cmd-nissa` deleted (recoverable from Git); its 34 cards stay in the EDH catalog (the by-name import keeps cards already imported), with their scripts and tests.
 
 Added on 2026-10-08 at the user's request with the "Add a Commander deck" recipe. List: "Nissa, Non-Green Animist (Landfall w/ Big Creatures)" by KamiNinja on Moxfield (declared bracket 4, updated 2026-10-02), in `docs/commander/decks/nissa.txt`; precon `cmd-nissa` (white, blue, black, red; 4 Game Changers: Cyclonic Rift, Farewell, Teferi's Protection, Vampiric Tutor). The commander and 60 other cards were already playable (Multiverse Reforged, other decks, sets).
 

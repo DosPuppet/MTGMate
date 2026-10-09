@@ -7,7 +7,6 @@ import cmdEdgarMarkov from "../decks/cmd-edgar-markov.json";
 import cmdFantasticFour from "../decks/cmd-fantastic-four.json";
 import cmdMultiverseReforged from "../decks/cmd-multiverse-reforged.json";
 import cmdMutantMenace from "../decks/cmd-mutant-menace.json";
-import cmdNissa from "../decks/cmd-nissa.json";
 import cmdRakdos from "../decks/cmd-rakdos.json";
 import cmdTurtlePower from "../decks/cmd-turtle-power.json";
 import cmdUrDragon from "../decks/cmd-ur-dragon.json";
@@ -82,7 +81,6 @@ export const DECKS: DeckList[] = [
   cmdCounterBlitz,
   cmdFantasticFour,
   cmdMutantMenace,
-  cmdNissa,
   cmdVision,
   cmdDarkLeo,
 ].map((d) => withArt({ ...(d as DeckList), builtin: true }));
