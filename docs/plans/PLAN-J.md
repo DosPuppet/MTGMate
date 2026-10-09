@@ -307,3 +307,4 @@ Three read-only surveys (2026-10-09) checked every tracked entry against the for
 | J3 | done | — | generic action trigger: 18 TriggerSpec variants into 1 (58 → 41); fingerprints identical |
 | J4a | done | 179 | turn-log damage and untap entries; 4 ops, 3 variants, 1 key, GameObject.combatDamagedPlayers removed; Sold Out and the Calendar half lifted; golden games and fingerprints identical |
 | J4b | done | 180 | X costs in the cost keys (6 keys), Twists and Turns as an explore replacement, Warped Space as a cast permission; activation flags and ninjutsu bounce cost kept (renames only); fingerprints identical |
+| J4c | done | 181 | The Mindskinner mills for real; immediate effects in replacements and mana abilities, token-copy exceptions and the low-value keys kept (no form that removes debt without an off-stack effect runner or a copy rework) |

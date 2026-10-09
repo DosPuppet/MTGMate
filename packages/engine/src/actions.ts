@@ -2,6 +2,7 @@
  * Elementary game actions, shared by effects, combat and state-based actions.
  */
 
+import { millCards } from "./effects";
 import { bumpFor } from "./layers";
 import { capReached, MAX_BATTLEFIELD, MAX_TOKENS_PER_EVENT } from "./limits";
 import { type AmountMod, chooseReplacementOrder } from "./modifiers";
@@ -296,14 +297,15 @@ function preventByReplacement(
 ): void {
   consumeReplacement(s, a);
   const after = a.r.onPrevent;
+  // The Mindskinner: "each opponent mills that many cards" — a real mill (701.13): mill replacements, a single grouped
+  // event, the turn log.
   if (after?.opponentsMill) {
-    for (const p of opponentsOf(s, a.controller)) {
-      for (const id of (s.players[p]?.library ?? []).slice(0, amount)) {
-        const o = obj(s, id);
-        emit({ type: "moved", owner: o.owner, objectId: id, defId: o.defId, from: "library", to: "graveyard" });
-        moveObject(s, id, "graveyard");
-      }
-    }
+    const batch: [PlayerId, ObjectId[]][] = opponentsOf(s, a.controller).map((p) => {
+      const q = quantityMods(s, "mill", (r) => recipientMatches(s, r, p));
+      const count = amount > 0 && !q.prevented ? chooseReplacementOrder(amount, q.mods, "min") : 0;
+      return [p, (s.players[p]?.library ?? []).slice(0, count)];
+    });
+    millCards(s, batch);
   }
   if (after?.counters && a.sourceId && s.objects[a.sourceId]?.zone === "battlefield")
     changeCounters(s, obj(s, a.sourceId), after.counters, amount);

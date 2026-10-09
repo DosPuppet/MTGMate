@@ -162,6 +162,17 @@ describe("remplacements (616, 615)", () => {
     expect(s.players.p2?.library).toHaveLength(7);
   });
 
+  it("The Mindskinner mills (701.13): a mill replacement applies (The Water Crystal: plus four)", () => {
+    const s = scenario({
+      p1: { battlefield: ["The Mindskinner", "The Water Crystal", "Bear Cub"] },
+      p2: { library: Array(12).fill("Forest") },
+    });
+    dealDamage(s, sourceFromObject(s, idOf(s, "p1", "battlefield", "Bear Cub")), "p2", 2, false);
+    expect(s.players.p2?.life).toBe(20);
+    // 2 prevented, the opponent mills 2 + 4.
+    expect(s.players.p2?.library).toHaveLength(6);
+  });
+
   it("two damage doublers stack: 3 damage becomes 12", () => {
     const tyrant = (name: string) =>
       ench(name, eventReplacement({ event: "damage", source: { controller: "you" }, to: "opponentSide", modify: { times: 2 } }));
