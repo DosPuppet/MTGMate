@@ -134,6 +134,27 @@ describe("Deadpool (EDH)", () => {
     });
   });
 
+  describe("Deadpool returning to the battlefield", () => {
+    it("exiled and returned by Conjurer's Closet, he exchanges again (the question names him)", () => {
+      let s = scenario({
+        p1: { battlefield: ["Deadpool, Trading Card", "Conjurer's Closet"] },
+        p2: { battlefield: ["Llanowar Elves"] },
+      });
+      const dp = idOf(s, "p1", "battlefield", "Deadpool, Trading Card");
+      let prompt = "";
+      s = advanceUntil(s, (x) => x.turn.step === "end" && x.stack.length > 0);
+      s = settle(s, (req, p, cur) => {
+        if (req.type === "pick" && req.options.includes(dp)) return [dp];
+        if (req.type === "pick" && /text box/.test(req.prompt)) prompt = req.prompt;
+        return swapWith("Llanowar Elves")(req, p, cur);
+      });
+      expect(prompt).toContain("deadpool-trading-card");
+      const back = idOf(s, "p1", "battlefield", "Deadpool, Trading Card");
+      expect(objectView(s, back).textBox?.name).toBe("Llanowar Elves");
+      expect(objectView(s, idOf(s, "p2", "battlefield", "Llanowar Elves")).textBox?.name).toBe("Deadpool, Trading Card");
+    });
+  });
+
   describe("copies", () => {
     it("a token copy of Deadpool has his printed text and exchanges its own text box as it enters", () => {
       let s = scenario({

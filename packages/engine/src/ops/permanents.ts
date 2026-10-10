@@ -528,7 +528,8 @@ export const HANDLERS: OpHandlers = {
           request: {
             type: "pick",
             intent: "pickCards",
-            prompt: msg("Exchange its text box with another creature's?"),
+            // The entering card is named: the question may come during another resolution (Conjurer's Closet).
+            prompt: msg("{card}: exchange its text box with another creature's?", { card: cardRef(ctx.sourceDefId) }),
             options,
             min: 0,
             max: 1,
