@@ -53,7 +53,7 @@ import {
   turnFaceUp,
   untapObject,
 } from "../state";
-import { payableLife, quantityMods, recipientMatches } from "../statics";
+import { payableLife, playerStatics, quantityMods, recipientMatches, tokenShielded } from "../statics";
 import { holderOf, matchesCard, matchesObjectFilter, shareCreatureType } from "../targets";
 import { msg } from "../text";
 import { logTurnEvent } from "../turnlog";
@@ -815,7 +815,8 @@ export const HANDLERS: OpHandlers = {
   },
   exile(s, _r, e, ctx) {
     for (const id of resolveRef(s, ctx, e.what)) {
-      if (onBattlefield(s, id)) moveAndLog(s, id, "exile");
+      // The Master, Multiplied: a creature token its controller's triggered ability can't exile.
+      if (onBattlefield(s, id) && !tokenShielded(s, id)) moveAndLog(s, id, "exile");
       // "Exile target spell" (Mindbreak Trap): it leaves the stack without resolving.
       else if (s.stack.some((x) => x.id === id && x.kind === "spell")) exileSpell(s, id);
     }
@@ -991,7 +992,8 @@ export const HANDLERS: OpHandlers = {
         (id) =>
           s.objects[id]?.controller === p &&
           matchesObjectFilter(s, p, id, filter, ctx.sourceId) &&
-          !hasKeyword(s, id, "cantBeSacrificed"),
+          !hasKeyword(s, id, "cantBeSacrificed") &&
+          !tokenShielded(s, id),
       );
       // Zodiark: "half the creatures they control, rounded down".
       const n = e.half ? Math.floor(candidates.length / 2) : all;
@@ -1470,13 +1472,18 @@ export const HANDLERS: OpHandlers = {
           ctx.sourceId,
         ),
       );
+      // Opposition Agent: an opponent controls this search (the most recent), and the cards found are exiled with it.
+      const agent = playerStatics(s, p, "searchControl")
+        .filter(({ id }) => !!id && s.objects[id]?.controller !== p)
+        .sort((a, b) => (b.timestamp ?? 0) - (a.timestamp ?? 0))[0]?.id;
+      const searcher = (agent && s.objects[agent]?.controller) || p;
       let picked: string[] = [];
       if (options.length > 0 && count > 0) {
         const answer = r.vars[key(`search-${p}`)];
         if (!answer) {
           return {
             ask: {
-              player: p,
+              player: searcher,
               key: key(`search-${p}`),
               request: {
                 type: "pick",
@@ -1501,7 +1508,7 @@ export const HANDLERS: OpHandlers = {
         r.vars[key(`revealed-${p}`)] = [1];
         emit({ type: "reveal", player: p, defIds: picked.map((id) => s.objects[id]?.defId ?? "") });
       }
-      const arrival = arrivalChoices(s, r, ctx, picked, e.to, ownerOr(s, e.to, p), (x) => key(`${p}-${x}`));
+      const arrival = agent ? new Map() : arrivalChoices(s, r, ctx, picked, e.to, ownerOr(s, e.to, p), (x) => key(`${p}-${x}`));
       if (!(arrival instanceof Map)) return arrival;
       r.vars[key(`sdone-${p}`)] = [1];
       // "If you search your library this way, shuffle": a card taken from the graveyard means the library wasn't searched.
@@ -1511,8 +1518,14 @@ export const HANDLERS: OpHandlers = {
         logTurnEvent(s, { e: "search", player: p });
       }
       // 701.23: shuffle after searching; "on top" applies after the shuffle.
-      const toTop = e.to.to === "libraryTop";
+      const toTop = e.to.to === "libraryTop" && !agent;
       for (const id of picked) {
+        if (agent) {
+          const exiled = moveObject(s, id, "exile");
+          const holder = s.objects[agent];
+          if (exiled && holder) holder.linked = [...(holder.linked ?? []), exiled];
+          continue;
+        }
         if (toTop) continue;
         const moved = moveWithSpec(s, p, id, evalMoveSpec(s, ctx, e.to), arrival.get(id));
         if (e.store && moved) r.vars[`$ids:${e.store}`] = [...(r.vars[`$ids:${e.store}`] ?? []), moved];

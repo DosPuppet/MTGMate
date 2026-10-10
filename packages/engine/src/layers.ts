@@ -92,6 +92,7 @@ export const KEYWORD_COUNTERS: Record<string, Keyword> = {
 export function blockRulePlaceholder(r: BlockRule): boolean {
   return (
     r.cantAttackPlayer === "you" ||
+    r.cantAttackPlayer === "owner" ||
     r.goadedBy === "you" ||
     r.mustAttackPlayer === "eventPlayer" ||
     r.mustBlockAttacker === "eventObject" ||
@@ -111,6 +112,7 @@ export function resolveBlockRules(
   event?: { player?: PlayerId; objectId?: ObjectId },
   player?: (r: Ref) => PlayerId | undefined,
   sourceId?: ObjectId,
+  owner?: PlayerId,
 ): BlockRule[] {
   return rules.map((r) => {
     if (!blockRulePlaceholder(r)) return r;
@@ -118,6 +120,7 @@ export function resolveBlockRules(
     if (r.cantBeBlockedByWeakerThan === "source") out.cantBeBlockedByWeakerThan = sourceId;
     if (typeof r.cantBeBlockedByPlayer === "object") out.cantBeBlockedByPlayer = player?.(r.cantBeBlockedByPlayer);
     if (r.cantAttackPlayer === "you") out.cantAttackPlayer = you;
+    if (r.cantAttackPlayer === "owner") out.cantAttackPlayer = owner;
     if (r.goadedBy === "you") out.goadedBy = you;
     if (r.mustAttackPlayer === "eventPlayer") out.mustAttackPlayer = event?.player;
     if (r.mustBlockAttacker === "eventObject") out.mustBlockAttacker = event?.objectId;
@@ -474,6 +477,33 @@ function base(s: GameState, o: GameObject, defId = o.defId): Characteristics {
     powerRules: [],
     controller: o.controller,
   };
+}
+
+/**
+ * Layer 3 (612): the definition whose text box the object has instead of its own, if an effect gave it one (Deadpool,
+ * Trading Card: the most recent exchange); otherwise `undefined`.
+ */
+export function textBoxOf(s: GameState, id: ObjectId): string | undefined {
+  let best: { textOf?: string; timestamp: number } | undefined;
+  for (const e of s.effects) if (e.textOf && e.affected.includes(id) && (!best || e.timestamp >= best.timestamp)) best = e;
+  return best?.textOf;
+}
+
+/**
+ * Layer 3 (612): the text box of another definition: its abilities, keywords and characteristic-defining abilities
+ * (604.3: a P/T defined by an ability follows the text; without one, the printed P/T stays).
+ */
+function applyTextBox(s: GameState, c: Characteristics, o: GameObject, ownDefId: string, textDefId: string): void {
+  const d = s.defs[textDefId];
+  const own = s.defs[ownDefId];
+  if (!d || !own) return;
+  c.abilities = [...d.abilities];
+  c.keywords = [...d.keywords];
+  const hasCda = (x: CardDef) => x.cdaPT !== undefined || x.cdaPower !== undefined || x.cdaToughness !== undefined;
+  if (!hasCda(d) && !hasCda(own)) return;
+  const cda = d.cdaPT === undefined ? undefined : cdaValue(s, o, d.cdaPT);
+  c.power = (d.cdaPower === undefined ? undefined : cdaValue(s, o, d.cdaPower)) ?? cda ?? own.power ?? 0;
+  c.toughness = (d.cdaToughness === undefined ? undefined : cdaValue(s, o, d.cdaToughness)) ?? cda ?? own.toughness ?? 0;
 }
 
 /** Printed abilities of a permanent: levels reached by a Class (716), "Solved" abilities of a Case (719). */
@@ -980,15 +1010,19 @@ function staticSlots(s: GameState, defOfId: (id: ObjectId) => string): StaticSlo
     const ownDef = s.defs[own];
     // Room: abilities of its unlocked doors. Face down: no static ability. Command zone: those of an emblem only
     // (113.6).
+    // Layer 3 (612): a text box taken from another definition (Deadpool, Trading Card) brings its static abilities.
+    const text = o.zone === "battlefield" && !o.faceDown ? textBoxOf(s, id) : undefined;
     const printed = o.faceDown
       ? []
-      : o.zone === "command"
-        ? commandZoneAbilities(s, id)
-        : o.zone === "battlefield" && ownDef?.layout === "split" && ownDef.faceDefs
-          ? roomBase(o, ownDef).abilities
-          : ownDef
-            ? levelAbilities(o, ownDef)
-            : [];
+      : text
+        ? (s.defs[text]?.abilities ?? [])
+        : o.zone === "command"
+          ? commandZoneAbilities(s, id)
+          : o.zone === "battlefield" && ownDef?.layout === "split" && ownDef.faceDefs
+            ? roomBase(o, ownDef).abilities
+            : ownDef
+              ? levelAbilities(o, ownDef)
+              : [];
     // Statics granted by a resolution effect (Roar of the Fifth People, chapter II: "gains 'Creatures you control
     // have…'"). A static granted by another static isn't handled (613.8).
     // 613.7a: most recent timestamp between the object and the effect that grants the ability.
@@ -1064,7 +1098,7 @@ function evalStatic(s: GameState, slot: StaticSlot, sig: (string | number)[]): {
     sig.push(`a${extra.length}`);
   }
   if (mods.addBlockRules?.some(blockRulePlaceholder)) {
-    mods = { ...mods, addBlockRules: resolveBlockRules(mods.addBlockRules, o.controller, undefined, undefined, id) };
+    mods = { ...mods, addBlockRules: resolveBlockRules(mods.addBlockRules, o.controller, undefined, undefined, id, o.owner) };
     sig.push(`ca${o.controller}`);
   }
   if (mods.setColorsChosen) {
@@ -1201,6 +1235,12 @@ function applyLayersScanned(s: GameState, applied: Applied[], defOfId: (id: Obje
     for (const a of applied) if (has(a.mods)) for (const id of affectedBy(a)) apply(out.get(id) as Characteristics, a.mods, a);
   };
 
+  // Layer 3: text-changing effects (612): an exchanged text box (Deadpool, Trading Card).
+  for (const a of applied) {
+    const text = a.mods.textOf;
+    if (text) for (const id of affectedBy(a)) applyTextBox(s, out.get(id) as Characteristics, obj(s, id), defOfId(id), text);
+  }
+
   // Layer 4: types (and name, for Witness Protection).
   layer(
     (m) =>
@@ -1317,8 +1357,12 @@ function applyLayersScanned(s: GameState, applied: Applied[], defOfId: (id: Obje
     (m) => !!(m.power || m.toughness),
     (c, m) => {
       // Diligent Zookeeper: multiplied by the number of creature types of the affected object (changeling: all).
-      const k =
-        m.perOwnCreatureTypes === undefined
+      // Mirror Box: multiplied by the number of other creatures of the same controller with the same name.
+      const k = m.perSameName
+        ? [...out.values()].filter(
+            (x) => x !== c && x.controller === c.controller && x.types.includes("Creature") && shareName(x.name, c.name),
+          ).length
+        : m.perOwnCreatureTypes === undefined
           ? 1
           : Math.min(m.perOwnCreatureTypes, c.keywords.includes("changeling") ? m.perOwnCreatureTypes : c.subtypes.length);
       c.power += (m.power ?? 0) * k;

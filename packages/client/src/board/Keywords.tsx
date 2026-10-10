@@ -6,7 +6,7 @@ import type { Keyword, ObjectView } from "@mtgx/engine";
 import { msg, RESTRICTIONS } from "@mtgx/engine";
 import { type ReactNode, useState } from "react";
 import { createPortal } from "react-dom";
-import { KEYWORD_LABEL } from "../i18n";
+import { faceName, faceText, KEYWORD_LABEL } from "../i18n";
 import { useLocalize, useT } from "../localize";
 import { useGame } from "../store";
 
@@ -137,6 +137,14 @@ const GOAD_ICON = (
   </g>
 );
 
+/** Icon of an exchanged text box (Deadpool, Trading Card): two crossing arrows. */
+const TEXT_BOX_ICON = (
+  <g {...stroke}>
+    <path d="M4 8 H18 L14 4" />
+    <path d="M20 16 H6 L10 20" />
+  </g>
+);
+
 interface Tip {
   x: number;
   y: number;
@@ -153,9 +161,18 @@ export function KeywordBadges({ obj }: { obj: ObjectView }) {
   // "Doesn't untap" (replacement of the untap step): shown with the rules, as a restriction.
   const rules = obj.untapRule ? [...(obj.blockRules ?? []), obj.untapRule] : (obj.blockRules ?? []);
   const view = useGame((s) => s.view);
+  const lang = useGame((s) => s.lang);
   const t = useT();
   const loc = useLocalize();
-  if (shown.length === 0 && rules.length === 0 && protections.length === 0 && powerRules.length === 0 && goaded.length === 0)
+  const textBox = obj.textBox;
+  if (
+    shown.length === 0 &&
+    rules.length === 0 &&
+    protections.length === 0 &&
+    powerRules.length === 0 &&
+    goaded.length === 0 &&
+    !textBox
+  )
     return null;
   // Goad: by whom, and what it imposes (a player other than them).
   const goadedBy = (by: string) =>
@@ -168,6 +185,28 @@ export function KeywordBadges({ obj }: { obj: ObjectView }) {
   return (
     <>
       <div className="kw-badges">
+        {textBox && (
+          <span
+            className="kw-badge"
+            data-text-box={textBox.defId}
+            role="img"
+            aria-label={t("Text box of {card}", { card: faceName(textBox, lang) })}
+            onMouseEnter={(ev) => {
+              const r = ev.currentTarget.getBoundingClientRect();
+              setTip({
+                x: r.right + 6,
+                y: r.top + r.height / 2,
+                title: t("Text box of {card}", { card: faceName(textBox, lang) }),
+                help: faceText(textBox, lang),
+              });
+            }}
+            onMouseLeave={() => setTip(null)}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              {TEXT_BOX_ICON}
+            </svg>
+          </span>
+        )}
         {protections.map((title) => (
           <span
             key={title}

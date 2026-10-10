@@ -56,6 +56,7 @@ import {
   landBackFace,
   landFace,
   landTypeChoice,
+  mayActivate,
   modeConditionHolds,
   modesOf,
   sacrificeOptions,
@@ -773,11 +774,19 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
   );
   for (const id of [...s.battlefield, ...offField("graveyard", "fromGraveyard"), ...offField("hand", "fromHand"), ...emblems]) {
     const o = obj(s, id);
-    if (o.zone === "battlefield" ? o.controller !== player : o.owner !== player) continue;
+    // 602.2: abilities that other players may activate (Xantcha, Oft-Nabbed Goat).
+    const foreign = o.zone === "battlefield" && o.controller !== player;
+    if (
+      foreign
+        ? !abilitiesOf(s, id).some((ab) => ab.kind === "activated" && ab.activators)
+        : o.zone !== "battlefield" && o.owner !== player
+    )
+      continue;
     abilitiesOf(s, id).forEach((_, index) => {
       const printed = activatedAbility(s, id, index);
       const ab = printed && abilityAsPaid(s, player, id, printed);
-      if (!ab || activationZone(o, ab) !== o.zone || !canPayNonManaCost(s, id, ab, index)) return;
+      if (!ab || activationZone(o, ab) !== o.zone || !mayActivate(s, player, o, ab) || !canPayNonManaCost(s, id, ab, index))
+        return;
       const fc = fixedCost(ab.cost);
       const xc = xCosts(ab.cost);
       if (ab.sorcerySpeed && !instantLoyalty(s, player, id, ab) && !sorceryTiming(s, player)) return;

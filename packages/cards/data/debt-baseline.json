@@ -47,7 +47,9 @@
     "radiationGains": "Strong, the Brutish Thespian: \"you gain life instead of losing it because of radiation\"; family of player effects on radiation (Fallout)",
     "cantAttack": "family D, a player's attack restrictions: \"can't attack this player or their planeswalkers\" (Sandswirl Wanderglyph) or only their planeswalkers of a subtype (Jace, Multiverse Architect), read by attackableDefenders (PLAN-H H8b)",
     "lookAt": "family O, information (R4.5): look at any time at the top card of one's library (libraryTop) or at opposing face-down creatures (faceDown, Found Footage), a single mayLookAt evaluator (PLAN-H H8b)",
-    "skips": "family J (500.11): skip one's next turn (turn, Ral Zarek), draw step (drawStep, Necropotence, Necrodominance) or extra turns (extraTurns, Trouble in Pairs), a single skips evaluator (PLAN-H H8b)"
+    "skips": "family J (500.11): skip one's next turn (turn, Ral Zarek), draw step (drawStep, Necropotence, Necrodominance) or extra turns (extraTurns, Trouble in Pairs), a single skips evaluator (PLAN-H H8b)",
+    "searchControl": "Opposition Agent — family K, control of another player (R4.2): \"you control your opponents while they're searching their libraries\"; the found cards are exiled, linked to the source (searches of `ops/zones.ts`); to reuse for Praetor's Grasp-like effects",
+    "tokenShield": "The Master, Multiplied — family J, rules exceptions (R4.5): \"triggered abilities you control can't cause you to sacrifice or exile creature tokens you control\" (`tokenShielded`, read by sacrifice and exile)"
   },
   "keyword": {
     "attacksDespiteDefender": "keyword rule, several cards",
@@ -75,7 +77,8 @@
     "foretell": "foretell (702.143, special action read from the text): a single Standard card (Sozin's Comet) for now",
     "chooseNumbers": "Wheel of Misfortune — each player secretly chooses a number (ref.numberChoosers, amount.numberChosen); family of simultaneous secret choices (votes, auctions) to attach when another card needs it",
     "removeFromCombat": "Reconnaissance — \"remove [the creature] from combat\" (506.4), a rules action shared by many cards (Maze of Ith family); generic op, a single card for now",
-    "pair": "soulbond (702.95, Tandem Lookout): pairing of two creatures, the keyword's own action; shared by every soulbond card"
+    "pair": "soulbond (702.95, Tandem Lookout): pairing of two creatures, the keyword's own action; shared by every soulbond card",
+    "exchangeTextBox": "Deadpool, Trading Card — \"as it enters, you may exchange its text box and another creature's\" (612, layer 3, `LayerMods.textOf`): family of text-changing effects (Exchange of Words, Volrath's Shapeshifter), to reuse for them"
   },
   "variant": {
     "Amount.numberChosen": "Wheel of Misfortune — union variant of a single card, tracked since the audit of 2026-10-07: to attach to a generic form when one exists",
@@ -109,6 +112,7 @@
     "cantBeBlockedByWeakerThan": "Champion of Lambholt — \"creatures with power less than [this]'s power can't block\": blocking rule comparing with the static's source at block time (a layer-time comparison would loop)",
     "cantBeCopied": "Choreographed Sparks — a printed spell property, no other user",
     "collectEvidenceTargetsManaValue": "Urgent Necropsy — property of a single card (audit of 2026-10-02, § 5.1): to attach to a family as soon as another card needs it",
+    "control": "Xantcha, Sleeper Agent — \"enters under the control of an opponent of your choice\" (chooseOnEnter player with control: the chosen player becomes its base controller as it enters, 110.2); to reuse for the other permanents that enter under an opponent's control",
     "convoke": "Heirloom Epic — convoke for an activated ability (\"for each mana in this ability's activation cost, you may tap an untapped creature you control rather than pay that mana\", PLAN-L L5): family of helpers that pay an ability's mana (waterbend, convoke), to reuse for any ability with that text",
     "costPerExtraTarget": "Officious Interrogation — a colored surcharge per extra target; Amount cost reductions are generic only",
     "createToken": "Head of the Hunt — property of a single card (audit of 2026-10-02, § 5.1): to attach to a family as soon as another card needs it",
@@ -158,6 +162,7 @@
     "outsideIdentity": "Commander's Plate — protection from each color outside the commanders' color identity (903.4): specific to this card; family R4.2 (protections), to attach to a computed color filter if another card needs it",
     "paired": "Tandem Lookout — soulbond filter (702.95: paired, unpaired, paired with the source); shared by every soulbond card",
     "perOwnCreatureTypes": "Diligent Zookeeper — counted per affected object",
+    "perSameName": "Mirror Box — layer 7c multiplier relative to the affected object (\"for each other creature you control with the same name as that creature\"), next to perOwnCreatureTypes (Diligent Zookeeper)",
     "poison": "The Serpent Society — a ward cost kind",
     "preferHighManaValue": "Jade Seedstones // Jadeheart Attendant — property of a single card (audit of 2026-10-02, § 5.1): to attach to a family as soon as another card needs it",
     "preparedSpell": "Codie, Ravenous Codex — marker of the prepared copy",
@@ -189,10 +194,10 @@
     "ObjectFilter": 64,
     "FilterCompare": 3,
     "CostDef": 28,
-    "ActivatedAbilityDef": 18,
+    "ActivatedAbilityDef": 19,
     "CastPermissionAbilityDef": 9,
     "PlayFromZone": 21,
-    "LayerMods": 29,
+    "LayerMods": 31,
     "TriggerMod": 6,
     "EventReplacement": 19,
     "CastInfo": 10,
@@ -203,10 +208,10 @@
     "AdditionalCost": 12,
     "CastLimit": 9,
     "NextSpell": 9,
-    "Effect": 147,
-    "Effect (fields)": 648,
+    "Effect": 148,
+    "Effect (fields)": 650,
     "TriggerSpec": 41,
-    "TriggerSpec (fields)": 145,
+    "TriggerSpec (fields)": 146,
     "Condition": 47,
     "Condition (fields)": 90,
     "Amount": 32,
@@ -310,6 +315,7 @@
     "PLAN-L L4 [rules 188]: small approximations lifted; CostReductionAbilityDef.colored (\"{U} (or {1}) less\", Eluge: value U), action trigger whose \"chosen\" (Shinryu: \"when the chosen player loses\"), ExiledFilter withWarp becomes withCost \"warp\" | \"flashback\" (Blade of the Swarm, Sorceress's Schemes: one key for two cards, each value single-card); optionsFrom shared by Koh and the player choice (Zenos); withWarp and optionsFrom leave the single-card keys: Single-card values 126 → 130, Effect (fields) 642 → 644, Ref (fields) 66 → 67",
     "PLAN-L L5a [rules 189]: Hawkeye (payX max), Nuka-Nuke Launcher (a delayed ability that lasts until the end of the watched player's next turn: delayed until \"theirNextTurn\"; intimidate as a block rule), Kíli (AbilityCostMod free: the whole equip cost), Abuelo's Awakening (MoveSpec.mods: the base P/T in place as it enters), Heirloom Epic (CostDef.convoke: convoke for an ability, single-card key justified): CostDef 27 → 28, MoveSpec 17 → 18, Effect (fields) 644 → 646",
     "PLAN-L L5c [rules 191]: Eriette as a trigger (TriggerSpec becomesAttached, Ref hostOf, gainControl whileAttached + attachment; justified single-card entries), the player static auraStealsCheaper removed; GameObject.counterTimestamps (ability counters in layer 6); changeCounters { by }: Single-card values 130 → 131, GameObject 49 → 50, Effect (fields) 646 → 647, TriggerSpec 40 → 41, TriggerSpec (fields) 142 → 145, Ref 37 → 38, Ref (fields) 67 → 69",
-    "Tevesh Szat & Jeska deck [rules 194]: coinFlip.each, a coin for each object (Rakdos, the Showstopper): Effect (fields) 647 → 648"
+    "Tevesh Szat & Jeska deck [rules 194]: coinFlip.each, a coin for each object (Rakdos, the Showstopper): Effect (fields) 647 → 648",
+    "Deadpool deck [rules 195]: LayerMods.textOf (612, layer 3, exchanged text boxes) and perSameName (Mirror Box); ActivatedAbilityDef.activators (602.2: any player, only the opponents); op exchangeTextBox; copyToken pt amounts and attacking a player; zoneChange linked (a card exiled with the source is played): ActivatedAbilityDef 18 → 19, LayerMods 29 → 31, Effect 147 → 148, Effect (fields) 648 → 650, TriggerSpec (fields) 145 → 146"
   ]
 }

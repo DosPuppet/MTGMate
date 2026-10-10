@@ -23,6 +23,11 @@ export const MAX_TOKENS_PER_EVENT = 100;
 export const MAX_BATTLEFIELD = 400;
 /** Replaced amount (damage, counters, life, cards, tokens): doublers multiplying each other would give infinity. */
 export const MAX_AMOUNT = 1_000_000;
+/**
+ * Announced X (spells and abilities, squad and replicate counts): beyond, the decision is refused (a cost of that many
+ * symbols would be built before the payment fails; the options of `legalActions` stay far below).
+ */
+export const MAX_X = 1_000_000;
 /** Numeric replacements of a single event whose orders are all tried (616.1); beyond, the order of the code. */
 export const MAX_PERMUTED = 5;
 /** Applications of the layers to resolve dependencies (613.8, fixed point). */

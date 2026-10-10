@@ -3,7 +3,7 @@
  * Hidden information (opponent's hand, libraries) never leaves the engine.
  */
 
-import { copiedDefId, FACE_DOWN_WARD } from "./layers";
+import { copiedDefId, FACE_DOWN_WARD, textBoxOf } from "./layers";
 import { legalActions } from "./legal";
 import { costToText, manaValue, totalCost } from "./mana";
 import { customArtSet, keyedPrinting } from "./printing";
@@ -124,6 +124,8 @@ export interface ObjectView extends CardFace {
    * reductions and taxes, flashback, imposed alternative cost… `delta`: mana value difference (negative: cheaper).
    */
   castCost?: { text: string; delta: number };
+  /** Layer 3 (612): the text box it has instead of its own (Deadpool, Trading Card), shown with the card. */
+  textBox?: CardFace;
 }
 
 export interface StackItemView extends CardFace {
@@ -450,8 +452,16 @@ export function objectView(s: GameState, id: ObjectId): ObjectView {
     ...(o.classLevel && o.classLevel > 1 ? { classLevel: o.classLevel } : {}),
     ...(o.solved ? { solved: true } : {}),
     ...(c.keywords.includes("ward") ? { ward: wardCost(c.abilities) } : {}),
+    ...textBoxView(s, id),
     ...activatedView(o.zone === "battlefield" ? c.abilities : []),
   };
+}
+
+/** An exchanged text box (Deadpool, Trading Card): the face whose text it has. */
+function textBoxView(s: GameState, id: ObjectId): Pick<ObjectView, "textBox"> {
+  const text = s.objects[id]?.zone === "battlefield" ? textBoxOf(s, id) : undefined;
+  const d = text ? s.defs[text] : undefined;
+  return d ? { textBox: cardFace(d) } : {};
 }
 
 /** Abilities activated from the battlefield, with a label and their cost (mana and {T}). */

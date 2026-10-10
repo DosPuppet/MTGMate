@@ -3,6 +3,7 @@
 import { customArtSet, type Format } from "@mtgx/engine";
 import cmdCounterBlitz from "../decks/cmd-counter-blitz.json";
 import cmdDarkLeo from "../decks/cmd-dark-leo.json";
+import cmdDeadpool from "../decks/cmd-deadpool.json";
 import cmdEdgarMarkov from "../decks/cmd-edgar-markov.json";
 import cmdFantasticFour from "../decks/cmd-fantastic-four.json";
 import cmdMarioLuigi from "../decks/cmd-mario-luigi.json";
@@ -94,6 +95,7 @@ export const DECKS: DeckList[] = [
   cmdSephiroth,
   cmdMarioLuigi,
   cmdTeveshJeska,
+  cmdDeadpool,
 ].map((d) => withArt({ ...(d as DeckList), builtin: true }));
 
 function withArt(d: DeckList): DeckList {

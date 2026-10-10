@@ -542,8 +542,13 @@ export const RECORD_VERSION = 1;
  *   from the graveyard (Anger), an alternative cost that sacrifices several permanents (Demon of Death's Gate), a coin
  *   for each object (Rakdos, the Showstopper), "+N/+M" counters (Soul Exchange), discover and cascade filters resolved
  *   during the resolution (Tibalt's Trickery)
+ * - 195: Deadpool deck: exchanged text boxes (612, layer 3, `LayerMods.textOf`); abilities that other players may
+ *   activate (602.2, `activators`); a permanent that enters under an opponent's control; "can't attack its owner"; The
+ *   Master, Multiplied's token shield; Opposition Agent's control of the opponents' searches; token copies with P/T
+ *   amounts or attacking a designated player; a `modify` with a P/T amount no longer leaves a stale characteristics
+ *   cache; multi-word creature types ("Time Lord") kept whole by the import; an announced X above a million is refused
  */
-export const RULES_VERSION = 194;
+export const RULES_VERSION = 195;
 
 /** One checkpoint every N decisions (plus the last one of the game). */
 export const CHECKPOINT_EVERY = 25;

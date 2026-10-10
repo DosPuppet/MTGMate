@@ -268,6 +268,18 @@ export function playerStatic(s: GameState, player: PlayerId, key: PlayerStaticKe
 }
 
 /**
+ * The Master, Multiplied (`tokenShield`): a creature token that a triggered ability of its controller, now resolving,
+ * can't make them sacrifice or exile (myriad, "sacrifice it at the beginning of the next end step").
+ */
+export function tokenShielded(s: GameState, id: ObjectId): boolean {
+  const o = s.objects[id];
+  const item = s.resolving?.item;
+  if (!o?.isToken || o.zone !== "battlefield" || item?.kind !== "ability" || !item.event || item.controller !== o.controller)
+    return false;
+  return isCreature(s, id) && playerStatic(s, o.controller, "tokenShield");
+}
+
+/**
  * Can the player not lose the game (104.3)? `reason: "life"`: for having 0 or less life (704.5a), which
  * `cantLose: "life"` is enough to prevent (Marina Vendrell's Grimoire); otherwise only `cantLose: true` (Herald of
  * Eternal Dawn), which also prevents their opponents from winning.

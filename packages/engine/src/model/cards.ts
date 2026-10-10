@@ -584,6 +584,12 @@ export interface ActivatedAbilityDef {
    * creature": Dragonfire Blade).
    */
   reduction?: { generic: Amount; condition?: Condition };
+  /**
+   * Who may activate it, if not only its controller (602.2): `"opponents"` (Oft-Nabbed Goat: "only your opponents may
+   * activate this ability"), `"any"` (Xantcha: "any player may activate this ability"). "You" in its effects is the
+   * player who activates it.
+   */
+  activators?: "opponents" | "any";
 }
 
 export interface CostDef {
@@ -712,7 +718,8 @@ export interface BlockRule {
    * attack you"), replaced by the source's controller when the static ability applies, or by the controller of
    * the effect as it resolves (Promise of Loyalty); see `resolveBlockRules`.
    */
-  cantAttackPlayer?: PlayerId | "you";
+  /** `"owner"`: the owner of the source (Alexios, Xantcha: "can't attack its owner"). */
+  cantAttackPlayer?: PlayerId | "you" | "owner";
   /**
    * Goad (701.38): it attacks each combat if able, and a player other than this one if able (508.1d).
    * In a script, `"you"` (`fx.goad`): the controller of the effect, fixed on resolution. Several players can goad
@@ -778,10 +785,20 @@ export interface PowerRule {
 
 export interface LayerMods {
   /**
+   * Layer 3 (612, text-changing effects): the object has the text box of this definition (abilities, keywords,
+   * characteristic-defining abilities) instead of its own (Deadpool, Trading Card: two exchanged text boxes). Not copiable.
+   */
+  textOf?: string;
+  /**
    * Layer 7c: `power`/`toughness` multiplied, for each affected object, by its number of creature types, at most
    * this value (Diligent Zookeeper: "+1/+1 for each of its creature types, to a maximum of 10"; changeling: all).
    */
   perOwnCreatureTypes?: number;
+  /**
+   * Layer 7c: `power`/`toughness` multiplied, for each affected object, by the number of other creatures its controller
+   * controls with the same name (Mirror Box).
+   */
+  perSameName?: boolean;
   /** Layer 6: "uses its toughness for" rules granted. */
   addPowerRules?: PowerRule[];
   /** Layer 6: protections and hexproof "from [filter]" granted. */
@@ -1202,6 +1219,16 @@ export interface PlayerStaticAbilityDef {
   /** Hall of Echoes: the legend rule doesn't apply to your permanents; only to these (Spider-Verse: your
    * Spiders). */
   noLegendRule?: boolean | ObjectFilter;
+  /**
+   * Opposition Agent (with `affects: "opponents"`): the source's controller controls the affected players while they
+   * search their library (they choose what is found), and the cards found are exiled, linked to the source.
+   */
+  searchControl?: boolean;
+  /**
+   * The Master, Multiplied: "triggered abilities you control can't cause you to sacrifice or exile creature tokens you
+   * control" (read by `tokenShielded`).
+   */
+  tokenShield?: boolean;
   /** Jace's Machinations: loyalty abilities of your Jaces at instant speed. */
   jaceLoyaltyInstant?: boolean;
   /**

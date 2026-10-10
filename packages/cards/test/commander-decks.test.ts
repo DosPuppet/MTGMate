@@ -16,6 +16,7 @@ describe("decks Commander", () => {
     expect(decks.map((d) => d.id)).toEqual([
       "counter-blitz",
       "dark-leo",
+      "deadpool",
       "edgar-markov",
       "fantastic-four",
       "mario-luigi",

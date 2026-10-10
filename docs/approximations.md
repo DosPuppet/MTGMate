@@ -31,7 +31,7 @@ Each entry carries its nature:
 - `rule` **Suspend (702.62):** haste is given to the next creature spell cast this turn, even if it is not the suspended card (also Taigam, Master Opportunist).
 - `auto choice` **Controlling another player's turn** (Mindslaver, The Dominion Bracelet): an AI that controls another player's turn contents itself with the default decisions (pass, do not attack).
 - `rule` **Token copies created attacking (508.4):** a single choice of defender for all the token copies that one effect creates for one player (Calamity), whereas each could attack a different defender; the copies beyond a doubler keep the defender chosen for their player (myriad). The other tokens created attacking (mobilize…) are divided among the defenders since PLAN-L L5.
-- `rule` **Safety caps:** a single event creates at most 100 tokens, and none when the battlefield already holds 400 objects; a replaced amount (damage, counters, life, cards) is capped at one million. Token doublers that multiply (copies of Exalted Sunborn) otherwise gave an infinite number and a blocked game (`engine/src/limits.ts`). Each cut is noted in the game log ("Safety cap reached").
+- `rule` **Safety caps:** a single event creates at most 100 tokens, and none when the battlefield already holds 400 objects; a replaced amount (damage, counters, life, cards) is capped at one million, and so is an announced X (a larger X is refused: squad paid a billion times built a cost of a billion symbols before failing). Token doublers that multiply (copies of Exalted Sunborn) otherwise gave an infinite number and a blocked game (`engine/src/limits.ts`). Each cut is noted in the game log ("Safety cap reached").
 
 ### Outside the game rules
 
@@ -251,3 +251,14 @@ In the order they were added, set by set.
   - `auto choice` Stinging Study: with two commanders, X is the greatest mana value among them (and not the one you choose);
   - `rule` Tibalt's Trickery: "choose 1, 2, or 3 at random" is a three-sided die roll (shown as such in the log); the card found is offered with the cascade prompt (cast for free, otherwise to the bottom);
   - `auto choice` Demon of Death's Gate: the three black creatures sacrificed instead of paying are chosen by the engine (the lowest mana values).
+  - `rule` Elturel Survivors: X counts the lands of all opponents (the defending player's in a duel);
+  - `rule` Echoing Assault: it triggers once per attack (not once for each player attacked), and the copy attacks the player its controller chooses;
+  - `rule` Possibility Storm: the cast spell is exiled after the card is found (its types read while it is on the stack) and stays in exile instead of going to the bottom with the others;
+  - `timing` Mob Verdict, Prisoner's Dilemma: the "secret" votes and choices are made one after the other, in turn order, each seen by the next players;
+  - `rule` Vislor Turlough: the creature stays goaded for the rest of the game (not only while the opponent controls it);
+  - `rule` Slicer, Hired Muscle: "More Than Meets the Eye" (casting it converted for {2}{R}) is not handled: it is only cast for its mana cost;
+  - `rule` Delina, Wild Mage: "you may roll again" is offered ten times at most;
+  - `timing` Xenic Poltergeist: the artifact stays a creature until your next turn (rather than your next upkeep);
+  - `rule` Sundering Eruption: "creatures without flying can't block this turn" affects the creatures present on resolution;
+  - `rule` Share the Spoils: each player may play the exiled cards whenever they could play them (not only during their own turn: an instant on an opponent's turn);
+  - `auto choice` Opposition Agent: you choose what the opponent finds, but the other decisions of the search (a "may" in its spell) stay theirs.

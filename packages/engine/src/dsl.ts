@@ -1206,12 +1206,14 @@ export const fx = {
    */
   chooseForSelf: (
     kind: Extract<Effect, { op: "chooseOnEnter" }>["kind"],
-    opts: { options?: string[]; optionsFrom?: Ref; secret?: boolean; who?: Ref } = {},
+    opts: { options?: string[]; optionsFrom?: Ref; secret?: boolean; who?: Ref; control?: boolean } = {},
   ): Effect => ({ op: "chooseOnEnter", kind, ...opts }),
   /**
    * "You may have [this permanent] enter as a copy of [filter]" (707.9, in `asEnters`): see the `chooseCopy` effect
    * ("you may": `optional`, the case of every card so far).
    */
+  /** "As [this] enters, you may exchange its text box and another creature's" (in `asEnters`, Deadpool). */
+  exchangeTextBox: { op: "exchangeTextBox" } as Effect,
   chooseCopy: (filter: ObjectFilter, opts: Omit<Extract<Effect, { op: "chooseCopy" }>, "op" | "filter"> = {}): Effect => ({
     op: "chooseCopy",
     filter,
@@ -1757,13 +1759,13 @@ export const fx = {
       nonlegendary?: boolean;
       store?: string;
       tapped?: boolean;
-      attacking?: boolean;
+      attacking?: boolean | Ref;
       attackEach?: Ref;
       /** With `attackEach`: "you may", for each player (myriad). */
       optional?: boolean;
       atEndOfCombat?: "exile" | "sacrifice";
       addTypes?: CardType[];
-      pt?: number;
+      pt?: number | { power: Amount; toughness: Amount };
       setColors?: Color[];
       addColors?: Color[];
       setSubtypes?: string[];
@@ -2226,6 +2228,8 @@ export function activated(opts: {
   fromHand?: boolean;
   /** Also from the command zone (commander ninjutsu). */
   fromCommand?: boolean;
+  /** Who else may activate it (602.2): its controller's opponents only, or any player (Oft-Nabbed Goat, Xantcha). */
+  activators?: "opponents" | "any";
   exileSelf?: boolean;
   discardSelf?: boolean;
   bounceSelf?: boolean;
@@ -2342,6 +2346,7 @@ export function activated(opts: {
     fromGraveyard: opts.fromGraveyard,
     fromHand: opts.fromHand,
     ...(opts.fromCommand ? { fromCommand: true } : {}),
+    ...(opts.activators ? { activators: opts.activators } : {}),
     label: opts.label,
   };
 }
@@ -2471,7 +2476,7 @@ export const when = {
   /** A card changes zones (see TriggerSpec `zoneChange`). */
   zoneChange: (
     from: Zone[],
-    opts: { to?: Zone[]; filter?: ObjectFilter; whose?: "you" | "opponent" | "any" } = {},
+    opts: { to?: Zone[]; filter?: ObjectFilter; whose?: "you" | "opponent" | "any"; linked?: boolean } = {},
   ): TriggerSpec => ({
     on: "zoneChange",
     from,

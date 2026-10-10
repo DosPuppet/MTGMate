@@ -47,6 +47,7 @@ import type {
   GameObject,
   GameState,
   NameKind,
+  ObjectId,
   PlayerId,
   Resolution,
   TokenSpec,
@@ -474,7 +475,6 @@ export const HANDLERS: OpHandlers = {
           p.from.chosen === "color" ? { ...p, from: { ...p.from, chosen: undefined, colors: [chosen] } } : p,
         ),
       };
-    bump(s);
     s.effects.push({
       id: newId(s, "e"),
       timestamp: nextTimestamp(s),
@@ -500,6 +500,9 @@ export const HANDLERS: OpHandlers = {
         : {}),
       ...(e.basePT !== undefined ? { setPower: evalAmount(s, ctx, e.basePT), setToughness: evalAmount(s, ctx, e.basePT) } : {}),
     });
+    // After the push: evaluating the amounts above (Karn, Silver Golem: the mana value) reads the characteristics, which
+    // must not stay cached without this effect.
+    bump(s);
     return;
   },
   harness(s, _r, _e, ctx) {
@@ -507,6 +510,35 @@ export const HANDLERS: OpHandlers = {
     if (o?.zone !== "battlefield" || o.harnessed) return;
     o.harnessed = true;
     bump(s);
+    return;
+  },
+  exchangeTextBox(s, r, _e, ctx, key) {
+    // Deadpool, Trading Card: "another creature" (any player's), chosen as it enters; "you may": none.
+    const options = s.battlefield.filter((id) => id !== ctx.sourceId && chars(s, id).types.includes("Creature"));
+    const answer = r.vars[key("swap")];
+    if (!answer) {
+      if (options.length === 0) return;
+      // Suggestion: an opponent's creature with the greatest mana value (it takes the drawbacks, this one its text).
+      const mv = (id: ObjectId) => manaValue(s.defs[copiedDefId(s, id)]?.manaCost);
+      const theirs = options.filter((id) => chars(s, id).controller !== ctx.controller).sort((a, b) => mv(b) - mv(a));
+      return {
+        ask: {
+          player: ctx.controller,
+          key: key("swap"),
+          request: {
+            type: "pick",
+            intent: "pickCards",
+            prompt: msg("Exchange its text box with another creature's?"),
+            options,
+            min: 0,
+            max: 1,
+            suggested: theirs.slice(0, 1),
+          },
+        },
+      };
+    }
+    const chosen = answer.map(String).filter((id) => options.includes(id));
+    r.vars.$textSwap = chosen.slice(0, 1);
     return;
   },
   attach(s, r, e, ctx) {
@@ -657,7 +689,11 @@ export const HANDLERS: OpHandlers = {
     const creators = e.for ? resolveRef(s, ctx, e.for).filter((x) => isPlayer(s, x)) : [ctx.controller];
     // "Tapped and attacking": a single choice for all the copies of one controller, made by that player.
     const attacking = new Map<string, string | undefined>();
-    if (e.attacking && !attackEach) {
+    if (e.attacking && typeof e.attacking === "object" && !attackEach) {
+      // Echoing Assault: "attacking that player" (if it can still be attacked, 508.4a).
+      const defender = resolveRef(s, ctx, e.attacking).find((x) => isPlayer(s, x) && !s.players[x]?.lost);
+      for (const p of creators) attacking.set(p, defender && defender !== p ? defender : undefined);
+    } else if (e.attacking && !attackEach) {
       for (const p of creators) {
         const k = key(p === ctx.controller ? "defender" : `defender:${p}`);
         const c = chooseAttacked(s, r, ctx, k, p, undefined, msg("What should the copy attack?"));
@@ -665,6 +701,13 @@ export const HANDLERS: OpHandlers = {
         attacking.set(p, c.defender);
       }
     }
+    // Saw in Half: P/T evaluated now (half the destroyed creature's, rounded up).
+    const pt =
+      e.pt === undefined || typeof e.pt === "number"
+        ? e.pt === undefined
+          ? undefined
+          : { power: e.pt, toughness: e.pt }
+        : { power: evalAmount(s, ctx, e.pt.power), toughness: evalAmount(s, ctx, e.pt.toughness) };
     // Doubling Season also applies to token copies.
     const base = attackEach ? attackEach.length : e.count === undefined ? 1 : evalAmount(s, ctx, e.count);
     // The copies to make: for each creator and each model, its definition and its number.
@@ -711,7 +754,7 @@ export const HANDLERS: OpHandlers = {
                 // Ardyn, the Usurper: "except it's a black Demon".
                 setColors: e.setColors,
                 setSubtypes: e.setSubtypes,
-                ...(e.pt !== undefined ? { setPower: e.pt, setToughness: e.pt } : {}),
+                ...(pt ? { setPower: pt.power, setToughness: pt.toughness } : {}),
               }),
               modsCopiable: true,
             },

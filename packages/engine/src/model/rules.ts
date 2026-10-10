@@ -542,7 +542,11 @@ export type TriggerSpec =
    * A card changes zones (Ketramose: "put into exile from graveyards and/or the battlefield"; Dredger's Insight:
    * "leave your graveyard"). `whose`: the card's owner.
    */
-  | { on: "zoneChange"; from: Zone[]; to?: Zone[]; filter?: ObjectFilter; whose?: "you" | "opponent" | "any" }
+  /**
+   * `linked`: a card linked to the source (exiled with it) leaves that zone; `ref.eventPlayer` is then the player who
+   * controls it afterwards (Share the Spoils: "when they do", the player who played it).
+   */
+  | { on: "zoneChange"; from: Zone[]; to?: Zone[]; filter?: ObjectFilter; whose?: "you" | "opponent" | "any"; linked?: boolean }
   /** "Whenever you activate a loyalty ability [by removing at least N counters]"; `byOpponent`: an opponent activates it. */
   | { on: "loyaltyActivated"; minRemoved?: number; byOpponent?: boolean }
   /** "Whenever you activate an ability that isn't a mana ability" (the object: the ability on the stack);

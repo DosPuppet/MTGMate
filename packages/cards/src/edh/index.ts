@@ -6,6 +6,7 @@ import type { CardScript } from "@mtgx/engine";
 import { COMMANDER_CARDS } from "./commander";
 import { EDH_COUNTER_BLITZ } from "./counterblitz";
 import { EDH_DARK_LEO } from "./darkleo";
+import { EDH_DEADPOOL } from "./deadpool";
 import { EDH_EDGAR } from "./edgar";
 import { EDH_FANTASTIC } from "./fantastic";
 import { EDH_LANDS } from "./lands";
@@ -49,4 +50,5 @@ export const EDH_SCRIPTS: Record<string, CardScript> = {
   ...EDH_MARIO_LUIGI,
   ...EDH_PARTNERS,
   ...EDH_TEVESH_JESKA,
+  ...EDH_DEADPOOL,
 };

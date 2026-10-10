@@ -11,6 +11,7 @@ export const COUNTER_LABELS: Readonly<Record<string, string>> = {
   stun: msg("Stun"),
   loyalty: msg("Loyalty"),
   lore: msg("Lore"),
+  odor: msg("Odor"),
   finality: msg("Finality"),
   charge: msg("Charge"),
   time: msg("Time"),

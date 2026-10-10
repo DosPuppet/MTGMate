@@ -29,6 +29,7 @@ import {
 } from "./effects";
 import { RulesError, rethrowAsRules } from "./errors";
 import { copiedDefId, effectivePower, hasKeyword } from "./layers";
+import { MAX_X } from "./limits";
 import { canPay, costToText, type ManaPurpose, manaAbilitiesOf, manaValue, payMana, totalCost } from "./mana";
 import { firstOfEachName, hasName, isNameAllowed } from "./names";
 import { asEntersChoices, ENTERS_PREFIX, withEntersChoices } from "./replacement";
@@ -51,6 +52,7 @@ import {
   nextTimestamp,
   obj,
   onBattlefield,
+  opponentsOf,
   removeFromGame,
   rulesEvent,
   shuffle,
@@ -2152,6 +2154,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   });
   const hasX = (!free && !!(flashback ? (dc.flashback ?? dc.manaCost)?.x : dc.manaCost?.x)) || !!d.xCost || kickerPaidTimes(d);
   const x = hasX ? Math.max(0, Math.floor(choices.x ?? 0)) : 0;
+  if (x > MAX_X) throw new RulesError(msg("X is too large"));
   // Vicious Rivalry: "as an additional cost to cast this spell, pay X life".
   if (d.xCost === "life" && x > payableLife(s, player)) throw new RulesError(msg("Not enough life"));
   // Soul Immolation: "blight X; X can't be greater than the greatest toughness among creatures you control".
@@ -2957,6 +2960,16 @@ export function abilityZone(ab: ActivatedAbilityDef): "battlefield" | "graveyard
  * abilities work there; Karn, Living Legacy) and for an ability that says so (`fromCommand`: commander ninjutsu).
  * Outside the battlefield, the owner activates it.
  */
+/**
+ * 602.2: may this player activate this ability of this object? Its controller (its owner outside the battlefield), or the
+ * players its `activators` designate (Xantcha: any player; Oft-Nabbed Goat: only the opponents of its controller).
+ */
+export function mayActivate(s: GameState, player: PlayerId, o: GameObject, ab: ActivatedAbilityDef): boolean {
+  const holder = o.zone === "battlefield" ? o.controller : o.owner;
+  if (o.zone !== "battlefield" || !ab.activators) return holder === player;
+  return ab.activators === "any" || (player !== holder && opponentsOf(s, holder).includes(player));
+}
+
 export function activationZone(o: GameObject, ab: ActivatedAbilityDef): "battlefield" | "graveyard" | "hand" | "command" {
   return o.zone === "command" && (o.isToken || ab.fromCommand) ? "command" : abilityZone(ab);
 }
@@ -3517,7 +3530,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   const fc = fixedCost(ab.cost);
   const xc = xCosts(ab.cost);
   const zone = activationZone(o, ab);
-  if (o.zone !== zone || (zone === "battlefield" ? o.controller : o.owner) !== player) {
+  if (o.zone !== zone || !mayActivate(s, player, o, ab)) {
     throw new RulesError(msg("You don't control this permanent"));
   }
   if (
@@ -3551,6 +3564,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     xc.removeCounters
       ? Math.max(0, Math.floor(choices.x ?? 0))
       : 0;
+  if (x > MAX_X) throw new RulesError(msg("X is too large"));
   // "With mana value X" (an exact or maximum mana value read from X): checked with the announced X (601.2b, then 601.2c).
   const xCtx = { ...staticContext(s, player, source), x };
   const specs = ab.targets?.map((t) =>

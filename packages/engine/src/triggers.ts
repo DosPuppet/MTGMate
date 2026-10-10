@@ -121,7 +121,7 @@ function computeLiveSourcesScanned(s: GameState): Source[] {
     !!m.addKeywords?.includes("prowess") ||
     !!m.addKeywords?.includes("decayed");
   const granted =
-    s.effects.some((e) => e.copyOf || grants(e)) ||
+    s.effects.some((e) => e.copyOf || e.textOf || grants(e)) ||
     s.battlefield.some((id) => (s.defs[obj(s, id).defId]?.abilities ?? []).some((ab) => ab.kind === "static" && grants(ab.mods)));
   for (const id of s.battlefield) {
     // Quick filter on the printed abilities, unless an effect grants triggered abilities.
@@ -939,6 +939,12 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       if (ev.e !== "zone" || !ev.from || !t.from.includes(ev.from) || (t.to && !t.to.includes(ev.to))) return null;
       const card = (ev.newId && s.objects[ev.newId]) || undefined;
       const owner = card?.owner ?? ev.lki?.owner;
+      // Share the Spoils: a card exiled with the source is played (cast or put onto the battlefield) by a player.
+      if (t.linked) {
+        const old = ev.oldId;
+        if (!old || !s.objects[src.id]?.linked?.includes(old)) return null;
+        return { objectId: ev.newId ?? undefined, player: card?.controller ?? owner ?? me };
+      }
       if (t.whose === "you" && owner !== me) return null;
       // "… into an opponent's graveyard" (Bloodchief Ascension): an opponent still in the game.
       if (t.whose === "opponent" && (!owner || owner === me || !!s.players[owner]?.lost)) return null;

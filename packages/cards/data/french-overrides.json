@@ -166,5 +166,33 @@
   "Soul Exchange": {
     "typeLine": "Rituel",
     "text": "En tant que coût supplémentaire pour lancer ce sort, exilez une créature que vous contrôlez.\nRenvoyez sur le champ de bataille une carte de créature ciblée depuis votre cimetière. Mettez un marqueur +2/+2 sur cette créature si la créature exilée était un thrull."
+  },
+  "Deadpool, Trading Card": {
+    "typeLine": "Créature légendaire : mutant, mercenaire et héros",
+    "text": "Au moment où Deadpool arrive, vous pouvez échanger sa zone de texte avec celle d'une autre créature.\nAu début de votre entretien, vous perdez 3 points de vie.\n{3}, sacrifiez cette créature : Chaque autre joueur pioche une carte."
+  },
+  "Olinda the Oblivious": {
+    "typeLine": "Créature légendaire : mouffette et gredin",
+    "text": "À chaque fois qu'Olinda arrive ou attaque, pour chaque adversaire, mettez un marqueur « odeur » sur jusqu'à une créature ciblée que ce joueur contrôle et qui n'a pas de marqueur « odeur ». Chacune de ces créatures a « Au début de votre entretien, vous perdez 2 points de vie » tant qu'elle a un marqueur « odeur ». (Elles continuent de sentir après qu'Olinda a quitté le champ de bataille.)"
+  },
+  "Karn, Silver Golem": {
+    "typeLine": "Créature-artefact légendaire : golem",
+    "text": "À chaque fois que Karn bloque ou est bloqué, il gagne -4/+4 jusqu'à la fin du tour.\n{1} : Un artefact non-créature ciblé devient une créature-artefact avec une force et une endurance chacune égales à sa valeur de mana jusqu'à la fin du tour."
+  },
+  "Xenic Poltergeist": {
+    "typeLine": "Créature : esprit",
+    "text": "{T} : Jusqu'à votre prochain entretien, un artefact non-créature ciblé devient une créature-artefact avec une force et une endurance chacune égales à sa valeur de mana."
+  },
+  "Slicer, Hired Muscle": {
+    "faces": [
+      {
+        "typeLine": "Créature-artefact légendaire : robot",
+        "text": "Plus qu'il n'y paraît {2}{R} (Vous pouvez lancer cette carte convertie pour {2}{R}.)\nDouble initiative, célérité\nAu début de l'entretien de chaque adversaire, vous pouvez faire que ce joueur acquière le contrôle de Slicer jusqu'à la fin du tour. Si vous faites ainsi, dégagez Slicer, provoquez-le, et il ne peut pas être sacrifié ce tour-ci. Si vous ne faites pas ainsi, convertissez-le."
+      },
+      {
+        "typeLine": "Artefact légendaire : véhicule",
+        "text": "Métal vivant (Pendant votre tour, ce véhicule est aussi une créature.)\nInitiative, célérité\nÀ chaque fois que Slicer inflige des blessures de combat à un joueur, convertissez-le à la fin du combat."
+      }
+    ]
   }
 }

@@ -87,11 +87,19 @@ export function Preview() {
         {obj && players && MAX_SPEED.test(`${face.text}\n${face.fr?.text ?? ""}`) && (
           <MaxSpeedNote speed={players[obj.controller]?.speed} />
         )}
-        {/* Oracle text always shown: frameless art, foreign printings, small print. */}
-        {faceText(face, lang) && (
-          <div className="preview-text">
-            <RulesText text={faceText(face, lang)} />
+        {/* Oracle text always shown: frameless art, foreign printings, small print. An exchanged text box (Deadpool,
+            Trading Card) replaces it. */}
+        {obj?.textBox ? (
+          <div className="preview-text" data-text-box={obj.textBox.defId}>
+            <div className="preview-text-box">{t("Text box of {card}", { card: faceName(obj.textBox, lang) })}</div>
+            <RulesText text={faceText(obj.textBox, lang)} />
           </div>
+        ) : (
+          faceText(face, lang) && (
+            <div className="preview-text">
+              <RulesText text={faceText(face, lang)} />
+            </div>
+          )
         )}
         {backImage && (
           <button type="button" className="btn small ghost preview-flip" onClick={() => setFlipped((x) => !x)}>

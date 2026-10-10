@@ -378,8 +378,11 @@ export type Effect =
       addAbilities?: AbilityDef[];
       /** Tapped copy (Kambal). */
       tapped?: boolean;
-      /** Tapped and attacking (Calamity, Galloping Inferno): its controller chooses what it attacks (508.4). */
-      attacking?: boolean;
+      /**
+       * Tapped and attacking (Calamity, Galloping Inferno): its controller chooses what it attacks (508.4); a reference:
+       * attacking that player (Echoing Assault: "attacking that player").
+       */
+      attacking?: boolean | Ref;
       /**
        * Myriad (702.116), Shredder: a tapped and attacking copy for each of the designated players, attacking that
        * player (or one of their designated planeswalkers, at your choice: `ref.withPlaneswalkers`); `count` is ignored.
@@ -388,8 +391,11 @@ export type Effect =
        */
       attackEach?: Ref;
       optional?: boolean;
-      /** Base P/T set (Nexus of Becoming: 3/3). */
-      pt?: number;
+      /**
+       * Base P/T set (Nexus of Becoming: 3/3), or amounts evaluated on resolution (Saw in Half: half the power and
+       * toughness of the destroyed creature, rounded up).
+       */
+      pt?: number | { power: Amount; toughness: Amount };
       /** "… except its equip abilities cost {N} less" (Firion). */
       equipDiscount?: number;
       /** "… except it's a black Demon" (Ardyn, the Usurper): colors and subtypes replaced. */
@@ -483,12 +489,19 @@ export type Effect =
       secret?: boolean;
       /** Another player makes the choice for the source (Sphinx Ambassador: "that player chooses a card name"). */
       who?: Ref;
+      /** `player` as it enters: it enters under the control of the chosen player (Xantcha, Sleeper Agent). */
+      control?: boolean;
     }
   /**
    * Devour N (702.82, in `CardDef.asEnters`): sacrifice permanents as it enters; N +1/+1 counters per sacrificed
    * permanent. `graveyardUpToX`: "exile up to X cards from your graveyard" instead (Mimeoplasm, linked cards).
    */
   | { op: "devour"; filter: ObjectFilter; n: number; graveyardUpToX?: boolean }
+  /**
+   * "As [this] enters, you may exchange its text box and another creature's" (Deadpool, Trading Card; in `asEnters`):
+   * the chosen creature is stored (`$textSwap`), and the exchange is done as it enters (layer 3, `LayerMods.textOf`).
+   */
+  | { op: "exchangeTextBox" }
   /**
    * "You may have [this permanent] enter as a copy of …" (707.9, in `CardDef.asEnters`): the model is chosen as it
    * enters. `anyController`: any permanent (Mockingbird), otherwise one of yours; `fromGraveyards`: a card from a

@@ -6,6 +6,7 @@ import {
   type CardScript,
   type CardType,
   type Color,
+  CREATURE_TYPES,
   cardRef,
   dsl,
   type Effect,
@@ -908,12 +909,28 @@ function faceRaw(raw: RawCard, f: RawFace): RawCard {
   };
 }
 
+/** Creature types of several words (205.3m: "Time Lord"), kept together when the type line is split. */
+const MULTI_WORD_TYPES = new Set(CREATURE_TYPES.filter((t) => t.includes(" ")));
+
+function splitSubtypes(right: string): string[] {
+  const words = right.split(" ").filter(Boolean);
+  const out: string[] = [];
+  for (let i = 0; i < words.length; i++) {
+    const two = `${words[i]} ${words[i + 1]}`;
+    if (i + 1 < words.length && MULTI_WORD_TYPES.has(two)) {
+      out.push(two);
+      i++;
+    } else out.push(words[i] as string);
+  }
+  return out;
+}
+
 function singleDef(raw: RawCard, script: CardScript | undefined, set: string): CardDef {
   const [left = "", right = ""] = raw.typeLine.split(" — ");
   const words = left.split(" ").filter(Boolean);
   const supertypes = words.filter((w) => SUPERTYPES.has(w));
   const types = words.filter((w): w is CardType => CARD_TYPES.has(w as CardType));
-  const subtypes = right.split(" ").filter(Boolean);
+  const subtypes = splitSubtypes(right);
 
   let implemented = !!script || onlyKeywords(raw.oracleText);
   // "Prepare" cards: playable only if the script describes their spell.

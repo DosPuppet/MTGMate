@@ -40,6 +40,7 @@ import {
   recipientMatches,
   replacementAdd,
   replacementAtLeast,
+  tokenShielded,
 } from "./statics";
 import { matchesObjectFilter, matchesView, protectedFrom, sourceView, withChosen } from "./targets";
 import { msg } from "./text";
@@ -618,7 +619,8 @@ export function sacrifice(s: GameState, id: ObjectId): void {
   const o = s.objects[id];
   if (o?.zone !== "battlefield") return;
   // Zurgo, Thunder's Decree: "this token can't be sacrificed".
-  if (hasKeyword(s, id, "cantBeSacrificed")) return;
+  // The Master, Multiplied: nor a creature token its controller's triggered ability would make them sacrifice.
+  if (hasKeyword(s, id, "cantBeSacrificed") || tokenShielded(s, id)) return;
   rulesEvent(s, { e: "sacrifice", objectId: id, player: o.controller });
   const c = chars(s, id);
   logTurnEvent(s, {

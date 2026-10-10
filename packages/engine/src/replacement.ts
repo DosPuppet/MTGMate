@@ -11,7 +11,7 @@
 
 import { gainLife } from "./actions";
 import { boardAmount, type EffectContext, evalAmount, type OpResult, runEffectWith, staticContext } from "./effects";
-import { copiableExceptions, copiedDefId, mergeMods } from "./layers";
+import { copiableExceptions, copiedDefId, mergeMods, textBoxOf } from "./layers";
 import { manaValue } from "./mana";
 import { willHaveRiot } from "./stack";
 import { changeCounters, chars, FACE_DOWN_ID, moveObject, newId, nextTimestamp, P1P1, setPrepared } from "./state";
@@ -63,6 +63,10 @@ export interface EntersContext {
   copyDuration?: "endOfTurn";
   /** Cards linked to the permanent (702.82: exiled as it enters by Mimeoplasm). */
   linked?: ObjectId[];
+  /** Deadpool, Trading Card: the creature whose text box it exchanges with its own as it enters (layer 3). */
+  textSwap?: ObjectId;
+  /** "Enters under the control of an opponent of your choice" (Xantcha, Sleeper Agent): its controller as it enters. */
+  enterController?: PlayerId;
   /** "When you do, exile that card": the card copied from a graveyard (Superior Spider-Man, 603.12). */
   exileCopied?: ObjectId;
   /** Riot (702.136): the choice made while resolving the spell (otherwise the default choice, `defaultRiot`). */
@@ -123,6 +127,8 @@ export type EntersChoices = Pick<
   | "linked"
   | "exileCopied"
   | "beheld"
+  | "textSwap"
+  | "enterController"
 >;
 
 /**
@@ -152,9 +158,9 @@ type EntersAsk = Extract<OpResult, { ask: unknown }>;
 export const ENTERS_PREFIX = "enter:";
 
 /** "As it enters" effects that only choose: the only ones done outside a resolution, and probed for a land. */
-const CHOICE_OPS: ReadonlySet<Effect["op"]> = new Set(["chooseOnEnter", "chooseCopy", "behold"]);
+const CHOICE_OPS: ReadonlySet<Effect["op"]> = new Set(["chooseOnEnter", "chooseCopy", "behold", "exchangeTextBox"]);
 /** Results of these choices, removed before each effect (a second choice of the same kind is properly asked). */
-const RESULT_KEYS = ["$chosen", "$copyOf", "$copyCard", "$devoured", "$ids:devoured", "$beheld"];
+const RESULT_KEYS = ["$chosen", "$copyOf", "$copyCard", "$devoured", "$ids:devoured", "$beheld", "$textSwap"];
 
 /** Riot (702.136a): a +1/+1 counter or haste; suggestion: haste if it can still attack this turn. */
 function riotRequest(s: GameState, controller: PlayerId): ChoiceRequest {
@@ -193,6 +199,7 @@ function collectEntering(
   if (e.op === "chooseOnEnter") {
     const [kind, value] = (diff.$chosen ?? []).map(String);
     if (kind && value) out.chosen = { ...out.chosen, ...chosenValue(kind, value), ...(e.secret ? { secret: true } : {}) };
+    if (kind === "player" && value && e.control) out.enterController = value;
   } else if (e.op === "chooseCopy") {
     const [defId, model] = (diff.$copyOf ?? []).map(String);
     if (!defId) return;
@@ -207,6 +214,9 @@ function collectEntering(
     if (e.tapped) out.tapped = true;
     const card = diff.$copyCard?.[0];
     if (e.exile && card !== undefined) out.exileCopied = String(card);
+  } else if (e.op === "exchangeTextBox") {
+    const other = diff.$textSwap?.[0];
+    if (other !== undefined) out.textSwap = String(other);
   } else if (e.op === "behold") {
     // "As this land enters, you may behold a Jace" (Theorist's Sanctum): read by `cond.beheld` as it enters.
     out.beheld = Number(diff.$beheld?.[0] ?? 0) > 0;
@@ -520,6 +530,11 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
     const res = asEntersChoices(s, {}, { id: o.id, defId: copiedDefId(s, o.id), controller: o.controller }, "", "default");
     if (!("ask" in res)) ctx = withEntersChoices(ctx, res);
   }
+  // Xantcha, Sleeper Agent: "enters under the control of an opponent of your choice" (110.2: its base controller).
+  if (ctx.enterController && s.players[ctx.enterController]) {
+    o.controller = ctx.enterController;
+    o.baseController = ctx.enterController;
+  }
   // 707.9: "enters as a copy of …" (Waxen Shapethief), before the other replacements (which read the copy: riot,
   // loyalty). The exceptions of the model, then its own (Visage Bandit: "… in addition to its other types"; Superior
   // Spider-Man: name and P/T), are copiable (707.9b): a copy of this permanent takes them over. Cursed Mirror: until end
@@ -544,6 +559,18 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
         bound: { c: [card] },
         label: msg("Exile the copied card"),
       });
+  }
+  // Deadpool, Trading Card: "as it enters, you may exchange his text box and another creature's" (612, layer 3). Each
+  // takes the other's text box as it is now (a text box already exchanged, otherwise its copiable one), for as long as it
+  // stays on the battlefield; not copiable (707.2).
+  const other = ctx.textSwap;
+  if (other && other !== o.id && s.objects[other]?.zone === "battlefield") {
+    const mine = textBoxOf(s, o.id) ?? copiedDefId(s, o.id);
+    const theirs = textBoxOf(s, other) ?? copiedDefId(s, other);
+    const timestamp = nextTimestamp(s);
+    s.effects.push({ id: newId(s, "e"), timestamp, affected: [o.id], duration: "permanent", textOf: theirs });
+    s.effects.push({ id: newId(s, "e"), timestamp, affected: [other], duration: "permanent", textOf: mine });
+    s.version += 1; // layer cache
   }
   // 702.82: the cards exiled as it enters (Mimeoplasm) are linked to the permanent.
   if (ctx.linked?.length) o.linked = [...(o.linked ?? []), ...ctx.linked];
