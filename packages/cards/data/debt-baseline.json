@@ -133,6 +133,7 @@
     "forbidKeywords": "Archetype of Courage — \"loses [keyword] and can't have or gain it\" (LayerMods, removed at the end of layer 6): family of layer 6 abilities, to reuse for the other Archetypes",
     "foretell": "Sozin's Comet — duplicate of op.foretell (the mechanic read from the text)",
     "gainLife": "The Darkness Crystal — property of a single card (audit of 2026-10-02, § 5.1): to attach to a family as soon as another card needs it",
+    "graveyard": "Animate Dead — \"enchant creature card in a graveyard\" (CardDef.enchant.graveyard): the Aura spell targets a card in a graveyard, which returns under the Aura's controller as the Aura enters attached to it; family of reanimation Auras (Necromancy, Dance of the Dead), to reuse for them",
     "graveyardPermanentTypes": "Muldrotha, the Gravetide — a per-type budget, no other card",
     "graveyardSize": "Riverchurn Monument — property of a single card (audit of 2026-10-02, § 5.1): to attach to a family as soon as another card needs it",
     "graveyardUpToX": "Mimeoplasm, Revered One — the asEnters loop links cards only through devour's stored ids",
@@ -145,7 +146,6 @@
     "mustBlockAttacker": "Tolsimir, Midnight's Light: \"blocks that creature if able\" (the event's object, fixed on resolution; PLAN-H H3 merged mustBlockEventObject into mustBlockAttacker); family of combat requirements (BlockRule)",
     "notAlone": "Toby, Beastie Befriender — a genuine attack/block restriction",
     "notControlledByYou": "Valgavoth, Terror Eater — controller:\"opponent\" reads the owner off the battlefield, which would wrongly exile Valgavoth-cast cards",
-    "notDefendersAttackedThisTurn": "Port Razer — attack restriction of the blocking rules family (BlockRule, R4.1): \"can't attack a player already attacked this turn\"",
     "notSpellFromHand": "Heartwood Crafter — complement of spellNotFromHand; no combinator exists",
     "notStartingPlayer": "Gemstone Caverns — a unique leyline condition",
     "oneOfEach": "Academy Manufactor — token replacement \"instead create one of each\" (EventReplacement.instead, family H); each such replacement applies once (616.1)",
@@ -165,6 +165,7 @@
     "removeSupertypes": "Shuri, Wakandan Inventor — property of a single card (audit of 2026-10-02, § 5.1): to attach to a family as soon as another card needs it",
     "replacePrevious": "Superior Foes of Spider-Man — a unique permission chaining",
     "revealFirstUpkeep": "Chancellor of the Spires — opening-hand reveal (CardDef.leyline, 103.6): the Chancellor cycle (Annex, Dross, Forge, Tangle) uses the same form",
+    "sacrificeCount": "Demon of Death's Gate — number of permanents sacrificed by an alternative cost (AltCostPay.sacrificeCount, \"sacrifice three black creatures rather than pay\"): family of the alternative costs with sacrifice (the Flares), to reuse for any \"sacrifice N … rather than pay\"",
     "secret": "A Killer Among Us — a hidden choice",
     "spellToSoleTarget": "Imodane, the Pyrohammer — unique",
     "stash": "Tinybones, Bauble Burglar — property of a single card (audit of 2026-10-02, § 5.1): to attach to a family as soon as another card needs it",
@@ -203,7 +204,7 @@
     "CastLimit": 9,
     "NextSpell": 9,
     "Effect": 147,
-    "Effect (fields)": 647,
+    "Effect (fields)": 648,
     "TriggerSpec": 41,
     "TriggerSpec (fields)": 145,
     "Condition": 47,
@@ -308,6 +309,7 @@
     "PLAN-L L2 [rules 186]: Commander-only reprints; ActivatedAbilityDef.fromCommand (commander ninjutsu, 702.49d: the same flag as on triggered and static abilities) ActivatedAbilityDef 17 → 18; ref.eventPlayers (the players of a \"one or more\" batch: Breeches, Malcolm) Ref 36 → 37; AdditionalCost.sacrificeToPay becomes { filter, each } (Rottenmouth Viper {1}, Dargo {2}): sacrificeToPay and each leave the single-card keys: ActivatedAbilityDef 17 → 18, Ref 36 → 37, Ref (fields) 65 → 66",
     "PLAN-L L4 [rules 188]: small approximations lifted; CostReductionAbilityDef.colored (\"{U} (or {1}) less\", Eluge: value U), action trigger whose \"chosen\" (Shinryu: \"when the chosen player loses\"), ExiledFilter withWarp becomes withCost \"warp\" | \"flashback\" (Blade of the Swarm, Sorceress's Schemes: one key for two cards, each value single-card); optionsFrom shared by Koh and the player choice (Zenos); withWarp and optionsFrom leave the single-card keys: Single-card values 126 → 130, Effect (fields) 642 → 644, Ref (fields) 66 → 67",
     "PLAN-L L5a [rules 189]: Hawkeye (payX max), Nuka-Nuke Launcher (a delayed ability that lasts until the end of the watched player's next turn: delayed until \"theirNextTurn\"; intimidate as a block rule), Kíli (AbilityCostMod free: the whole equip cost), Abuelo's Awakening (MoveSpec.mods: the base P/T in place as it enters), Heirloom Epic (CostDef.convoke: convoke for an ability, single-card key justified): CostDef 27 → 28, MoveSpec 17 → 18, Effect (fields) 644 → 646",
-    "PLAN-L L5c [rules 191]: Eriette as a trigger (TriggerSpec becomesAttached, Ref hostOf, gainControl whileAttached + attachment; justified single-card entries), the player static auraStealsCheaper removed; GameObject.counterTimestamps (ability counters in layer 6); changeCounters { by }: Single-card values 130 → 131, GameObject 49 → 50, Effect (fields) 646 → 647, TriggerSpec 40 → 41, TriggerSpec (fields) 142 → 145, Ref 37 → 38, Ref (fields) 67 → 69"
+    "PLAN-L L5c [rules 191]: Eriette as a trigger (TriggerSpec becomesAttached, Ref hostOf, gainControl whileAttached + attachment; justified single-card entries), the player static auraStealsCheaper removed; GameObject.counterTimestamps (ability counters in layer 6); changeCounters { by }: Single-card values 130 → 131, GameObject 49 → 50, Effect (fields) 646 → 647, TriggerSpec 40 → 41, TriggerSpec (fields) 142 → 145, Ref 37 → 38, Ref (fields) 67 → 69",
+    "Tevesh Szat & Jeska deck [rules 194]: coinFlip.each, a coin for each object (Rakdos, the Showstopper): Effect (fields) 647 → 648"
   ]
 }

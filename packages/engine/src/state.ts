@@ -334,9 +334,22 @@ export function counterCount(o: { counters: Record<string, number> }, kind: stri
   return o.counters[kind] ?? 0;
 }
 
-/** Net P/T change due to +1/+1 and -1/-1 counters. */
-export function counterPT(o: { counters: Record<string, number> }): number {
-  return counterCount(o, P1P1) - counterCount(o, M1M1);
+/** Kinds of P/T counters other than +1/+1 and -1/-1 (122.1a: "+2/+2" of Soul Exchange, "+1/+0"…). */
+const PT_COUNTER = /^([+-]\d+)\/([+-]\d+)$/;
+
+/** Net P/T change due to the P/T counters (122.1a): +1/+1, -1/-1 and the other "+N/+M" kinds. */
+export function counterPT(o: { counters: Record<string, number> }): { power: number; toughness: number } {
+  const n = counterCount(o, P1P1) - counterCount(o, M1M1);
+  let power = n;
+  let toughness = n;
+  for (const [kind, k] of Object.entries(o.counters)) {
+    if (!k || kind === P1P1 || kind === M1M1) continue;
+    const m = PT_COUNTER.exec(kind);
+    if (!m) continue;
+    power += Number(m[1]) * k;
+    toughness += Number(m[2]) * k;
+  }
+  return { power, toughness };
 }
 
 /** Taps a permanent ("whenever it becomes tapped"). */

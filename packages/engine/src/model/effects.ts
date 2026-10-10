@@ -346,7 +346,11 @@ export type Effect =
   | { op: "mayShuffleHandGraveyardDraw"; n: number }
   /** 705: coin flip; `store` is 1 if the controller wins. */
   /** Flips a coin (1 if won, 0 otherwise) or, with `sides`, rolls an N-sided die (706, result from 1 to N); stored. */
-  | { op: "coinFlip"; store: string; sides?: number }
+  /**
+   * `each`: a coin for each designated object (Rakdos, the Showstopper); the objects whose coin comes up tails are stored
+   * (`ref.stored(store)`).
+   */
+  | { op: "coinFlip"; store: string; sides?: number; each?: Ref }
   /** Another Round: choose permanents you control, exile them and return them, N times. */
   | { op: "flickerChosen"; filter: ObjectFilter; times: Amount }
   /** Choose a card name (without seeing any hidden card), remembered for `exileNamed` (Ancient Vendetta). */

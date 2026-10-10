@@ -17,6 +17,7 @@ import { EDH_PARTNERS } from "./partners";
 import { EDH_RAKDOS } from "./rakdos";
 import { EDH_SEPHIROTH } from "./sephiroth";
 import { EDH_STAPLES } from "./staples";
+import { EDH_TEVESH_JESKA } from "./teveshjeska";
 import { EDH_TURTLES } from "./turtles";
 import { EDH_URDRAGON } from "./urdragon";
 import { EDH_UR_SPHINX } from "./ursphinx";
@@ -47,4 +48,5 @@ export const EDH_SCRIPTS: Record<string, CardScript> = {
   ...EDH_SEPHIROTH,
   ...EDH_MARIO_LUIGI,
   ...EDH_PARTNERS,
+  ...EDH_TEVESH_JESKA,
 };

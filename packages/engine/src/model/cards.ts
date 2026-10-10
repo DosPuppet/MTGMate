@@ -100,8 +100,12 @@ export interface CardDef {
   costPerExtraTarget?: ManaCost;
   /** Planeswalker: starting loyalty (306.5b). */
   loyalty?: number;
-  /** Aura: what it can enchant (target of the Aura spell, then legality of the attachment). */
-  enchant?: { filter: ObjectFilter; label: string; player?: boolean };
+  /**
+   * Aura: what it can enchant (target of the Aura spell, then legality of the attachment). `graveyard`: "enchant
+   * [filter] card in a graveyard" (Animate Dead): the spell targets a card in a graveyard, which returns to the
+   * battlefield under the Aura's controller as the Aura enters attached to it (`stack.ts`).
+   */
+  enchant?: { filter: ObjectFilter; label: string; player?: boolean; graveyard?: boolean };
   /** "If this card is in your opening hand, you may begin the game with it on the battlefield." */
   /**
    * `notStartingPlayer`: only if you're not the starting player; `counter`: it enters with this counter;
@@ -328,6 +332,8 @@ export interface AltCostPay {
   /** A matching permanent you control, sacrificed (the Flares: "sacrifice a nontoken black creature rather than pay";
    * automatic choice: the lowest mana value). */
   sacrifice?: ObjectFilter;
+  /** Number of permanents sacrificed for `sacrifice` (1 by default; Demon of Death's Gate: three black creatures). */
+  sacrificeCount?: number;
 }
 
 /** A printing of a card: its set, its number and its art. */
@@ -1366,6 +1372,8 @@ export interface StaticAbilityDef {
   kind: "static";
   /** Also works from the command zone (113.6; eminence, Commander). */
   fromCommand?: boolean;
+  /** Works only from its owner's graveyard (113.6: Anger, "as long as this card is in your graveyard"). */
+  fromGraveyard?: boolean;
   /**
    * "self": the source itself; "attached": the permanent the source is attached to
    * ("equipped / enchanted creature"); otherwise the permanents matching the filter (seen from the controller).

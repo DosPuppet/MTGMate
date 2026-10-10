@@ -84,7 +84,8 @@ export interface CardScript {
   disguiseReduction?: Amount;
   /** Aura: "Enchant [filter]". */
   /** `player`: "Enchant player" (Grievous Wound). */
-  enchant?: { filter: ObjectFilter; label: string; player?: boolean };
+  /** `graveyard`: "enchant creature card in a graveyard" (Animate Dead). */
+  enchant?: { filter: ObjectFilter; label: string; player?: boolean; graveyard?: boolean };
   /** May begin the game on the battlefield (Leyline). */
   leyline?: CardDef["leyline"];
   /** Alternative cost: "you may pay {B} rather than… if [condition]". */
@@ -1150,6 +1151,8 @@ export const fx = {
   addManaColorsAmong: (filter: ObjectFilter): Effect => ({ op: "addManaColorsAmong", filter }),
   mayShuffleHandGraveyardDraw: (n = 7): Effect => ({ op: "mayShuffleHandGraveyardDraw", n }),
   coinFlip: (store: string): Effect => ({ op: "coinFlip", store }),
+  /** "Flip a coin for each [object]": those whose coin comes up tails are stored (`ref.stored(store)`). */
+  coinFlipEach: (each: Ref, store: string): Effect => ({ op: "coinFlip", store, each }),
   /** "Roll an N-sided die" (706): the result is stored (Ancient Copper Dragon: a d20). */
   rollDie: (sides: number, store: string): Effect => ({ op: "coinFlip", store, sides }),
   /** "… additional upkeep steps after this phase" (Obeka); `afterStep`: "after this step" (Paradox Haze). */
@@ -3190,10 +3193,13 @@ export function staticAbility(
     perLife?: boolean;
     perHand?: boolean;
     perAmount?: Amount;
+    /** "As long as this card is in your graveyard" (113.6): works from the graveyard only. */
+    fromGraveyard?: boolean;
   } = {},
 ): StaticAbilityDef {
   return {
     kind: "static",
+    ...(opts.fromGraveyard ? { fromGraveyard: true } : {}),
     affects,
     mods,
     condition: opts.condition,

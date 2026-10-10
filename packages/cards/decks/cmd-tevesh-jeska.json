@@ -1,0 +1,368 @@
+{
+  "id": "cmd-tevesh-jeska",
+  "name": "Tevesh Szat & Jeska — Demons",
+  "description": "Commander, black and red, based on the list \"Tevesh Szat + Jeska - My Demonic Signature Deck\" by Kronic_EDH_Vet (Moxfield, bracket 4: four Game Changers, Demonic Tutor, Vampiric Tutor, Mana Vault and Jeska's Will). Two partner commanders, Tevesh Szat, Doom of Fools and Jeska, Thrice Reborn: big Demons (Abyssal Persecutor, Bloodthirster, Orcus, Rakdos, Razaketh, Reaper from the Abyss) brought back from the graveyard (Animate Dead, Reanimate, Dread Return, Buried Alive, Entomb), sacrifice (Grave Pact, Ashnod's Altar, Skullclamp) and board wipes (Blasphemous Act, Hellfire, Kindred Dominance).",
+  "fr": {
+    "name": "Tevesh Szat & Jeska — Démons",
+    "description": "Commander, noir et rouge, d'après la liste « Tevesh Szat + Jeska - My Demonic Signature Deck » de Kronic_EDH_Vet (Moxfield, bracket 4 : quatre Game Changers, Demonic Tutor, Vampiric Tutor, Mana Vault et Jeska's Will). Deux commandants partenaires, Tevesh Szat, Doom of Fools et Jeska, Thrice Reborn : de grands Démons (Abyssal Persecutor, Bloodthirster, Orcus, Rakdos, Razaketh, Reaper from the Abyss) ramenés du cimetière (Animate Dead, Reanimate, Dread Return, Buried Alive, Entomb), du sacrifice (Grave Pact, Ashnod's Altar, Skullclamp) et des balayages (Blasphemous Act, Hellfire, Kindred Dominance)."
+  },
+  "colors": [
+    "B",
+    "R"
+  ],
+  "bracket": 4,
+  "cover": "https://cards.scryfall.io/art_crop/front/8/f/8f244716-78ab-46f5-b6e9-fc1e6db28052.jpg?1783928825",
+  "format": "commander",
+  "commander": [
+    [
+      1,
+      "Tevesh Szat, Doom of Fools"
+    ],
+    [
+      1,
+      "Jeska, Thrice Reborn"
+    ]
+  ],
+  "main": [
+    [
+      1,
+      "Abyssal Persecutor"
+    ],
+    [
+      1,
+      "Anger"
+    ],
+    [
+      1,
+      "Animate Dead"
+    ],
+    [
+      1,
+      "Arcane Signet"
+    ],
+    [
+      1,
+      "Ashnod's Altar"
+    ],
+    [
+      1,
+      "Badlands"
+    ],
+    [
+      1,
+      "Bedevil"
+    ],
+    [
+      1,
+      "Bitter Reunion"
+    ],
+    [
+      1,
+      "Blasphemous Act"
+    ],
+    [
+      1,
+      "Blazemire Verge"
+    ],
+    [
+      1,
+      "Blood Crypt"
+    ],
+    [
+      1,
+      "Bloodghast"
+    ],
+    [
+      1,
+      "Bloodstained Mire"
+    ],
+    [
+      1,
+      "Bloodthirster"
+    ],
+    [
+      1,
+      "Bojuka Bog"
+    ],
+    [
+      1,
+      "Buried Alive"
+    ],
+    [
+      1,
+      "Cabal Coffers"
+    ],
+    [
+      1,
+      "Chaos Warp"
+    ],
+    [
+      1,
+      "Command Tower"
+    ],
+    [
+      1,
+      "Culling the Weak"
+    ],
+    [
+      1,
+      "Dark Ritual"
+    ],
+    [
+      1,
+      "Darkness"
+    ],
+    [
+      1,
+      "Deadly Rollick"
+    ],
+    [
+      1,
+      "Demon of Death's Gate"
+    ],
+    [
+      1,
+      "Demonic Tutor"
+    ],
+    [
+      1,
+      "Dragonskull Summit"
+    ],
+    [
+      1,
+      "Dread Return"
+    ],
+    [
+      1,
+      "Entomb"
+    ],
+    [
+      1,
+      "Faithless Looting"
+    ],
+    [
+      1,
+      "Falthis, Shadowcat Familiar"
+    ],
+    [
+      1,
+      "Grave Pact"
+    ],
+    [
+      1,
+      "Haunted Ridge"
+    ],
+    [
+      1,
+      "Hellfire"
+    ],
+    [
+      1,
+      "Herald of Slaanesh"
+    ],
+    [
+      1,
+      "Infernal Grasp"
+    ],
+    [
+      1,
+      "Jeska's Will"
+    ],
+    [
+      1,
+      "Jet Medallion"
+    ],
+    [
+      1,
+      "Kardur, Doomscourge"
+    ],
+    [
+      1,
+      "Kindred Dominance"
+    ],
+    [
+      1,
+      "Luxury Suite"
+    ],
+    [
+      1,
+      "Malakir Rebirth // Malakir Mire"
+    ],
+    [
+      1,
+      "Mana Vault"
+    ],
+    [
+      1,
+      "Maze of Ith"
+    ],
+    [
+      2,
+      "Mountain"
+    ],
+    [
+      1,
+      "Night's Whisper"
+    ],
+    [
+      1,
+      "Orcus, Prince of Undeath"
+    ],
+    [
+      1,
+      "Phyrexian Tower"
+    ],
+    [
+      1,
+      "Promise of Power"
+    ],
+    [
+      1,
+      "Rakdos Signet"
+    ],
+    [
+      1,
+      "Rakdos, Lord of Riots"
+    ],
+    [
+      1,
+      "Rakdos, the Showstopper"
+    ],
+    [
+      1,
+      "Raucous Theater"
+    ],
+    [
+      1,
+      "Razaketh, the Foulblooded"
+    ],
+    [
+      1,
+      "Reanimate"
+    ],
+    [
+      1,
+      "Reaper from the Abyss"
+    ],
+    [
+      1,
+      "Rite of Belzenlok"
+    ],
+    [
+      1,
+      "Rune-Scarred Demon"
+    ],
+    [
+      1,
+      "Seize the Spotlight"
+    ],
+    [
+      1,
+      "Shadowborn Demon"
+    ],
+    [
+      1,
+      "Shadowgrange Archfiend"
+    ],
+    [
+      1,
+      "Shadowspear"
+    ],
+    [
+      1,
+      "Shizo, Death's Storehouse"
+    ],
+    [
+      1,
+      "Sign in Blood"
+    ],
+    [
+      1,
+      "Skullclamp"
+    ],
+    [
+      1,
+      "Smoldering Marsh"
+    ],
+    [
+      1,
+      "Sol Ring"
+    ],
+    [
+      1,
+      "Soul Exchange"
+    ],
+    [
+      1,
+      "Stinging Study"
+    ],
+    [
+      1,
+      "Sulfurous Springs"
+    ],
+    [
+      13,
+      "Swamp"
+    ],
+    [
+      1,
+      "Tainted Peak"
+    ],
+    [
+      1,
+      "Talisman of Indulgence"
+    ],
+    [
+      1,
+      "Temple of Malice"
+    ],
+    [
+      1,
+      "Temur Battle Rage"
+    ],
+    [
+      1,
+      "Tibalt's Trickery"
+    ],
+    [
+      1,
+      "Urborg, Tomb of Yawgmoth"
+    ],
+    [
+      1,
+      "Urza's Incubator"
+    ],
+    [
+      1,
+      "Vampiric Tutor"
+    ],
+    [
+      1,
+      "Vandalblast"
+    ],
+    [
+      1,
+      "Varragoth, Bloodsky Sire"
+    ],
+    [
+      1,
+      "Victimize"
+    ],
+    [
+      1,
+      "Volrath's Stronghold"
+    ],
+    [
+      1,
+      "Wasteland"
+    ],
+    [
+      1,
+      "Westvale Abbey // Ormendahl, Profane Prince"
+    ],
+    [
+      1,
+      "Wheel of Fortune"
+    ]
+  ]
+}

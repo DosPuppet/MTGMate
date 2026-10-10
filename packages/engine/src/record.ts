@@ -538,8 +538,12 @@ export const RECORD_VERSION = 1;
  *   and Emrakul, the Promised End have their protections; Swift Demise destroys the creatures that were dealt damage;
  *   Shelinda's "otherwise" reads its condition once (`fx.ifElse`); Summoner's Sending reads the exiled card's mana
  *   value; Yuna's mana rider sees the spell it was spent on
+ * - 194: Tevesh Szat & Jeska deck: Auras that enchant a card in a graveyard (Animate Dead), static abilities that work
+ *   from the graveyard (Anger), an alternative cost that sacrifices several permanents (Demon of Death's Gate), a coin
+ *   for each object (Rakdos, the Showstopper), "+N/+M" counters (Soul Exchange), discover and cascade filters resolved
+ *   during the resolution (Tibalt's Trickery)
  */
-export const RULES_VERSION = 193;
+export const RULES_VERSION = 194;
 
 /** One checkpoint every N decisions (plus the last one of the game). */
 export const CHECKPOINT_EVERY = 25;

@@ -965,6 +965,14 @@ function staticSlots(s: GameState, defOfId: (id: ObjectId) => string): StaticSlo
   }
   const slots: StaticSlot[] = [];
   const emblems = s.playerOrder.flatMap((p) => s.players[p]?.command ?? []);
+  // 113.6: the statics that work from a graveyard (Anger), and only those of these cards.
+  for (const p of s.playerOrder) {
+    for (const id of s.players[p]?.graveyard ?? []) {
+      const o = obj(s, id);
+      for (const ab of s.defs[o.defId]?.abilities ?? [])
+        if (ab.kind === "static" && ab.fromGraveyard) slots.push({ id, ab, ts: o.timestamp });
+    }
+  }
   for (const id of [...s.battlefield, ...emblems]) {
     if (lost.has(id)) continue;
     const o = obj(s, id);
@@ -990,7 +998,7 @@ function staticSlots(s: GameState, defOfId: (id: ObjectId) => string): StaticSlo
       for (const ab of e.addAbilities ?? []) if (ab.kind === "static") grantedAt.set(ab, Math.max(o.timestamp, e.timestamp));
     }
     for (const ab of grantedAt.size ? [...printed, ...grantedAt.keys()] : printed) {
-      if (ab.kind === "static") slots.push({ id, ab, ts: grantedAt.get(ab) ?? o.timestamp });
+      if (ab.kind === "static" && !ab.fromGraveyard) slots.push({ id, ab, ts: grantedAt.get(ab) ?? o.timestamp });
     }
   }
   return slots;
@@ -1301,8 +1309,9 @@ function applyLayersScanned(s: GameState, applied: Applied[], defOfId: (id: Obje
   for (const [id, c] of out) {
     const o = obj(s, id);
     c.basePower = c.power;
-    c.power += counterPT(o) + (hone.get(id) ?? 0);
-    c.toughness += counterPT(o);
+    const pt = counterPT(o);
+    c.power += pt.power + (hone.get(id) ?? 0);
+    c.toughness += pt.toughness;
   }
   layer(
     (m) => !!(m.power || m.toughness),

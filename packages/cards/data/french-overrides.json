@@ -158,5 +158,13 @@
   "Mind Twist": {
     "typeLine": "Rituel",
     "text": "Un joueur ciblé se défausse de X cartes au hasard."
+  },
+  "Hellfire": {
+    "typeLine": "Rituel",
+    "text": "Détruisez toutes les créatures non-noires. Hellfire vous inflige X plus 3 blessures, X étant le nombre de créatures mortes de cette manière."
+  },
+  "Soul Exchange": {
+    "typeLine": "Rituel",
+    "text": "En tant que coût supplémentaire pour lancer ce sort, exilez une créature que vous contrôlez.\nRenvoyez sur le champ de bataille une carte de créature ciblée depuis votre cimetière. Mettez un marqueur +2/+2 sur cette créature si la créature exilée était un thrull."
   }
 }

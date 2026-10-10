@@ -13,6 +13,7 @@ import {
   nextTurnOf,
   resolveRef,
   store,
+  withX,
 } from "../effects";
 import { bump } from "../layers";
 import { availableMana, canPay, costToText, manaValue, payMana } from "../mana";
@@ -62,6 +63,7 @@ export const HANDLERS: OpHandlers = {
     // The resolution can resume after the question: the exiling happens only once.
     if (!r.vars[key("done")]) {
       const n = evalAmount(s, ctx, e.n);
+      const filter = e.filter ? withX(s, e.filter, ctx) : undefined;
       const lib = s.players[p]?.library ?? [];
       const rest: ObjectId[] = [];
       let hit: ObjectId | undefined;
@@ -73,7 +75,7 @@ export const HANDLERS: OpHandlers = {
           d &&
           !d.types.includes("Land") &&
           (e.cascade ? manaValue(d.manaCost) < n : manaValue(d.manaCost) <= n) &&
-          (!e.filter || matchesCard(s, p, id, { ...e.filter, controller: undefined }))
+          (!filter || matchesCard(s, p, id, { ...filter, controller: undefined }))
         )
           hit = id;
         else rest.push(id);

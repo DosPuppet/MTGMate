@@ -569,7 +569,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     const altPaid = alt?.pay ? altCostPayment(s, player, card, alt.pay) : undefined;
     // Web-slinging: the tapped creature returned by default (Nyxbloom Ancient no longer triples the mana).
     const webBounce = alt && isWebSlinging(s, player, d) ? webSlingingOptions(s, player)[0] : undefined;
-    const altGone = [altPaid?.bounce, altPaid?.sacrifice, webBounce].filter((x): x is string => !!x);
+    const altGone = [altPaid?.bounce, ...(altPaid?.sacrifice ?? []), webBounce].filter((x): x is string => !!x);
     const altAvailable =
       !!alt &&
       (!alt.collectEvidence || !!evidenceCards(s, player, card, alt.collectEvidence)) &&

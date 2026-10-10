@@ -10,6 +10,7 @@ import cmdMultiverseReforged from "../decks/cmd-multiverse-reforged.json";
 import cmdMutantMenace from "../decks/cmd-mutant-menace.json";
 import cmdRakdos from "../decks/cmd-rakdos.json";
 import cmdSephiroth from "../decks/cmd-sephiroth.json";
+import cmdTeveshJeska from "../decks/cmd-tevesh-jeska.json";
 import cmdTurtlePower from "../decks/cmd-turtle-power.json";
 import cmdUrDragon from "../decks/cmd-ur-dragon.json";
 import cmdUrSphinx from "../decks/cmd-ur-sphinx.json";
@@ -92,6 +93,7 @@ export const DECKS: DeckList[] = [
   cmdVivi,
   cmdSephiroth,
   cmdMarioLuigi,
+  cmdTeveshJeska,
 ].map((d) => withArt({ ...(d as DeckList), builtin: true }));
 
 function withArt(d: DeckList): DeckList {

@@ -245,3 +245,9 @@ In the order they were added, set by set.
   - `auto choice` Flare of Malice: the creature sacrificed instead of paying is chosen by the engine (the lowest mana value);
   - `rule` Tombstone Stairwell: the world rule (704.5k) is not done (no other world enchantment in the catalog).
   - `rule` Reyhan, Last of the Abzan: "is put into the command zone" only from the battlefield (a commander that dies goes to the graveyard first, then may return to the command zone: the death triggers it).
+  - `timing` Animate Dead: the creature card returns during the Aura's resolution, which then enters attached to it (and not by its "enters" triggered ability: nobody can respond while it enchants the card in the graveyard); `rule` put onto the battlefield without being cast, it enchants nothing and stays in its zone;
+  - `rule` Jeska, Thrice Reborn: "one of your opponents" (0 ability) is read from the creature's controller (an opposing creature triples the combat damage it deals to its own opponents);
+  - `rule` Kardur, Doomscourge: the attack requirements are a goad until your next turn (same requirements; the creatures count as goaded);
+  - `auto choice` Stinging Study: with two commanders, X is the greatest mana value among them (and not the one you choose);
+  - `rule` Tibalt's Trickery: "choose 1, 2, or 3 at random" is a three-sided die roll (shown as such in the log); the card found is offered with the cascade prompt (cast for free, otherwise to the bottom);
+  - `auto choice` Demon of Death's Gate: the three black creatures sacrificed instead of paying are chosen by the engine (the lowest mana values).

@@ -102,6 +102,8 @@ export interface EffectContext {
  * the Mighty); "that shares a creature type with it" (Shared Animosity: the object of the event).
  */
 export function withX(s: GameState, f: ObjectFilter, ctx: EffectContext): ObjectFilter {
+  // "… with a different name than that spell" (Tibalt's Trickery): a designated object read inside `not`.
+  if (f.not?.shares) f = { ...f, not: withX(s, f.not, ctx) };
   const shares = f.shares;
   if (shares) f = { ...f, shares: undefined };
   if (shares?.what === "creatureType") {

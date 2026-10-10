@@ -1,0 +1,93 @@
+// Tevesh Szat, Doom of Fools + Jeska, Thrice Reborn — Rakdos demons, reanimation and sacrifice (partners).
+// List "Tevesh Szat + Jeska - My Demonic Signature Deck" by Kronic_EDH_Vet (Moxfield), updated on 2026-10-04,
+// retrieved on 2026-10-10 (sideboard Jeweled Lotus and Mana Crypt left out: banned). Source: https://moxfield.com/decks/sf_2RPW7M0S2kMHBfVvWbA
+Commander
+1 Tevesh Szat, Doom of Fools
+1 Jeska, Thrice Reborn
+
+Deck
+1 Abyssal Persecutor
+1 Anger
+1 Animate Dead
+1 Arcane Signet
+1 Ashnod's Altar
+1 Badlands
+1 Bedevil
+1 Bitter Reunion
+1 Blasphemous Act
+1 Blazemire Verge
+1 Blood Crypt
+1 Bloodghast
+1 Bloodstained Mire
+1 Bloodthirster
+1 Bojuka Bog
+1 Buried Alive
+1 Cabal Coffers
+1 Chaos Warp
+1 Command Tower
+1 Culling the Weak
+1 Dark Ritual
+1 Darkness
+1 Deadly Rollick
+1 Demon of Death's Gate
+1 Demonic Tutor
+1 Dragonskull Summit
+1 Dread Return
+1 Entomb
+1 Faithless Looting
+1 Falthis, Shadowcat Familiar
+1 Grave Pact
+1 Haunted Ridge
+1 Hellfire
+1 Herald of Slaanesh
+1 Infernal Grasp
+1 Jeska's Will
+1 Jet Medallion
+1 Kardur, Doomscourge
+1 Kindred Dominance
+1 Luxury Suite
+1 Malakir Rebirth // Malakir Mire
+1 Mana Vault
+1 Maze of Ith
+2 Mountain
+1 Night's Whisper
+1 Orcus, Prince of Undeath
+1 Phyrexian Tower
+1 Promise of Power
+1 Rakdos Signet
+1 Rakdos, Lord of Riots
+1 Rakdos, the Showstopper
+1 Raucous Theater
+1 Razaketh, the Foulblooded
+1 Reanimate
+1 Reaper from the Abyss
+1 Rite of Belzenlok
+1 Rune-Scarred Demon
+1 Seize the Spotlight
+1 Shadowborn Demon
+1 Shadowgrange Archfiend
+1 Shadowspear
+1 Shizo, Death's Storehouse
+1 Sign in Blood
+1 Skullclamp
+1 Smoldering Marsh
+1 Sol Ring
+1 Soul Exchange
+1 Stinging Study
+1 Sulfurous Springs
+13 Swamp
+1 Tainted Peak
+1 Talisman of Indulgence
+1 Temple of Malice
+1 Temur Battle Rage
+1 Tibalt's Trickery
+1 Urborg, Tomb of Yawgmoth
+1 Urza's Incubator
+1 Vampiric Tutor
+1 Vandalblast
+1 Varragoth, Bloodsky Sire
+1 Victimize
+1 Volrath's Stronghold
+1 Wasteland
+1 Westvale Abbey // Ormendahl, Profane Prince
+1 Wheel of Fortune

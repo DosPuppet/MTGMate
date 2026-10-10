@@ -23,6 +23,7 @@ describe("decks Commander", () => {
       "mutant-menace",
       "rakdos",
       "sephiroth",
+      "tevesh-jeska",
       "turtle-power",
       "ur-dragon",
       "ur-sphinx",

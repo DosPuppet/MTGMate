@@ -92,7 +92,8 @@ export interface EntersContext {
 /** 303.4f: what an Aura entering without being cast can enchant (permanents; not player Auras). */
 export function auraHosts(s: GameState, controller: PlayerId, cardId: ObjectId): ObjectId[] {
   const enchant = s.defs[s.objects[cardId]?.defId ?? ""]?.enchant;
-  if (!enchant || enchant.player) return [];
+  // Animate Dead entering without being cast: nothing chosen in a graveyard, it stays in its zone (approximation).
+  if (!enchant || enchant.player || enchant.graveyard) return [];
   return s.battlefield.filter(
     (id) =>
       id !== cardId &&

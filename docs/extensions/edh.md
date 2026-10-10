@@ -26,6 +26,7 @@ The scripts are in `packages/cards/src/edh/`; the rules tests in `packages/engin
 | `vivi` | Vivi Ornitier (cEDH storm, blue and red) | 39 |
 | `sephiroth` | Sephiroth, Fabled SOLDIER (aristocrats, mono-black) | 31 |
 | `mario-luigi` | Bruse Tarl and Reyhan, partners (+1/+1 counters, four colors) | 38 |
+| `tevesh-jeska` | Tevesh Szat and Jeska, partners (Demons and reanimation, black and red) | 36 |
 
 ## E0 — import ✅
 
@@ -376,3 +377,24 @@ Added on 2026-10-09 (PLAN-L, lot L2): the ten cards of `EXCLUDED_REPRINTS` (PLAN
 - **Tests:** `engine/test/edh-partners.test.ts` (17: the pairs, each card's Oracle text, Dargo's two reductions and the empty pool, Inalla from the command zone, Yuriko's commander ninjutsu from the command zone and from the hand); EDH smoke test (798 cards).
 - **Approximations:** none.
 - **Debt:** `sacrificeToPay` and `each` leave the single-card keys (two cards each); ceilings ActivatedAbilityDef 17 → 18, Ref 36 → 37.
+
+## Deck Tevesh Szat & Jeska: Demons ✅ (834 / 834)
+
+Added on 2026-10-10 at the user's request with the "Add a Commander deck" recipe. List: "Tevesh Szat + Jeska - My Demonic Signature Deck" by Kronic_EDH_Vet on Moxfield (updated 2026-10-04, read through the Moxfield API), in `docs/commander/decks/tevesh-jeska.txt`; precon `cmd-tevesh-jeska` (black and red), bracket 4 (four Game Changers: Demonic Tutor, Jeska's Will, Mana Vault, Vampiric Tutor). Two partner commanders, Tevesh Szat, Doom of Fools (already playable, Sephiroth deck) and Jeska, Thrice Reborn; 49 other cards were already playable. The Moxfield sideboard (Jeweled Lotus and Mana Crypt, banned) and maybeboard (13 cards) are not imported.
+
+**Import:** 36 cards absent from the catalog added to EDH; French text from Scryfall except two old printings without one (Hellfire, Legends; Soul Exchange, Fallen Empires: never printed in French), completed by hand in `french-overrides.json`; 0 color identity discrepancies with Scryfall.
+
+**Cards (36, `edh/teveshjeska.ts`; Tainted Peak in `edh/lands.ts`):** commander: Jeska, Thrice Reborn; creatures: Abyssal Persecutor, Anger, Bloodthirster, Demon of Death's Gate, Falthis, Shadowcat Familiar, Herald of Slaanesh, Kardur, Doomscourge, Orcus, Prince of Undeath, Rakdos, the Showstopper, Reaper from the Abyss, Shadowborn Demon, Shadowgrange Archfiend; enchantments: Animate Dead, Bitter Reunion, Rite of Belzenlok; lands: Maze of Ith, Tainted Peak, Volrath's Stronghold, Wasteland, Westvale Abbey // Ormendahl, Profane Prince; spells: Buried Alive, Chaos Warp, Dread Return, Hellfire, Infernal Grasp, Kindred Dominance, Night's Whisper, Promise of Power, Seize the Spotlight, Sign in Blood, Soul Exchange, Stinging Study, Temur Battle Rage, Tibalt's Trickery, Vandalblast.
+
+- **Engine** (rules 194, details in `docs/engine.md`):
+  - Auras that enchant a card in a graveyard (`enchant.graveyard`, Animate Dead): the spell targets the card, which returns under the Aura's controller as the Aura enters attached to it, the creature linked to the Aura ("when it leaves, sacrifice that creature");
+  - static abilities that work from the graveyard (`staticAbility(…, { fromGraveyard })`, 113.6: Anger);
+  - an alternative cost that sacrifices several permanents (`AltCostPay.sacrificeCount`, Demon of Death's Gate);
+  - a coin for each object (`fx.coinFlipEach`, Rakdos, the Showstopper: the objects whose coin comes up tails are stored);
+  - P/T counters other than +1/+1 and −1/−1 (122.1a: "+2/+2" of Soul Exchange) count in layer 7c;
+  - the filter of discover and cascade is resolved during the resolution (`withX`), and `withX` resolves a designated object inside `not` (Tibalt's Trickery: "with a different name than that spell");
+  - entwine is written with `escalate` (Promise of Power: both modes for {4} more), and the Oracle test of modal spells counts the extra mode.
+- **Tests:** `engine/test/edh-tevesh.test.ts` (39: each card's Oracle text, among them Animate Dead and its sacrifice when it leaves, Anger in and out of the graveyard, Jeska's loyalty from the commander casts, Orcus's two modes, the free cast offered by Tibalt's Trickery to the spell's controller); EDH smoke test (834 cards).
+- **Approximations:** Animate Dead (reanimation during the resolution; entering without being cast, it stays in its zone), Jeska (opponents read from the creature's controller), Kardur (its attack requirements are a goad), Stinging Study (the greatest commander mana value), Tibalt's Trickery (a three-sided roll; cascade prompt), Demon of Death's Gate (the sacrificed creatures are chosen by the engine).
+- **Balance** (medium AI on both sides, `--by-deck --deck cmd-tevesh-jeska`, against the fifteen other precons in turn): in a duel, 55.5% ± 6.9 (200 games, 21.3 turns); with four players (seats A, B, A, B, fair share 50%), 42.7% ± 9.9 (96 decided games out of 100, 2 draws and 2 unfinished, 63.6 turns). Within the target, but the four-player games are long (the other decks: 42 to 49 turns; likely Abyssal Persecutor, which keeps opponents from losing and which the AI does not sacrifice on purpose). Slowest decision: 6.5 s, an opponent at 116 permanents with four players.
+- **Debt:** `graveyard` (enchant) and `sacrificeCount` enter the baseline; `notDefendersAttackedThisTurn` leaves it (Port Razer and Bloodthirster); ceiling Effect (fields) 647 → 648 (`coinFlip.each`).

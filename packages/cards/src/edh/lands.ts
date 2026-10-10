@@ -174,6 +174,7 @@ export const EDH_LANDS: Record<string, CardScript> = {
   "Tainted Field": taintedLand("W", "B"),
   "Tainted Isle": taintedLand("U", "B"),
   "Tainted Wood": taintedLand("B", "G"),
+  "Tainted Peak": taintedLand("B", "R"),
   "Temple of the False God": {
     abilities: [manaAbility("C", 2, { condition: cond.controls({ types: ["Land"] }, 5) })],
   },

@@ -132,8 +132,9 @@ const COUNTER_KEYS = new Set([
 ]);
 const COUNTER_HOLDERS = new Set(["addCounters", "removeCounters", "removeCounterFrom", "counters", "moveCounter"]);
 const COUNTER_OPS = new Set(["addCounters", "removeCounters", "counterOnOrCreate", "countersDivided", "moveCounter"]);
-/** Kinds with no name to translate ("+1/+1") or wildcards ("any kind"). */
+/** Kinds with no name to translate ("+1/+1") or wildcards ("any kind"); the P/T counters ("+2/+2", 122.1a) too. */
 const UNNAMED = new Set(["+1/+1", "-1/-1", "any", "*"]);
+const PT_COUNTER = /^[+-]\d+\/[+-]\d+$/;
 
 function counterKinds(n: J, parentKey: string, out: Map<string, string>, where: string): void {
   if (Array.isArray(n)) {
@@ -153,7 +154,9 @@ describe("counter names", () => {
     const kinds = new Map<string, string>();
     for (const d of implementedCards()) counterKinds(d, "", kinds, d.name);
     for (const [k, t] of Object.entries(TOKEN_SPECS)) counterKinds(t, "", kinds, `token ${k}`);
-    const missing = [...kinds].filter(([k]) => !UNNAMED.has(k) && !COUNTER_LABELS[k]).map(([k, w]) => `${k} (${w})`);
+    const missing = [...kinds]
+      .filter(([k]) => !UNNAMED.has(k) && !PT_COUNTER.test(k) && !COUNTER_LABELS[k])
+      .map(([k, w]) => `${k} (${w})`);
     expect(missing).toEqual([]);
   });
 });

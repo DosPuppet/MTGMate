@@ -195,7 +195,8 @@ function expectedModes(text: string): number | null {
   if (!head) return null;
   const n = all.filter((l) => l.startsWith("•")).length;
   if (n < 2) return null;
-  if (head === "Choose one —") return n;
+  // Entwine (702.42): one more mode, all of them for the entwine cost (Promise of Power).
+  if (head === "Choose one —") return all.some((l) => l.startsWith("Entwine")) ? n + 1 : n;
   if (head === "Choose two —") return binom(n, 2);
   if (head === "Choose three —") return binom(n, 3);
   if (head === "Choose one or both —") return n === 2 ? 3 : null;

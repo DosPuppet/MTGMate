@@ -254,7 +254,11 @@ export const ENCHANT_SPEC = "enchant";
 export function modesOf(d: CardDef): ModeDef[] {
   if (d.spell) return d.spell.modes;
   if (d.enchant) {
-    const filter = d.enchant.player ? { players: "any" as const } : { objects: d.enchant.filter };
+    const filter = d.enchant.player
+      ? { players: "any" as const }
+      : d.enchant.graveyard
+        ? { cards: { filter: d.enchant.filter, whose: "any" as const } }
+        : { objects: d.enchant.filter };
     return [{ targets: [{ id: ENCHANT_SPEC, label: d.enchant.label, filter }], effects: [] }];
   }
   return [{ targets: [], effects: [] }];
@@ -840,7 +844,7 @@ export function altCostPayment(
   player: PlayerId,
   card: ObjectId,
   pay: AltCostPay,
-): { exile: ObjectId[]; bounce?: ObjectId; sacrifice?: ObjectId } | null {
+): { exile: ObjectId[]; bounce?: ObjectId; sacrifice?: ObjectId[] } | null {
   const pl = s.players[player];
   if (!pl || (pay.life !== undefined && payableLife(s, player) < pay.life)) return null;
   let exile: ObjectId[] = [];
@@ -861,9 +865,9 @@ export function altCostPayment(
     bounce = options[0];
   }
   const sacrifice = pay.sacrificeReduce
-    ? emergeVictim(s, player, pay.sacrificeReduce)
+    ? emergeVictims(s, player, pay.sacrificeReduce)
     : pay.sacrifice
-      ? emergeVictim(s, player, pay.sacrifice, "lowest")
+      ? emergeVictims(s, player, pay.sacrifice, "lowest", pay.sacrificeCount)
       : undefined;
   if ((pay.sacrificeReduce || pay.sacrifice) && !sacrifice) return null;
   return { exile, ...(bounce ? { bounce } : {}), ...(sacrifice ? { sacrifice } : {}) };
@@ -877,10 +881,22 @@ function emergeVictim(
   f: ObjectFilter,
   order: "greatest" | "lowest" = "greatest",
 ): ObjectId | undefined {
+  return emergeVictims(s, player, f, order)?.[0];
+}
+
+/** The `count` permanents sacrificed in that order (Demon of Death's Gate: three black creatures), if there are enough. */
+function emergeVictims(
+  s: GameState,
+  player: PlayerId,
+  f: ObjectFilter,
+  order: "greatest" | "lowest" = "greatest",
+  count = 1,
+): ObjectId[] | undefined {
   const mv = (id: ObjectId) => snapshot(s, id).manaValue ?? 0;
-  return s.battlefield
+  const all = s.battlefield
     .filter((id) => obj(s, id).controller === player && matchesObjectFilter(s, player, id, f))
-    .sort((a, b) => (order === "greatest" ? mv(b) - mv(a) : mv(a) - mv(b)))[0];
+    .sort((a, b) => (order === "greatest" ? mv(b) - mv(a) : mv(a) - mv(b)));
+  return all.length >= count ? all.slice(0, count) : undefined;
 }
 
 /** A mana cost paid N times (replicate, cumulative upkeep). */
@@ -2286,7 +2302,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     if (altPay.life) payLife_(s, player, altPay.life);
     for (const id of paid.exile) moveObject(s, id, "exile");
     if (paid.bounce) moveObject(s, paid.bounce, "hand");
-    if (paid.sacrifice) sacrificePermanent(s, paid.sacrifice);
+    for (const id of paid.sacrifice ?? []) sacrificePermanent(s, id);
   }
   // Conspiracy Unraveler: "collect evidence 10 rather than pay the mana cost".
   const altEvidence = alternative ? altCostFor(s, player, d)?.collectEvidence : undefined;
@@ -4106,6 +4122,12 @@ function finishResolution(
     if (d && choices && !("ask" in choices)) {
       // Back face of a modal double-faced card cast: the permanent enters with that face.
       const face = s.objects[item.sourceId]?.faceDefId;
+      // Animate Dead: the targeted card in a graveyard returns to the battlefield under the Aura's controller, and the
+      // Aura enters attached to it (approximation: within the resolution, not by its "enters" triggered ability).
+      const reanimated =
+        d.enchant?.graveyard && targets[ENCHANT_SPEC]?.[0]
+          ? (moveObject(s, targets[ENCHANT_SPEC][0], "battlefield", { controller: item.controller }) ?? undefined)
+          : undefined;
       // 303.4f: an Aura enters attached to the object it targeted.
       const enteredId = moveObject(s, item.sourceId, "battlefield", {
         controller: item.controller,
@@ -4114,7 +4136,7 @@ function finishResolution(
             x: item.x,
             kicked: item.kicked,
             cast: item.cast,
-            attachTo: d.enchant ? targets[ENCHANT_SPEC]?.[0] : undefined,
+            attachTo: d.enchant?.graveyard ? reanimated : d.enchant ? targets[ENCHANT_SPEC]?.[0] : undefined,
             // Sneak: it enters tapped and attacking what the returned creature was attacking; if that player left the
             // game or that planeswalker the battlefield, it enters tapped but not attacking (508.4a).
             ...(item.cast?.sneakDefender
@@ -4132,6 +4154,8 @@ function finishResolution(
       });
       const arrived = enteredId ? s.objects[enteredId] : undefined;
       if (arrived && item.x) arrived.x = item.x;
+      // "When this Aura leaves the battlefield, that creature's controller sacrifices it": the creature is linked to it.
+      if (arrived && reanimated) arrived.linked = [...(arrived.linked ?? []), reanimated];
       // Fear of Abduction: the cards exiled to pay the additional cost are linked to the permanent.
       const exiled = item.paid?.exiled ?? [];
       if (arrived && exiled.length) arrived.linked = [...(arrived.linked ?? []), ...exiled];

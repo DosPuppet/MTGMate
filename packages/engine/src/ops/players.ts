@@ -371,6 +371,17 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   coinFlip(s, r, e, ctx) {
+    // Rakdos, the Showstopper: a coin for each object (heads or tails, nobody wins or loses the flip, 705.2).
+    if (e.each) {
+      const tails = resolveRef(s, ctx, e.each).filter(() => {
+        const heads = random(s) < 0.5;
+        emit({ type: "coinFlip", player: ctx.controller, won: heads });
+        return !heads;
+      });
+      r.vars[`$ids:${e.store}`] = tails;
+      store(r, e.store, tails.length);
+      return;
+    }
     if (e.sides) {
       const result = 1 + Math.floor(random(s) * e.sides);
       emit({ type: "dieRoll", player: ctx.controller, sides: e.sides, result });
